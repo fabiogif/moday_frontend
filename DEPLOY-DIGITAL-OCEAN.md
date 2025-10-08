@@ -1,15 +1,19 @@
 # Deploy para Digital Ocean - Guia de Solução
 
 ## Problema Resolvido
-O erro "Run Command Not Executable" ocorria porque o projeto não tinha um Dockerfile configurado corretamente.
+O erro "Run Command Not Executable" ocorria porque:
+1. O projeto não tinha um Dockerfile configurado corretamente
+2. A porta do health check estava errada (8080 ao invés de 3000)
+3. Possível conflito com gerenciador de pacotes (pnpm vs npm)
 
-## Arquivos Criados
+## Arquivos Criados/Modificados
 
 ### 1. `Dockerfile`
 - Dockerfile multi-stage otimizado para Next.js
 - Usa Node.js 20 Alpine (imagem leve)
+- Instala dependências com npm (evita problemas com pnpm)
 - Configura o container com usuário não-root para segurança
-- Expõe a porta 3000
+- Expõe a porta 3000 (porta correta do Next.js)
 - Comando de execução: `node server.js`
 
 ### 2. `.dockerignore`
@@ -18,12 +22,32 @@ O erro "Run Command Not Executable" ocorria porque o projeto não tinha um Docke
 
 ### 3. `.do/app.yaml`
 - Arquivo de especificação para Digital Ocean App Platform
+- **IMPORTANTE**: Health check configurado para porta 3000
+- Variáveis de ambiente PORT e HOSTNAME definidas
 - Configura health checks, variáveis de ambiente, etc.
 
 ### 4. `next.config.ts` (atualizado)
 - Adicionado `output: 'standalone'` para gerar build otimizado para Docker
 
 ## Como Fazer Deploy na Digital Ocean
+
+### ⚠️ IMPORTANTE - Configurações Críticas
+
+Antes de fazer deploy, certifique-se de:
+
+1. **REMOVER qualquer Run Command customizado**:
+   - No painel Digital Ocean → App Settings → Components → web
+   - Procure por "Run Command" 
+   - DELETE/REMOVA qualquer comando customizado
+   - O Dockerfile já define o comando correto
+
+2. **Verificar a porta do Health Check**:
+   - Deve estar configurada para porta **3000** (não 8080)
+   - O Next.js sempre usa porta 3000 por padrão
+
+3. **Usar o Dockerfile para build**:
+   - A Digital Ocean deve detectar automaticamente o Dockerfile
+   - Não configure buildpacks ou outros métodos de build
 
 ### Opção 1: Via Console Web (Recomendado)
 
@@ -34,6 +58,8 @@ O erro "Run Command Not Executable" ocorria porque o projeto não tinha um Docke
 5. **IMPORTANTE**: Na configuração do App:
    - Certifique-se que o "Run Command" está vazio ou removido
    - O comando será automaticamente obtido do Dockerfile (CMD ["node", "server.js"])
+   - Verifique se o HTTP Port está configurado para 3000
+   - Verifique se o Health Check está na porta 3000
 6. Configure as variáveis de ambiente necessárias:
    - `NEXT_PUBLIC_API_URL` (URL da sua API)
    - Outras variáveis que seu app precisa
@@ -61,9 +87,13 @@ Configure estas variáveis no painel da Digital Ocean:
 ```
 NODE_ENV=production
 NEXT_TELEMETRY_DISABLED=1
+PORT=3000
+HOSTNAME=0.0.0.0
 NEXT_PUBLIC_API_URL=https://sua-api.com
 # Adicione outras variáveis conforme necessário
 ```
+
+**Nota**: As variáveis PORT e HOSTNAME são essenciais para o Next.js rodar corretamente no container.
 
 ## Testando Localmente
 
@@ -86,6 +116,21 @@ npm run dev
 ```
 
 ## Troubleshooting
+
+### Erro: "pnpm: command not found" (exit code 127)
+
+**Solução**: O Dockerfile foi atualizado para usar npm ao invés de pnpm. Certifique-se de:
+- Usar o Dockerfile mais recente deste repositório
+- Não ter nenhum arquivo pnpm-lock.yaml ou .npmrc especificando pnpm
+- Limpar o cache de build no Digital Ocean e fazer rebuild
+
+### Erro: "failed health checks" na porta 8080
+
+**Solução**: A porta está configurada errada. Corrija no painel Digital Ocean:
+1. Vá em App Settings → Components → web
+2. Encontre "Health Check" 
+3. Mude o port de 8080 para **3000**
+4. Salve e faça redeploy
 
 ### Se ainda ocorrer erro "Run Command Not Executable":
 

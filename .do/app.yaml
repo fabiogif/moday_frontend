@@ -6,7 +6,7 @@ spec:
       dockerfile_path: Dockerfile
       source_dir: /
       
-      # HTTP configuration
+      # HTTP configuration - Next.js runs on port 3000
       http_port: 3000
       
       # Environment variables (add your own as needed)
@@ -15,13 +15,18 @@ spec:
           value: production
         - key: NEXT_TELEMETRY_DISABLED
           value: "1"
+        - key: PORT
+          value: "3000"
+        - key: HOSTNAME
+          value: "0.0.0.0"
         # Add your API URL and other environment variables here:
         # - key: NEXT_PUBLIC_API_URL
         #   value: your-api-url
       
-      # Health check
+      # Health check on correct port
       health_check:
         http_path: /
+        port: 3000
         initial_delay_seconds: 60
         period_seconds: 10
         timeout_seconds: 5
