@@ -1,0 +1,36 @@
+spec:
+  name: moday-frontend
+  services:
+    - name: web
+      # Build configuration
+      dockerfile_path: Dockerfile
+      source_dir: /
+      
+      # HTTP configuration
+      http_port: 3000
+      
+      # Environment variables (add your own as needed)
+      envs:
+        - key: NODE_ENV
+          value: production
+        - key: NEXT_TELEMETRY_DISABLED
+          value: "1"
+        # Add your API URL and other environment variables here:
+        # - key: NEXT_PUBLIC_API_URL
+        #   value: your-api-url
+      
+      # Health check
+      health_check:
+        http_path: /
+        initial_delay_seconds: 60
+        period_seconds: 10
+        timeout_seconds: 5
+        success_threshold: 1
+        failure_threshold: 3
+      
+      # Instance configuration
+      instance_count: 1
+      instance_size_slug: basic-xxs
+      
+      # Run command (uses the CMD from Dockerfile)
+      # No custom run_command needed - will use Dockerfile CMD: node server.js
