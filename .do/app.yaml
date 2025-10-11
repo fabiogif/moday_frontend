@@ -5,6 +5,7 @@ services:
   - name: web
     # Usar Dockerfile para build
     dockerfile_path: Dockerfile
+    build_command: ""
     
     # Porta HTTP
     http_port: 3000
@@ -36,7 +37,3 @@ services:
       # Adicione suas variáveis de ambiente aqui
       # - key: NEXT_PUBLIC_API_URL
       #   value: "https://sua-api.com"
-    
-    # IMPORTANTE: NÃO definir build_command ou run_command
-    # Deixe o Dockerfile controlar isso
-    # O CMD no Dockerfile será usado automaticamente
