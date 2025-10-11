@@ -34,6 +34,10 @@ services:
         value: "3000"
       - key: HOSTNAME
         value: "0.0.0.0"
+      - key: USE_NPM_INSTALL
+        value: "true"
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
       # Adicione suas variáveis de ambiente aqui
       # - key: NEXT_PUBLIC_API_URL
       #   value: "https://sua-api.com"
