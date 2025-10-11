@@ -13,7 +13,7 @@ services:
     http_port: 3000
     
     # Run command
-    run_command: node server.js
+    run_command: node .next/standalone/server.js
     
     # Build command
     build_command: npm run build
