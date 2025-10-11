@@ -4,8 +4,8 @@ region: nyc
 services:
   - name: web
     # Usar Dockerfile para build
+    type: docker
     dockerfile_path: Dockerfile
-    build_command: ""
     
     # Porta HTTP
     http_port: 3000
