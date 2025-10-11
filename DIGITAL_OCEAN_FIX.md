@@ -1,30 +1,64 @@
 # Digital Ocean Deployment Fix
 
-## Problema Identificado
+## Problemas Identificados
 
-O erro `bash: line 1: pnpm: command not found` ocorreu porque o Digital Ocean estava tentando usar o gerenciador de pacotes `pnpm`, mas o projeto está configurado para usar `npm`.
+### 1. Primeiro Erro: `pnpm: command not found`
+O Digital Ocean estava tentando usar o gerenciador de pacotes `pnpm`, mas o projeto está configurado para usar `npm`.
 
-## Causa
+**Causa**: A ausência do arquivo `package-lock.json` no repositório.
 
-A ausência do arquivo `package-lock.json` no repositório fez com que o Digital Ocean não conseguisse detectar corretamente qual gerenciador de pacotes usar, resultando na tentativa de usar `pnpm` por padrão.
+### 2. Segundo Erro: `npm ci` sync error
+O comando `npm ci` falhou com mensagem de que package.json e package-lock.json não estavam sincronizados.
+
+**Causa**: 
+- O `package-lock.json` estava incompleto ou desatualizado
+- Faltavam dependências transitivas no lock file
+- Sem especificação da versão do Node.js no package.json
 
 ## Soluções Aplicadas
 
-### 1. Adicionado `package-lock.json`
-- Executado `npm install --legacy-peer-deps` para gerar o arquivo `package-lock.json`
+### 1. Adicionado e Sincronizado `package-lock.json`
+- Removido node_modules e package-lock.json antigo
+- Executado `npm install --legacy-peer-deps` para gerar um arquivo completo e sincronizado
 - Este arquivo garante que o Digital Ocean saiba que o projeto usa npm
+- Contém todas as dependências transitivas necessárias
 
-### 2. Atualizado `.do/app.yaml`
+### 2. Especificado Versão do Node.js no `package.json`
+```json
+"engines": {
+  "node": "20.x",
+  "npm": "10.x"
+}
+```
+- Garante que o buildpack use a versão correta do Node.js
+- Compatível com o Dockerfile (node:20-alpine)
+
+### 3. Atualizado `Dockerfile`
+- Mudado de `npm ci --legacy-peer-deps || npm install --legacy-peer-deps` 
+- Para apenas `npm install --legacy-peer-deps`
+- Mais flexível e compatível com diferentes ambientes de build
+
+### 4. Atualizado `.do/app.yaml`
 - Adicionado `build_command: ""` para indicar que o build deve usar apenas o Dockerfile
 - Isso evita que o Digital Ocean tente executar comandos de build fora do container
 
 ## Arquivos Alterados
 
-1. **package-lock.json** (novo)
-   - Arquivo de lock do npm com todas as dependências
-   - Deve ser mantido no controle de versão
+1. **package.json**
+   - Adicionado seção `engines` com Node.js 20.x e npm 10.x
+   - Garante compatibilidade com o ambiente de produção
 
-2. **.do/app.yaml**
+2. **package-lock.json** (novo/atualizado)
+   - Arquivo de lock do npm com TODAS as dependências (12,426 linhas)
+   - Inclui todas as dependências transitivas
+   - Sincronizado com package.json
+   - **DEVE** ser mantido no controle de versão
+
+3. **Dockerfile**
+   - Mudado de `npm ci --legacy-peer-deps || npm install` para apenas `npm install --legacy-peer-deps`
+   - Mais resiliente a problemas de sincronização
+
+4. **.do/app.yaml**
    - Adicionado `build_command: ""`
    - Mantém a configuração de usar apenas o Dockerfile
 
@@ -85,10 +119,21 @@ Se ainda houver problemas:
 - **MANTENHA** o `package-lock.json` no controle de versão
 - O Dockerfile já está otimizado para produção com output standalone
 
-## Commit Realizado
+## Commits Realizados
 
+### Commit 1
 ```
 fix: Add package-lock.json and update Digital Ocean config to use npm instead of pnpm
 ```
+Resolve o erro inicial de "pnpm: command not found".
 
-Este commit resolve o erro de "pnpm: command not found" garantindo que o Digital Ocean use npm corretamente.
+### Commit 2 (Principal)
+```
+fix: Sync package-lock.json and add Node.js engine specification
+
+- Added Node.js 20.x and npm 10.x engine requirements in package.json
+- Regenerated package-lock.json to include all dependencies
+- Updated Dockerfile to use npm install instead of npm ci for better compatibility
+- This fixes the npm ci sync errors during Digital Ocean deployment
+```
+Resolve o erro de sincronização do npm ci e garante build consistente.
