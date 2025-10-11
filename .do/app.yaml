@@ -3,18 +3,26 @@ region: nyc
 
 services:
   - name: web
-    # Usar Dockerfile para build
-    type: docker
-    dockerfile_path: Dockerfile
+    # Build configuration - use buildpack since Docker is being ignored
+    environment_slug: node-js
+    github:
+      branch: main
+      deploy_on_push: true
     
     # Porta HTTP
     http_port: 3000
+    
+    # Run command
+    run_command: node server.js
+    
+    # Build command
+    build_command: npm run build
     
     # Health check
     health_check:
       http_path: /
       port: 3000
-      initial_delay_seconds: 20
+      initial_delay_seconds: 60
       period_seconds: 10
       timeout_seconds: 5
       success_threshold: 1
