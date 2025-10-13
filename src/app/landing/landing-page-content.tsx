@@ -26,7 +26,6 @@ export function LandingPageContent() {
       <main>
         <HeroSection />
         <LogoCarousel />
-        <StatsSection />
         <FeaturesSection />
         <PricingSection />
         <TestimonialsSection />
@@ -39,8 +38,8 @@ export function LandingPageContent() {
       <LandingFooter />
 
       {/* Theme Customizer */}
-      <LandingThemeCustomizerTrigger onClick={() => setThemeCustomizerOpen(true)} />
-      <LandingThemeCustomizer open={themeCustomizerOpen} onOpenChange={setThemeCustomizerOpen} />
+      {/* <LandingThemeCustomizerTrigger onClick={() => setThemeCustomizerOpen(true)} />
+      <LandingThemeCustomizer open={themeCustomizerOpen} onOpenChange={setThemeCustomizerOpen} /> */}
     </div>
   )
 }

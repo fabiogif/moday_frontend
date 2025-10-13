@@ -119,7 +119,7 @@ export function RegisterForm({
     setIsLoading(true)
 
     try {
-      const response = await apiClient.post<{
+      interface RegisterResponse {
         user: {
           id: number
           name: string
@@ -134,12 +134,13 @@ export function RegisterForm({
         }
         token: string
         expires_in: number
-      }>('/api/register', data)
+      }
+
+      const response = await apiClient.post<RegisterResponse>('/api/register', data)
 
       if (response.success && response.data) {
         // Salvar token e dados do usuário
-        const token = response.data.token
-        const user = response.data.user
+        const { token, user } = response.data as RegisterResponse
         
         if (token) {
           apiClient.setToken(token)
