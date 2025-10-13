@@ -17,7 +17,12 @@ const nextConfig: NextConfig = {
   
   // Image optimization
   images: {
-    domains: ['ui.shadcn.com', 'images.unsplash.com'],
+    domains: [
+      'ui.shadcn.com', 
+      'images.unsplash.com',
+      'orca-app-7hejo.ondigitalocean.app',
+      'localhost'
+    ],
     formats: ['image/webp', 'image/avif'],
   },
   
