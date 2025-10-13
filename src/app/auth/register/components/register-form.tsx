@@ -119,7 +119,22 @@ export function RegisterForm({
     setIsLoading(true)
 
     try {
-      const response = await apiClient.post('/api/register', data)
+      const response = await apiClient.post<{
+        user: {
+          id: number
+          name: string
+          email: string
+          is_active: boolean
+          tenant: {
+            id: number
+            uuid: string
+            name: string
+            slug: string
+          }
+        }
+        token: string
+        expires_in: number
+      }>('/api/register', data)
 
       if (response.success && response.data) {
         // Salvar token e dados do usuário
