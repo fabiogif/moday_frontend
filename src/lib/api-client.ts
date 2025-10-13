@@ -317,6 +317,22 @@ export const endpoints = {
     update: (uuid: string) => `/api/payment-methods/${uuid}`,
     delete: (uuid: string) => `/api/payment-methods/${uuid}`,
   },
+
+  // Planos
+  plans: {
+    list: '/api/plan',
+    create: '/api/plan',
+    show: (id: string | number) => `/api/plan/${id}`,
+    update: (id: string | number) => `/api/plan/${id}`,
+    delete: (id: string | number) => `/api/plan/${id}`,
+    details: (id: string | number) => `/api/plan/${id}/details`,
+  },
+
+  // Tenant
+  tenant: {
+    current: '/api/tenant/current',
+    update: '/api/tenant/update',
+  },
 } as const
 
 export default apiClient
