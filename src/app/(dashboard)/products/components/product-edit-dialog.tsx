@@ -74,12 +74,13 @@ interface Product {
   id: number;
   name: string;
   description: string;
-  price: number;
+  price: number | string;
   categories: Array<{
     identify: string;
     name: string;
   }>;
-  price_cost: number;
+  price_cost: number | string;
+  qtd_stock?: number | string;
   is_active: boolean;
   created_at: string;
   createdAt: string;
@@ -106,10 +107,10 @@ export function ProductEditDialog({ product, onEditProduct }: ProductEditDialogP
     defaultValues: {
       name: product.name,
       description: product.description,
-      price: product.price,
-      price_cost: product.price_cost,
+      price: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
+      price_cost: typeof product.price_cost === 'string' ? parseFloat(product.price_cost) : product.price_cost,
       categories: product.categories?.map(cat => cat.identify).filter(Boolean) || [],
-      qtd_stock: product.price_cost, // Assumindo que price_cost é o estoque
+      qtd_stock: product.qtd_stock ? (typeof product.qtd_stock === 'string' ? parseFloat(product.qtd_stock) : product.qtd_stock) : 0,
       image: undefined,
       is_active: product.is_active,
     },
