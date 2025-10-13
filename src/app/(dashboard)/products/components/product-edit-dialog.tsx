@@ -150,6 +150,7 @@ export function ProductEditDialog({ product, onEditProduct }: ProductEditDialogP
         description: data.description,
         price: data.price,
         price_cost: data.price_cost,
+        qtd_stock: data.qtd_stock,
         categories: data.categories?.map(catId => {
           const categoryList = Array.isArray(categories) ? categories : [];
           const category = categoryList.find((cat: any) => cat.identify === catId);

@@ -183,11 +183,6 @@ export default function ProductDetailPage() {
   const isActive = product.is_active ?? product.isActive
   const stock = product.qtd_stock ?? product.stock
   
-  // Garantir que product existe antes de renderizar
-  if (!product) {
-    return null
-  }
-  
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}

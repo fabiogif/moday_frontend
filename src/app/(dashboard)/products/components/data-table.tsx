@@ -52,6 +52,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { toast } from "sonner"
 import { ProductFormDialog } from "./product-form-dialog"
 import { ProductEditDialog } from "./product-edit-dialog"
 import { DeleteProductDialog } from "./delete-product-dialog"
@@ -111,6 +112,10 @@ export function DataTable({ products, onDeleteProduct, onEditProduct, onAddProdu
   }
 
   const handleViewDetails = (productId: number | string) => {
+    if (productId === undefined || productId === null || productId === '' || productId === 'undefined') {
+      toast.error('ID do produto inválido');
+      return;
+    }
     router.push(`/products/${productId}`);
   };
 
@@ -256,6 +261,13 @@ export function DataTable({ products, onDeleteProduct, onEditProduct, onAddProdu
       enableHiding: false,
       cell: ({ row }) => {
         const product = row.original
+        
+        // Debug: Log do produto para verificar estrutura
+        console.log('Product data in actions:', {
+          id: product.id,
+          name: product.name,
+          fullProduct: product
+        });
 
         return (
           <DropdownMenu>
@@ -266,7 +278,10 @@ export function DataTable({ products, onDeleteProduct, onEditProduct, onAddProdu
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleViewDetails(product.id?.toString() || '')}>
+              <DropdownMenuItem 
+                onClick={() => handleViewDetails(product.id)}
+                disabled={!product.id}
+              >
                 <Eye className="mr-2 h-4 w-4" />
                 Ver detalhes
               </DropdownMenuItem>
