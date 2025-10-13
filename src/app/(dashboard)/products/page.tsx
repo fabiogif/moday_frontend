@@ -135,6 +135,10 @@ export default function ProductsPage() {
       console.log("Edit product:", product)
       
       const formData = new FormData()
+      
+      // Adicionar _method para Laravel reconhecer como PUT
+      formData.append('_method', 'PUT')
+      
       formData.append('name', product.name)
       formData.append('description', product.description)
       formData.append('price', product.price.toString())
@@ -146,9 +150,10 @@ export default function ProductsPage() {
         formData.append(`categories[${index}]`, category.identify)
       })
       
+      // Usar POST ao invés de PUT quando há FormData
       const result = await createProduct(
         endpoints.products.update(product.id),
-        'PUT',
+        'POST',
         formData
       )
       
