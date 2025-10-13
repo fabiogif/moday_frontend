@@ -196,6 +196,9 @@ export default function CompanySettings() {
       if (logoFile || removeLogo) {
         const formData = new FormData()
         
+        // Adicionar _method para Laravel reconhecer como PUT
+        formData.append('_method', 'PUT')
+        
         // Adicionar campos do formulário
         Object.entries(data).forEach(([key, value]) => {
           if (value !== undefined && value !== null && value !== '') {
@@ -213,10 +216,10 @@ export default function CompanySettings() {
           formData.append('remove_logo', 'true')
         }
         
-        // Enviar com FormData (multipart/form-data)
-        response = await apiClient.put(`/api/tenant/${tenantData.uuid}`, formData)
+        // Usar POST com _method=PUT para upload de arquivo
+        response = await apiClient.post(`/api/tenant/${tenantData.uuid}`, formData)
       } else {
-        // Enviar como JSON normal
+        // Enviar como JSON normal com PUT
         response = await apiClient.put(`/api/tenant/${tenantData.uuid}`, data)
       }
       

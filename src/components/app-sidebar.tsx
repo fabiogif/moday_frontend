@@ -13,8 +13,10 @@ import {
   UserCog,
   Settings,
   CreditCard,
+  Building2,
 } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { Logo } from "@/components/logo"
 import { useAuth } from "@/contexts/auth-context"
 
@@ -114,6 +116,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     avatar: "",
   }
 
+  // Dados do tenant para exibir logo
+  const tenantData = (user as any)?.tenant
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -122,10 +127,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Logo size={24} className="text-current" />
+                  {tenantData?.logo ? (
+                    <Image 
+                      src={tenantData.logo} 
+                      alt={tenantData.name || "Logo"} 
+                      width={32} 
+                      height={32} 
+                      className="rounded-lg object-cover"
+                    />
+                  ) : (
+                    <Logo size={24} className="text-current" />
+                  )}
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">Moday</span>
+                  <span className="truncate font-medium">
+                    {tenantData?.name || "Moday"}
+                  </span>
                   <span className="truncate text-xs">Sistema de Gestão</span>
                 </div>
               </Link>
