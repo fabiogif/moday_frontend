@@ -18,7 +18,8 @@ import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
 import { apiClient } from "@/lib/api-client"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
+import { Loader2, Building2 } from "lucide-react"
+import Image from "next/image"
 
 const companyFormSchema = z.object({
   name: z.string().min(1, "Nome da empresa é obrigatório"),
@@ -183,25 +184,48 @@ export default function CompanySettings() {
             <CardDescription>Dados cadastrados da empresa</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="flex items-center gap-4 mb-6">
+              {tenantData.logo ? (
+                <Image 
+                  src={tenantData.logo} 
+                  alt={tenantData.name} 
+                  width={80} 
+                  height={80} 
+                  className="rounded-lg object-cover border"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center border">
+                  <Building2 className="h-10 w-10 text-muted-foreground" />
+                </div>
+              )}
+              <div>
+                <h3 className="text-xl font-semibold">{tenantData.name}</h3>
+                <p className="text-sm text-muted-foreground">{tenantData.email}</p>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Nome</label>
-                <p className="text-sm">{tenantData.name}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Email</label>
-                <p className="text-sm">{tenantData.email}</p>
-              </div>
               {tenantData.cnpj && (
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">CNPJ</label>
                   <p className="text-sm">{tenantData.cnpj}</p>
                 </div>
               )}
+              {tenantData.phone && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Telefone</label>
+                  <p className="text-sm">{tenantData.phone}</p>
+                </div>
+              )}
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Status</label>
                 <p className="text-sm">{tenantData.is_active ? 'Ativo' : 'Inativo'}</p>
               </div>
+              {tenantData.city && tenantData.state && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Localização</label>
+                  <p className="text-sm">{tenantData.city}/{tenantData.state}</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
