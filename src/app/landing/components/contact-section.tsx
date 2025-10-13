@@ -17,7 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Mail, MessageCircle, Github, BookOpen } from 'lucide-react'
+import { Mail, MessageCircle, Github, BookOpen, Phone } from 'lucide-react'
 import { useState } from 'react'
 
 const contactFormSchema = z.object({
@@ -100,9 +100,47 @@ export function ContactSection() {
           </p>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-2">
+      
+
+
+        <div className="grid gap-8 lg:grid-cols-4">
           {/* Contact Options */}
-         
+          <div className="lg:col-span-2 order-2 lg:order-1 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mail className="h-5 w-5" />
+                  E-mail
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-2">Entre em contato por e-mail</p>
+                <a href="mailto:fabiosantanagif@gmail.com" className="text-primary hover:underline">
+                  atendimento@tahansolucoes.com.br
+                </a>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Phone className="h-5 w-5" />
+                  WhatsApp
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-2">Fale conosco pelo WhatsApp</p>
+                <a 
+                  href="https://wa.me/557991981871" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-primary hover:underline"
+                >
+                  +55 71 99198-1871
+                </a>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Contact Form */}
           <div className="lg:col-span-2 order-1 lg:order-2">

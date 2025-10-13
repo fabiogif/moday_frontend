@@ -23,11 +23,11 @@ export async function POST(request: NextRequest) {
         'Accept': 'application/json',
       },
       body: JSON.stringify({
-        name: `${firstName} ${lastName}`,
+        firstName,
+        lastName,
         email,
         subject,
         message,
-        to_email: 'fabiosantana@gmail.com',
       }),
     })
 

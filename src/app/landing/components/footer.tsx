@@ -14,7 +14,6 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Logo } from '@/components/logo'
-import { Twitter, Linkedin, Youtube, Instagram } from 'lucide-react'
 
 const newsletterSchema = z.object({
   email: z.string().email({
@@ -26,35 +25,12 @@ const footerLinks = {
   product: [
     { name: 'Recursos', href: '#features' },
     { name: 'Planos', href: '#pricing' },
-    { name: 'Cardápio Digital', href: '#' },
-    { name: 'Documentação', href: '#' },
   ],
   company: [
-    { name: 'Sobre Nós', href: '#' },
     { name: 'Contato', href: '#contact' },
-    { name: 'Suporte', href: '#' },
-    { name: 'Blog', href: '#' },
-  ],
-  resources: [
-    { name: 'Central de Ajuda', href: '#' },
-    { name: 'Guias', href: '#' },
     { name: 'FAQ', href: '#faq' },
-    { name: 'Status do Sistema', href: '#' },
-  ],
-  legal: [
-    { name: 'Privacidade', href: '#privacy' },
-    { name: 'Termos de Uso', href: '#terms' },
-    { name: 'Segurança', href: '#security' },
-    { name: 'Cookies', href: '#cookies' },
   ],
 }
-
-const socialLinks = [
-  { name: 'Twitter', href: '#', icon: Twitter },
-  { name: 'Instagram', href: '#', icon: Instagram },
-  { name: 'LinkedIn', href: '#', icon: Linkedin },
-  { name: 'YouTube', href: '#', icon: Youtube },
-]
 
 export function LandingFooter() {
   const form = useForm<z.infer<typeof newsletterSchema>>({
@@ -106,9 +82,9 @@ export function LandingFooter() {
         </div>
 
         {/* Main Footer Content */}
-        <div className="grid gap-8 grid-cols-4 lg:grid-cols-6">
+        <div className="grid gap-8 grid-cols-2 lg:grid-cols-4">
           {/* Brand Column */}
-          <div className="col-span-4 lg:col-span-2 max-w-2xl">
+          <div className="col-span-2 max-w-2xl">
             <div className="flex items-center space-x-2 mb-4 max-lg:justify-center">
               <div className="flex items-center space-x-2">
                 <Logo size={32} />
@@ -118,24 +94,10 @@ export function LandingFooter() {
             <p className="text-muted-foreground mb-6 max-lg:text-center max-lg:flex max-lg:justify-center">
               Sistema completo de gestão para restaurantes. Simplifique seus processos e aumente suas vendas.
             </p>
-            <div className="flex space-x-4 max-lg:justify-center">
-              {socialLinks.map((social) => (
-                <Button key={social.name} variant="ghost" size="icon" asChild>
-                  <a
-                    href={social.href}
-                    aria-label={social.name}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <social.icon className="h-4 w-4" />
-                  </a>
-                </Button>
-              ))}
-            </div>
           </div>
 
           {/* Links Columns */}
-          <div className='max-md:col-span-2 lg:col-span-1'>
+          <div className='max-md:col-span-1 lg:col-span-1'>
             <h4 className="font-semibold mb-4">Produto</h4>
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
@@ -151,42 +113,10 @@ export function LandingFooter() {
             </ul>
           </div>
 
-          <div className='max-md:col-span-2 lg:col-span-1'>
+          <div className='max-md:col-span-1 lg:col-span-1'>
             <h4 className="font-semibold mb-4">Empresa</h4>
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className='max-md:col-span-2 lg:col-span-1'>
-            <h4 className="font-semibold mb-4">Recursos</h4>
-            <ul className="space-y-3">
-              {footerLinks.resources.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className='max-md:col-span-2 lg:col-span-1'>
-            <h4 className="font-semibold mb-4">Legal</h4>
-            <ul className="space-y-3">
-              {footerLinks.legal.map((link) => (
                 <li key={link.name}>
                   <a
                     href={link.href}
@@ -206,17 +136,6 @@ export function LandingFooter() {
         <div className="flex flex-col lg:flex-row justify-between items-center gap-2">
           <div className="text-muted-foreground text-sm text-center lg:text-left">
             © {new Date().getFullYear()} Moday. Todos os direitos reservados.
-          </div>
-          <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-4 md:mt-0">
-            <a href="#privacy" className="hover:text-foreground transition-colors">
-              Privacidade
-            </a>
-            <a href="#terms" className="hover:text-foreground transition-colors">
-              Termos
-            </a>
-            <a href="#cookies" className="hover:text-foreground transition-colors">
-              Cookies
-            </a>
           </div>
         </div>
       </div>

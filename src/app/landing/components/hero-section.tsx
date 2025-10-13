@@ -51,7 +51,7 @@ export function HeroSection() {
               </Link>
             </Button>
             <Button variant="outline" size="lg" className="text-base cursor-pointer" asChild>
-              <Link href="/auth/login">
+              <Link href="/login">
                 Fazer Login
               </Link>
             </Button>

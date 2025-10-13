@@ -86,7 +86,7 @@ export function LandingNavbar() {
         <div className="hidden xl:flex items-center space-x-2">
           <ModeToggle variant="ghost" />
           <Button variant="ghost" asChild className="cursor-pointer">
-            <Link href="/auth/login">Login</Link>
+            <Link href="/login">Login</Link>
           </Button>
           <Button asChild className="cursor-pointer">
             <Link href="/auth/register">Começar Agora</Link>
