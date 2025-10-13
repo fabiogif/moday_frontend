@@ -14,39 +14,51 @@ type FaqItem = {
 const faqItems: FaqItem[] = [
   {
     value: 'item-1',
-    question: 'How do I integrate ShadcnStore components into my project?',
+    question: 'Como funciona o sistema de gestão de pedidos?',
     answer:
-      'Integration is simple! All our components are built with shadcn/ui and work with React, Next.js, and Vite. Just copy the component code, install any required dependencies, and paste it into your project. Each component comes with detailed installation instructions and examples.',
+      'Nosso sistema permite gerenciar pedidos em tempo real, desde o recebimento até a entrega. Você pode acompanhar o status de cada pedido, gerenciar filas de produção, enviar notificações aos clientes e gerar relatórios completos de vendas. Tudo de forma integrada e intuitiva.',
   },
   {
     value: 'item-2',
-    question: 'What\'s the difference between free and premium components?',
+    question: 'Posso personalizar o cardápio digital?',
     answer:
-      'Free components include essential UI elements like buttons, forms, and basic layouts. Premium components offer advanced features like complex data tables, analytics dashboards, authentication flows, and complete admin templates. Premium also includes Figma files, priority support, and commercial licenses.',
+      'Sim! Você tem total controle sobre seu cardápio digital. Adicione produtos, organize por categorias, defina preços, adicione imagens e descrições detalhadas. Seu cardápio fica disponível online com um link único que pode ser compartilhado com seus clientes via QR Code ou redes sociais.',
   },
   {
     value: 'item-3',
-    question: 'Can I use these components in commercial projects?',
+    question: 'Como funciona o controle de estoque?',
     answer:
-      'Yes! Free components come with an MIT license for unlimited use. Premium components include a commercial license that allows usage in client projects, SaaS applications, and commercial products without attribution requirements.',
+      'O sistema oferece controle completo de estoque com alertas automáticos quando produtos estão acabando. Você pode acompanhar entradas e saídas, definir quantidades mínimas, gerenciar fornecedores e ter relatórios detalhados sobre movimentação de produtos.',
   },
   {
     value: 'item-4',
-    question: 'Do you provide support and updates?',
+    question: 'O sistema oferece suporte e treinamento?',
     answer:
-      'Absolutely! We provide community support for free components through our Discord server and GitHub issues. Premium subscribers get priority email support, regular component updates, and early access to new releases. We also maintain compatibility with the latest shadcn/ui versions.',
+      'Sim! Oferecemos suporte técnico via chat e email, além de documentação completa e vídeos tutoriais. Todos os planos incluem treinamento inicial para sua equipe, garantindo que você aproveite ao máximo todas as funcionalidades do sistema.',
   },
   {
     value: 'item-5',
-    question: 'What frameworks and tools do you support?',
+    question: 'Posso gerenciar múltiplos restaurantes?',
     answer:
-      'Our components work with React 18+, Next.js 13+, and Vite. We use TypeScript, Tailwind CSS, and follow shadcn/ui conventions. Components are tested with popular tools like React Hook Form, TanStack Query, and Zustand for state management.',
+      'Sim! Nossos planos Pro e Enterprise permitem gerenciar múltiplos estabelecimentos a partir de uma única conta. Você pode ter diferentes cardápios, equipes e relatórios para cada local, mantendo tudo organizado em um só lugar.',
   },
   {
     value: 'item-6',
-    question: 'How often do you release new components?',
+    question: 'Como funciona a integração com pagamentos?',
     answer:
-      'We release new components and templates weekly. Premium subscribers get early access to new releases, while free components are updated regularly based on community feedback. You can track our roadmap and request specific components through our GitHub repository.',
+      'O sistema se integra com as principais plataformas de pagamento do mercado. Seus clientes podem pagar online via cartão de crédito, PIX, carteiras digitais ou optar por pagamento na entrega. Todas as transações são rastreadas e incluídas nos relatórios financeiros.',
+  },
+  {
+    value: 'item-7',
+    question: 'Posso acessar o sistema de qualquer lugar?',
+    answer:
+      'Sim! Nosso sistema é 100% em nuvem, permitindo acesso de qualquer dispositivo com internet - computador, tablet ou smartphone. Seus dados estão sempre seguros e sincronizados em tempo real.',
+  },
+  {
+    value: 'item-8',
+    question: 'Quais relatórios o sistema oferece?',
+    answer:
+      'Oferecemos relatórios completos de vendas, produtos mais vendidos, desempenho por período, clientes frequentes, análise de estoque e muito mais. Todos os relatórios podem ser exportados em PDF ou Excel para facilitar sua gestão.',
   },
 ]
 
@@ -56,12 +68,12 @@ const FaqSection = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="mx-auto max-w-2xl text-center mb-16">
-          <Badge variant="outline" className="mb-4">FAQ</Badge>
+          <Badge variant="outline" className="mb-4">Perguntas Frequentes</Badge>
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
-            Frequently Asked Questions
+            Perguntas Frequentes
           </h2>
           <p className="text-lg text-muted-foreground">
-            Everything you need to know about ShadcnStore components, licensing, and integration. Still have questions? We&apos;re here to help!
+            Tire suas dúvidas sobre nosso sistema de gestão para restaurantes. Precisa de mais informações? Entre em contato conosco!
           </p>
         </div>
 
@@ -90,11 +102,11 @@ const FaqSection = () => {
           {/* Contact Support CTA */}
           <div className="text-center mt-12">
             <p className="text-muted-foreground mb-4">
-              Still have questions? We&apos;re here to help.
+              Ainda tem dúvidas? Estamos aqui para ajudar.
             </p>
             <Button className='cursor-pointer' asChild>
               <a href="#contact">
-                Contact Support
+                Fale Conosco
               </a>
             </Button>
           </div>

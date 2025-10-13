@@ -20,9 +20,7 @@ export default function PlansPage() {
         const response = await apiClient.get<PlanWithDetails[]>(endpoints.plans.list)
         
         if (response.success && response.data) {
-          // Se data é um array, usar diretamente
-          const plansData = Array.isArray(response.data) ? response.data : response.data.data || []
-          setPlans(plansData)
+          setPlans(Array.isArray(response.data) ? response.data : [])
         }
       } catch (err: any) {
         console.error('Erro ao carregar planos:', err)

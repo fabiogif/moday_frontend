@@ -13,83 +13,83 @@ type Testimonial = {
 
 const testimonials: Testimonial[] = [
   {
-    name: 'Alexandra Mitchell',
-    role: 'Senior Frontend Developer',
+    name: 'Maria Santos',
+    role: 'Proprietária - Restaurante Sabor & Arte',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=female-1',
     quote:
-      'This platform has completely transformed our development workflow. The component system is so well-architected that even complex applications feel simple to build.',
+      'O Moday revolucionou a gestão do meu restaurante. Agora consigo acompanhar pedidos em tempo real, controlar estoque e gerar relatórios precisos. Nossa eficiência aumentou 40%!',
   },
   {
-    name: 'James Thompson',
-    role: 'Technical Lead',
+    name: 'João Silva',
+    role: 'Gerente - Pizzaria Bella Napoli',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=male-1',
-    quote: 'After trying countless frameworks, this is the one that finally clicked. The documentation is exceptional.',
+    quote: 'Sistema intuitivo e fácil de usar. Minha equipe se adaptou rapidamente e os clientes adoram nosso cardápio digital. As vendas aumentaram 30% no primeiro mês.',
   },
   {
-    name: 'Priya Sharma',
-    role: 'Product Designer',
+    name: 'Ana Costa',
+    role: 'Chef - Bistrô Gourmet',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=female-2',
     quote:
-      'The design system is beautiful and consistent. I can prototype ideas quickly and hand them off to developers with confidence that the implementation will match perfectly.',
+      'Finalmente um sistema que entende as necessidades de um restaurante. O controle de estoque é impecável e os alertas me ajudam a evitar desperdícios.',
   },
   {
-    name: 'Robert Kim',
-    role: 'Engineering Manager',
+    name: 'Carlos Mendes',
+    role: 'Proprietário - Burger House',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=male-2',
     quote:
-      'We migrated our entire application to this platform in just two weeks. The performance improvements were immediate.',
+      'Migrei de um sistema antigo para o Moday e foi a melhor decisão. Os relatórios me ajudam a tomar decisões estratégicas baseadas em dados reais.',
   },
   {
-    name: 'Maria Santos',
-    role: 'Full Stack Engineer',
+    name: 'Lucia Oliveira',
+    role: 'Administradora - Rede de Lanchonetes',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=female-3',
     quote:
-      'The accessibility features are top-notch. Building inclusive applications has never been easier. Every component follows best practices out of the box, and the automated testing suite ensures we maintain high accessibility standards throughout our development process.',
+      'Gerencio 5 unidades com o Moday. A visão consolidada de todas as lojas me permite identificar oportunidades e otimizar operações. Indispensável para nossa rede!',
   },
   {
-    name: 'Thomas Anderson',
-    role: 'Solutions Architect',
+    name: 'Roberto Alves',
+    role: 'Sócio - Sushi Bar Premium',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=male-3',
-    quote: 'Scalability was our biggest concern, but this platform handles enterprise-level complexity with ease.',
+    quote: 'O cardápio digital com fotos dos pratos aumentou nosso ticket médio significativamente. Sistema profissional e com excelente custo-benefício.',
   },
   {
-    name: 'Lisa Chang',
-    role: 'UX Researcher',
+    name: 'Fernanda Lima',
+    role: 'Proprietária - Cafeteria Aroma',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=female-4',
     quote:
-      'User testing results have been consistently positive since we adopted this platform. The user experience is intuitive and the performance is stellar. Our user satisfaction scores have increased by 40% since the migration.',
+      'O suporte é excepcional! Sempre que preciso, a equipe está pronta para ajudar. O sistema funciona perfeitamente no celular, tablet e computador.',
   },
   {
-    name: 'Michael Foster',
-    role: 'DevOps Engineer',
+    name: 'Paulo Souza',
+    role: 'Gerente - Churrascaria Gaúcha',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=male-4',
-    quote: 'Deployment and maintenance are a breeze. The platform integrates seamlessly with our CI/CD pipeline.',
+    quote: 'A integração com delivery facilitou muito nossa operação. Todos os pedidos centralizados em um só lugar. Sem mais bagunça!',
   },
   {
-    name: 'Sophie Laurent',
-    role: 'Creative Director',
+    name: 'Carla Rodrigues',
+    role: 'Chef - Restaurante Vegetariano',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=female-5',
     quote:
-      'The creative possibilities are endless. We can bring any design concept to life without compromising on technical quality or user experience.',
+      'Posso atualizar o cardápio em segundos quando algum ingrediente acaba. O sistema é rápido, confiável e me dá total controle.',
   },
   {
-    name: 'Daniel Wilson',
-    role: 'Backend Developer',
+    name: 'André Martins',
+    role: 'Proprietário - Padaria & Confeitaria',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=male-5',
-    quote: 'The API design is exceptional. Clean, intuitive, and well-documented.',
+    quote: 'Os relatórios de produtos mais vendidos me ajudam a planejar melhor a produção. Reduzi desperdícios e aumentei lucros!',
   },
   {
-    name: 'Natasha Petrov',
-    role: 'Mobile App Developer',
+    name: 'Juliana Castro',
+    role: 'Administradora - Food Truck Gourmet',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=female-6',
     quote:
-      'Cross-platform development has never been this efficient. One codebase, multiple platforms, consistent user experience. This is the future. The responsive design system ensures our apps look perfect on every device.',
+      'Perfeito para food trucks! Simples, rápido e funciona offline quando necessário. Meu negócio ficou muito mais profissional.',
   },
   {
-    name: 'Carlos Rivera',
-    role: 'Startup Founder',
+    name: 'Ricardo Ferreira',
+    role: 'Empresário - Rede de Pizzarias',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=male-6',
-    quote: 'As a non-technical founder, this platform gave me the confidence to build our MVP quickly.',
+    quote: 'Escalei meu negócio de 1 para 8 unidades usando o Moday. O sistema cresce com o negócio. Investimento que vale cada centavo!',
   },
 ]
 
@@ -99,12 +99,12 @@ export function TestimonialsSection() {
       <div className="container mx-auto px-8 sm:px-6">
         {/* Section Header */}
         <div className="mx-auto max-w-2xl text-center mb-16">
-          <Badge variant="outline" className="mb-4">Testimonials</Badge>
+          <Badge variant="outline" className="mb-4">Depoimentos</Badge>
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
-            Empowering Innovation Worldwide
+            O Que Nossos Clientes Dizem
           </h2>
           <p className="text-lg text-muted-foreground">
-            Join thousands of developers and teams who trust our platform to build exceptional digital experiences.
+            Milhares de restaurantes confiam no Moday para gerenciar seus negócios e aumentar suas vendas.
           </p>
         </div>
 

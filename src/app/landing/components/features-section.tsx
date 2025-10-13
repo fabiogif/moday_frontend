@@ -7,9 +7,9 @@ import {
   ArrowRight,
   Database,
   Package,
-  Crown,
-  Layout,
-  Palette
+  ShoppingCart,
+  MenuSquare,
+  Smartphone
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -17,47 +17,47 @@ import { Image3D } from '@/components/image-3d'
 
 const mainFeatures = [
   {
+    icon: ShoppingCart,
+    title: 'Gestão de Pedidos',
+    description: 'Controle completo de pedidos em tempo real, do recebimento à entrega.'
+  },
+  {
+    icon: MenuSquare,
+    title: 'Cardápio Digital',
+    description: 'Crie e gerencie seu cardápio online com fotos e descrições detalhadas.'
+  },
+  {
     icon: Package,
-    title: 'Curated Component Library',
-    description: 'Hand-picked blocks and templates for quality and reliability.'
+    title: 'Controle de Estoque',
+    description: 'Monitore produtos, alertas de baixo estoque e histórico de movimentações.'
   },
   {
-    icon: Crown,
-    title: 'Free & Premium Options',
-    description: 'Start free, upgrade to premium collections when you need more.'
-  },
-  {
-    icon: Layout,
-    title: 'Ready-to-Use Templates',
-    description: 'Copy-paste components that just work out of the box.'
-  },
-  {
-    icon: Zap,
-    title: 'Regular Updates',
-    description: 'New blocks and templates added weekly to keep you current.'
+    icon: BarChart3,
+    title: 'Relatórios em Tempo Real',
+    description: 'Acompanhe vendas, produtos mais vendidos e performance do negócio.'
   }
 ]
 
 const secondaryFeatures = [
   {
-    icon: BarChart3,
-    title: 'Multiple Frameworks',
-    description: 'React, Next.js, and Vite compatibility for flexible development.'
+    icon: Smartphone,
+    title: 'Acesso Mobile',
+    description: 'Gerencie seu restaurante de qualquer lugar, em qualquer dispositivo.'
   },
   {
-    icon: Palette,
-    title: 'Modern Tech Stack',
-    description: 'Built with shadcn/ui, Tailwind CSS, and TypeScript.'
+    icon: Zap,
+    title: 'Rápido e Eficiente',
+    description: 'Sistema otimizado para velocidade e facilidade de uso no dia a dia.'
   },
   {
     icon: Users,
-    title: 'Responsive Design',
-    description: 'Mobile-first components for all screen sizes and devices.'
+    title: 'Gestão de Equipe',
+    description: 'Controle de usuários com diferentes níveis de permissão e acesso.'
   },
   {
     icon: Database,
-    title: 'Developer-Friendly',
-    description: 'Clean code, well-documented, easy integration and customization.'
+    title: 'Dados Seguros',
+    description: 'Armazenamento em nuvem com backup automático e segurança avançada.'
   }
 ]
 
@@ -67,12 +67,12 @@ export function FeaturesSection() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="mx-auto max-w-2xl text-center mb-16">
-          <Badge variant="outline" className="mb-4">Marketplace Features</Badge>
+          <Badge variant="outline" className="mb-4">Recursos do Sistema</Badge>
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
-            Everything you need to build amazing web applications
+            Tudo que você precisa para gerenciar seu restaurante
           </h2>
           <p className="text-lg text-muted-foreground">
-            Our marketplace provides curated blocks, templates, landing pages, and admin dashboards to help you build professional applications faster than ever.
+            Sistema completo com todas as ferramentas necessárias para modernizar e otimizar a gestão do seu negócio.
           </p>
         </div>
 
@@ -82,17 +82,18 @@ export function FeaturesSection() {
           <Image3D
             lightSrc="/feature-1-light.png"
             darkSrc="/feature-1-dark.png"
-            alt="Analytics dashboard"
+            alt="Painel de controle de pedidos"
             direction="left"
           />
           {/* Right Content */}
           <div className="space-y-6">
             <div className="space-y-4">
               <h3 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-                Components that accelerate development
+                Ferramentas poderosas para gestão eficiente
               </h3>
               <p className="text-muted-foreground text-base text-pretty">
-                Our curated marketplace offers premium blocks and templates designed to save time and ensure consistency across your admin projects.
+                Gerencie todos os aspectos do seu restaurante em uma única plataforma integrada, 
+                desde pedidos até relatórios de vendas.
               </p>
             </div>
 
@@ -111,15 +112,15 @@ export function FeaturesSection() {
             </ul>
 
             <div className="flex flex-col sm:flex-row gap-4 pe-4 pt-2">
-              <Button size="lg" className="cursor-pointer">
-                <a href="https://shadcnstore.com/templates" className='flex items-center'>
-                  Browse Templates
+              <Button size="lg" className="cursor-pointer" asChild>
+                <a href="#pricing" className='flex items-center'>
+                  Ver Planos
                   <ArrowRight className="ms-2 size-4" aria-hidden="true" />
                 </a>
               </Button>
-              <Button size="lg" variant="outline" className="cursor-pointer">
-                <a href="https://shadcnstore.com/blocks">
-                  View Components
+              <Button size="lg" variant="outline" className="cursor-pointer" asChild>
+                <a href="#contact">
+                  Falar com Vendas
                 </a>
               </Button>
             </div>
@@ -132,10 +133,11 @@ export function FeaturesSection() {
           <div className="space-y-6 order-2 lg:order-1">
             <div className="space-y-4">
               <h3 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-                Built for modern development workflows
+                Desenvolvido para o dia a dia do seu restaurante
               </h3>
               <p className="text-muted-foreground text-base text-pretty">
-                Every component follows best practices with TypeScript, responsive design, and clean code architecture that integrates seamlessly into your projects.
+                Interface intuitiva e moderna, pensada para facilitar o trabalho da sua equipe 
+                e melhorar a experiência dos seus clientes.
               </p>
             </div>
 
@@ -154,15 +156,15 @@ export function FeaturesSection() {
             </ul>
 
             <div className="flex flex-col sm:flex-row gap-4 pe-4 pt-2">
-              <Button size="lg" className="cursor-pointer">
-                <a href="#" className='flex items-center'>
-                  View Documentation
+              <Button size="lg" className="cursor-pointer" asChild>
+                <a href="/auth/register" className='flex items-center'>
+                  Começar Agora
                   <ArrowRight className="ms-2 size-4" aria-hidden="true" />
                 </a>
               </Button>
-              <Button size="lg" variant="outline" className="cursor-pointer">
-                <a href="https://github.com/silicondeck/shadcn-dashboard-landing-template" target="_blank" rel="noopener noreferrer">
-                  GitHub Repository
+              <Button size="lg" variant="outline" className="cursor-pointer" asChild>
+                <a href="#faq">
+                  Perguntas Frequentes
                 </a>
               </Button>
             </div>
@@ -172,7 +174,7 @@ export function FeaturesSection() {
           <Image3D
             lightSrc="/feature-2-light.png"
             darkSrc="/feature-2-dark.png"
-            alt="Performance dashboard"
+            alt="Painel de relatórios"
             direction="right"
             className="order-1 lg:order-2"
           />
