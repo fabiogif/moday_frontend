@@ -45,7 +45,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { PageLoading } from "@/components/ui/loading-progress"
 import { useAuthenticatedApi, useMutation } from "@/hooks/use-authenticated-api"
 import { endpoints } from "@/lib/api-client"
 import { toast } from "sonner"
@@ -122,7 +121,8 @@ export default function ProductDetailPage() {
         is_active: product.is_active ?? product.isActive ?? true,
       })
     }
-  }, [product, form])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product])
   
   const onSubmit = async (data: ProductFormValues) => {
     try {
@@ -161,7 +161,11 @@ export default function ProductDetailPage() {
   }
   
   if (loading) {
-    return <PageLoading />
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
   }
   
   if (error || !product) {
@@ -178,6 +182,11 @@ export default function ProductDetailPage() {
   
   const isActive = product.is_active ?? product.isActive
   const stock = product.qtd_stock ?? product.stock
+  
+  // Garantir que product existe antes de renderizar
+  if (!product) {
+    return null
+  }
   
   return (
     <div className="container mx-auto p-6 space-y-6">
