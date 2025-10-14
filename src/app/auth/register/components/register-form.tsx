@@ -140,8 +140,7 @@ export function RegisterForm({
 
       if (response.success && response.data) {
         // Salvar token e dados do usuário
-        const responseData = response.data as RegisterResponse
-        const { token, user } = responseData
+        const { token, user } = response.data
         
         if (token) {
           apiClient.setToken(token)
