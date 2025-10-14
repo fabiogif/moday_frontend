@@ -32,7 +32,7 @@ export function PricingSection() {
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const response = await ApiClient.get<Plan[]>('/public/plans')
+        const response = await ApiClient.get<Plan[]>('/api/plans')
         if (response && response.data) {
           setPlans(response.data)
         }
