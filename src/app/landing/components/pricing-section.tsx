@@ -18,7 +18,7 @@ interface Plan {
   id: number
   name: string
   url: string
-  price: number
+  price: number | string  // Pode vir como string do backend
   description: string | null
   details: PlanDetail[]
 }
@@ -34,7 +34,12 @@ export function PricingSection() {
       try {
         const response = await ApiClient.get<Plan[]>('/api/public/plans')
         if (response && response.data) {
-          setPlans(response.data)
+          // Garantir que price seja número
+          const plansWithNumberPrice = response.data.map(plan => ({
+            ...plan,
+            price: typeof plan.price === 'string' ? parseFloat(plan.price) : plan.price
+          }))
+          setPlans(plansWithNumberPrice)
         }
       } catch (error) {
         console.error('Erro ao carregar planos:', error)
@@ -174,7 +179,9 @@ export function PricingSection() {
                   {/* Pricing */}
                   <div>
                     <div className="text-4xl font-bold mb-1">
-                      R$ {isYearly ? (plan.price * 12 * 0.8).toFixed(2) : plan.price.toFixed(2)}
+                      R$ {isYearly 
+                        ? (Number(plan.price) * 12 * 0.8).toFixed(2) 
+                        : Number(plan.price).toFixed(2)}
                     </div>
                     <div className="text-muted-foreground text-sm">
                       Por mês
@@ -199,8 +206,8 @@ export function PricingSection() {
                   {/* Features */}
                   <div>
                     <ul role="list" className="space-y-3 text-sm">
-                      {plan.details.map((detail) => (
-                        <li key={detail.id} className="flex items-center gap-3">
+                      {plan.details.map((detail, detailIndex) => (
+                        <li key={detail.id ? `detail-${detail.id}` : `plan-${plan.id}-detail-${detailIndex}`} className="flex items-center gap-3">
                           <Check className="text-muted-foreground size-4 flex-shrink-0" strokeWidth={2.5} />
                           <span>{detail.name}</span>
                         </li>

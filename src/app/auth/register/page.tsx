@@ -2,7 +2,13 @@ import { RegisterForm } from "./components/register-form"
 import { Logo } from "@/components/logo"
 import Link from "next/link"
 
-export default function RegisterPage() {
+export default async function RegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ plan?: string }>
+}) {
+  const params = await searchParams
+  
   return (
     <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="flex w-full max-w-xl flex-col gap-6">
@@ -12,7 +18,7 @@ export default function RegisterPage() {
           </div>
           Moday
         </Link>
-        <RegisterForm />
+        <RegisterForm preSelectedPlanId={params.plan} />
       </div>
     </div>
   )

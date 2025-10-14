@@ -57,7 +57,7 @@ type RegisterFormValues = z.infer<typeof registerFormSchema>
 interface Plan {
   id: number
   name: string
-  price: number
+  price: number | string  // Pode vir como string do backend
   description: string
   details: {
     id: number
@@ -67,8 +67,11 @@ interface Plan {
 
 export function RegisterForm({
   className,
+  preSelectedPlanId,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & {
+  preSelectedPlanId?: string
+}) {
   const router = useRouter()
   const { toast } = useToast()
   const { login } = useAuth()
@@ -87,7 +90,7 @@ export function RegisterForm({
       password: "",
       password_confirmation: "",
       phone: "",
-      plan_id: "",
+      plan_id: preSelectedPlanId || "",  // Usa o plano pré-selecionado
       terms: false,
     },
   })
@@ -98,7 +101,12 @@ export function RegisterForm({
       try {
         const response = await apiClient.get<Plan[]>('/api/plans')
         if (response.success && response.data) {
-          setPlans(response.data)
+          // Garantir que price seja número
+          const plansWithNumberPrice = response.data.map(plan => ({
+            ...plan,
+            price: typeof plan.price === 'string' ? parseFloat(plan.price) : plan.price
+          }))
+          setPlans(plansWithNumberPrice)
         }
       } catch (error) {
         console.error('Erro ao carregar planos:', error)
@@ -113,7 +121,20 @@ export function RegisterForm({
     }
 
     fetchPlans()
-  }, [toast])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Atualizar plano quando a lista de planos carregar e houver um plano pré-selecionado
+  useEffect(() => {
+    if (preSelectedPlanId && plans.length > 0) {
+      // Verificar se o plano existe
+      const planExists = plans.some(p => p.id.toString() === preSelectedPlanId)
+      if (planExists) {
+        form.setValue('plan_id', preSelectedPlanId)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plans, preSelectedPlanId])
 
   async function onSubmit(data: RegisterFormValues) {
     setIsLoading(true)
@@ -351,7 +372,7 @@ export function RegisterForm({
                           <SelectContent>
                             {plans.map((plan) => (
                               <SelectItem key={plan.id} value={plan.id.toString()}>
-                                {plan.name} - R$ {plan.price.toFixed(2)}/mês
+                                {plan.name} - R$ {Number(plan.price).toFixed(2)}/mês
                               </SelectItem>
                             ))}
                           </SelectContent>

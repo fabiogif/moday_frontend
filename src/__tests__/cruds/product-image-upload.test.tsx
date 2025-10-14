@@ -12,13 +12,15 @@
 
 import { screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { render } from '../utils/test-utils'
+import { render, generateProduct } from '../utils/test-utils'
 import ProductsPage from '@/app/(dashboard)/products/page'
-import { useAuthenticatedProducts, useMutation } from '@/hooks/use-authenticated-api'
+import { useAuthenticatedProducts, useMutation, useMutationWithValidation } from '@/hooks/use-authenticated-api'
 
 // Mock dos hooks
+jest.mock('@/hooks/use-authenticated-api')
 const mockUseAuthenticatedProducts = useAuthenticatedProducts as jest.MockedFunction<typeof useAuthenticatedProducts>
 const mockUseMutation = useMutation as jest.MockedFunction<typeof useMutation>
+const mockUseMutationWithValidation = useMutationWithValidation as jest.MockedFunction<typeof useMutationWithValidation>
 
 describe('Product Image Upload - Frontend Tests', () => {
   const mockMutate = jest.fn()
@@ -52,6 +54,14 @@ describe('Product Image Upload - Frontend Tests', () => {
       mutate: mockMutate,
       loading: false,
       error: null,
+    })
+
+    mockUseMutationWithValidation.mockReturnValue({
+      mutate: mockMutate,
+      loading: false,
+      error: null,
+      validationErrors: {},
+      mapFieldErrors: jest.fn(),
     })
   })
 
