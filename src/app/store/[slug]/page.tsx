@@ -15,6 +15,7 @@ import { toast } from "sonner"
 import Image from "next/image"
 import { maskCPF, validateCPF, maskPhone, validatePhone, maskZipCode, validateEmail } from '@/lib/masks'
 import { useViaCEP } from '@/hooks/use-viacep'
+import { apiClient } from '@/lib/api-client'
 
 interface Product {
   uuid: string
