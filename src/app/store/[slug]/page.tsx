@@ -105,17 +105,19 @@ export default function PublicStorePage() {
 
   async function loadPaymentMethods() {
     try {
-      const response = await apiClient.get('/api/payment-methods/active')
-      if (response.data) {
+      const response = await apiClient.get<any[]>('/api/payment-methods/active')
+      if (response.data && Array.isArray(response.data)) {
         setPaymentMethods(response.data)
         // Selecionar primeiro método por padrão
         if (response.data.length > 0) {
           setPaymentMethod(response.data[0].uuid)
         }
+      } else {
+        setPaymentMethods([])
       }
     } catch (error) {
       console.error('Erro ao carregar formas de pagamento:', error)
-      toast.error('Erro ao carregar formas de pagamento')
+      setPaymentMethods([])
     }
   }
 
