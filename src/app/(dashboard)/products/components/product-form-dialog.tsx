@@ -77,6 +77,7 @@ const productFormSchema = z.object({
   qtd_stock: z.number().min(0, {
     message: "Estoque deve ser maior ou igual a 0.",
   }),
+  is_active: z.boolean().optional(),
   image: z.any().optional(),
 });
 
@@ -97,6 +98,7 @@ interface ProductFormValues {
   variations?: Array<{ type: string; value: string }>;
   categories: string[];
   qtd_stock: number;
+  is_active?: boolean;
   image?: File;
 }
 
@@ -122,6 +124,7 @@ export function ProductFormDialog({ onAddProduct, renderAsPage = false }: Produc
       price_cost: 0,
       categories: [],
       qtd_stock: 0,
+      is_active: true,
       image: undefined,
     },
     mode: "onChange", // Validar em tempo real

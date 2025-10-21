@@ -333,6 +333,16 @@ export const endpoints = {
     current: '/api/tenant/current',
     update: '/api/tenant/update',
   },
+  
+  // Relatórios
+  reports: {
+    list: '/api/reports',
+    dailySales: '/api/reports/daily-sales',
+    clients: '/api/reports/clients',
+    topProducts: '/api/reports/top-products',
+    monthlyFinancial: '/api/reports/monthly-financial',
+    tableOccupancy: '/api/reports/table-occupancy',
+  },
 } as const
 
 export default apiClient

@@ -1,40 +1,23 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
 import {
   ArrowLeft,
-  Save,
   Package,
   DollarSign,
   Tag,
   Calendar,
   Edit,
   Trash2,
-  Image as ImageIcon,
   BarChart3,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription,
-} from "@/components/ui/form"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,18 +31,6 @@ import {
 import { useAuthenticatedApi, useMutation } from "@/hooks/use-authenticated-api"
 import { endpoints } from "@/lib/api-client"
 import { toast } from "sonner"
-
-// Schema de validação
-const productSchema = z.object({
-  name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-  description: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
-  price: z.number().min(0.01, "Preço deve ser maior que zero"),
-  price_cost: z.number().min(0, "Custo não pode ser negativo").optional(),
-  qtd_stock: z.number().int().min(0, "Estoque não pode ser negativo"),
-  is_active: z.boolean().optional(),
-})
-
-type ProductFormValues = z.infer<typeof productSchema>
 
 interface Product {
   id: number
@@ -87,56 +58,14 @@ export default function ProductDetailPage() {
   const router = useRouter()
   const productId = params.id as string
   
-  const [isEditing, setIsEditing] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   
-  const { data: product, loading, error, refetch } = useAuthenticatedApi<Product>(
+  const { data: product, loading, error } = useAuthenticatedApi<Product>(
     endpoints.products.getById(productId)
   )
   
-  const { mutate: updateProduct, loading: updating } = useMutation()
   const { mutate: deleteProduct, loading: deleting } = useMutation()
   
-  const form = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      price: 0,
-      price_cost: 0,
-      qtd_stock: 0,
-      is_active: true,
-    },
-  })
-  
-  // Atualizar formulário quando produto carregar
-  useEffect(() => {
-    if (product) {
-      form.reset({
-        name: product.name || "",
-        description: product.description || "",
-        price: Number(product.price) || 0,
-        price_cost: Number(product.price_cost) || 0,
-        qtd_stock: Number(product.qtd_stock || product.stock) || 0,
-        is_active: product.is_active ?? product.isActive ?? true,
-      })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product])
-  
-  const onSubmit = async (data: ProductFormValues) => {
-    try {
-      const response = await updateProduct(endpoints.products.update(productId), 'PUT', data)
-      
-      if (response) {
-        toast.success("Produto atualizado com sucesso!")
-        setIsEditing(false)
-        refetch()
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao atualizar produto")
-    }
-  }
   
   const handleDelete = async () => {
     try {
@@ -202,43 +131,20 @@ export default function ProductDetailPage() {
         </div>
         
         <div className="flex gap-2">
-          {isEditing ? (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsEditing(false)
-                  form.reset()
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={form.handleSubmit(onSubmit)}
-                disabled={updating}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {updating ? "Salvando..." : "Salvar"}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => setIsEditing(true)}
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Editar
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Excluir
-              </Button>
-            </>
-          )}
+          <Button
+            variant="default"
+            onClick={() => router.push(`/products/${productId}/edit`)}
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Editar Produto
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Excluir
+          </Button>
         </div>
       </div>
       
@@ -305,208 +211,125 @@ export default function ProductDetailPage() {
         </Card>
       </div>
       
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Informações Básicas */}
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Informações Básicas
-                </CardTitle>
-                <CardDescription>
-                  Dados principais do produto
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Produto</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={!isEditing} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrição</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          {...field} 
-                          disabled={!isEditing}
-                          rows={4}
-                          className="resize-none"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="flex items-center gap-4">
-                  <FormField
-                    control={form.control}
-                    name="is_active"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">
-                            Produto Ativo
-                          </FormLabel>
-                          <FormDescription>
-                            Produto disponível para venda
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            disabled={!isEditing}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <Badge variant={isActive ? "default" : "secondary"} className="h-fit">
-                    {isActive ? "Ativo" : "Inativo"}
-                  </Badge>
-                </div>
-                
-                {product.categories && product.categories.length > 0 && (
-                  <div>
-                    <Label>Categorias</Label>
-                    <div className="flex gap-2 mt-2">
-                      {product.categories.map((cat) => (
-                        <Badge key={cat.identify} variant="outline">
-                          <Tag className="w-3 h-3 mr-1" />
-                          {cat.name}
-                        </Badge>
-                      ))}
+      <div className="space-y-6">
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Informações Básicas */}
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Informações Básicas
+              </CardTitle>
+              <CardDescription>
+                Dados principais do produto
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Nome do Produto</Label>
+                <p className="mt-1 text-lg font-medium">{product.name}</p>
+              </div>
+              
+              <div>
+                <Label>Descrição</Label>
+                <p className="mt-1 text-muted-foreground">{product.description}</p>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="flex-1 rounded-lg border p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-base">Status</Label>
+                      <p className="text-sm text-muted-foreground">
+                        {isActive ? "Produto ativo e disponível para venda" : "Produto inativo"}
+                      </p>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            
-            {/* Preços */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  Preços
-                </CardTitle>
-                <CardDescription>
-                  Valores de custo e venda
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Preço de Venda</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                          disabled={!isEditing}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="price_cost"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Custo Unitário</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                          disabled={!isEditing}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Custo de aquisição/produção
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-            
-            {/* Estoque */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Estoque
-                </CardTitle>
-                <CardDescription>
-                  Controle de quantidade
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="qtd_stock"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Quantidade em Estoque</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="1"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          disabled={!isEditing}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Unidades disponíveis
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="pt-4 border-t">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">
-                      Criado em: {product.created_at || product.createdAt}
-                    </span>
+                    <Badge variant={isActive ? "default" : "secondary"}>
+                      {isActive ? "Ativo" : "Inativo"}
+                    </Badge>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </form>
-      </Form>
+              </div>
+              
+              {product.categories && product.categories.length > 0 && (
+                <div>
+                  <Label>Categorias</Label>
+                  <div className="flex gap-2 mt-2">
+                    {product.categories.map((cat) => (
+                      <Badge key={cat.identify} variant="outline">
+                        <Tag className="w-3 h-3 mr-1" />
+                        {cat.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Preços */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="w-5 h-5" />
+                Preços
+              </CardTitle>
+              <CardDescription>
+                Valores de custo e venda
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Preço de Venda</Label>
+                <p className="mt-1 text-xl font-bold">
+                  R$ {Number(product.price).toFixed(2)}
+                </p>
+              </div>
+              
+              <div>
+                <Label>Custo Unitário</Label>
+                <p className="mt-1 text-lg">
+                  R$ {Number(product.price_cost || 0).toFixed(2)}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Custo de aquisição/produção
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Estoque */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Estoque
+              </CardTitle>
+              <CardDescription>
+                Controle de quantidade
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Quantidade em Estoque</Label>
+                <p className="mt-1 text-xl font-bold">{stock}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Unidades disponíveis
+                </p>
+              </div>
+              
+              <div className="pt-4 border-t">
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">
+                    Criado em: {product.created_at || product.createdAt}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
       
       {/* Dialog de Confirmação de Exclusão */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

@@ -54,7 +54,6 @@ import {
 } from "@/components/ui/table"
 import { toast } from "sonner"
 import { ProductFormDialog } from "./product-form-dialog"
-import { ProductEditDialog } from "./product-edit-dialog"
 import { DeleteProductDialog } from "./delete-product-dialog"
 
 interface Product {
@@ -285,8 +284,12 @@ export function DataTable({ products, onDeleteProduct, onEditProduct, onAddProdu
                 <Eye className="mr-2 h-4 w-4" />
                 Ver detalhes
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <ProductEditDialog product={product} onEditProduct={onEditProduct} />
+              <DropdownMenuItem 
+                onClick={() => router.push(`/products/${product.id}/edit`)}
+                disabled={!product.id}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Editar
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>

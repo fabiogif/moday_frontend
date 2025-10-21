@@ -82,6 +82,7 @@ export default function ProductsPage() {
       formData.append('price', productData.price.toString())
       formData.append('price_cost', productData.price_cost?.toString() || '0')
       formData.append('qtd_stock', productData.qtd_stock.toString())
+      formData.append('is_active', productData.is_active ? '1' : '0') // Campo obrigatório
       
       // Enviar cada categoria individualmente para o Laravel processar como array
       productData.categories.forEach((categoryId, index) => {
@@ -93,11 +94,39 @@ export default function ProductsPage() {
         formData.append('image', productData.image)
       }
       
-      const result = await createProduct(
-        endpoints.products.create,
-        'POST',
-        formData
-      )
+      // Debug: Log do FormData criado
+      console.log('FormData criado:')
+      for (const [key, value] of formData.entries()) {
+        console.log(`${key}:`, value)
+      }
+      
+      // Teste: Se não há imagem, enviar como JSON ao invés de FormData
+      let result
+      if (!productData.image || !(productData.image instanceof File)) {
+        console.log('Sem imagem - enviando como JSON')
+        const jsonData = {
+          name: productData.name,
+          description: productData.description,
+          price: productData.price,
+          price_cost: productData.price_cost || 0,
+          qtd_stock: productData.qtd_stock,
+          is_active: productData.is_active ?? true,
+          categories: productData.categories
+        }
+        console.log('Dados JSON:', jsonData)
+        result = await createProduct(
+          endpoints.products.create,
+          'POST',
+          jsonData
+        )
+      } else {
+        console.log('Com imagem - enviando como FormData')
+        result = await createProduct(
+          endpoints.products.create,
+          'POST',
+          formData
+        )
+      }
       
       if (result) {
         console.log('Produto criado com sucesso:', result)
@@ -138,42 +167,11 @@ export default function ProductsPage() {
     }
   }
 
+  // Função de edição removida - agora usa navegação para página de edição
   const handleEditProduct = async (product: Product) => {
-    try {
-      console.log("Edit product:", product)
-      
-      const formData = new FormData()
-      
-      // Adicionar _method para Laravel reconhecer como PUT
-      formData.append('_method', 'PUT')
-      
-      formData.append('name', product.name)
-      formData.append('description', product.description)
-      formData.append('price', product.price.toString())
-      formData.append('price_cost', product.price_cost?.toString() || '0')
-      formData.append('qtd_stock', product.qtd_stock?.toString() || '0')
-      
-      // Categorias
-      product.categories?.forEach((category, index) => {
-        formData.append(`categories[${index}]`, category.identify)
-      })
-      
-      // Usar POST ao invés de PUT quando há FormData
-      const result = await createProduct(
-        endpoints.products.update(product.id),
-        'POST',
-        formData
-      )
-      
-      if (result) {
-        // ✅ Atualizar grid automaticamente sem refresh
-        await refetch()
-        handleShowSuccessAlert('Sucesso!', 'Produto alterado com sucesso!')
-      }
-    } catch (error) {
-      console.error('Erro ao editar produto:', error)
-      handleShowSuccessAlert('Erro!', 'Erro ao editar produto')
-    }
+    // Esta função não é mais necessária, pois a edição é feita via página dedicada
+    // Mantida apenas para compatibilidade com a interface DataTable
+    console.log('handleEditProduct chamado - redirecionando para página de edição')
   }
 
   if (!isAuthenticated) {

@@ -26,6 +26,9 @@ import { Plus } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useInputMask } from "@/hooks/use-input-mask"
+import { validateCPF, validateEmail, validatePhone, maskCPF, maskPhone, maskZipCode } from "@/lib/masks"
+import { useViaCEP } from "@/hooks/use-viacep"
 
 const clientFormSchema = z.object({
   name: z.string().min(3, {
@@ -33,26 +36,26 @@ const clientFormSchema = z.object({
   }).max(255, {
     message: "O nome completo não pode ter mais de 255 caracteres.",
   }),
-  cpf: z.string().min(11, {
-    message: "O CPF deve ter pelo menos 11 caracteres.",
-  }).max(14, {
-    message: "O CPF não pode ter mais de 14 caracteres.",
-  }),
-  email: z.string().email({
-    message: "Por favor, insira um email válido.",
-  }).min(3, {
-    message: "O email deve ter pelo menos 3 caracteres.",
-  }).max(255, {
-    message: "O email não pode ter mais de 255 caracteres.",
-  }),
-  phone: z.string().min(10, {
-    message: "O telefone deve ter pelo menos 10 caracteres.",
-  }).max(20, {
-    message: "O telefone não pode ter mais de 20 caracteres.",
-  }),
+  cpf: z.string()
+    .min(1, { message: "CPF é obrigatório." })
+    .refine((value) => validateCPF(value), {
+      message: "CPF inválido. Verifique os dígitos.",
+    }),
+  email: z.string()
+    .min(1, { message: "Email é obrigatório." })
+    .refine((value) => validateEmail(value), {
+      message: "Email inválido. Use o formato: exemplo@email.com",
+    }),
+  phone: z.string()
+    .min(1, { message: "Telefone é obrigatório." })
+    .refine((value) => validatePhone(value), {
+      message: "Telefone inválido. Use (00) 00000-0000",
+    }),
   address: z.string().optional(),
   city: z.string().optional(),
-  state: z.string().optional(),
+  state: z.string().max(2, {
+    message: "Estado deve ter 2 caracteres (UF).",
+  }).optional(),
   zip_code: z.string().optional(),
   neighborhood: z.string().optional(),
   number: z.string().optional(),
@@ -91,6 +94,7 @@ export function ClientFormDialog({
   onOpenChange 
 }: ClientFormDialogProps) {
   const isEditing = !!editingClient
+  const { loading: loadingCEP, searchCEP } = useViaCEP();
 
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
@@ -109,6 +113,28 @@ export function ClientFormDialog({
       isActive: true,
     },
   })
+  
+  // Função para buscar endereço pelo CEP
+  const handleSearchCEP = async (cep: string) => {
+    // Remove máscara e valida
+    const cleanCEP = cep.replace(/\D/g, '');
+    
+    if (cleanCEP.length !== 8) {
+      return; // CEP incompleto, não busca
+    }
+    
+    const address = await searchCEP(cep);
+    
+    if (address) {
+      // Preenche os campos automaticamente
+      form.setValue('address', address.address);
+      form.setValue('neighborhood', address.neighborhood);
+      form.setValue('city', address.city);
+      form.setValue('state', address.state);
+      
+      console.log('Endereço preenchido automaticamente:', address);
+    }
+  }
 
   // Preencher o formulário quando editingClient mudar
   React.useEffect(() => {
@@ -196,15 +222,26 @@ export function ClientFormDialog({
               <FormField
                 control={form.control}
                 name="cpf"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>CPF *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="000.000.000-00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const handleCPFChange = useInputMask('cpf', field.onChange);
+                  
+                  return (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>CPF *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="000.000.000-00" 
+                          value={field.value}
+                          onChange={handleCPFChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          maxLength={14}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
               
               <FormField
@@ -224,15 +261,26 @@ export function ClientFormDialog({
               <FormField
                 control={form.control}
                 name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefone *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="(11) 99999-9999" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const handlePhoneChange = useInputMask('phone', field.onChange);
+                  
+                  return (
+                    <FormItem>
+                      <FormLabel>Telefone *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="(11) 99999-9999" 
+                          value={field.value}
+                          onChange={handlePhoneChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          maxLength={15}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
 
@@ -247,7 +295,7 @@ export function ClientFormDialog({
                     <FormItem className="md:col-span-2">
                       <FormLabel>Logradouro</FormLabel>
                       <FormControl>
-                        <Input placeholder="Rua das Flores" {...field} />
+                        <Input placeholder="Rua das Flores, Av. Paulista" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -327,15 +375,40 @@ export function ClientFormDialog({
                 <FormField
                   control={form.control}
                   name="zip_code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CEP</FormLabel>
-                      <FormControl>
-                        <Input placeholder="01234-567" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const handleZipCodeChange = useInputMask('zipCode', field.onChange);
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel>CEP</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input 
+                              placeholder="01234-567" 
+                              value={field.value}
+                              onChange={handleZipCodeChange}
+                              onBlur={(e) => {
+                                field.onBlur();
+                                handleSearchCEP(e.target.value);
+                              }}
+                              name={field.name}
+                              maxLength={9}
+                              disabled={loadingCEP}
+                            />
+                            {loadingCEP && (
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {loadingCEP ? 'Buscando endereço...' : 'Digite o CEP para preencher automaticamente'}
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
             </div>

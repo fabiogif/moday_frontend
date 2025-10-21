@@ -22,15 +22,33 @@ import { Loader2, Building2, Upload, X, ExternalLink, Copy } from "lucide-react"
 import Image from "next/image"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { useBackendValidation, commonFieldMappings } from "@/hooks/use-backend-validation"
+import { useInputMask } from "@/hooks/use-input-mask"
+import { validateCNPJ, validateEmail, validatePhone } from "@/lib/masks"
+import { useViaCEP } from "@/hooks/use-viacep"
+import { useReceitaWS } from "@/hooks/use-receitaws"
+import { AlertCircle, CheckCircle2 } from "lucide-react"
 
 const companyFormSchema = z.object({
   name: z.string().min(1, "Nome da empresa é obrigatório"),
-  email: z.string().email("Endereço de email inválido"),
-  cnpj: z.string().optional(),
-  phone: z.string().optional(),
+  email: z.string()
+    .min(1, "Email é obrigatório")
+    .refine((value) => validateEmail(value), {
+      message: "Email inválido. Use o formato: exemplo@email.com",
+    }),
+  cnpj: z.string()
+    .optional()
+    .refine((value) => !value || value === '' || validateCNPJ(value), {
+      message: "CNPJ inválido. Verifique os dígitos.",
+    }),
+  phone: z.string()
+    .optional()
+    .refine((value) => !value || value === '' || validatePhone(value), {
+      message: "Telefone inválido. Use (00) 00000-0000",
+    }),
   address: z.string().optional(),
   city: z.string().optional(),
-  state: z.string().max(2, "Estado deve ter no máximo 2 caracteres").optional(),
+  state: z.string().max(2, "Estado deve ter no máximo 2 caracteres (UF)").optional(),
   zipcode: z.string().optional(),
   country: z.string().optional(),
 })
@@ -79,6 +97,68 @@ export default function CompanySettings() {
       country: "",
     },
   })
+
+  const { handleBackendErrors } = useBackendValidation(form.setError)
+  const { loading: loadingCEP, searchCEP } = useViaCEP()
+  const { loading: loadingCNPJ, companyData, searchCNPJ } = useReceitaWS()
+  
+  // Função para buscar endereço pelo CEP
+  const handleSearchCEP = async (cep: string) => {
+    const cleanCEP = cep.replace(/\D/g, '');
+    
+    if (cleanCEP.length !== 8) {
+      return; // CEP incompleto
+    }
+    
+    const address = await searchCEP(cep);
+    
+    if (address) {
+      form.setValue('address', address.address);
+      form.setValue('city', address.city);
+      form.setValue('state', address.state);
+      console.log('Endereço da empresa preenchido:', address);
+    }
+  }
+  
+  // Função para buscar dados da empresa pelo CNPJ
+  const handleSearchCNPJ = async (cnpj: string) => {
+    const cleanCNPJ = cnpj.replace(/\D/g, '');
+    
+    if (cleanCNPJ.length !== 14) {
+      return; // CNPJ incompleto
+    }
+    
+    const company = await searchCNPJ(cnpj);
+    
+    if (company) {
+      // Pergunta ao usuário se deseja preencher os dados
+      const shouldFill = window.confirm(
+        `Empresa encontrada: ${company.nome}\n\nDeseja preencher os dados automaticamente?`
+      );
+      
+      if (shouldFill) {
+        // Preenche dados básicos
+        if (company.nome && !form.getValues('name')) {
+          form.setValue('name', company.nome);
+        }
+        if (company.email && !form.getValues('email')) {
+          form.setValue('email', company.email);
+        }
+        if (company.phone && !form.getValues('phone')) {
+          form.setValue('phone', company.phone);
+        }
+        
+        // Preenche endereço
+        if (company.address) form.setValue('address', company.address);
+        if (company.city) form.setValue('city', company.city);
+        if (company.state) form.setValue('state', company.state);
+        if (company.zipCode) form.setValue('zipcode', company.zipCode);
+        
+        console.log('Dados da empresa preenchidos:', company);
+        toast.success('Dados da empresa preenchidos automaticamente!');
+      }
+    }
+  }
 
   // Carregar dados da empresa
   useEffect(() => {
@@ -236,7 +316,39 @@ export default function CompanySettings() {
       }
     } catch (error: any) {
       console.error('Erro ao atualizar empresa:', error)
-      toast.error(error.message || 'Erro ao atualizar informações da empresa')
+      console.error('Detalhes do erro:', {
+        message: error.message,
+        data: error.data,
+        errors: error.errors
+      })
+      
+      // Se houver erros de validação, mostrar no console
+      if (error.data?.data) {
+        console.error('Erros de validação do backend:', error.data.data)
+        Object.entries(error.data.data).forEach(([field, messages]) => {
+          console.error(`Campo ${field}:`, messages)
+        })
+      }
+      
+      // Mapeamento de campos específicos para empresa
+      const companyFieldMappings: Record<string, string> = {
+        'name': 'name',
+        'email': 'email',
+        'phone': 'phone',
+        'cnpj': 'cnpj',
+        'address': 'address',
+        'city': 'city',
+        'state': 'state',
+        'zipcode': 'zipcode',
+        'country': 'country',
+      }
+      
+      const handled = handleBackendErrors(error, companyFieldMappings as any)
+      
+      if (!handled) {
+        const errorMsg = error.data?.message || error.message || 'Erro ao atualizar empresa'
+        toast.error(errorMsg)
+      }
     } finally {
       setSaving(false)
     }
@@ -394,7 +506,7 @@ export default function CompanySettings() {
                     {logoPreview ? (
                       <Image 
                         src={logoPreview} 
-                        alt="Preview do logo" 
+                        alt="logo padrão" 
                         width={128} 
                         height={128} 
                         className="object-cover w-full h-full"
@@ -522,28 +634,76 @@ export default function CompanySettings() {
                 <FormField
                   control={form.control}
                   name="cnpj"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CNPJ</FormLabel>
-                      <FormControl>
-                        <Input placeholder="00.000.000/0000-00" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const handleCNPJChange = useInputMask('cnpj', field.onChange);
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel>CNPJ</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input 
+                              placeholder="00.000.000/0000-00" 
+                              value={field.value}
+                              onChange={handleCNPJChange}
+                              onBlur={(e) => {
+                                field.onBlur();
+                                handleSearchCNPJ(e.target.value);
+                              }}
+                              name={field.name}
+                              maxLength={18}
+                              disabled={loadingCNPJ}
+                            />
+                            {loadingCNPJ && (
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {loadingCNPJ ? 'Consultando Receita Federal...' : 'Digite o CNPJ para buscar dados da empresa'}
+                        </p>
+                        {companyData && (
+                          <div className="flex items-start gap-2 mt-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                            <div className="text-xs space-y-0.5">
+                              <p className="font-medium text-green-900 dark:text-green-100">{companyData.nome}</p>
+                              <p className="text-green-700 dark:text-green-300">Situação: {companyData.situacao}</p>
+                              {companyData.nomeFantasia && (
+                                <p className="text-green-700 dark:text-green-300">Nome Fantasia: {companyData.nomeFantasia}</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
                 <FormField
                   control={form.control}
                   name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefone</FormLabel>
-                      <FormControl>
-                        <Input placeholder="(00) 00000-0000" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const handlePhoneChange = useInputMask('phone', field.onChange);
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel>Telefone</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="(00) 00000-0000" 
+                            value={field.value}
+                            onChange={handlePhoneChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            maxLength={15}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
             </CardContent>
@@ -600,15 +760,40 @@ export default function CompanySettings() {
                 <FormField
                   control={form.control}
                   name="zipcode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CEP</FormLabel>
-                      <FormControl>
-                        <Input placeholder="00000-000" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const handleZipCodeChange = useInputMask('zipCode', field.onChange);
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel>CEP</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input 
+                              placeholder="00000-000" 
+                              value={field.value}
+                              onChange={handleZipCodeChange}
+                              onBlur={(e) => {
+                                field.onBlur();
+                                handleSearchCEP(e.target.value);
+                              }}
+                              name={field.name}
+                              maxLength={9}
+                              disabled={loadingCEP}
+                            />
+                            {loadingCEP && (
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {loadingCEP ? 'Buscando endereço...' : 'Digite o CEP para preencher automaticamente'}
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
               <FormField

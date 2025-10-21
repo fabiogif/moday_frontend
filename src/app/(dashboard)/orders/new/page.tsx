@@ -20,6 +20,7 @@ import { endpoints } from "@/lib/api-client";
 import { toast } from "sonner";
 import { useOrderRefresh } from "@/hooks/use-order-refresh";
 import { useAuth } from "@/contexts/auth-context";
+import { useBackendValidation } from "@/hooks/use-backend-validation";
 
 const orderFormSchema = z.object({
   clientId: z.string().min(1, "Por favor, selecione um cliente."),
@@ -203,6 +204,8 @@ export default function NewOrderPage() {
     control: form.control,
     name: "products",
   });
+
+  const { handleBackendErrors } = useBackendValidation(form.setError);
 
   const isDelivery = form.watch("isDelivery");
   const useClientAddress = form.watch("useClientAddress");
@@ -500,7 +503,43 @@ export default function NewOrderPage() {
       }
     } catch (error: any) {
       console.error('Erro ao criar pedido:', error);
-      toast.error(error.message || 'Erro ao criar pedido');
+      console.error('Detalhes do erro:', {
+        message: error.message,
+        data: error.data,
+        errors: error.errors
+      });
+      
+      // Se houver erros de validação, mostrar no console
+      if (error.data?.data) {
+        console.error('Erros de validação do backend:', error.data.data);
+        Object.entries(error.data.data).forEach(([field, messages]) => {
+          console.error(`Campo ${field}:`, messages);
+        });
+      }
+      
+      // Mapeamento de campos específicos para pedidos
+      const orderFieldMappings = {
+        'client_id': 'clientId',
+        'table': 'tableId',
+        'products': 'products',
+        'products.*.qty': 'products',
+        'products.*.identify': 'products',
+        'delivery_address': 'deliveryAddress',
+        'delivery_city': 'deliveryCity',
+        'delivery_state': 'deliveryState',
+        'delivery_zip_code': 'deliveryZipCode',
+        'delivery_neighborhood': 'deliveryNeighborhood',
+        'delivery_number': 'deliveryNumber',
+        'payment_method_id': 'paymentMethodId',
+        'is_delivery': 'isDelivery',
+      };
+      
+      const handled = handleBackendErrors(error, orderFieldMappings);
+      
+      if (!handled) {
+        const errorMsg = error.data?.message || error.message || 'Erro ao criar pedido';
+        toast.error(errorMsg);
+      }
     }
   };
 

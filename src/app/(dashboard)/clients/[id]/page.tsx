@@ -46,16 +46,30 @@ import { PageLoading } from "@/components/ui/loading-progress"
 import { useAuthenticatedApi, useMutation } from "@/hooks/use-authenticated-api"
 import { endpoints } from "@/lib/api-client"
 import { toast } from "sonner"
+import { useInputMask } from "@/hooks/use-input-mask"
+import { validateCPF, validateEmail, validatePhone } from "@/lib/masks"
 
 // Schema de validação
 const clientSchema = z.object({
   name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-  cpf: z.string().min(11, "CPF inválido"),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
-  phone: z.string().min(10, "Telefone inválido"),
+  cpf: z.string()
+    .min(1, { message: "CPF é obrigatório." })
+    .refine((value) => validateCPF(value), {
+      message: "CPF inválido. Verifique os dígitos.",
+    }),
+  email: z.string()
+    .optional()
+    .refine((value) => !value || value === '' || validateEmail(value), {
+      message: "Email inválido. Use o formato: exemplo@email.com",
+    }),
+  phone: z.string()
+    .min(1, { message: "Telefone é obrigatório." })
+    .refine((value) => validatePhone(value), {
+      message: "Telefone inválido. Use (00) 00000-0000",
+    }),
   address: z.string().optional(),
   city: z.string().optional(),
-  state: z.string().optional(),
+  state: z.string().max(2, "Estado deve ter 2 caracteres (UF)").optional(),
   zip_code: z.string().optional(),
   neighborhood: z.string().optional(),
   number: z.string().optional(),
@@ -321,15 +335,27 @@ export default function ClientDetailPage() {
                 <FormField
                   control={form.control}
                   name="cpf"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CPF</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={!isEditing} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const handleCPFChange = useInputMask('cpf', field.onChange);
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel>CPF</FormLabel>
+                        <FormControl>
+                          <Input 
+                            value={field.value}
+                            onChange={handleCPFChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            disabled={!isEditing}
+                            placeholder="000.000.000-00"
+                            maxLength={14}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
               
@@ -351,15 +377,27 @@ export default function ClientDetailPage() {
                 <FormField
                   control={form.control}
                   name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefone</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={!isEditing} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const handlePhoneChange = useInputMask('phone', field.onChange);
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel>Telefone</FormLabel>
+                        <FormControl>
+                          <Input 
+                            value={field.value}
+                            onChange={handlePhoneChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            disabled={!isEditing}
+                            placeholder="(00) 00000-0000"
+                            maxLength={15}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
             </CardContent>
@@ -381,15 +419,27 @@ export default function ClientDetailPage() {
                 <FormField
                   control={form.control}
                   name="zip_code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CEP</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={!isEditing} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const handleZipCodeChange = useInputMask('zipCode', field.onChange);
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel>CEP</FormLabel>
+                        <FormControl>
+                          <Input 
+                            value={field.value}
+                            onChange={handleZipCodeChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            disabled={!isEditing}
+                            placeholder="00000-000"
+                            maxLength={9}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
                 
                 <FormField
