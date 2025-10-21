@@ -518,7 +518,7 @@ export default function NewOrderPage() {
       }
       
       // Mapeamento de campos específicos para pedidos
-      const orderFieldMappings = {
+      const orderFieldMappings: Record<string, string> = {
         'client_id': 'clientId',
         'table': 'tableId',
         'products': 'products',
@@ -534,7 +534,7 @@ export default function NewOrderPage() {
         'is_delivery': 'isDelivery',
       };
       
-      const handled = handleBackendErrors(error, orderFieldMappings);
+      const handled = handleBackendErrors(error, orderFieldMappings as any);
       
       if (!handled) {
         const errorMsg = error.data?.message || error.message || 'Erro ao criar pedido';

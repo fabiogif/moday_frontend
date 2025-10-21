@@ -33,6 +33,7 @@ interface ProductFormValues {
   price_cost: number
   categories: string[]
   qtd_stock: number
+  is_active?: boolean
   image?: File
 }
 
@@ -82,7 +83,7 @@ export default function ProductsPage() {
       formData.append('price', productData.price.toString())
       formData.append('price_cost', productData.price_cost?.toString() || '0')
       formData.append('qtd_stock', productData.qtd_stock.toString())
-      formData.append('is_active', productData.is_active ? '1' : '0') // Campo obrigatório
+      formData.append('is_active', productData.is_active ?? true ? '1' : '0') // Campo obrigatório
       
       // Enviar cada categoria individualmente para o Laravel processar como array
       productData.categories.forEach((categoryId, index) => {
