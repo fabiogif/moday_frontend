@@ -212,7 +212,41 @@ export default function ProductDetailPage() {
       </div>
       
       <div className="space-y-6">
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-3">
+          {/* Imagem do Produto */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Imagem
+              </CardTitle>
+              <CardDescription>
+                Foto do produto
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {product.image ? (
+                <div className="aspect-square relative overflow-hidden rounded-lg border bg-muted">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="object-cover w-full h-full"
+                    onError={(e) => {
+                      e.currentTarget.src = '/placeholder-product.png'
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="aspect-square flex items-center justify-center rounded-lg border bg-muted">
+                  <div className="text-center p-4">
+                    <Package className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">Sem imagem</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
           {/* Informações Básicas */}
           <Card className="md:col-span-2">
             <CardHeader>

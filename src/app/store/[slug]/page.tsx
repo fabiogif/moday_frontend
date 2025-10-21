@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import { ShoppingCart, Plus, Minus, Trash2, Store, MapPin, Phone, Mail, Image as ImageIcon } from "lucide-react"
+import { ShoppingCart, Plus, Minus, Trash2, Store, MapPin, Phone, Mail, Image as ImageIcon, Loader2, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import Image from "next/image"
+import { maskCPF, validateCPF, maskPhone, validatePhone, maskZipCode, validateEmail } from '@/lib/masks'
+import { useViaCEP } from '@/hooks/use-viacep'
 
 interface Product {
   uuid: string
@@ -85,14 +87,36 @@ export default function PublicStorePage() {
     notes: "",
   })
 
-  const [paymentMethod, setPaymentMethod] = useState("pix")
+  const [paymentMethod, setPaymentMethod] = useState("")
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([])
   const [shippingMethod, setShippingMethod] = useState("delivery")
   const [orderResult, setOrderResult] = useState<any>(null)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [cartCollapsed, setCartCollapsed] = useState(false)
+
+  // Hook para buscar CEP
+  const { searchCEP, loading: cepLoading } = useViaCEP()
 
   useEffect(() => {
     loadStoreData()
+    loadPaymentMethods()
   }, [slug])
+
+  async function loadPaymentMethods() {
+    try {
+      const response = await apiClient.get('/api/payment-methods/active')
+      if (response.data) {
+        setPaymentMethods(response.data)
+        // Selecionar primeiro método por padrão
+        if (response.data.length > 0) {
+          setPaymentMethod(response.data[0].uuid)
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar formas de pagamento:', error)
+      toast.error('Erro ao carregar formas de pagamento')
+    }
+  }
 
   async function loadStoreData() {
     try {
@@ -239,6 +263,30 @@ export default function PublicStorePage() {
   const handleStateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toUpperCase().slice(0, 2)
     setDeliveryData({ ...deliveryData, state: value })
+  }
+
+  // Buscar endereço por CEP
+  const handleSearchCEP = async () => {
+    const cep = deliveryData.zip_code.replace(/\D/g, '')
+    
+    if (cep.length !== 8) {
+      return
+    }
+
+    const result = await searchCEP(cep)
+    
+    if (result) {
+      setDeliveryData({
+        ...deliveryData,
+        address: result.logradouro || deliveryData.address,
+        neighborhood: result.bairro || deliveryData.neighborhood,
+        city: result.localidade || deliveryData.city,
+        state: result.uf || deliveryData.state,
+      })
+      toast.success('CEP encontrado! Endereço preenchido automaticamente.')
+    } else {
+      toast.error('CEP não encontrado. Preencha manualmente.')
+    }
   }
 
   // Helper function to translate field names from backend
@@ -499,18 +547,32 @@ export default function PublicStorePage() {
                 </div>
               </div>
             </div>
-            <Button
-              variant="outline"
-              className="relative"
-              onClick={() => setCheckoutStep(checkoutStep === "cart" ? "checkout" : "cart")}
-            >
-              <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0">
-                  {cartCount}
-                </Badge>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="relative"
+                onClick={() => setCartCollapsed(!cartCollapsed)}
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0">
+                    {cartCount}
+                  </Badge>
+                )}
+                <span className="ml-2 hidden md:inline">
+                  {cartCollapsed ? 'Mostrar' : 'Ocultar'} Carrinho
+                </span>
+              </Button>
+              
+              {checkoutStep === "cart" && cart.length > 0 && (
+                <Button
+                  onClick={() => setCheckoutStep("checkout")}
+                  className="hidden md:inline-flex"
+                >
+                  Finalizar Pedido
+                </Button>
               )}
-            </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -573,48 +635,76 @@ export default function PublicStorePage() {
               })}
             </div>
 
-            {/* Cart Summary */}
+            {/* Cart Summary - Collapsible */}
             {cart.length > 0 && (
-              <Card className="mt-8 sticky bottom-4">
-                <CardHeader>
-                  <CardTitle>Carrinho ({cartCount} {cartCount === 1 ? "item" : "itens"})</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {cart.map((item) => {
-                      const price = getNumericPrice(item.promotional_price || item.price)
-                      return (
-                        <div key={item.uuid} className="flex items-center gap-4">
-                          <div className="flex-1">
-                            <p className="font-medium">{item.name}</p>
-                            <p className="text-sm text-muted-foreground">R$ {formatPrice(item.promotional_price || item.price)}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button size="sm" variant="outline" onClick={() => updateQuantity(item.uuid, -1)}>
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="w-8 text-center">{item.quantity}</span>
-                            <Button size="sm" variant="outline" onClick={() => updateQuantity(item.uuid, 1)}>
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => removeFromCart(item.uuid)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <p className="font-bold w-24 text-right">R$ {formatPrice(price * item.quantity)}</p>
-                        </div>
-                      )
-                    })}
-                    <Separator />
-                    <div className="flex items-center justify-between text-xl font-bold">
-                      <span>Total</span>
-                      <span>R$ {formatPrice(cartTotal)}</span>
+              <Card className={`mt-8 sticky bottom-4 transition-all duration-300 ${cartCollapsed ? 'shadow-lg' : 'shadow-xl'}`}>
+                <CardHeader className="cursor-pointer" onClick={() => setCartCollapsed(!cartCollapsed)}>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <ShoppingCart className="h-5 w-5" />
+                      Carrinho ({cartCount} {cartCount === 1 ? "item" : "itens"})
+                    </CardTitle>
+                    <div className="flex items-center gap-4">
+                      {cartCollapsed && (
+                        <span className="text-lg font-bold">R$ {formatPrice(cartTotal)}</span>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setCartCollapsed(!cartCollapsed)
+                        }}
+                      >
+                        {cartCollapsed ? 'Expandir' : 'Recolher'}
+                      </Button>
                     </div>
-                    <Button className="w-full" size="lg" onClick={() => setCheckoutStep("checkout")}>
-                      Finalizar Pedido
-                    </Button>
                   </div>
-                </CardContent>
+                </CardHeader>
+                
+                {!cartCollapsed && (
+                  <CardContent>
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                      {cart.map((item) => {
+                        const price = getNumericPrice(item.promotional_price || item.price)
+                        return (
+                          <div key={item.uuid} className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{item.name}</p>
+                              <p className="text-sm text-muted-foreground">R$ {formatPrice(item.promotional_price || item.price)}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button size="sm" variant="outline" onClick={() => updateQuantity(item.uuid, -1)}>
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="w-8 text-center font-medium">{item.quantity}</span>
+                              <Button size="sm" variant="outline" onClick={() => updateQuantity(item.uuid, 1)}>
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => removeFromCart(item.uuid)}>
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                            <p className="font-bold w-24 text-right">R$ {formatPrice(price * item.quantity)}</p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <Separator className="my-4" />
+                    <div className="flex items-center justify-between text-xl font-bold mb-4">
+                      <span>Total</span>
+                      <span className="text-primary">R$ {formatPrice(cartTotal)}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" className="flex-1" onClick={() => setCart([])}>
+                        Limpar Carrinho
+                      </Button>
+                      <Button className="flex-1" size="lg" onClick={() => setCheckoutStep("checkout")}>
+                        Finalizar Pedido
+                      </Button>
+                    </div>
+                  </CardContent>
+                )}
               </Card>
             )}
           </>
@@ -659,7 +749,8 @@ export default function PublicStorePage() {
                         <Input
                           id="phone"
                           value={clientData.phone}
-                          onChange={(e) => setClientData({ ...clientData, phone: e.target.value })}
+                          onChange={(e) => setClientData({ ...clientData, phone: maskPhone(e.target.value) })}
+                          placeholder="(11) 99999-9999"
                           required
                         />
                       </div>
@@ -668,7 +759,8 @@ export default function PublicStorePage() {
                         <Input
                           id="cpf"
                           value={clientData.cpf}
-                          onChange={(e) => setClientData({ ...clientData, cpf: e.target.value })}
+                          onChange={(e) => setClientData({ ...clientData, cpf: maskCPF(e.target.value) })}
+                          placeholder="000.000.000-00"
                         />
                       </div>
                     </div>
@@ -779,17 +871,32 @@ export default function PublicStorePage() {
                         </div>
                         <div>
                           <Label htmlFor="zip_code">CEP *</Label>
-                          <Input
-                            id="zip_code"
-                            value={deliveryData.zip_code}
-                            onChange={handleCEPChange}
-                            maxLength={9}
-                            required={shippingMethod === "delivery"}
-                            placeholder="01234-567"
-                            className={validationErrors['delivery.zip_code'] ? 'border-red-500' : ''}
-                          />
+                          <div className="flex gap-2">
+                            <Input
+                              id="zip_code"
+                              value={deliveryData.zip_code}
+                              onChange={handleCEPChange}
+                              onBlur={handleSearchCEP}
+                              maxLength={9}
+                              required={shippingMethod === "delivery"}
+                              placeholder="01234-567"
+                              className={validationErrors['delivery.zip_code'] ? 'border-red-500' : ''}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={handleSearchCEP}
+                              disabled={cepLoading || deliveryData.zip_code.replace(/\D/g, '').length !== 8}
+                            >
+                              {cepLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                            </Button>
+                          </div>
                           {validationErrors['delivery.zip_code'] && (
                             <p className="text-sm text-red-500 mt-1">{validationErrors['delivery.zip_code']}</p>
+                          )}
+                          {cepLoading && (
+                            <p className="text-sm text-muted-foreground mt-1">Buscando CEP...</p>
                           )}
                         </div>
                       </div>
@@ -820,28 +927,28 @@ export default function PublicStorePage() {
                     <CardTitle>Forma de Pagamento</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="pix" id="pix" />
-                        <Label htmlFor="pix">PIX</Label>
+                    {paymentMethods.length > 0 ? (
+                      <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                        {paymentMethods.map((method) => (
+                          <div key={method.uuid} className="flex items-center space-x-2">
+                            <RadioGroupItem value={method.uuid} id={method.uuid} />
+                            <Label htmlFor={method.uuid} className="flex items-center gap-2 cursor-pointer">
+                              {method.name}
+                              {method.type && (
+                                <Badge variant="outline" className="text-xs">
+                                  {method.type}
+                                </Badge>
+                              )}
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                        <p className="text-sm">Carregando formas de pagamento...</p>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="credit_card" id="credit_card" />
-                        <Label htmlFor="credit_card">Cartão de Crédito</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="debit_card" id="debit_card" />
-                        <Label htmlFor="debit_card">Cartão de Débito</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="money" id="money" />
-                        <Label htmlFor="money">Dinheiro</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="bank_transfer" id="bank_transfer" />
-                        <Label htmlFor="bank_transfer">Transferência Bancária</Label>
-                      </div>
-                    </RadioGroup>
+                    )}
                   </CardContent>
                 </Card>
               </div>
