@@ -100,12 +100,12 @@ export function NavUser({
                 </Link>
               </DropdownMenuItem>
           
-              <DropdownMenuItem asChild className="cursor-pointer">
+              {/* <DropdownMenuItem asChild className="cursor-pointer">
                 <Link href="/settings/notifications">
                   <BellDot />
                   Notificação
                 </Link>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer" onClick={handleLogout}>
