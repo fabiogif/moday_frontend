@@ -15,7 +15,6 @@ import { toast } from "sonner"
 import Image from "next/image"
 import { maskCPF, validateCPF, maskPhone, validatePhone, maskZipCode, validateEmail } from '@/lib/masks'
 import { useViaCEP } from '@/hooks/use-viacep'
-import { apiClient } from '@/lib/api-client'
 
 interface Product {
   uuid: string
@@ -102,11 +101,45 @@ export default function PublicStorePage() {
     loadStoreData()
   }, [slug])
 
+  async function loadPaymentMethods() {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
+      const response = await fetch(`${apiUrl}/api/store/${slug}/payment-methods`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        mode: 'cors',
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao carregar formas de pagamento')
+      }
+
+      const data = await response.json()
+      
+      if (data.success && data.data) {
+        setPaymentMethods(data.data)
+        // Selecionar primeiro método por padrão
+        if (data.data.length > 0) {
+          setPaymentMethod(data.data[0].uuid)
+        }
+      } else {
+        setPaymentMethods([])
+      }
+    } catch (error) {
+      console.error('Erro ao carregar formas de pagamento:', error)
+      toast.error('Erro ao carregar formas de pagamento')
+      setPaymentMethods([])
+    }
+  }
+
   async function loadStoreData() {
     try {
       setLoading(true)
 
-      // Prefer env var; fallback to Laravel default port 8000
+1      // Prefer env var; fallback to Laravel default port 8000
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
       
       const [storeRes, productsRes] = await Promise.all([
@@ -125,14 +158,12 @@ export default function PublicStorePage() {
       const storeData = await storeRes.json()
       const productsData = await productsRes.json()
 
-      if (storeData.success) {
-        setStoreInfo(storeData.data)
-        // Carregar formas de pagamento após ter o tenant_id
-        if (storeData.data.tenant_id) {
-          await loadPaymentMethods(storeData.data.tenant_id)
-        }
-      } else {
-        toast.error(storeData.message || "Loja não encontrada")
+        if (storeData.success) {
+          setStoreInfo(storeData.data)
+          // Carregar formas de pagamento após obter info da loja
+          await loadPaymentMethods()
+        } else {
+          toast.error(storeData.message || "Loja não encontrada")
       }
 
       if (productsData.success) {
@@ -144,33 +175,6 @@ export default function PublicStorePage() {
       toast.error(errorMessage)
     } finally {
       setLoading(false)
-    }
-  }
-
-  async function loadPaymentMethods(tenantId: string) {
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
-      const response = await fetch(`${apiUrl}/api/payment-methods/public?tenant_id=${tenantId}`, {
-        mode: 'cors'
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.data && Array.isArray(data.data)) {
-          setPaymentMethods(data.data)
-          // Selecionar primeiro método por padrão
-          if (data.data.length > 0) {
-            setPaymentMethod(data.data[0].uuid)
-          }
-        } else {
-          setPaymentMethods([])
-        }
-      } else {
-        setPaymentMethods([])
-      }
-    } catch (error) {
-      console.error('Erro ao carregar formas de pagamento:', error)
-      setPaymentMethods([])
     }
   }
 
