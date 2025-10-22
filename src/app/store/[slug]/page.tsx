@@ -100,32 +100,13 @@ export default function PublicStorePage() {
 
   useEffect(() => {
     loadStoreData()
-    loadPaymentMethods()
   }, [slug])
-
-  async function loadPaymentMethods() {
-    try {
-      const response = await apiClient.get<any[]>('/api/payment-methods/active')
-      if (response.data && Array.isArray(response.data)) {
-        setPaymentMethods(response.data)
-        // Selecionar primeiro método por padrão
-        if (response.data.length > 0) {
-          setPaymentMethod(response.data[0].uuid)
-        }
-      } else {
-        setPaymentMethods([])
-      }
-    } catch (error) {
-      console.error('Erro ao carregar formas de pagamento:', error)
-      setPaymentMethods([])
-    }
-  }
 
   async function loadStoreData() {
     try {
       setLoading(true)
 
-1      // Prefer env var; fallback to Laravel default port 8000
+      // Prefer env var; fallback to Laravel default port 8000
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
       
       const [storeRes, productsRes] = await Promise.all([
@@ -146,6 +127,10 @@ export default function PublicStorePage() {
 
       if (storeData.success) {
         setStoreInfo(storeData.data)
+        // Carregar formas de pagamento após ter o tenant_id
+        if (storeData.data.tenant_id) {
+          await loadPaymentMethods(storeData.data.tenant_id)
+        }
       } else {
         toast.error(storeData.message || "Loja não encontrada")
       }
@@ -159,6 +144,33 @@ export default function PublicStorePage() {
       toast.error(errorMessage)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function loadPaymentMethods(tenantId: string) {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
+      const response = await fetch(`${apiUrl}/api/payment-methods/public?tenant_id=${tenantId}`, {
+        mode: 'cors'
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data && Array.isArray(data.data)) {
+          setPaymentMethods(data.data)
+          // Selecionar primeiro método por padrão
+          if (data.data.length > 0) {
+            setPaymentMethod(data.data[0].uuid)
+          }
+        } else {
+          setPaymentMethods([])
+        }
+      } else {
+        setPaymentMethods([])
+      }
+    } catch (error) {
+      console.error('Erro ao carregar formas de pagamento:', error)
+      setPaymentMethods([])
     }
   }
 
