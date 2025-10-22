@@ -41,8 +41,10 @@ export function useNotifications() {
       setLoading(true)
       setError(null)
       const response = await apiClient.get(endpoints.notifications.list)
-      if (response.data) {
+      if (response.data && Array.isArray(response.data)) {
         setNotifications(response.data)
+      } else {
+        setNotifications([])
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar notificações')
@@ -55,8 +57,8 @@ export function useNotifications() {
   const fetchUnreadCount = useCallback(async () => {
     try {
       const response = await apiClient.get(endpoints.notifications.unreadCount)
-      if (response.data?.count !== undefined) {
-        setUnreadCount(response.data.count)
+      if (response.data && typeof response.data === 'object' && 'count' in response.data) {
+        setUnreadCount((response.data as { count: number }).count)
       }
     } catch (err) {
       console.error('Erro ao carregar contagem de não lidas:', err)

@@ -23,6 +23,11 @@ export interface AddressData {
   city: string;
   state: string;
   zipCode: string;
+  // Campos originais do ViaCEP
+  logradouro?: string;
+  bairro?: string;
+  localidade?: string;
+  uf?: string;
 }
 
 /**
@@ -66,6 +71,11 @@ export async function searchAddressByCEP(cep: string): Promise<AddressData | nul
       city: data.localidade || '',
       state: data.uf || '',
       zipCode: data.cep || '',
+      // Incluir campos originais para compatibilidade
+      logradouro: data.logradouro || '',
+      bairro: data.bairro || '',
+      localidade: data.localidade || '',
+      uf: data.uf || '',
     };
   } catch (error) {
     console.error('Erro ao buscar CEP:', error);

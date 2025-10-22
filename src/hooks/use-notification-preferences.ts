@@ -13,8 +13,10 @@ export function useNotificationPreferences() {
       setLoading(true)
       setError(null)
       const response = await apiClient.get(endpoints.notifications.preferences)
-      if (response.data) {
+      if (response.data && Array.isArray(response.data)) {
         setPreferences(response.data)
+      } else {
+        setPreferences([])
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar preferências')
