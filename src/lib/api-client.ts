@@ -343,6 +343,17 @@ export const endpoints = {
     monthlyFinancial: '/api/reports/monthly-financial',
     tableOccupancy: '/api/reports/table-occupancy',
   },
+  // Notificações
+  notifications: {
+    list: '/api/notifications',
+    unread: '/api/notifications/unread',
+    unreadCount: '/api/notifications/unread-count',
+    markAsRead: (uuid: string) => `/api/notifications/${uuid}/read`,
+    markAllAsRead: '/api/notifications/read-all',
+    delete: (uuid: string) => `/api/notifications/${uuid}`,
+    preferences: '/api/notifications/preferences',
+    updatePreferences: '/api/notifications/preferences',
+  },
 } as const
 
 export default apiClient
