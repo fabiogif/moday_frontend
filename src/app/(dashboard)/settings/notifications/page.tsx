@@ -111,25 +111,33 @@ export default function NotificationSettings() {
     if (preferences.length > 0) {
       const formValues: any = {
         frequency: "instant",
-        quiet_hours_start: "22:00",
-        quiet_hours_end: "06:00",
+        quiet_hours_start: "",
+        quiet_hours_end: "",
       }
+
+      // Buscar valores de quiet_hours da primeira preferência que tiver
+      let quietHoursFound = false
 
       preferences.forEach(pref => {
         formValues[`${pref.event_type}_email`] = pref.email_enabled
         formValues[`${pref.event_type}_push`] = pref.push_enabled
         if (pref.frequency) formValues.frequency = pref.frequency
         
-        // Garantir formato HH:MM para quiet_hours
-        if (pref.quiet_hours_start) {
+        // Pegar quiet_hours apenas da primeira preferência que tiver valores
+        if (!quietHoursFound && pref.quiet_hours_start) {
           const start = String(pref.quiet_hours_start)
           formValues.quiet_hours_start = start.includes(':') ? start.substring(0, 5) : start
+          quietHoursFound = true
         }
-        if (pref.quiet_hours_end) {
+        if (!quietHoursFound && pref.quiet_hours_end) {
           const end = String(pref.quiet_hours_end)
           formValues.quiet_hours_end = end.includes(':') ? end.substring(0, 5) : end
         }
       })
+
+      // Se não encontrou valores, usar padrões
+      if (!formValues.quiet_hours_start) formValues.quiet_hours_start = "22:00"
+      if (!formValues.quiet_hours_end) formValues.quiet_hours_end = "06:00"
 
       form.reset(formValues)
     }

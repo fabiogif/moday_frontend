@@ -206,8 +206,8 @@ export function PricingSection() {
                   {/* Features */}
                   <div>
                     <ul role="list" className="space-y-3 text-sm">
-                      {plan.details.map((detail, detailIndex) => (
-                        <li key={detail.id ? `detail-${detail.id}` : `plan-${plan.id}-detail-${detailIndex}`} className="flex items-center gap-3">
+                      {plan.details.map((detail) => (
+                        <li key={`${plan.id}-${detail.id || detail.name}`} className="flex items-center gap-3">
                           <Check className="text-muted-foreground size-4 flex-shrink-0" strokeWidth={2.5} />
                           <span>{detail.name}</span>
                         </li>

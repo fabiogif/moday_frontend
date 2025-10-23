@@ -47,9 +47,16 @@ interface Product {
   createdAt: string
   created_at?: string
   image?: string
+  url?: string
   categories?: Array<{
     identify: string
     name: string
+  }>
+  variations?: Array<{
+    id: number
+    name: string
+    price: number
+    stock: number
   }>
 }
 
@@ -225,25 +232,22 @@ export default function ProductDetailPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {product.image ? (
-                <div className="aspect-square relative overflow-hidden rounded-lg border bg-muted">
+              <div className="aspect-square relative overflow-hidden rounded-lg border bg-muted">
+                {product.image || product.url ? (
                   <img
-                    src={product.image}
+                    src={product.url || product.image}
                     alt={product.name}
                     className="object-cover w-full h-full"
-                    onError={(e) => {
-                      e.currentTarget.src = '/placeholder-product.png'
-                    }}
                   />
-                </div>
-              ) : (
-                <div className="aspect-square flex items-center justify-center rounded-lg border bg-muted">
-                  <div className="text-center p-4">
-                    <Package className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground">Sem imagem</p>
+                ) : (
+                  <div className="flex items-center justify-center w-full h-full">
+                    <div className="text-center p-4">
+                      <Package className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">Sem imagem</p>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </CardContent>
           </Card>
           
@@ -363,6 +367,40 @@ export default function ProductDetailPage() {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Variações do Produto */}
+        {product.variations && product.variations.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Variações do Produto
+              </CardTitle>
+              <CardDescription>
+                Diferentes versões deste produto
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {product.variations.map((variation) => (
+                  <div key={variation.id} className="rounded-lg border p-4 space-y-2">
+                    <h4 className="font-medium">{variation.name}</h4>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Preço:</span>
+                      <span className="font-bold">R$ {Number(variation.price).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Estoque:</span>
+                      <Badge variant={variation.stock > 0 ? "default" : "secondary"}>
+                        {variation.stock} unidades
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
       
       {/* Dialog de Confirmação de Exclusão */}
