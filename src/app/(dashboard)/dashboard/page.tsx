@@ -3,6 +3,8 @@ import { SalesChart } from "./components/sales-chart"
 import { RecentTransactions } from "./components/recent-transactions"
 import { TopProducts } from "./components/top-products"
 import { QuickActions } from "./components/quick-actions"
+import { OrdersVolumeChart } from "./components/orders-volume-chart"
+import { CustomersChart } from "./components/customers-chart"
 
 export default function Dashboard() {
   return (
@@ -27,6 +29,12 @@ export default function Dashboard() {
           {/* Sales Performance Chart */}
           <div className="grid gap-6 grid-cols-1">
             <SalesChart />
+          </div>
+
+          {/* Orders Volume and Customers Charts */}
+          <div className="grid gap-6 grid-cols-1 @5xl:grid-cols-2">
+            <OrdersVolumeChart />
+            <CustomersChart />
           </div>
 
           {/* Recent Transactions and Top Products */}
