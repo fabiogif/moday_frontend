@@ -430,7 +430,7 @@ export default function PublicStorePage() {
       console.log('deliveryDataToSend:', deliveryDataToSend)
       console.log('full orderData:', orderData)
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
       const response = await fetch(`${apiUrl}/api/store/${slug}/orders`, {
         method: "POST",
         headers: {

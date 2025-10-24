@@ -137,7 +137,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
       // Chamar logout no backend
       await fetch(`${apiUrl}/api/auth/logout`, {
         method: 'POST',

@@ -3,7 +3,7 @@
  * Inclui autenticação JWT, tratamento de erros e cache
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
 
 interface ApiResponse<T = any> {
   success: boolean
