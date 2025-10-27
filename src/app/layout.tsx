@@ -6,6 +6,7 @@ import { SidebarConfigProvider } from "@/contexts/sidebar-context";
 import { AuthProvider } from "@/contexts/auth-context";
 import { inter } from "@/lib/fonts";
 import { ToasterProvider } from "@/components/toaster-provider";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "Moday - Gestão",
@@ -28,6 +29,7 @@ export default function RootLayout({
             </SidebarConfigProvider>
           </AuthProvider>
         </ThemeProvider>
+        <SpeedInsights />
       </body>
     </html>
   );

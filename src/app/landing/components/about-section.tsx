@@ -47,7 +47,7 @@ export function AboutSection() {
           </p>
         </div>
 
-        {/* Modern Values Grid with Enhanced Design */}
+            {/* Modern Values Grid with Enhanced Design */}
         <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 xl:grid-cols-4 mb-12">
           {values.map((value) => (
             <Card key={value.title} className='group shadow-xs py-2'>
