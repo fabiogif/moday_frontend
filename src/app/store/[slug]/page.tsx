@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import Image from "next/image"
 import { maskCPF, validateCPF, maskPhone, validatePhone, maskZipCode, validateEmail } from '@/lib/masks'
@@ -66,6 +67,7 @@ export default function PublicStorePage() {
   const [loading, setLoading] = useState(true)
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "checkout" | "success">("cart")
   const [submitting, setSubmitting] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<string>("all")
 
   // Form state
   const [clientData, setClientData] = useState({
@@ -96,6 +98,42 @@ export default function PublicStorePage() {
 
   // Hook para buscar CEP
   const { searchCEP, loading: cepLoading } = useViaCEP()
+
+  // Extrair categorias únicas dos produtos
+  const categories = Array.from(
+    new Set(
+      products.flatMap(product => 
+        product.categories?.map(cat => cat.name) || []
+      )
+    )
+  ).sort()
+
+  // Filtrar produtos por categoria
+  const filteredProducts = selectedCategory === "all" 
+    ? products 
+    : products.filter(product => 
+        product.categories?.some(cat => cat.name === selectedCategory)
+      )
+
+  // Produtos com ofertas (têm promotional_price)
+  const productsWithOffers = products
+    .filter(product => product.promotional_price && product.promotional_price < product.price)
+    .map(product => ({
+      ...product,
+      discountPercent: Math.round((1 - (getNumericPrice(product.promotional_price!) / getNumericPrice(product.price))) * 100)
+    }))
+    .sort((a, b) => b.discountPercent - a.discountPercent)
+    .slice(0, 4)
+
+  // 4 Melhores ofertas (maior desconto)
+  const bestOffers = productsWithOffers
+
+  // Para produtos mais vendidos, vou usar uma propriedade fictícia por enquanto
+  // Você pode substituir isso por dados reais da API se tiver um campo 'total_sales'
+  const bestSellers = products
+    .slice()
+    .sort(() => Math.random() - 0.5) // Por enquanto, aleatório
+    .slice(0, 4)
 
   useEffect(() => {
     loadStoreData()
@@ -599,60 +637,98 @@ export default function PublicStorePage() {
       <div className="container mx-auto px-4 py-8">
         {checkoutStep === "cart" && (
           <>
-            {/* Products Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {products.map((product) => {
-                const price = product.promotional_price || product.price
-                const hasDiscount = product.promotional_price && product.promotional_price < product.price
+            {/* Products with Category Tabs */}
+            <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
+              <TabsList className="w-full justify-start overflow-x-auto flex-wrap h-auto gap-2 mb-6 bg-transparent">
+                <TabsTrigger 
+                  value="all" 
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  Todos ({products.length})
+                </TabsTrigger>
+                {categories.map((category) => {
+                  const count = products.filter(p => 
+                    p.categories?.some(c => c.name === category)
+                  ).length
+                  return (
+                    <TabsTrigger 
+                      key={category} 
+                      value={category}
+                      className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    >
+                      {category} ({count})
+                    </TabsTrigger>
+                  )
+                })}
+              </TabsList>
 
-                return (
-                  <Card key={product.uuid} className="overflow-hidden">
-                    <div className="aspect-square relative bg-muted">
-                      {product.image ? (
-                        <Image
-                          src={product.image}
-                          alt={product.name}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-muted">
-                          <ImageIcon className="h-16 w-16 text-muted-foreground/50" />
-                        </div>
-                      )}
-                      {hasDiscount && (
-                        <Badge className="absolute top-2 right-2 bg-red-500 text-white">
-                          {Math.round((1 - (getNumericPrice(product.promotional_price!) / getNumericPrice(product.price))) * 100)}% OFF
-                        </Badge>
-                      )}
-                    </div>
-                    <CardHeader className="p-4">
-                      <CardTitle className="text-lg line-clamp-2">{product.name}</CardTitle>
-                      {product.description && (
-                        <CardDescription className="line-clamp-2">{product.description}</CardDescription>
-                      )}
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <div className="flex items-end justify-between mb-3">
-                        <div>
-                          {hasDiscount && (
-                            <p className="text-sm text-muted-foreground line-through">
-                              R$ {formatPrice(product.price)}
-                            </p>
-                          )}
-                          <p className="text-2xl font-bold text-primary">R$ {formatPrice(price)}</p>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{product.qtd_stock} em estoque</p>
-                      </div>
-                      <Button onClick={() => addToCart(product)} className="w-full" disabled={product.qtd_stock === 0}>
-                        {product.qtd_stock === 0 ? "Esgotado" : "Adicionar ao Carrinho"}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
+              <TabsContent value={selectedCategory} className="mt-6">
+                {filteredProducts.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground text-lg">Nenhum produto encontrado nesta categoria.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {filteredProducts.map((product) => {
+                      const price = product.promotional_price || product.price
+                      const hasDiscount = product.promotional_price && product.promotional_price < product.price
+
+                      return (
+                        <Card key={product.uuid} className="overflow-hidden">
+                          <div className="aspect-square relative bg-muted">
+                            {product.image ? (
+                              <Image
+                                src={product.image}
+                                alt={product.name}
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-muted">
+                                <ImageIcon className="h-16 w-16 text-muted-foreground/50" />
+                              </div>
+                            )}
+                            {hasDiscount && (
+                              <Badge className="absolute top-2 right-2 bg-red-500 text-white">
+                                {Math.round((1 - (getNumericPrice(product.promotional_price!) / getNumericPrice(product.price))) * 100)}% OFF
+                              </Badge>
+                            )}
+                            {product.categories && product.categories.length > 0 && (
+                              <Badge className="absolute bottom-2 left-2 bg-black/70 text-white">
+                                {product.categories[0].name}
+                              </Badge>
+                            )}
+                          </div>
+                          <CardHeader className="p-4">
+                            <CardTitle className="text-lg line-clamp-2">{product.name}</CardTitle>
+                            {product.description && (
+                              <CardDescription className="line-clamp-2">{product.description}</CardDescription>
+                            )}
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0">
+                            <div className="flex items-end justify-between mb-3">
+                              <div>
+                                {hasDiscount && (
+                                  <p className="text-sm text-muted-foreground line-through">
+                                    R$ {formatPrice(product.price)}
+                                  </p>
+                                )}
+                                <p className="text-2xl font-bold text-primary">R$ {formatPrice(price)}</p>
+                              </div>
+                              <p className="text-sm text-muted-foreground">{product.qtd_stock} em estoque</p>
+                            </div>
+                            <Button onClick={() => addToCart(product)} className="w-full" disabled={product.qtd_stock === 0}>
+                              {product.qtd_stock === 0 ? "Esgotado" : "Adicionar ao Carrinho"}
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
 
             {/* Cart Summary - Collapsible */}
             {cart.length > 0 && (
