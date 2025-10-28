@@ -34,6 +34,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { endpoints } from "@/lib/api-client"
 import { SuccessAlert } from "./success-alert"
+import { StateCityFormFields } from "@/components/location/state-city-form-fields"
+import { ClientFormDialog } from "../../clients/components/client-form-dialog"
 
 const orderFormSchema = z.object({
   clientId: z.string().min(1, {
@@ -153,17 +155,6 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
     title: "",
     message: "",
   })
-  const [newClientName, setNewClientName] = useState("")
-  const [newClientEmail, setNewClientEmail] = useState("")
-  const [newClientPhone, setNewClientPhone] = useState("")
-  const [newClientCpf, setNewClientCpf] = useState("")
-  const [newClientAddress, setNewClientAddress] = useState("")
-  const [newClientCity, setNewClientCity] = useState("")
-  const [newClientState, setNewClientState] = useState("")
-  const [newClientZipCode, setNewClientZipCode] = useState("")
-  const [newClientNeighborhood, setNewClientNeighborhood] = useState("")
-  const [newClientNumber, setNewClientNumber] = useState("")
-  const [newClientComplement, setNewClientComplement] = useState("")
   
   const { token, isAuthenticated } = useAuth()
   const { data: clientsData, loading: clientsLoading, error: clientsError, refetch: refetchClients } = useAuthenticatedClients()
@@ -275,56 +266,28 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
     }
   }
 
-  const handleAddClient = async () => {
-    try {
-      const clientData = {
-        name: newClientName,
-        email: newClientEmail,
-        phone: newClientPhone,
-        cpf: newClientCpf,
-        address: newClientAddress,
-        number: newClientNumber,
-        complement: newClientComplement,
-        neighborhood: newClientNeighborhood,
-        city: newClientCity,
-        state: newClientState,
-        zip_code: newClientZipCode,
-      }
+  const handleAddClientFromDialog = async (clientData: any) => {
+    const result = await createClient(
+      endpoints.clients.create,
+      'POST',
+      clientData
+    )
+    
+    if (result?.data?.id) {
+      // Recarregar lista de clientes
+      await refetchClients()
       
-      const result = await createClient(
-        endpoints.clients.create,
-        'POST',
-        clientData
-      )
+      // Selecionar automaticamente o cliente recém-criado no formulário
+      form.setValue('clientId', result.data.id.toString())
       
-      if (result) {
-        await refetchClients()
-        setClientDialogOpen(false)
-        // Limpar campos
-        setNewClientName("")
-        setNewClientEmail("")
-        setNewClientPhone("")
-        setNewClientCpf("")
-        setNewClientAddress("")
-        setNewClientCity("")
-        setNewClientState("")
-        setNewClientZipCode("")
-        setNewClientNeighborhood("")
-        setNewClientNumber("")
-        setNewClientComplement("")
-        
-        // Mostrar mensagem de sucesso
-        setSuccessAlert({
-          open: true,
-          title: "Sucesso",
-          message: "Cliente cadastrado com sucesso"
-        })
-      }
-    } catch (error) {
-      console.error("Erro ao criar cliente:", error)
-      // TODO: Implementar toast ou alert dialog para erro
-      console.error('Erro ao cadastrar cliente. Verifique os dados e tente novamente.')
+      // Mostrar mensagem de sucesso
+      setSuccessAlert({
+        open: true,
+        title: "Cliente Adicionado",
+        message: `${result.data.name} foi cadastrado e selecionado com sucesso!`
+      })
     }
+    // Se houver erro, o createClient vai lançar e o ClientFormDialog vai capturar
   }
 
   const onSubmit = (data: OrderFormValues) => {
@@ -355,7 +318,7 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
                       : clients.filter((c: Client) => c.isActive).length > 0 
                         ? clients.filter((c: Client) => c.isActive).map((client: Client) => ({
                             value: client.id.toString(),
-                            label: `${client.name} - ${client.email}`,
+                            label: client.email ? `${client.name} - ${client.email}` : client.name,
                           }))
                         : [{ value: "no-clients", label: "Nenhum cliente cadastrado", disabled: true }]
                   }
@@ -653,33 +616,18 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="deliveryCity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cidade *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="São Paulo" {...field} value={field.value || ""} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="deliveryState"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estado</FormLabel>
-                      <FormControl>
-                        <Input placeholder="SP" {...field} value={field.value || ""} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Estado e Cidade */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <StateCityFormFields
+                    control={form.control}
+                    stateFieldName="deliveryState"
+                    cityFieldName="deliveryCity"
+                    stateLabel="Estado"
+                    cityLabel="Cidade"
+                    required
+                    gridCols="equal"
+                  />
+                </div>
 
                 <FormField
                   control={form.control}
@@ -891,121 +839,6 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
     </>
   )
 
-  // Função para renderizar o formulário de cliente
-  const renderClientForm = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="md:col-span-2">
-        <label className="text-sm font-medium">Nome Completo *</label>
-        <Input 
-          placeholder="João Silva" 
-          value={newClientName}
-          onChange={(e) => setNewClientName(e.target.value)}
-          className="mt-1"
-        />
-      </div>
-      
-      <div>
-        <label className="text-sm font-medium">Email *</label>
-        <Input 
-          type="email"
-          placeholder="joao@example.com" 
-          value={newClientEmail}
-          onChange={(e) => setNewClientEmail(e.target.value)}
-          className="mt-1"
-        />
-      </div>
-      
-      <div>
-        <label className="text-sm font-medium">Telefone *</label>
-        <Input 
-          placeholder="(11) 99999-9999" 
-          value={newClientPhone}
-          onChange={(e) => setNewClientPhone(e.target.value)}
-          className="mt-1"
-        />
-      </div>
-
-      <div>
-        <label className="text-sm font-medium">CPF</label>
-        <Input 
-          placeholder="000.000.000-00" 
-          value={newClientCpf}
-          onChange={(e) => setNewClientCpf(e.target.value)}
-          className="mt-1"
-        />
-      </div>
-
-      <div className="md:col-span-2">
-        <label className="text-sm font-medium">Endereço</label>
-        <Input 
-          placeholder="Rua das Flores, 123" 
-          value={newClientAddress}
-          onChange={(e) => setNewClientAddress(e.target.value)}
-          className="mt-1"
-        />
-      </div>
-
-      <div>
-        <label className="text-sm font-medium">Número</label>
-        <Input 
-          placeholder="123" 
-          value={newClientNumber}
-          onChange={(e) => setNewClientNumber(e.target.value)}
-          className="mt-1"
-        />
-      </div>
-
-      <div>
-        <label className="text-sm font-medium">Complemento</label>
-        <Input 
-          placeholder="Apto 101" 
-          value={newClientComplement}
-          onChange={(e) => setNewClientComplement(e.target.value)}
-          className="mt-1"
-        />
-      </div>
-
-      <div>
-        <label className="text-sm font-medium">Bairro</label>
-        <Input 
-          placeholder="Centro" 
-          value={newClientNeighborhood}
-          onChange={(e) => setNewClientNeighborhood(e.target.value)}
-          className="mt-1"
-        />
-      </div>
-
-      <div>
-        <label className="text-sm font-medium">Cidade</label>
-        <Input 
-          placeholder="São Paulo" 
-          value={newClientCity}
-          onChange={(e) => setNewClientCity(e.target.value)}
-          className="mt-1"
-        />
-      </div>
-
-      <div>
-        <label className="text-sm font-medium">Estado</label>
-        <Input 
-          placeholder="SP" 
-          value={newClientState}
-          onChange={(e) => setNewClientState(e.target.value)}
-          className="mt-1"
-        />
-      </div>
-
-      <div>
-        <label className="text-sm font-medium">CEP</label>
-        <Input 
-          placeholder="01234-567" 
-          value={newClientZipCode}
-          onChange={(e) => setNewClientZipCode(e.target.value)}
-          className="mt-1"
-        />
-      </div>
-    </div>
-  )
 
   // Se renderAsPage for true, renderizar como página
   if (renderAsPage) {
@@ -1043,17 +876,14 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
         </Form>
 
         {/* Dialog de novo cliente */}
-        <Dialog open={clientDialogOpen} onOpenChange={setClientDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Novo Cliente</DialogTitle>
-              <DialogDescription>
-                Adicione um novo cliente com endereço completo ao sistema.
-              </DialogDescription>
-            </DialogHeader>
-            {renderClientForm()}
-          </DialogContent>
-        </Dialog>
+        <ClientFormDialog
+          onAddClient={handleAddClientFromDialog}
+          onEditClient={() => {}}
+          editingClient={null}
+          open={clientDialogOpen}
+          onOpenChange={setClientDialogOpen}
+          hideTrigger={true}
+        />
 
         {/* Success Alert */}
         <SuccessAlert
@@ -1116,7 +946,7 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
                               : clients.filter((c: Client) => c.isActive).length > 0 
                                 ? clients.filter((c: Client) => c.isActive).map((client: Client) => ({
                                     value: client.id.toString(),
-                                    label: `${client.name} - ${client.email}`,
+                                    label: client.email ? `${client.name} - ${client.email}` : client.name,
                                   }))
                                 : [{ value: "no-clients", label: "Nenhum cliente cadastrado", disabled: true }]
                           }
@@ -1643,144 +1473,14 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
       </Dialog>
 
       {/* Dialog de novo cliente */}
-      <Dialog open={clientDialogOpen} onOpenChange={setClientDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Novo Cliente</DialogTitle>
-            <DialogDescription>
-              Adicione um novo cliente com endereço completo ao sistema.
-            </DialogDescription>
-          </DialogHeader>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium">Nome Completo *</label>
-                  <Input 
-                    placeholder="João Silva" 
-                    value={newClientName}
-                    onChange={(e) => setNewClientName(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium">Email *</label>
-                  <Input 
-                    type="email"
-                    placeholder="joao@example.com" 
-                    value={newClientEmail}
-                    onChange={(e) => setNewClientEmail(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium">Telefone *</label>
-                  <Input 
-                    placeholder="(11) 99999-9999" 
-                    value={newClientPhone}
-                    onChange={(e) => setNewClientPhone(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">CPF</label>
-                  <Input 
-                    placeholder="000.000.000-00" 
-                    value={newClientCpf}
-                    onChange={(e) => setNewClientCpf(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium">Endereço</label>
-                  <Input 
-                    placeholder="Rua das Flores, 123" 
-                    value={newClientAddress}
-                    onChange={(e) => setNewClientAddress(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Número</label>
-                  <Input 
-                    placeholder="123" 
-                    value={newClientNumber}
-                    onChange={(e) => setNewClientNumber(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Complemento</label>
-                  <Input 
-                    placeholder="Apto 101" 
-                    value={newClientComplement}
-                    onChange={(e) => setNewClientComplement(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Bairro</label>
-                  <Input 
-                    placeholder="Centro" 
-                    value={newClientNeighborhood}
-                    onChange={(e) => setNewClientNeighborhood(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Cidade</label>
-                  <Input 
-                    placeholder="São Paulo" 
-                    value={newClientCity}
-                    onChange={(e) => setNewClientCity(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Estado</label>
-                  <Input 
-                    placeholder="SP" 
-                    value={newClientState}
-                    onChange={(e) => setNewClientState(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">CEP</label>
-                  <Input 
-                    placeholder="01234-567" 
-                    value={newClientZipCode}
-                    onChange={(e) => setNewClientZipCode(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-              
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setClientDialogOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleAddClient}
-              disabled={!newClientName || !newClientEmail || !newClientPhone}
-            >
-              Criar Cliente
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ClientFormDialog
+        onAddClient={handleAddClientFromDialog}
+        onEditClient={() => {}}
+        editingClient={null}
+        open={clientDialogOpen}
+        onOpenChange={setClientDialogOpen}
+        hideTrigger={true}
+      />
 
       {/* Success Alert */}
       <SuccessAlert

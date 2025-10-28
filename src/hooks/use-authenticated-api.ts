@@ -281,14 +281,22 @@ export function useMutation<T, P = any>() {
         throw new Error(errorMsg)
       }
     } catch (err: any) {
-      console.error('AuthenticatedMutation: Erro na requisição:', err)
+      // Log detalhado apenas em desenvolvimento
+      if (process.env.NODE_ENV === 'development') {
+        console.group('🔴 AuthenticatedMutation: Erro na Requisição')
+        console.log('Tipo:', err?.constructor?.name || typeof err)
+        console.log('Mensagem:', err?.message || 'Sem mensagem')
+        console.log('Data:', err?.data)
+        console.log('Errors:', err?.errors)
+        console.log('Status:', err?.status)
+        console.log('Erro completo:', err)
+        console.groupEnd()
+      }
       
       let errorMessage = 'Erro na requisição'
       
       // Tratar erros de validação (HTTP 422)
       if (err.errors || err.data) {
-        console.error('AuthenticatedMutation: Erros de validação:', err.errors || err.data)
-        
         // Laravel retorna erros em diferentes formatos
         const validationErrors = err.errors || err.data || {}
         const errorMessages: string[] = []
@@ -311,7 +319,7 @@ export function useMutation<T, P = any>() {
       }
       
       setError(errorMessage)
-      throw new Error(errorMessage)
+      throw err  // Lançar erro original ao invés de new Error()
     } finally {
       setLoading(false)
     }

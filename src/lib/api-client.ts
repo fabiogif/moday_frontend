@@ -107,7 +107,16 @@ class ApiClient {
       const data = await response.json()
 
       if (!response.ok) {
-        console.error('ApiClient: Erro HTTP', response.status, ':', data.message || data)
+        // Log amigável apenas em desenvolvimento
+        if (process.env.NODE_ENV === 'development') {
+          console.group(`🔴 Erro ${response.status} - ${response.statusText}`)
+          console.log('Mensagem:', data.message || 'Sem mensagem')
+          if (data.errors) {
+            console.log('Erros de validação:', data.errors)
+          }
+          console.groupEnd()
+        }
+        
         const error: ApiError = {
           success: false,
           message: data.message || 'Erro na requisição',
@@ -120,9 +129,11 @@ class ApiClient {
       return data as ApiResponse<T>
     } catch (parseError) {
       if (parseError instanceof Error && parseError.message.includes('JSON')) {
-        console.error('ApiClient: Resposta não é JSON válido. Status:', response.status)
-        const text = await response.text()
-        console.error('ApiClient: Conteúdo da resposta:', text.substring(0, 200))
+        if (process.env.NODE_ENV === 'development') {
+          console.error('⚠️ Resposta não é JSON válido. Status:', response.status)
+          const text = await response.text()
+          console.error('Conteúdo:', text.substring(0, 200))
+        }
       }
       throw parseError
     }
@@ -353,6 +364,17 @@ export const endpoints = {
     delete: (uuid: string) => `/api/notifications/${uuid}`,
     preferences: '/api/notifications/preferences',
     updatePreferences: '/api/notifications/preferences',
+  },
+
+  // Localização (Estados e Municípios)
+  states: {
+    list: '/api/states',
+    cities: (uf: string) => `/api/states/${uf}/cities`,
+  },
+  cities: {
+    list: '/api/cities',
+    capitals: '/api/cities/capitals',
+    search: '/api/cities/search',
   },
 } as const
 

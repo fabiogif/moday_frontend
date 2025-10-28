@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import Image from "next/image"
 import { maskCPF, validateCPF, maskPhone, validatePhone, maskZipCode, validateEmail } from '@/lib/masks'
 import { useViaCEP } from '@/hooks/use-viacep'
+import { StateCitySelect } from '@/components/location/state-city-select'
 
 interface Product {
   uuid: string
@@ -161,7 +162,8 @@ export default function PublicStorePage() {
         setPaymentMethods(data.data)
         // Selecionar primeiro método por padrão
         if (data.data.length > 0) {
-          setPaymentMethod(data.data[0].uuid)
+          // Usar 'type' ao invés de 'uuid' (backend espera enum: pix, credit_card, etc.)
+          setPaymentMethod(data.data[0].type || data.data[0].uuid)
         }
       } else {
         setPaymentMethods([])
@@ -333,13 +335,22 @@ export default function PublicStorePage() {
     const result = await searchCEP(cep)
     
     if (result) {
+      // Primeiro atualiza estado (isso vai carregar as cidades)
       setDeliveryData({
         ...deliveryData,
         address: result.logradouro || deliveryData.address,
         neighborhood: result.bairro || deliveryData.neighborhood,
-        city: result.localidade || deliveryData.city,
         state: result.uf || deliveryData.state,
       })
+      
+      // Aguardar cidades carregarem, então setar a cidade
+      setTimeout(() => {
+        setDeliveryData(prev => ({
+          ...prev,
+          city: result.localidade || prev.city,
+        }))
+      }, 500)
+      
       toast.success('CEP encontrado! Endereço preenchido automaticamente.')
     } else {
       toast.error('CEP não encontrado. Preencha manualmente.')
@@ -955,37 +966,20 @@ export default function PublicStorePage() {
                             <p className="text-sm text-red-500 mt-1">{validationErrors['delivery.neighborhood']}</p>
                           )}
                         </div>
-                        <div>
-                          <Label htmlFor="city">Cidade *</Label>
-                          <Input
-                            id="city"
-                            value={deliveryData.city}
-                            onChange={(e) => setDeliveryData({ ...deliveryData, city: e.target.value })}
-                            required={shippingMethod === "delivery"}
-                            placeholder="São Paulo"
-                            className={validationErrors['delivery.city'] ? 'border-red-500' : ''}
-                          />
-                          {validationErrors['delivery.city'] && (
-                            <p className="text-sm text-red-500 mt-1">{validationErrors['delivery.city']}</p>
-                          )}
-                        </div>
                       </div>
+                      
+                      {/* Estado e Cidade */}
+                      <StateCitySelect
+                        stateValue={deliveryData.state}
+                        cityValue={deliveryData.city}
+                        onStateChange={(value) => setDeliveryData({ ...deliveryData, state: value })}
+                        onCityChange={(value) => setDeliveryData({ ...deliveryData, city: value })}
+                        stateError={validationErrors['delivery.state']}
+                        cityError={validationErrors['delivery.city']}
+                        required={shippingMethod === "delivery"}
+                      />
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="state">Estado *</Label>
-                          <Input
-                            id="state"
-                            value={deliveryData.state}
-                            onChange={handleStateChange}
-                            maxLength={2}
-                            required={shippingMethod === "delivery"}
-                            placeholder="SP"
-                            className={validationErrors['delivery.state'] ? 'border-red-500' : ''}
-                          />
-                          {validationErrors['delivery.state'] && (
-                            <p className="text-sm text-red-500 mt-1">{validationErrors['delivery.state']}</p>
-                          )}
-                        </div>
                         <div>
                           <Label htmlFor="zip_code">CEP *</Label>
                           <div className="flex gap-2">
@@ -1048,7 +1042,7 @@ export default function PublicStorePage() {
                       <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
                         {paymentMethods.map((method) => (
                           <div key={method.uuid} className="flex items-center space-x-2">
-                            <RadioGroupItem value={method.uuid} id={method.uuid} />
+                            <RadioGroupItem value={method.type || method.uuid} id={method.uuid} />
                             <Label htmlFor={method.uuid} className="flex items-center gap-2 cursor-pointer">
                               {method.name}
                               {method.type && (

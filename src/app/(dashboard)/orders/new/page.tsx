@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ComboboxForm, ComboboxOption } from "@/components/ui/combobox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Plus, Trash2, Calculator } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Calculator, UserPlus } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import { useOrderRefresh } from "@/hooks/use-order-refresh";
 import { useAuth } from "@/contexts/auth-context";
 import { useBackendValidation } from "@/hooks/use-backend-validation";
+import { ClientFormDialog } from "../../clients/components/client-form-dialog";
+import { StateCityFormFields } from "@/components/location/state-city-form-fields";
 
 const orderFormSchema = z.object({
   clientId: z.string().min(1, "Por favor, selecione um cliente."),
@@ -167,14 +169,18 @@ export default function NewOrderPage() {
   const router = useRouter();
   const { triggerRefresh } = useOrderRefresh();
   const auth = useAuth();
-  const { data: clientsData, loading: clientsLoading } = useAuthenticatedClients();
+  const { data: clientsData, loading: clientsLoading, refetch: refetchClients } = useAuthenticatedClients();
   const { data: productsData, loading: productsLoading } = useProducts(); // Teste não autenticado
   const { data: tablesData, loading: tablesLoading } = useAuthenticatedTables();
   const { data: paymentMethodsData, loading: paymentMethodsLoading } = useAuthenticatedActivePaymentMethods();
   const { mutate: createOrder, loading: creating } = useMutation();
+  const { mutate: createClient } = useMutation();
   
   // Hook autenticado para produtos (inicializado após os outros)
   const { data: productsDataAuth, loading: productsLoadingAuth } = useAuthenticatedProducts();
+  
+  // Estado para controlar modal de adicionar cliente
+  const [clientDialogOpen, setClientDialogOpen] = useState(false);
 
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
@@ -307,7 +313,7 @@ export default function NewOrderPage() {
 
   const clientOptions: ComboboxOption[] = clients.map((client: Client) => ({
     value: client.uuid || client.identify || client.id.toString(),
-    label: `${client.name} - ${client.phone}`,
+    label: client.phone ? `${client.name} - ${client.phone}` : client.name,
   }));
 
   const productOptions: ComboboxOption[] = products.map((product: Product) => {
@@ -442,6 +448,27 @@ export default function NewOrderPage() {
     } else {
       form.setValue(`products.${index}.price`, 0);
     }
+  };
+
+  // Função para adicionar cliente
+  const handleAddClient = async (clientData: any) => {
+    const result = await createClient(
+      endpoints.clients.create,
+      'POST',
+      clientData
+    )
+    
+    if (result?.data?.id) {
+      // Recarregar lista de clientes
+      await refetchClients()
+      
+      // Selecionar automaticamente o cliente criado
+      form.setValue('clientId', result.data.uuid || result.data.identify || result.data.id.toString())
+      
+      // Mostrar sucesso
+      toast.success(`${result.data.name} foi cadastrado e selecionado com sucesso!`)
+    }
+    // Se houver erro, o createClient vai lançar e o ClientFormDialog vai capturar
   };
 
   const onSubmit = async (data: OrderFormValues) => {
@@ -589,14 +616,26 @@ export default function NewOrderPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Cliente *</FormLabel>
-                      <FormControl>
-                        <ComboboxForm
-                          field={field}
-                          options={clientOptions}
-                          placeholder="Selecionar cliente..."
-                          searchPlaceholder="Buscar cliente..."
-                        />
-                      </FormControl>
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <ComboboxForm
+                            field={field}
+                            options={clientOptions}
+                            placeholder="Selecionar cliente..."
+                            searchPlaceholder="Buscar cliente..."
+                            className="flex-1"
+                          />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          onClick={() => setClientDialogOpen(true)}
+                          title="Adicionar novo cliente"
+                        >
+                          <UserPlus className="h-4 w-4" />
+                        </Button>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -605,8 +644,12 @@ export default function NewOrderPage() {
                 {selectedClient && (
                   <div className="p-3 bg-muted rounded-lg">
                     <h4 className="font-semibold">{selectedClient.name}</h4>
-                    <p className="text-sm text-muted-foreground">{selectedClient.email}</p>
-                    <p className="text-sm text-muted-foreground">{selectedClient.phone}</p>
+                    {selectedClient.email && (
+                      <p className="text-sm text-muted-foreground">{selectedClient.email}</p>
+                    )}
+                    {selectedClient.phone && (
+                      <p className="text-sm text-muted-foreground">{selectedClient.phone}</p>
+                    )}
                     {selectedClient.has_complete_address && (
                       <p className="text-sm text-muted-foreground mt-1">
                         Endereço completo disponível
@@ -756,33 +799,18 @@ export default function NewOrderPage() {
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name="deliveryCity"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cidade *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="São Paulo" {...field} value={field.value || ""} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="deliveryState"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Estado</FormLabel>
-                            <FormControl>
-                              <Input placeholder="SP" {...field} value={field.value || ""} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      {/* Estado e Cidade */}
+                      <div className="md:col-span-2">
+                        <StateCityFormFields
+                          control={form.control}
+                          stateFieldName="deliveryState"
+                          cityFieldName="deliveryCity"
+                          stateLabel="Estado"
+                          cityLabel="Cidade"
+                          required
+                          gridCols="equal"
+                        />
+                      </div>
 
                       <FormField
                         control={form.control}
@@ -1077,6 +1105,16 @@ export default function NewOrderPage() {
           </div>
         </form>
       </Form>
+
+      {/* Modal de Adicionar Cliente */}
+      <ClientFormDialog
+        onAddClient={handleAddClient}
+        onEditClient={() => {}}
+        editingClient={null}
+        open={clientDialogOpen}
+        onOpenChange={setClientDialogOpen}
+        hideTrigger={true}
+      />
     </div>
   );
 }

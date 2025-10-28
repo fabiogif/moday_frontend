@@ -28,6 +28,7 @@ import { validateCNPJ, validateEmail, validatePhone } from "@/lib/masks"
 import { useViaCEP } from "@/hooks/use-viacep"
 import { useReceitaWS } from "@/hooks/use-receitaws"
 import { AlertCircle, CheckCircle2 } from "lucide-react"
+import { StateCityFormFields } from "@/components/location/state-city-form-fields"
 
 const companyFormSchema = z.object({
   name: z.string().min(1, "Nome da empresa é obrigatório"),
@@ -114,8 +115,15 @@ export default function CompanySettings() {
     
     if (address) {
       form.setValue('address', address.address);
-      form.setValue('city', address.city);
+      
+      // Setar o estado primeiro (isso vai carregar as cidades)
       form.setValue('state', address.state);
+      
+      // Aguardar as cidades carregarem, então setar a cidade
+      setTimeout(() => {
+        form.setValue('city', address.city);
+      }, 500);
+      
       console.log('Endereço da empresa preenchido:', address);
     }
   }
@@ -730,33 +738,19 @@ export default function CompanySettings() {
                   </FormItem>
                 )}
               />
+              
+              {/* Estado e Cidade */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
+                <StateCityFormFields
                   control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cidade</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Cidade" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  stateFieldName="state"
+                  cityFieldName="city"
+                  stateLabel="Estado"
+                  cityLabel="Cidade"
                 />
-                <FormField
-                  control={form.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estado</FormLabel>
-                      <FormControl>
-                        <Input placeholder="UF" maxLength={2} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="zipcode"

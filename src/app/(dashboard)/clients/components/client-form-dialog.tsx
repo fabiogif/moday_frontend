@@ -22,13 +22,16 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Plus } from "lucide-react"
+import { Plus, Loader2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useInputMask } from "@/hooks/use-input-mask"
 import { validateCPF, validateEmail, validatePhone, maskCPF, maskPhone, maskZipCode } from "@/lib/masks"
 import { useViaCEP } from "@/hooks/use-viacep"
+import { StateCityFormFields } from "@/components/location/state-city-form-fields"
+import { useBackendValidation } from "@/hooks/use-backend-validation"
+import { showErrorToast, showSuccessToast } from "@/components/ui/error-toast"
 
 const clientFormSchema = z.object({
   name: z.string().min(3, {
@@ -79,11 +82,12 @@ interface ClientFormValues {
 }
 
 interface ClientFormDialogProps {
-  onAddClient: (clientData: ClientFormValues) => void
-  onEditClient?: (id: number, clientData: ClientFormValues) => void
+  onAddClient: (clientData: ClientFormValues) => void | Promise<void>
+  onEditClient?: (id: number, clientData: ClientFormValues) => void | Promise<void>
   editingClient?: ClientFormValues & { id: number } | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  hideTrigger?: boolean // Se true, não mostra o botão "Novo Cliente"
 }
 
 export function ClientFormDialog({ 
@@ -91,10 +95,12 @@ export function ClientFormDialog({
   onEditClient, 
   editingClient, 
   open, 
-  onOpenChange 
+  onOpenChange,
+  hideTrigger = false 
 }: ClientFormDialogProps) {
   const isEditing = !!editingClient
   const { loading: loadingCEP, searchCEP } = useViaCEP();
+  const [submitting, setSubmitting] = React.useState(false);
 
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
@@ -113,6 +119,8 @@ export function ClientFormDialog({
       isActive: true,
     },
   })
+
+  const { handleBackendErrors } = useBackendValidation(form.setError)
   
   // Função para buscar endereço pelo CEP
   const handleSearchCEP = async (cep: string) => {
@@ -129,8 +137,14 @@ export function ClientFormDialog({
       // Preenche os campos automaticamente
       form.setValue('address', address.address);
       form.setValue('neighborhood', address.neighborhood);
-      form.setValue('city', address.city);
+      
+      // Setar o estado primeiro (isso vai carregar as cidades)
       form.setValue('state', address.state);
+      
+      // Aguardar um pouco para as cidades carregarem, então setar a cidade
+      setTimeout(() => {
+        form.setValue('city', address.city);
+      }, 500);
       
       console.log('Endereço preenchido automaticamente:', address);
     }
@@ -140,10 +154,10 @@ export function ClientFormDialog({
   React.useEffect(() => {
     if (editingClient) {
       form.reset({
-        name: editingClient.name,
-        cpf: editingClient.cpf,
-        email: editingClient.email,
-        phone: editingClient.phone,
+        name: editingClient.name || "",
+        cpf: editingClient.cpf || "",
+        email: editingClient.email || "",
+        phone: editingClient.phone || "",
         address: editingClient.address || "",
         city: editingClient.city || "",
         state: editingClient.state || "",
@@ -151,7 +165,7 @@ export function ClientFormDialog({
         neighborhood: editingClient.neighborhood || "",
         number: editingClient.number || "",
         complement: editingClient.complement || "",
-        isActive: editingClient.isActive,
+        isActive: editingClient.isActive ?? true,
       })
     } else {
       form.reset({
@@ -171,19 +185,64 @@ export function ClientFormDialog({
     }
   }, [editingClient, form])
 
-  const onSubmit = (data: ClientFormValues) => {
-    if (isEditing && editingClient && onEditClient) {
-      onEditClient(editingClient.id, data)
-    } else {
-      onAddClient(data)
+  const onSubmit = async (data: ClientFormValues) => {
+    try {
+      setSubmitting(true)
+      
+      if (isEditing && editingClient && onEditClient) {
+        await onEditClient(editingClient.id, data)
+      } else {
+        await onAddClient(data)
+      }
+      
+      // Só fechar e limpar se não houver erro
+      form.reset()
+      onOpenChange(false)
+      
+    } catch (error: any) {
+      // Log organizado apenas em desenvolvimento
+      if (process.env.NODE_ENV === 'development') {
+        console.group('🔴 ClientFormDialog: Erro ao Salvar')
+        console.log('Tipo:', error?.constructor?.name || typeof error)
+        console.log('Mensagem:', error?.message || 'Sem mensagem')
+        console.log('Data:', error?.data)
+        console.log('Errors:', error?.errors)
+        console.log('Erro completo:', error)
+        console.groupEnd()
+      }
+      
+      // Tentar tratar erros do backend automaticamente
+      const handled = handleBackendErrors(error)
+      
+      // Se não conseguiu tratar automaticamente, mostrar erro formatado
+      if (!handled) {
+        // Mostrar toast com erro formatado
+        showErrorToast(error, isEditing ? 'Erro ao Atualizar Cliente' : 'Erro ao Cadastrar Cliente')
+        
+        // Verificar se é erro de CPF duplicado
+        if (error?.data?.message?.includes('CPF')) {
+          form.setError('cpf', { 
+            type: 'manual', 
+            message: error.data.message 
+          })
+        } else if (error?.data?.message?.includes('email')) {
+          form.setError('email', { 
+            type: 'manual', 
+            message: error.data.message 
+          })
+        }
+      } else {
+        // Se foi tratado, ainda mostrar toast
+        showErrorToast(error, isEditing ? 'Erro ao Atualizar Cliente' : 'Erro ao Cadastrar Cliente')
+      }
+    } finally {
+      setSubmitting(false)
     }
-    form.reset()
-    onOpenChange(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {!isEditing && (
+      {!isEditing && !hideTrigger && (
         <DialogTrigger asChild>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
@@ -191,7 +250,7 @@ export function ClientFormDialog({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Editar Cliente' : 'Novo Cliente'}</DialogTitle>
           <DialogDescription>
@@ -344,33 +403,17 @@ export function ClientFormDialog({
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cidade</FormLabel>
-                      <FormControl>
-                        <Input placeholder="São Paulo" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estado</FormLabel>
-                      <FormControl>
-                        <Input placeholder="SP" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Estado e Cidade */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <StateCityFormFields
+                    control={form.control}
+                    stateFieldName="state"
+                    cityFieldName="city"
+                    stateLabel="Estado"
+                    cityLabel="Cidade"
+                    gridCols="equal"
+                  />
+                </div>
 
                 <FormField
                   control={form.control}
@@ -436,11 +479,18 @@ export function ClientFormDialog({
             />
             
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
                 Cancelar
               </Button>
-              <Button type="submit">
-                {isEditing ? 'Salvar Alterações' : 'Criar Cliente'}
+              <Button type="submit" disabled={submitting}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isEditing ? 'Salvando...' : 'Criando...'}
+                  </>
+                ) : (
+                  isEditing ? 'Salvar Alterações' : 'Criar Cliente'
+                )}
               </Button>
             </DialogFooter>
           </form>

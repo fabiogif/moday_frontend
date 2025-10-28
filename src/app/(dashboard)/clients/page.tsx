@@ -11,6 +11,7 @@ import {
 } from "@/hooks/use-authenticated-api";
 import { endpoints } from "@/lib/api-client";
 import { PageLoading } from "@/components/ui/loading-progress";
+import { showErrorToast, showSuccessToast } from "@/components/ui/error-toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -105,24 +106,30 @@ export default function ClientsPage() {
       );
 
       if (result) {
-        // Mostrar sucesso primeiro
-        setSuccessAlert({
-          open: true,
-          title: "Sucesso!",
-          message: "Cliente cadastrado com sucesso!",
-        });
-        // Recarregar dados após mostrar o alert
+        // Mostrar sucesso
+        showSuccessToast("Cliente cadastrado com sucesso!", "Sucesso");
+        
+        // Recarregar dados
         setTimeout(async () => {
           await refetch();
         }, 100);
       }
-    } catch (error) {
-      console.error("Erro ao criar cliente:", error);
-      setSuccessAlert({
-        open: true,
-        title: "Erro!",
-        message: "Erro ao cadastrar cliente. Tente novamente."
-      });
+    } catch (error: any) {
+      // Log organizado em desenvolvimento
+      if (process.env.NODE_ENV === 'development') {
+        console.group('🔴 Erro ao Criar Cliente')
+        console.log('Error:', error)
+        console.log('Message:', error?.message)
+        console.log('Data:', error?.data)
+        console.log('Errors:', error?.errors)
+        console.groupEnd()
+      }
+      
+      // Mostrar erro formatado
+      showErrorToast(error, "Erro ao Cadastrar Cliente");
+      
+      // Re-lançar erro para o ClientFormDialog capturar e marcar campos
+      throw error;
     }
   };
 
@@ -134,16 +141,18 @@ export default function ClientsPage() {
       );
 
       if (result) {
+        showSuccessToast("Cliente excluído com sucesso!", "Sucesso");
         // Recarregar dados após exclusão
         await refetch();
       }
-    } catch (error) {
-      console.error("Erro ao excluir cliente:", error);
-      setSuccessAlert({
-        open: true,
-        title: "Erro!",
-        message: "Erro ao excluir cliente. Tente novamente."
-      });
+    } catch (error: any) {
+      if (process.env.NODE_ENV === 'development') {
+        console.group('🔴 Erro ao Excluir Cliente')
+        console.log('Error:', error)
+        console.groupEnd()
+      }
+      
+      showErrorToast(error, "Erro ao Excluir Cliente");
     }
   };
 
@@ -171,25 +180,28 @@ export default function ClientsPage() {
       );
 
       if (result) {
-        // Mostrar sucesso primeiro
-        setSuccessAlert({
-          open: true,
-          title: "Sucesso!",
-          message: "Cliente alterado com sucesso!",
-        });
+        showSuccessToast("Cliente atualizado com sucesso!", "Sucesso");
         setEditingClient(null);
-        // Recarregar dados após mostrar o alert
+        
+        // Recarregar dados
         setTimeout(async () => {
           await refetch();
         }, 100);
       }
-    } catch (error) {
-      console.error("Erro ao atualizar cliente:", error);
-      setSuccessAlert({
-        open: true,
-        title: "Erro!",
-        message: "Erro ao atualizar cliente. Tente novamente."
-      });
+    } catch (error: any) {
+      if (process.env.NODE_ENV === 'development') {
+        console.group('🔴 Erro ao Atualizar Cliente')
+        console.log('Error:', error)
+        console.log('Message:', error?.message)
+        console.log('Data:', error?.data)
+        console.log('Errors:', error?.errors)
+        console.groupEnd()
+      }
+      
+      showErrorToast(error, "Erro ao Atualizar Cliente");
+      
+      // Re-lançar erro para o ClientFormDialog capturar
+      throw error;
     }
   };
 
