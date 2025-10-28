@@ -469,13 +469,22 @@ export default function PublicStorePage() {
       console.log('full orderData:', orderData)
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
-      const response = await fetch(`${apiUrl}/api/store/${slug}/orders`, {
+      const fullUrl = `${apiUrl}/api/store/${slug}/orders`
+      
+      console.log('=== DEBUG: Request Info ===')
+      console.log('API URL:', apiUrl)
+      console.log('Full URL:', fullUrl)
+      console.log('Slug:', slug)
+      
+      const response = await fetch(fullUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json",
         },
         body: JSON.stringify(orderData),
         mode: 'cors',
+        credentials: 'include',
       })
 
       // Check if response is JSON
@@ -535,9 +544,25 @@ export default function PublicStorePage() {
         }
       }
     } catch (error) {
-      console.error("Error creating order:", error)
-      const errorMessage = error instanceof Error ? error.message : "Erro ao finalizar pedido"
-      toast.error(errorMessage)
+      console.error("=== ERROR creating order ===")
+      console.error("Error type:", error?.constructor?.name)
+      console.error("Error details:", error)
+      
+      let errorMessage = "Erro ao finalizar pedido"
+      
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        errorMessage = "Não foi possível conectar ao servidor. Verifique sua conexão com a internet ou se o servidor está online."
+        console.error("Network error - possible causes:")
+        console.error("1. Backend is not running")
+        console.error("2. CORS is not configured properly")
+        console.error("3. Wrong API_URL:", process.env.NEXT_PUBLIC_API_URL)
+      } else if (error instanceof Error) {
+        errorMessage = error.message
+      }
+      
+      toast.error(errorMessage, {
+        duration: 5000,
+      })
     } finally {
       setSubmitting(false)
     }
@@ -707,16 +732,13 @@ export default function PublicStorePage() {
                             )}
                           </CardHeader>
                           <CardContent className="p-4 pt-0">
-                            <div className="flex items-end justify-between mb-3">
-                              <div>
-                                {hasDiscount && (
-                                  <p className="text-sm text-muted-foreground line-through">
-                                    R$ {formatPrice(product.price)}
-                                  </p>
-                                )}
-                                <p className="text-2xl font-bold text-primary">R$ {formatPrice(price)}</p>
-                              </div>
-                              <p className="text-sm text-muted-foreground">{product.qtd_stock} em estoque</p>
+                            <div className="mb-3">
+                              {hasDiscount && (
+                                <p className="text-sm text-muted-foreground line-through">
+                                  R$ {formatPrice(product.price)}
+                                </p>
+                              )}
+                              <p className="text-2xl font-bold text-primary">R$ {formatPrice(price)}</p>
                             </div>
                             <Button onClick={() => addToCart(product)} className="w-full" disabled={product.qtd_stock === 0}>
                               {product.qtd_stock === 0 ? "Esgotado" : "Adicionar ao Carrinho"}
