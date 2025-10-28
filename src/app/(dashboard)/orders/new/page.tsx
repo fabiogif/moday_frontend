@@ -458,15 +458,15 @@ export default function NewOrderPage() {
       clientData
     )
     
-    if (result?.data?.id) {
+    if (result && typeof result === 'object' && 'data' in result && result.data && typeof result.data === 'object' && 'id' in result.data) {
       // Recarregar lista de clientes
       await refetchClients()
       
       // Selecionar automaticamente o cliente criado
-      form.setValue('clientId', result.data.uuid || result.data.identify || result.data.id.toString())
+      form.setValue('clientId', (result.data as any).uuid || (result.data as any).identify || (result.data as any).id.toString())
       
       // Mostrar sucesso
-      toast.success(`${result.data.name} foi cadastrado e selecionado com sucesso!`)
+      toast.success(`${(result.data as any).name} foi cadastrado e selecionado com sucesso!`)
     }
     // Se houver erro, o createClient vai lançar e o ClientFormDialog vai capturar
   };

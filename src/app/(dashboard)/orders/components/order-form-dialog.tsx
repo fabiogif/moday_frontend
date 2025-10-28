@@ -273,18 +273,18 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
       clientData
     )
     
-    if (result?.data?.id) {
+    if (result && typeof result === 'object' && 'data' in result && result.data && typeof result.data === 'object' && 'id' in result.data) {
       // Recarregar lista de clientes
       await refetchClients()
       
       // Selecionar automaticamente o cliente recém-criado no formulário
-      form.setValue('clientId', result.data.id.toString())
+      form.setValue('clientId', (result.data as any).id.toString())
       
       // Mostrar mensagem de sucesso
       setSuccessAlert({
         open: true,
         title: "Cliente Adicionado",
-        message: `${result.data.name} foi cadastrado e selecionado com sucesso!`
+        message: `${(result.data as any).name} foi cadastrado e selecionado com sucesso!`
       })
     }
     // Se houver erro, o createClient vai lançar e o ClientFormDialog vai capturar

@@ -79,8 +79,8 @@ export function useCitiesByState(uf: string | null) {
         } 
       }>(endpoints.states.cities(stateUf))
       
-      if (response.success && response.data?.data?.cities) {
-        setCities(Array.isArray(response.data.data.cities) ? response.data.data.cities : [])
+      if (response.success && response.data?.data && 'cities' in response.data.data) {
+        setCities(Array.isArray((response.data.data as any).cities) ? (response.data.data as any).cities : [])
       } else {
         setError('Erro ao carregar cidades')
         setCities([])

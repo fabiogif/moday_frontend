@@ -79,7 +79,8 @@ export function StateCityFormFields<T extends FieldValues>({
     if (stateField && cityField) {
       const cityExists = cities.some(city => city.name === cityField)
       if (!cityExists && cities.length > 0) {
-        control._formState.dirtyFields[cityFieldName as string] = true
+        // Marcar campo como dirty para validação
+        (control._formState.dirtyFields as any)[cityFieldName] = true
         // Não limpa automaticamente para não perder o valor durante carregamento
       }
     }
