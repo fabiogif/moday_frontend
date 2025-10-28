@@ -459,14 +459,20 @@ export default function NewOrderPage() {
     )
     
     if (result && typeof result === 'object' && 'data' in result && result.data && typeof result.data === 'object' && 'id' in result.data) {
-      // Recarregar lista de clientes
+      // Recarregar lista de clientes para atualizar o combo
       await refetchClients()
       
       // Selecionar automaticamente o cliente criado
       form.setValue('clientId', (result.data as any).uuid || (result.data as any).identify || (result.data as any).id.toString())
       
+      // Fechar o modal de adicionar cliente
+      setClientDialogOpen(false)
+      
+      // Extrair mensagem de sucesso do backend
+      const successMessage = (result as any)?.message || `${(result.data as any).name} foi cadastrado e selecionado com sucesso!`
+      
       // Mostrar sucesso
-      toast.success(`${(result.data as any).name} foi cadastrado e selecionado com sucesso!`)
+      toast.success(successMessage)
     }
     // Se houver erro, o createClient vai lançar e o ClientFormDialog vai capturar
   };
