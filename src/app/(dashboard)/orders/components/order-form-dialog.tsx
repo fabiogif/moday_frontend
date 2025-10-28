@@ -161,6 +161,9 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
   const { data: productsData, loading: productsLoading, error: productsError } = useAuthenticatedProducts()
   const { data: tablesData, loading: tablesLoading, error: tablesError } = useAuthenticatedTables()
   const { mutate: createClient } = useMutation()
+  
+  // Estado local para forçar atualização de clientes
+  const [localClients, setLocalClients] = useState<any[]>([])
 
   // Transformar dados da API e filtrar itens inválidos
   const getArrayFromData = (data: any) => {
@@ -171,7 +174,20 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
     return []
   }
 
-  const clients = getArrayFromData(clientsData).filter((c: any) => c && c.id)
+  const clientsFromApi = getArrayFromData(clientsData).filter((c: any) => c && c.id)
+  
+  // Sincronizar com dados da API
+    useEffect(() => {
+    if (clientsFromApi.length > 0 || clientsData) {
+      setLocalClients(clientsFromApi)
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔄 [Dialog] Clientes sincronizados:', clientsFromApi.length)
+      }
+    }
+  }, [clientsData])
+  
+  const clients = localClients.length > 0 ? localClients : clientsFromApi
   const products = getArrayFromData(productsData).filter((p: any) => p && p.id && p.price !== undefined)
   const tables = getArrayFromData(tablesData).filter((t: any) => t && t.id)
 
@@ -267,33 +283,68 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
   }
 
   const handleAddClientFromDialog = async (clientData: any) => {
-    const result = await createClient(
-      endpoints.clients.create,
-      'POST',
-      clientData
-    )
-    
-    if (result && typeof result === 'object' && 'data' in result && result.data && typeof result.data === 'object' && 'id' in result.data) {
-      // Recarregar lista de clientes para atualizar o combo
-      await refetchClients()
+    try {
+      const result = await createClient(
+        endpoints.clients.create,
+        'POST',
+        clientData
+      )
       
-      // Selecionar automaticamente o cliente recém-criado no formulário
-      form.setValue('clientId', (result.data as any).id.toString())
-      
-      // Fechar o modal de adicionar cliente
-      setClientDialogOpen(false)
-      
-      // Extrair mensagem de sucesso do backend
-      const successMessage = (result as any)?.message || `${(result.data as any).name} foi cadastrado e selecionado com sucesso!`
-      
-      // Mostrar mensagem de sucesso
-      setSuccessAlert({
-        open: true,
-        title: "Cliente Adicionado",
-        message: successMessage
-      })
+      if (result && typeof result === 'object' && 'data' in result && result.data && typeof result.data === 'object' && 'id' in result.data) {
+        const newClient = (result.data as any)
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.group('✅ [Dialog] Cliente Criado')
+          console.log('Novo cliente:', newClient)
+          console.log('ID:', newClient.id)
+          console.log('Nome:', newClient.name)
+          console.groupEnd()
+        }
+        
+        // Adicionar cliente à lista local imediatamente
+        setLocalClients(prev => {
+          const updated = [newClient, ...prev]
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('📝 [Dialog] Lista de clientes atualizada:', updated.length, 'clientes')
+          }
+          
+          return updated
+        })
+        
+        // Recarregar lista de clientes para sincronizar com backend
+        setTimeout(async () => {
+          await refetchClients()
+        }, 100)
+        
+        // Selecionar automaticamente o cliente recém-criado no formulário
+        const clientId = newClient.uuid || newClient.identify || newClient.id.toString()
+        form.setValue('clientId', clientId)
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🎯 [Dialog] Cliente selecionado:', clientId)
+        }
+        
+        // Fechar o modal de adicionar cliente
+        setClientDialogOpen(false)
+        
+        // Extrair mensagem de sucesso do backend
+        const successMessage = (result as any)?.message || `${newClient.name} foi cadastrado e selecionado com sucesso!`
+        
+        // Mostrar mensagem de sucesso
+        setSuccessAlert({
+          open: true,
+          title: "Cliente Adicionado",
+          message: successMessage
+        })
+      }
+    } catch (error) {
+      // Erro já é tratado pelo ClientFormDialog
+      if (process.env.NODE_ENV === 'development') {
+        console.error('🔴 [Dialog] Erro ao adicionar cliente:', error)
+      }
+      throw error
     }
-    // Se houver erro, o createClient vai lançar e o ClientFormDialog vai capturar
   }
 
   const onSubmit = (data: OrderFormValues) => {

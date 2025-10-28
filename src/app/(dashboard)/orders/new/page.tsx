@@ -181,6 +181,9 @@ export default function NewOrderPage() {
   
   // Estado para controlar modal de adicionar cliente
   const [clientDialogOpen, setClientDialogOpen] = useState(false);
+  
+  // Estado local para forçar atualização de clientes
+  const [localClients, setLocalClients] = useState<Client[]>([]);
 
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
@@ -269,7 +272,33 @@ export default function NewOrderPage() {
     return [];
   };
 
-  const clients = getArrayFromData(clientsData).filter((c: any) => c && c.id);
+  const clientsFromApi = getArrayFromData(clientsData).filter((c: any) => c && c.id);
+  
+  // Sincronizar com dados da API
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.group('🔄 [useEffect] Sincronização de Clientes')
+      console.log('clientsData:', clientsData)
+      console.log('clientsFromApi.length:', clientsFromApi.length)
+      console.log('clientsFromApi:', clientsFromApi)
+      console.log('localClients.length (antes):', localClients.length)
+    }
+    
+    if (clientsFromApi.length > 0 || clientsData) {
+      setLocalClients(clientsFromApi);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ [useEffect] Clientes sincronizados:', clientsFromApi.length);
+        console.log('localClients.length (depois):', clientsFromApi.length);
+      }
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.groupEnd()
+    }
+  }, [clientsData]);
+  
+  const clients = localClients.length > 0 ? localClients : clientsFromApi;
   // Usar dados de qualquer hook que funcionar e filtrar apenas produtos ativos
   const finalProductsData = productsDataAuth || productsData;
   const finalProductsLoading = productsLoadingAuth && productsLoading;
@@ -315,6 +344,16 @@ export default function NewOrderPage() {
     value: client.uuid || client.identify || client.id.toString(),
     label: client.phone ? `${client.name} - ${client.phone}` : client.name,
   }));
+
+  // Debug do clientOptions
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 [clientOptions] Atualizado:');
+    console.log('  - clients.length:', clients.length);
+    console.log('  - clientOptions.length:', clientOptions.length);
+    console.log('  - localClients.length:', localClients.length);
+    console.log('  - clientsFromApi.length:', clientsFromApi.length);
+    console.log('  - Primeiros 3 clientOptions:', clientOptions.slice(0, 3));
+  }
 
   const productOptions: ComboboxOption[] = products.map((product: Product) => {
     console.log('Mapeando produto para opção:', product);
@@ -452,29 +491,92 @@ export default function NewOrderPage() {
 
   // Função para adicionar cliente
   const handleAddClient = async (clientData: any) => {
-    const result = await createClient(
-      endpoints.clients.create,
-      'POST',
-      clientData
-    )
-    
-    if (result && typeof result === 'object' && 'data' in result && result.data && typeof result.data === 'object' && 'id' in result.data) {
-      // Recarregar lista de clientes para atualizar o combo
-      await refetchClients()
-      
-      // Selecionar automaticamente o cliente criado
-      form.setValue('clientId', (result.data as any).uuid || (result.data as any).identify || (result.data as any).id.toString())
-      
-      // Fechar o modal de adicionar cliente
-      setClientDialogOpen(false)
-      
-      // Extrair mensagem de sucesso do backend
-      const successMessage = (result as any)?.message || `${(result.data as any).name} foi cadastrado e selecionado com sucesso!`
-      
-      // Mostrar sucesso
-      toast.success(successMessage)
+    if (process.env.NODE_ENV === 'development') {
+      console.group('🚀 [handleAddClient] Iniciando criação de cliente')
+      console.log('clientData recebido:', clientData)
+      console.log('localClients.length (antes):', localClients.length)
     }
-    // Se houver erro, o createClient vai lançar e o ClientFormDialog vai capturar
+    
+    try {
+      const result = await createClient(
+        endpoints.clients.create,
+        'POST',
+        clientData
+      )
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ [handleAddClient] Resultado da API:', result)
+      }
+      
+      if (result && typeof result === 'object' && 'data' in result && result.data && typeof result.data === 'object' && 'id' in result.data) {
+        const newClient = (result.data as any);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.group('✅ [handleAddClient] Cliente Criado')
+          console.log('Novo cliente:', newClient)
+          console.log('ID:', newClient.id)
+          console.log('Nome:', newClient.name)
+          console.log('UUID:', newClient.uuid)
+          console.log('Identify:', newClient.identify)
+          console.groupEnd()
+        }
+        
+        // Adicionar cliente à lista local imediatamente
+        setLocalClients(prev => {
+          const updated = [newClient, ...prev];
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('📝 [handleAddClient] Lista de clientes atualizada:', updated.length, 'clientes');
+            console.log('Primeiros 3 clientes:', updated.slice(0, 3));
+          }
+          
+          return updated;
+        });
+        
+        // Recarregar lista de clientes para sincronizar com backend
+        setTimeout(async () => {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔄 [handleAddClient] Refetching clients...');
+          }
+          await refetchClients();
+        }, 100);
+        
+        // Selecionar automaticamente o cliente criado
+        const clientId = newClient.uuid || newClient.identify || newClient.id.toString();
+        form.setValue('clientId', clientId);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🎯 [handleAddClient] Cliente selecionado:', clientId);
+        }
+        
+        // Fechar o modal de adicionar cliente
+        setClientDialogOpen(false);
+        
+        // Extrair mensagem de sucesso do backend
+        const successMessage = (result as any)?.message || `${newClient.name} foi cadastrado e selecionado com sucesso!`;
+        
+        // Mostrar sucesso
+        toast.success(successMessage);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ [handleAddClient] Processo concluído com sucesso');
+        }
+      } else {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('❌ [handleAddClient] Resultado inválido da API:', result);
+        }
+      }
+    } catch (error) {
+      // Erro já é tratado pelo ClientFormDialog
+      if (process.env.NODE_ENV === 'development') {
+        console.error('🔴 [handleAddClient] Erro ao adicionar cliente:', error);
+      }
+      throw error;
+    } finally {
+      if (process.env.NODE_ENV === 'development') {
+        console.groupEnd()
+      }
+    }
   };
 
   const onSubmit = async (data: OrderFormValues) => {
@@ -1124,6 +1226,7 @@ export default function NewOrderPage() {
     </div>
   );
 }
+
 
 
 

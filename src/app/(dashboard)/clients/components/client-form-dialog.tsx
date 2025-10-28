@@ -101,6 +101,7 @@ export function ClientFormDialog({
   const isEditing = !!editingClient
   const { loading: loadingCEP, searchCEP } = useViaCEP();
   const [submitting, setSubmitting] = React.useState(false);
+  const [pendingCity, setPendingCity] = React.useState<string | null>(null);
 
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
@@ -122,6 +123,24 @@ export function ClientFormDialog({
 
   const { handleBackendErrors } = useBackendValidation(form.setError)
   
+  // Monitorar quando o estado mudar e há uma cidade pendente para ser setada
+  const currentState = form.watch('state');
+  React.useEffect(() => {
+    if (pendingCity && currentState) {
+      // Aguardar um pouco para as cidades carregarem
+      const timer = setTimeout(() => {
+        form.setValue('city', pendingCity);
+        setPendingCity(null);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Cidade setada após carregamento:', pendingCity);
+        }
+      }, 1000); // 1 segundo para garantir que as cidades carregaram
+      
+      return () => clearTimeout(timer);
+    }
+  }, [currentState, pendingCity, form]);
+  
   // Função para buscar endereço pelo CEP
   const handleSearchCEP = async (cep: string) => {
     // Remove máscara e valida
@@ -131,27 +150,49 @@ export function ClientFormDialog({
       return; // CEP incompleto, não busca
     }
     
-    const address = await searchCEP(cep);
-    
-    if (address) {
-      // Preenche os campos automaticamente
-      form.setValue('address', address.address);
-      form.setValue('neighborhood', address.neighborhood);
+    try {
+      const address = await searchCEP(cep);
       
-      // Setar o estado primeiro (isso vai carregar as cidades)
-      form.setValue('state', address.state);
-      
-      // Aguardar um pouco para as cidades carregarem, então setar a cidade
-      setTimeout(() => {
-        form.setValue('city', address.city);
-      }, 500);
-      
-      console.log('Endereço preenchido automaticamente:', address);
+      if (address) {
+        if (process.env.NODE_ENV === 'development') {
+          console.group('🔍 CEP Encontrado')
+          console.log('CEP:', cep)
+          console.log('Endereço:', address)
+          console.groupEnd()
+        }
+        
+        // Preenche os campos automaticamente
+        form.setValue('address', address.address || address.logradouro || '');
+        form.setValue('neighborhood', address.neighborhood || address.bairro || '');
+        
+        // Setar o estado primeiro (isso vai carregar as cidades)
+        const stateToSet = address.state || address.uf || '';
+        const cityToSet = address.city || address.localidade || '';
+        
+        form.setValue('state', stateToSet);
+        
+        // Armazenar a cidade para ser setada quando as cidades carregarem
+        if (cityToSet) {
+          setPendingCity(cityToSet);
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('📌 Cidade pendente:', cityToSet);
+          }
+        }
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('🔴 Erro ao buscar CEP:', error);
+      }
+      // Erro já é tratado pelo useViaCEP com toast
     }
   }
 
   // Preencher o formulário quando editingClient mudar
   React.useEffect(() => {
+    // Limpar cidade pendente ao resetar formulário
+    setPendingCity(null);
+    
     if (editingClient) {
       form.reset({
         name: editingClient.name || "",

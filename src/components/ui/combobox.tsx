@@ -74,14 +74,17 @@ export function Combobox({
 
   // Log para debug
   React.useEffect(() => {
-    console.log('Combobox Debug:', {
-      totalOptions: options.length,
-      filteredOptions: filteredOptions.length,
-      selectedValue: value,
-      selectedOption: selectedOption?.label,
-      disabled,
-      searchValue
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [Combobox] Debug:', {
+        totalOptions: options.length,
+        filteredOptions: filteredOptions.length,
+        selectedValue: value,
+        selectedOption: selectedOption?.label,
+        disabled,
+        searchValue,
+        options: options.slice(0, 3) // Primeiros 3 para debug
+      });
+    }
   }, [options, filteredOptions, value, selectedOption, disabled, searchValue]);
 
   return (
@@ -168,6 +171,19 @@ export function ComboboxForm({
   // Melhor tratamento de valores undefined/null
   const safeValue = field?.value || "";
   const safeOnChange = field?.onChange || (() => {});
+
+  // Log para debug do ComboboxForm
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [ComboboxForm] Debug:', {
+        fieldValue: field?.value,
+        safeValue,
+        hasOnChange: !!field?.onChange,
+        fieldName: field?.name,
+        totalOptions: props.options?.length || 0
+      });
+    }
+  }, [field?.value, safeValue, field?.onChange, field?.name, props.options?.length]);
 
   return (
     <Combobox
