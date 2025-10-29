@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 
+
 const nextConfig: NextConfig = {
   output: 'standalone',
   experimental: {
@@ -14,17 +15,6 @@ const nextConfig: NextConfig = {
       },
     },
   },
-  module.exports = {
-    images: {
-      remotePatterns: [
-        { protocol: 'https', hostname: 'moday.sfo3.digitaloceanspaces.com' },
-        // se alguma logo ainda vier do backend:
-        // { protocol: 'https', hostname: 'seu-backend.com' },
-      ],
-      dangerouslyAllowSVG: true, // se exibir SVG
-    },
-  }
-  
   // Image optimization
   images: {
     remotePatterns: [
@@ -45,7 +35,11 @@ const nextConfig: NextConfig = {
         protocol: 'http',
         hostname: 'localhost',
       },
+      { protocol: 'https', 
+        hostname: 'moday.sfo3.digitaloceanspaces.com' 
+      },
     ],
+    dangerouslyAllowSVG: true, // se exibir SVG
     formats: ['image/webp', 'image/avif'],
   },
   
