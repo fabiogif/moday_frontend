@@ -14,6 +14,16 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  module.exports = {
+    images: {
+      remotePatterns: [
+        { protocol: 'https', hostname: 'moday.sfo3.digitaloceanspaces.com' },
+        // se alguma logo ainda vier do backend:
+        // { protocol: 'https', hostname: 'seu-backend.com' },
+      ],
+      dangerouslyAllowSVG: true, // se exibir SVG
+    },
+  }
   
   // Image optimization
   images: {
