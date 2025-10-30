@@ -42,7 +42,7 @@ export function formatErrorMessage(error: any): string {
 export function extractValidationErrors(error: any): Record<string, string> {
   const errors: Record<string, string> = {}
 
-  // Erros em formato Laravel
+  // Formato 1: error.data.errors (Laravel padrão)
   if (error?.data?.errors) {
     Object.entries(error.data.errors).forEach(([field, messages]) => {
       if (Array.isArray(messages) && messages.length > 0) {
@@ -53,7 +53,29 @@ export function extractValidationErrors(error: any): Record<string, string> {
     })
   }
 
-  // Mensagem principal
+  // Formato 2: error.errors (alguns endpoints retornam assim)
+  if (error?.errors && !error?.data?.errors) {
+    Object.entries(error.errors).forEach(([field, messages]) => {
+      if (Array.isArray(messages) && messages.length > 0) {
+        errors[field] = messages[0]
+      } else if (typeof messages === 'string') {
+        errors[field] = messages
+      }
+    })
+  }
+
+  // Formato 3: error.response?.data?.errors (Axios)
+  if (error?.response?.data?.errors) {
+    Object.entries(error.response.data.errors).forEach(([field, messages]) => {
+      if (Array.isArray(messages) && messages.length > 0) {
+        errors[field] = messages[0]
+      } else if (typeof messages === 'string') {
+        errors[field] = messages
+      }
+    })
+  }
+
+  // Mensagem principal como fallback
   const mainMessage = formatErrorMessage(error)
   if (mainMessage && Object.keys(errors).length === 0) {
     errors._general = mainMessage

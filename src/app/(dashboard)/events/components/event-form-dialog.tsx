@@ -14,6 +14,7 @@ import { Event, EventFormData } from '@/hooks/use-events'
 import { Calendar, Bell, MapPin, Clock, Palette, AlertCircle, Info } from 'lucide-react'
 import { format, addMinutes } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { extractValidationErrors } from '@/lib/error-formatter'
 
@@ -128,6 +129,21 @@ export function EventFormDialog({
       // Extrair erros de validação do backend
       const validationErrors = extractValidationErrors(error)
       setBackendErrors(validationErrors)
+      
+      // Mostrar toast com resumo dos erros
+      const errorCount = Object.keys(validationErrors).filter(k => k !== '_general').length
+      if (validationErrors._general) {
+        toast.error(validationErrors._general)
+      } else if (errorCount > 0) {
+        const firstError = Object.values(validationErrors)[0]
+        toast.error(firstError, {
+          description: errorCount > 1 ? `${errorCount - 1} outro(s) erro(s) de validação` : undefined
+        })
+      } else {
+        toast.error('Erro ao salvar evento', {
+          description: 'Por favor, verifique os campos e tente novamente'
+        })
+      }
       
       // Scroll para o topo do modal para ver os erros
       const dialogContent = document.querySelector('[role="dialog"]')

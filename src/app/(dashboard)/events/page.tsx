@@ -99,15 +99,27 @@ export default function EventsPage() {
   }
 
   const handleSubmit = async (data: any) => {
-    if (selectedEvent) {
-      await mutate(endpoints.events.update(selectedEvent.uuid), 'PUT', data)
-      toast.success('Evento atualizado com sucesso!')
-    } else {
-      await mutate(endpoints.events.create, 'POST', data)
-      toast.success('Evento criado com sucesso!')
+    try {
+      if (selectedEvent) {
+        await mutate(endpoints.events.update(selectedEvent.uuid), 'PUT', data)
+        toast.success('Evento atualizado com sucesso!')
+      } else {
+        await mutate(endpoints.events.create, 'POST', data)
+        toast.success('Evento criado com sucesso!')
+      }
+      
+      // Sucesso: fechar modal e recarregar
+      setFormDialogOpen(false)
+      await refetch()
+      
+      // Limpar estado do evento selecionado
+      setSelectedEvent(null)
+      setSelectedDate(undefined)
+    } catch (error: any) {
+      // Erro já foi tratado no EventFormDialog
+      // Apenas re-lançar para que o formulário possa processar
+      throw error
     }
-    setFormDialogOpen(false)
-    refetch()
   }
 
   const handleDeleteClick = (event: Event) => {
