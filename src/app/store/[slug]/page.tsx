@@ -162,8 +162,8 @@ export default function PublicStorePage() {
         setPaymentMethods(data.data)
         // Selecionar primeiro método por padrão
         if (data.data.length > 0) {
-          // Usar 'type' ao invés de 'uuid' (backend espera enum: pix, credit_card, etc.)
-          setPaymentMethod(data.data[0].type || data.data[0].uuid)
+          // Usar UUID da forma de pagamento
+          setPaymentMethod(data.data[0].uuid)
         }
       } else {
         setPaymentMethods([])
@@ -1042,12 +1042,12 @@ export default function PublicStorePage() {
                       <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
                         {paymentMethods.map((method) => (
                           <div key={method.uuid} className="flex items-center space-x-2">
-                            <RadioGroupItem value={method.type || method.uuid} id={method.uuid} />
+                            <RadioGroupItem value={method.uuid} id={method.uuid} />
                             <Label htmlFor={method.uuid} className="flex items-center gap-2 cursor-pointer">
                               {method.name}
-                              {method.type && (
+                              {method.description && (
                                 <Badge variant="outline" className="text-xs">
-                                  {method.type}
+                                  {method.description}
                                 </Badge>
                               )}
                             </Label>
