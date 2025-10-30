@@ -14,6 +14,7 @@ import {
   Settings,
   CreditCard,
   Building2,
+  CalendarDays,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -70,6 +71,11 @@ const navGroups = [
         title: "Formas de Pagamento",
         url: "/payment-methods",
         icon: CreditCard,
+      },
+      {
+        title: "Eventos",
+        url: "/events",
+        icon: CalendarDays,
       },
       {
         title: "Relatórios",

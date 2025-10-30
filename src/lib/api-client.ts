@@ -376,6 +376,17 @@ export const endpoints = {
     capitals: '/api/cities/capitals',
     search: '/api/cities/search',
   },
+
+  // Eventos
+  events: {
+    list: '/api/events',
+    stats: '/api/events/stats',
+    upcoming: '/api/events/upcoming',
+    create: '/api/events',
+    show: (uuid: string) => `/api/events/${uuid}`,
+    update: (uuid: string) => `/api/events/${uuid}`,
+    delete: (uuid: string) => `/api/events/${uuid}`,
+  },
 } as const
 
 export default apiClient
