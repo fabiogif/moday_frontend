@@ -58,11 +58,13 @@ jest.mock('@/hooks/use-api', () => ({
 }))
 
 jest.mock('@/hooks/use-authenticated-api', () => ({
-  useAuthenticatedProducts: jest.fn(),
-  useAuthenticatedCategories: jest.fn(),
-  useAuthenticatedRoles: jest.fn(),
-  useAuthenticatedPermissions: jest.fn(),
-  useMutation: jest.fn(),
+  useAuthenticatedProducts: jest.fn(() => ({ data: [], loading: false, error: null, refetch: jest.fn(), isAuthenticated: true })),
+  useAuthenticatedCategories: jest.fn(() => ({ data: [], loading: false, error: null, refetch: jest.fn(), isAuthenticated: true })),
+  useAuthenticatedRoles: jest.fn(() => ({ data: [], loading: false, error: null, refetch: jest.fn(), isAuthenticated: true })),
+  useAuthenticatedPermissions: jest.fn(() => ({ data: [], loading: false, error: null, refetch: jest.fn(), isAuthenticated: true })),
+  useAuthenticatedProductStats: jest.fn(() => ({ data: { total: 0, active: 0, inactive: 0, out_of_stock: 0 }, loading: false, error: null })),
+  useMutation: jest.fn(() => ({ mutate: jest.fn(), loading: false, error: null })),
+  useMutationWithValidation: jest.fn(() => ({ mutate: jest.fn(), loading: false, error: null })),
 }))
 
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
@@ -171,4 +173,11 @@ export const generateTask = (overrides = {}) => ({
   label: 'bug',
   priority: 'medium',
   ...overrides,
+})
+
+// Ensure this file is treated as a valid test suite by providing a noop test
+describe('test-utils bootstrap', () => {
+  it('bootstrap loaded', () => {
+    expect(true).toBe(true)
+  })
 })

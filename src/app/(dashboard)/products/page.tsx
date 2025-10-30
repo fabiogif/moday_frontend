@@ -165,6 +165,21 @@ export default function ProductsPage() {
       }
     } catch (error) {
       console.error('Erro ao excluir produto:', error)
+      // Mostrar mensagem detalhada do backend (422 validationError)
+      const backendMessage = (error as any)?.data?.message
+      const backendErrors = (error as any)?.data?.errors
+      if (backendMessage) {
+        // Montar detalhe com lista quando existir
+        let detail = backendMessage
+        if (backendErrors?.orders_in_preparing?.length) {
+          detail += `\nPedidos: ${backendErrors.orders_in_preparing.join(', ')}`
+        }
+        if (backendErrors?.linked_products?.length) {
+          detail += `\nProdutos vinculados: ${backendErrors.linked_products.join(', ')}`
+        }
+        handleShowSuccessAlert('Atenção!', detail)
+        return
+      }
       handleShowSuccessAlert('Erro!', 'Erro ao excluir produto')
     }
   }

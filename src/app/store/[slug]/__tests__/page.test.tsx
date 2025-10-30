@@ -1,26 +1,26 @@
-import { describe, it, expect, beforeEach, vi } from '@jest/globals'
+import { describe, it, expect, beforeEach } from '@jest/globals'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import PublicStorePage from '../page'
 
 // Mock next/navigation
-vi.mock('next/navigation', () => ({
+jest.mock('next/navigation', () => ({
   useParams: () => ({ slug: 'test-store' }),
   useRouter: () => ({
-    push: vi.fn(),
-    replace: vi.fn(),
+    push: jest.fn(),
+    replace: jest.fn(),
   }),
 }))
 
 // Mock next/image
-vi.mock('next/image', () => ({
+jest.mock('next/image', () => ({
   default: ({ src, alt }: any) => <img src={src} alt={alt} />,
 }))
 
 // Mock hooks
-vi.mock('@/hooks/use-viacep', () => ({
+jest.mock('@/hooks/use-viacep', () => ({
   useViaCEP: () => ({
-    searchCEP: vi.fn(),
+    searchCEP: jest.fn(),
     loading: false,
   }),
 }))
@@ -74,11 +74,11 @@ const mockProducts = [
 ]
 
 // Mock fetch
-global.fetch = vi.fn()
+global.fetch = jest.fn() as any
 
 describe('PublicStorePage - Categorias', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
     ;(global.fetch as any).mockImplementation((url: string) => {
       if (url.includes('/store/')) {
         return Promise.resolve({

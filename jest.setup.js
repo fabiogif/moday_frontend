@@ -85,3 +85,12 @@ const sessionStorageMock = {
   clear: jest.fn(),
 }
 global.sessionStorage = sessionStorageMock
+
+// Mock recharts ResponsiveContainer to avoid zero width/height warnings in JSDOM
+jest.mock('recharts', () => {
+  const Original = jest.requireActual('recharts')
+  const ResponsiveContainer = ({ children }) => (
+    <div style={{ width: 800, height: 400 }}>{children}</div>
+  )
+  return { ...Original, ResponsiveContainer }
+})
