@@ -71,7 +71,8 @@ export default function OrdersPage() {
         'DELETE'
       )
 
-      if (result) {
+      // Para exclusão, o backend retorna success: true mesmo com data vazia
+      if (result !== null) {
         toast.success('Pedido excluído com sucesso!')
         // Recarregar dados após exclusão
         await refetch()

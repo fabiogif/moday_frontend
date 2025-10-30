@@ -81,7 +81,9 @@ export default function PaymentMethodsPage() {
         'DELETE'
       )
       
-      if (result) {
+      // Para exclusão, o backend retorna success: true mesmo com data vazia
+      // Verificar se não houve erro (result !== null)
+      if (result !== null) {
         toast.success('Forma de pagamento excluída com sucesso!')
         await refetch()
       }

@@ -171,7 +171,8 @@ export default function ClientDetailPage() {
     try {
       const response = await deleteClient(endpoints.clients.delete(clientId), 'DELETE')
       
-      if (response) {
+      // Para exclusão, o backend retorna success: true mesmo com data vazia
+      if (response !== null) {
         toast.success("Cliente excluído com sucesso!")
         router.push("/clients")
       }

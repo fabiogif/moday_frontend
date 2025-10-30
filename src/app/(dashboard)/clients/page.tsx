@@ -165,7 +165,8 @@ export default function ClientsPage() {
         "DELETE"
       );
 
-      if (result) {
+      // Para exclusão, o backend retorna success: true mesmo com data vazia
+      if (result !== null) {
         // Extrair mensagem de sucesso do backend
         const successMessage = (result as any)?.message || "Cliente excluído com sucesso!";
         showSuccessToast(successMessage, "Sucesso");

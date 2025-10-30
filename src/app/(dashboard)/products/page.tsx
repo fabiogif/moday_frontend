@@ -157,7 +157,8 @@ export default function ProductsPage() {
         'DELETE'
       )
       
-      if (result) {
+      // Para exclusão, o backend retorna success: true mesmo com data vazia
+      if (result !== null) {
         // ✅ Atualizar grid automaticamente sem refresh
         await refetch()
         handleShowSuccessAlert('Sucesso!', 'Produto excluído com sucesso!')
