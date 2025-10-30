@@ -93,7 +93,12 @@ export default function PublicStorePage() {
   const [paymentMethod, setPaymentMethod] = useState("")
   const [paymentMethods, setPaymentMethods] = useState<any[]>([])
   const [shippingMethod, setShippingMethod] = useState("delivery")
-  const [orderResult, setOrderResult] = useState<any>(null)
+  const [orderResult, setOrderResult] = useState<{
+    order_id: string
+    total: string
+    whatsapp_message: string
+    whatsapp_link?: string | null
+  } | null>(null)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [cartCollapsed, setCartCollapsed] = useState(false)
 
@@ -512,6 +517,10 @@ export default function PublicStorePage() {
       console.log('response result:', result)
 
       if (result.success) {
+        console.log('=== DEBUG: Order Result ===')
+        console.log('Full result:', result)
+        console.log('result.data:', result.data)
+        console.log('whatsapp_link:', result.data?.whatsapp_link)
         setOrderResult(result.data)
         setCheckoutStep("success")
         setCart([])
@@ -580,8 +589,14 @@ export default function PublicStorePage() {
   }
 
   function openWhatsApp() {
+    console.log('openWhatsApp called - orderResult:', orderResult)
+    
     if (orderResult?.whatsapp_link) {
+      console.log('Opening WhatsApp link:', orderResult.whatsapp_link)
       window.open(orderResult.whatsapp_link, "_blank")
+    } else {
+      console.error('WhatsApp link não encontrado no resultado do pedido:', orderResult)
+      toast.error('Link do WhatsApp não disponível. Verifique se a loja possui telefone cadastrado.')
     }
   }
 
@@ -1199,10 +1214,22 @@ export default function PublicStorePage() {
                   </ol>
                 </div>
 
-                <Button className="w-full" size="lg" onClick={openWhatsApp}>
-                  <Phone className="mr-2 h-5 w-5" />
-                  Enviar Pedido via WhatsApp
-                </Button>
+                {orderResult?.whatsapp_link ? (
+                  <Button 
+                    className="w-full" 
+                    size="lg" 
+                    onClick={openWhatsApp}
+                  >
+                    <Phone className="mr-2 h-5 w-5" />
+                    Enviar Pedido via WhatsApp
+                  </Button>
+                ) : (
+                  <div className="w-full p-4 text-center text-muted-foreground border rounded-lg">
+                    <Phone className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">WhatsApp não disponível</p>
+                    <p className="text-xs">A loja não possui telefone cadastrado</p>
+                  </div>
+                )}
 
                 <Button variant="outline" className="w-full" onClick={() => {
                   setCheckoutStep("cart")
