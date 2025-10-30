@@ -27,7 +27,7 @@ import {
 import { 
   format, startOfMonth, endOfMonth, eachDayOfInterval, 
   isSameMonth, isSameDay, parseISO, addMonths, subMonths,
-  startOfWeek, endOfWeek, isToday
+  startOfWeek, endOfWeek, isToday, isBefore, startOfDay
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { toast } from 'sonner'
@@ -303,17 +303,21 @@ export default function EventsPage() {
                   const dayEvents = eventsByDate[dateKey] || []
                   const isCurrentMonth = isSameMonth(day, selectedMonth)
                   const isCurrentDay = isToday(day)
+                  const isPastDay = isBefore(startOfDay(day), startOfDay(new Date()))
+                  const isDisabled = isPastDay
 
                   return (
                     <div
                       key={idx}
                       className={cn(
                         'min-h-[120px] border-r border-b p-2 transition-colors',
-                        'hover:bg-accent/50 cursor-pointer',
+                        !isDisabled && 'hover:bg-accent/50 cursor-pointer',
                         !isCurrentMonth && 'bg-muted/20 text-muted-foreground',
+                        isDisabled && 'bg-muted/40 cursor-not-allowed opacity-50',
                         'last:border-r-0'
                       )}
-                      onClick={() => handleCreateEvent(day)}
+                      onClick={() => !isDisabled && handleCreateEvent(day)}
+                      title={isDisabled ? 'Data passada - não é possível criar eventos' : 'Clique para criar evento'}
                     >
                       {/* Número do dia */}
                       <div className="flex items-center justify-between mb-1">
