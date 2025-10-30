@@ -137,6 +137,18 @@ export function translateFieldName(field: string): string {
     // Empresa
     'cnpj': 'CNPJ',
     'zipcode': 'CEP',
+    
+    // Eventos
+    'title': 'Título',
+    'type': 'Tipo',
+    'color': 'Cor',
+    'start_date': 'Data e Hora',
+    'duration_minutes': 'Duração',
+    'location': 'Local',
+    'description': 'Descrição',
+    'client_ids': 'Clientes',
+    'notification_channels': 'Canais de Notificação',
+    'is_active': 'Status',
   }
 
   return translations[field] || field

@@ -7,6 +7,7 @@ export interface Event {
   title: string
   type: 'promocao' | 'aviso' | 'outro'
   type_label: string
+  color: string
   start_date: string
   start_date_formatted: string
   end_date: string
@@ -25,6 +26,7 @@ export interface Event {
 export interface EventFormData {
   title: string
   type: 'promocao' | 'aviso' | 'outro'
+  color?: string
   start_date: string
   duration_minutes: number
   location?: string
