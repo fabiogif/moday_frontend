@@ -171,6 +171,26 @@ export function translateFieldName(field: string): string {
     'client_ids': 'Clientes',
     'notification_channels': 'Canais de Notificação',
     'is_active': 'Status',
+    
+    // Módulo Financeiro - Contas a Pagar/Receber
+    'issue_date': 'Data de Emissão',
+    'due_date': 'Data de Vencimento',
+    'payment_date': 'Data de Pagamento',
+    'receipt_date': 'Data de Recebimento',
+    'amount': 'Valor',
+    'amount_paid': 'Valor Pago',
+    'amount_received': 'Valor Recebido',
+    'discount': 'Desconto',
+    'interest': 'Juros',
+    'fine': 'Multa',
+    'document_number': 'Número do Documento',
+    'installment_number': 'Número da Parcela',
+    'total_installments': 'Total de Parcelas',
+    'financial_category_id': 'Categoria Financeira',
+    'supplier_id': 'Fornecedor',
+    'client_id': 'Cliente',
+    'order_id': 'Pedido',
+    'notes': 'Observações',
   }
 
   return translations[field] || field

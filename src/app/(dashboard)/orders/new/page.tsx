@@ -605,6 +605,7 @@ export default function NewOrderPage() {
         token_company: tenantId,
         client_id: data.clientId || null,
         table: data.isDelivery ? null : data.tableId,
+        payment_method_id: data.paymentMethodId, // ← ADICIONADO
         is_delivery: data.isDelivery,
         use_client_address: data.useClientAddress,
         delivery_address: data.deliveryAddress,

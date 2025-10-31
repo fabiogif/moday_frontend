@@ -91,6 +91,7 @@ export default function PublicStorePage() {
   })
 
   const [paymentMethod, setPaymentMethod] = useState("")
+  const [paymentMethodName, setPaymentMethodName] = useState("")
   const [paymentMethods, setPaymentMethods] = useState<any[]>([])
   const [shippingMethod, setShippingMethod] = useState("delivery")
   const [orderResult, setOrderResult] = useState<{
@@ -164,6 +165,7 @@ export default function PublicStorePage() {
       const data = await response.json()
       
       if (data.success && data.data) {
+        console.log('data.data', data.data, data)
         setPaymentMethods(data.data)
         // Selecionar primeiro método por padrão
         if (data.data.length > 0) {
@@ -1054,7 +1056,14 @@ export default function PublicStorePage() {
                   </CardHeader>
                   <CardContent>
                     {paymentMethods.length > 0 ? (
-                      <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                      <RadioGroup 
+                        value={paymentMethod} 
+                        onValueChange={(uuid) => {
+                          setPaymentMethod(uuid)
+                          const selected = paymentMethods.find(m => m.uuid === uuid)
+                          setPaymentMethodName(selected?.name || uuid)
+                        }}
+                      >
                         {paymentMethods.map((method) => (
                           <div key={method.uuid} className="flex items-center space-x-2">
                             <RadioGroupItem value={method.uuid} id={method.uuid} />
@@ -1162,7 +1171,7 @@ export default function PublicStorePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-muted p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-1">Forma de Pagamento</p>
-                    <p className="font-semibold">{translatePaymentMethod(paymentMethod)}</p>
+                    <p className="font-semibold">{paymentMethodName || 'Não selecionado'}</p>
                   </div>
                   <div className="bg-muted p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-1">Método de Entrega</p>

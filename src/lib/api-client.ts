@@ -246,6 +246,8 @@ export const endpoints = {
   orders: {
     list: '/api/order',
     stats: '/api/order/stats',
+    searchByNumber: '/api/order/search-by-number',
+    getDetails: (orderId: number) => `/api/order/${orderId}/details`,
     create: '/api/order',
     show: (id: string) => `/api/order/${id}`,
     update: (id: string) => `/api/order/${id}`,
@@ -386,6 +388,57 @@ export const endpoints = {
     show: (uuid: string) => `/api/events/${uuid}`,
     update: (uuid: string) => `/api/events/${uuid}`,
     delete: (uuid: string) => `/api/events/${uuid}`,
+  },
+
+  // Módulo Financeiro
+  financialCategories: {
+    list: '/api/financial-categories',
+    create: '/api/financial-categories',
+    show: (uuid: string) => `/api/financial-categories/${uuid}`,
+    update: (uuid: string) => `/api/financial-categories/${uuid}`,
+    delete: (uuid: string) => `/api/financial-categories/${uuid}`,
+    byType: (type: string) => `/api/financial-categories?type=${type}`,
+  },
+
+  suppliers: {
+    list: '/api/suppliers',
+    create: '/api/suppliers',
+    show: (uuid: string) => `/api/suppliers/${uuid}`,
+    update: (uuid: string) => `/api/suppliers/${uuid}`,
+    delete: (uuid: string) => `/api/suppliers/${uuid}`,
+    checkDocument: '/api/suppliers/check-document',
+  },
+
+  expenses: {
+    list: '/api/expenses',
+    stats: '/api/expenses/stats',
+    create: '/api/expenses',
+    show: (uuid: string) => `/api/expenses/${uuid}`,
+    update: (uuid: string) => `/api/expenses/${uuid}`,
+    delete: (uuid: string) => `/api/expenses/${uuid}`,
+    uploadAttachment: (uuid: string) => `/api/expenses/${uuid}/attachment`,
+  },
+
+  accountsPayable: {
+    list: '/api/accounts-payable',
+    stats: '/api/accounts-payable/stats',
+    alerts: '/api/accounts-payable/alerts',
+    create: '/api/accounts-payable',
+    show: (uuid: string) => `/api/accounts-payable/${uuid}`,
+    update: (uuid: string) => `/api/accounts-payable/${uuid}`,
+    delete: (uuid: string) => `/api/accounts-payable/${uuid}`,
+    pay: (uuid: string) => `/api/accounts-payable/${uuid}/pay`,
+  },
+
+  accountsReceivable: {
+    list: '/api/accounts-receivable',
+    stats: '/api/accounts-receivable/stats',
+    fromOrder: (orderId: number) => `/api/accounts-receivable/from-order/${orderId}`,
+    create: '/api/accounts-receivable',
+    show: (uuid: string) => `/api/accounts-receivable/${uuid}`,
+    update: (uuid: string) => `/api/accounts-receivable/${uuid}`,
+    delete: (uuid: string) => `/api/accounts-receivable/${uuid}`,
+    receive: (uuid: string) => `/api/accounts-receivable/${uuid}/receive`,
   },
 } as const
 

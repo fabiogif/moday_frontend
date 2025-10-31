@@ -15,6 +15,11 @@ import {
   CreditCard,
   Building2,
   CalendarDays,
+  Wallet,
+  TrendingDown,
+  TrendingUp,
+  FileText,
+  Truck,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -81,6 +86,41 @@ const navGroups = [
         title: "Relatórios",
         url: "/reports",
         icon: BarChart3,
+      },
+    ],
+  },
+  {
+    label: "Financeiro",
+    items: [
+      {
+        title: "Informações Financeiras",
+        url: "/financial/dashboard",
+        icon: Wallet,
+      },
+      {
+        title: "Despesas",
+        url: "/financial/expenses",
+        icon: TrendingDown,
+      },
+      {
+        title: "Contas a Pagar",
+        url: "/financial/accounts-payable",
+        icon: CreditCard,
+      },
+      {
+        title: "Contas a Receber",
+        url: "/financial/accounts-receivable",
+        icon: TrendingUp,
+      },
+      {
+        title: "Fornecedores",
+        url: "/financial/suppliers",
+        icon: Truck,
+      },
+      {
+        title: "Categorias",
+        url: "/financial/categories",
+        icon: FileText,
       },
     ],
   },
