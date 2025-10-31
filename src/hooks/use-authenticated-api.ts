@@ -3,7 +3,7 @@
  * Verifica se o usuário está autenticado antes de fazer a requisição
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { apiClient, endpoints } from '@/lib/api-client'
 
@@ -38,6 +38,9 @@ export function useAuthenticatedApi<T>(
     total: number
   } | null>(null)
 
+  // Serializar queryParams para evitar loop infinito no useCallback
+  const queryParamsKey = useMemo(() => JSON.stringify(queryParams), [queryParams])
+
   const fetchData = useCallback(async () => {
     if (!isAuthenticated || !token) {
       setError('Usuário não autenticado')
@@ -51,9 +54,12 @@ export function useAuthenticatedApi<T>(
     setError(null)
 
     try {
+      // Reconstruir queryParams do queryParamsKey para garantir atualização
+      const currentQueryParams = queryParamsKey ? JSON.parse(queryParamsKey) : {}
+      
       // Construir URL com query parameters
       const url = new URL(endpoint, window.location.origin)
-      Object.entries(queryParams).forEach(([key, value]) => {
+      Object.entries(currentQueryParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           url.searchParams.append(key, value.toString())
         }
@@ -112,7 +118,7 @@ export function useAuthenticatedApi<T>(
     } finally {
       setLoading(false)
     }
-  }, [endpoint, isAuthenticated, token])
+  }, [endpoint, isAuthenticated, token, queryParamsKey])
 
   useEffect(() => {
     if (immediate && isAuthenticated && token) {

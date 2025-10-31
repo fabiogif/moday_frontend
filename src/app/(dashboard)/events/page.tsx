@@ -47,8 +47,8 @@ export default function EventsPage() {
   const startDate = format(startOfMonth(selectedMonth), 'yyyy-MM-dd')
   const endDate = format(endOfMonth(selectedMonth), 'yyyy-MM-dd')
   
-  const { data: events, loading: eventsLoading, refetch } = useEvents(startDate, endDate)
-  const { data: stats } = useEventStats()
+  const { data: events, loading: eventsLoading, refetch: refetchEvents } = useEvents(startDate, endDate)
+  const { data: stats, refetch: refetchStats } = useEventStats()
   const { data: clients } = useAuthenticatedApi<any[]>(endpoints.clients.list, { immediate: true })
   const { mutate, loading: mutating } = useEventMutation()
 
@@ -108,16 +108,23 @@ export default function EventsPage() {
         toast.success('Evento criado com sucesso!')
       }
       
-      // Sucesso: fechar modal e recarregar
+      // Sucesso: fechar modal imediatamente
       setFormDialogOpen(false)
-      await refetch()
-      
-      // Limpar estado do evento selecionado
       setSelectedEvent(null)
       setSelectedDate(undefined)
+      
+      // Recarregar dados em paralelo
+      console.log('🔄 Recarregando eventos e estatísticas...')
+      await Promise.all([
+        refetchEvents(),
+        refetchStats(),
+      ])
+      console.log('✅ Dados recarregados com sucesso!')
+      
     } catch (error: any) {
       // Erro já foi tratado no EventFormDialog
       // Apenas re-lançar para que o formulário possa processar
+      console.error('❌ Erro ao salvar evento:', error)
       throw error
     }
   }
@@ -136,7 +143,12 @@ export default function EventsPage() {
       setDeleteDialogOpen(false)
       setDetailDialogOpen(false)
       setEventToDelete(null)
-      refetch()
+      
+      // Recarregar eventos e estatísticas
+      await Promise.all([
+        refetchEvents(),
+        refetchStats(),
+      ])
     } catch (error: any) {
       toast.error(error.message || 'Erro ao excluir evento')
     }
