@@ -254,13 +254,29 @@ export default function CategoryDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Date(category.created_at || category.createdAt || '').toLocaleDateString('pt-BR', { 
-                day: '2-digit', 
-                month: 'short' 
-              })}
+              {(() => {
+                const dateStr = category.created_at || category.createdAt
+                if (!dateStr) return '-'
+                
+                const date = new Date(dateStr)
+                if (isNaN(date.getTime())) return '-'
+                
+                return date.toLocaleDateString('pt-BR', { 
+                  day: '2-digit', 
+                  month: 'short' 
+                })
+              })()}
             </div>
             <p className="text-xs text-muted-foreground">
-              {new Date(category.created_at || category.createdAt || '').getFullYear()}
+              {(() => {
+                const dateStr = category.created_at || category.createdAt
+                if (!dateStr) return '-'
+                
+                const date = new Date(dateStr)
+                if (isNaN(date.getTime())) return '-'
+                
+                return String(date.getFullYear())
+              })()}
             </p>
           </CardContent>
         </Card>
