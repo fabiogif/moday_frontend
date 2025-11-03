@@ -440,6 +440,35 @@ export const endpoints = {
     delete: (uuid: string) => `/api/accounts-receivable/${uuid}`,
     receive: (uuid: string) => `/api/accounts-receivable/${uuid}/receive`,
   },
+
+  // Horários de Funcionamento
+  storeHours: {
+    list: '/api/store-hours',
+    stats: '/api/store-hours/stats',
+    checkIsOpen: '/api/store-hours/check-is-open',
+    setAlwaysOpen: '/api/store-hours/set-always-open',
+    removeAlwaysOpen: '/api/store-hours/remove-always-open',
+    create: '/api/store-hours',
+    show: (uuid: string) => `/api/store-hours/${uuid}`,
+    update: (uuid: string) => `/api/store-hours/${uuid}`,
+    delete: (uuid: string) => `/api/store-hours/${uuid}`,
+  },
+
+  // Programa de Fidelidade
+  loyalty: {
+    program: '/api/loyalty/program',
+    updateProgram: (uuid: string) => `/api/loyalty/program/${uuid}`,
+    rewards: '/api/loyalty/rewards',
+    createReward: '/api/loyalty/rewards',
+    showReward: (uuid: string) => `/api/loyalty/rewards/${uuid}`,
+    updateReward: (uuid: string) => `/api/loyalty/rewards/${uuid}`,
+    deleteReward: (uuid: string) => `/api/loyalty/rewards/${uuid}`,
+    clientBalance: (clientId: number) => `/api/loyalty/client/${clientId}/balance`,
+    clientTransactions: (clientId: number) => `/api/loyalty/client/${clientId}/transactions`,
+    clientRedemptions: (clientId: number) => `/api/loyalty/client/${clientId}/redemptions`,
+    adjustPoints: (clientId: number) => `/api/loyalty/client/${clientId}/adjust-points`,
+    redeem: '/api/loyalty/redeem',
+  },
 } as const
 
 export default apiClient

@@ -20,6 +20,8 @@ import {
   TrendingUp,
   FileText,
   Truck,
+  Clock,
+  Gift,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -87,6 +89,11 @@ const navGroups = [
         url: "/reports",
         icon: BarChart3,
       },
+      {
+        title: "Programa de Fidelidade",
+        url: "/loyalty/program",
+        icon: Gift,
+      },
     ],
   },
   {
@@ -148,6 +155,21 @@ const navGroups = [
       //   icon: UserCog,
       // },
      
+    ],
+  },
+  {
+    label: "Configurações",
+    items: [
+      {
+        title: "Empresa",
+        url: "/settings/company",
+        icon: Building2,
+      },
+      {
+        title: "Horários de Funcionamento",
+        url: "/settings/store-hours",
+        icon: Clock,
+      },
     ],
   },
 ]
