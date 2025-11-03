@@ -17,6 +17,7 @@ import Image from "next/image"
 import { maskCPF, validateCPF, maskPhone, validatePhone, maskZipCode, validateEmail } from '@/lib/masks'
 import { useViaCEP } from '@/hooks/use-viacep'
 import { StateCitySelect } from '@/components/location/state-city-select'
+import { StoreHoursBanner } from './components/store-hours-banner'
 
 interface Product {
   uuid: string
@@ -102,6 +103,7 @@ export default function PublicStorePage() {
   } | null>(null)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [cartCollapsed, setCartCollapsed] = useState(false)
+  const [isStoreOpen, setIsStoreOpen] = useState(true) // Default true para não bloquear até carregar
 
   // Hook para buscar CEP
   const { searchCEP, loading: cepLoading } = useViaCEP()
@@ -631,6 +633,9 @@ export default function PublicStorePage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Store Hours Banner */}
+      <StoreHoursBanner slug={slug} onStatusChange={setIsStoreOpen} />
+      
       {/* Header */}
       <header className="border-b sticky top-0 bg-background z-50">
         <div className="container mx-auto px-4 py-4">
@@ -676,8 +681,16 @@ export default function PublicStorePage() {
               
               {checkoutStep === "cart" && cart.length > 0 && (
                 <Button
-                  onClick={() => setCheckoutStep("checkout")}
+                  onClick={() => {
+                    if (!isStoreOpen) {
+                      toast.error('A loja está fechada no momento. Volte durante o horário de funcionamento.')
+                      return
+                    }
+                    setCheckoutStep("checkout")
+                  }}
+                  disabled={!isStoreOpen}
                   className="hidden md:inline-flex"
+                  title={!isStoreOpen ? 'Loja fechada - fora do horário de atendimento' : ''}
                 >
                   Finalizar Pedido
                 </Button>
@@ -844,7 +857,19 @@ export default function PublicStorePage() {
                       <Button variant="outline" className="flex-1" onClick={() => setCart([])}>
                         Limpar Carrinho
                       </Button>
-                      <Button className="flex-1" size="lg" onClick={() => setCheckoutStep("checkout")}>
+                      <Button 
+                        className="flex-1" 
+                        size="lg" 
+                        onClick={() => {
+                          if (!isStoreOpen) {
+                            toast.error('A loja está fechada no momento. Volte durante o horário de funcionamento.')
+                            return
+                          }
+                          setCheckoutStep("checkout")
+                        }}
+                        disabled={!isStoreOpen}
+                        title={!isStoreOpen ? 'Loja fechada - fora do horário de atendimento' : ''}
+                      >
                         Finalizar Pedido
                       </Button>
                     </div>
