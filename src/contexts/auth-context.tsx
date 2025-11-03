@@ -14,15 +14,27 @@ interface User {
   }
 }
 
+interface TrialStatus {
+  is_trial: boolean
+  is_active: boolean
+  is_expired?: boolean
+  days_remaining: number
+  expires_at: string | null
+  is_expiring_soon?: boolean
+  needs_payment: boolean
+}
+
 interface AuthContextType {
   user: User | null
   token: string | null
+  trialStatus: TrialStatus | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
   setUser: (user: User) => void
   setToken: (token: string) => void
+  refreshTrialStatus: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -42,6 +54,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
+  const [trialStatus, setTrialStatus] = useState<TrialStatus | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -49,6 +62,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Verificar se há dados no localStorage ao inicializar
     const savedUser = localStorage.getItem('auth-user')
     const savedToken = localStorage.getItem('auth-token')
+    const savedTrialStatus = localStorage.getItem('trial-status')
     
     if (process.env.NODE_ENV === 'development') {
       console.log('AuthContext: Inicializando autenticação')
@@ -62,6 +76,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.error('AuthContext: Token inválido encontrado (não é JWT). Limpando...')
         localStorage.removeItem('auth-user')
         localStorage.removeItem('auth-token')
+        localStorage.removeItem('trial-status')
         document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
       } else {
         try {
@@ -69,6 +84,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(userData)
           setToken(savedToken)
           setIsAuthenticated(true)
+          
+          // Recuperar trial status se existir
+          if (savedTrialStatus) {
+            try {
+              const trialData = JSON.parse(savedTrialStatus)
+              setTrialStatus(trialData)
+            } catch (error) {
+              console.error('Erro ao recuperar trial status:', error)
+            }
+          }
           
           // Also set the token in apiClient
           apiClient.setToken(savedToken)
@@ -80,6 +105,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.error('Erro ao recuperar dados de autenticação:', error)
           localStorage.removeItem('auth-user')
           localStorage.removeItem('auth-token')
+          localStorage.removeItem('trial-status')
         }
       }
     }
@@ -113,11 +139,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log('AuthContext: Login bem-sucedido')
         console.log('AuthContext: Token recebido?', !!data.token)
         console.log('AuthContext: Token é JWT?', data.token?.startsWith('eyJ'))
+        console.log('AuthContext: Trial status:', data.trial_status)
       }
       
       setUser(data.user)
       setToken(data.token) // Armazenar o token JWT recebido
       setIsAuthenticated(true)
+
+      // Salvar trial status se presente
+      if (data.trial_status) {
+        setTrialStatus(data.trial_status)
+        localStorage.setItem('trial-status', JSON.stringify(data.trial_status))
+      }
 
       // Salvar dados do usuário e token
       localStorage.setItem('auth-user', JSON.stringify(data.user))
@@ -151,6 +184,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       setUser(null)
       setToken(null)
+      setTrialStatus(null)
       setIsAuthenticated(false)
       
       // Clear token from apiClient
@@ -159,9 +193,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Remover dados do localStorage
       localStorage.removeItem('auth-user')
       localStorage.removeItem('auth-token')
+      localStorage.removeItem('trial-status')
       
       // Limpar cookie
       document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    }
+  }
+
+  const refreshTrialStatus = async () => {
+    if (!token) return
+    
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const response = await fetch(`${apiUrl}/api/subscription/trial-status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'include',
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.data) {
+          setTrialStatus(result.data)
+          localStorage.setItem('trial-status', JSON.stringify(result.data))
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar trial status:', error)
     }
   }
 
@@ -182,12 +243,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextType = {
     user,
     token,
+    trialStatus,
     isAuthenticated,
     isLoading,
     login,
     logout,
     setUser: updateUser,
     setToken: updateToken,
+    refreshTrialStatus,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

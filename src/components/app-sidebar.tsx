@@ -22,6 +22,9 @@ import {
   Truck,
   Clock,
   Gift,
+  Store,
+  Receipt,
+  LayoutDashboard,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -42,18 +45,38 @@ import {
 
 const navGroups = [
   {
-    label: "Sistema",
+    label: "Principal",
     items: [
+      {
+        title: "Dashboard",
+        url: "/dashboard",
+        icon: LayoutDashboard,
+      },
       {
         title: "Pedidos",
         url: "/orders",
         icon: ShoppingCart,
+        items: [
+          {
+            title: "Todos os Pedidos",
+            url: "/orders",
+          },
+          {
+            title: "Quadro de Pedidos",
+            url: "/orders/board",
+          },
+        ],
       },
       {
-        title: "Quadro de Pedidos",
-        url: "/orders/board",
-        icon: ShoppingCart,
+        title: "Clientes",
+        url: "/clients",
+        icon: UserCheck,
       },
+    ],
+  },
+  {
+    label: "Cardápio",
+    items: [
       {
         title: "Categorias",
         url: "/categories",
@@ -69,33 +92,53 @@ const navGroups = [
         url: "/tables",
         icon: Table,
       },
+    ],
+  },
+  {
+    label: "Financeiro",
+    items: [
       {
-        title: "Clientes",
-        url: "/clients",
-        icon: UserCheck,
+        title: "Dashboard Financeiro",
+        url: "/financial/dashboard",
+        icon: Wallet,
       },
       {
-        title: "Formas de Pagamento",
-        url: "/payment-methods",
-        icon: CreditCard,
+        title: "Contas a Receber",
+        url: "/financial/accounts-receivable",
+        icon: TrendingUp,
       },
       {
-        title: "Eventos",
-        url: "/events",
-        icon: CalendarDays,
+        title: "Contas a Pagar",
+        url: "/financial/accounts-payable",
+        icon: TrendingDown,
       },
       {
-        title: "Relatórios",
-        url: "/reports",
-        icon: BarChart3,
+        title: "Despesas",
+        url: "/financial/expenses",
+        icon: Receipt,
       },
       {
-        title: "Fidelidade",
+        title: "Fornecedores",
+        url: "/financial/suppliers",
+        icon: Truck,
+      },
+      {
+        title: "Categorias Financeiras",
+        url: "/financial/categories",
+        icon: FileText,
+      },
+    ],
+  },
+  {
+    label: "Marketing",
+    items: [
+      {
+        title: "Programa de Fidelidade",
         url: "/loyalty/program",
         icon: Gift,
         items: [
           {
-            title: "Programa",
+            title: "Configuração",
             url: "/loyalty/program",
           },
           {
@@ -104,45 +147,30 @@ const navGroups = [
           },
         ],
       },
+      {
+        title: "Eventos",
+        url: "/events",
+        icon: CalendarDays,
+      },
     ],
   },
   {
-    label: "Financeiro",
+    label: "Gestão",
     items: [
       {
-        title: "Informações Financeiras",
-        url: "/financial/dashboard",
-        icon: Wallet,
+        title: "Relatórios",
+        url: "/reports",
+        icon: BarChart3,
       },
       {
-        title: "Despesas",
-        url: "/financial/expenses",
-        icon: TrendingDown,
-      },
-      {
-        title: "Contas a Pagar",
-        url: "/financial/accounts-payable",
+        title: "Formas de Pagamento",
+        url: "/payment-methods",
         icon: CreditCard,
-      },
-      {
-        title: "Contas a Receber",
-        url: "/financial/accounts-receivable",
-        icon: TrendingUp,
-      },
-      {
-        title: "Fornecedores",
-        url: "/financial/suppliers",
-        icon: Truck,
-      },
-      {
-        title: "Categorias",
-        url: "/financial/categories",
-        icon: FileText,
       },
     ],
   },
   {
-    label: "Controle de Acesso",
+    label: "Administração",
     items: [
       {
         title: "Usuários",
@@ -152,31 +180,25 @@ const navGroups = [
       {
         title: "Perfis",
         url: "/profiles",
-        icon: Settings,
+        icon: UserCog,
       },
       {
         title: "Permissões",
         url: "/permissions",
         icon: Shield,
       },
-      // {
-      //   title: "Funções",
-      //   url: "/roles",
-      //   icon: UserCog,
-      // },
-     
     ],
   },
   {
     label: "Configurações",
     items: [
       {
-        title: "Empresa",
+        title: "Dados da Empresa",
         url: "/settings/company",
         icon: Building2,
       },
       {
-        title: "Horários de Funcionamento",
+        title: "Horários",
         url: "/settings/store-hours",
         icon: Clock,
       },
@@ -247,3 +269,4 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     </Sidebar>
   )
 }
+
