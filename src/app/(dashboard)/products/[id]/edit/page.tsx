@@ -18,6 +18,9 @@ import { useBackendValidation, commonFieldMappings } from "@/hooks/use-backend-v
 import { endpoints } from "@/lib/api-client";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import { ProductVariationsManager } from "@/components/product-variations-manager";
+import { ProductOptionalsManager } from "@/components/product-optionals-manager";
+import { ProductVariation, ProductOptional } from "@/types/product-variations";
 
 const productFormSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres."),
@@ -59,11 +62,6 @@ interface ProductFormValues {
   is_active?: boolean;
 }
 
-interface Variation {
-  type: string;
-  value: string;
-}
-
 interface Product {
   id: number;
   identify?: string;
@@ -90,7 +88,8 @@ interface Product {
   isActive?: boolean;
   url?: string;
   image?: string;
-  variations?: Variation[];
+  variations?: ProductVariation[];  // Formato novo
+  optionals?: ProductOptional[];     // Novo campo
 }
 
 export default function EditProductPage() {
@@ -98,7 +97,8 @@ export default function EditProductPage() {
   const params = useParams();
   const productId = params.id as string;
   
-  const [variations, setVariations] = useState<Variation[]>([]);
+  const [variations, setVariations] = useState<ProductVariation[]>([]);
+  const [optionals, setOptionals] = useState<ProductOptional[]>([]);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
 
@@ -156,9 +156,27 @@ export default function EditProductPage() {
       
       form.reset(productData);
 
+      // DEBUG: Ver o que está chegando do backend
+      console.log('🔍 Produto carregado:', product);
+      console.log('🔍 Variations recebidas:', product.variations);
+      console.log('🔍 Optionals recebidos:', product.optionals);
+
       // Carregar variações se existirem
       if (product.variations && Array.isArray(product.variations)) {
+        console.log('✅ Carregando', product.variations.length, 'variações');
         setVariations(product.variations);
+      } else {
+        console.log('⚠️ Nenhuma variação encontrada ou formato inválido');
+        setVariations([]);
+      }
+      
+      // Carregar opcionais se existirem
+      if (product.optionals && Array.isArray(product.optionals)) {
+        console.log('✅ Carregando', product.optionals.length, 'opcionais');
+        setOptionals(product.optionals);
+      } else {
+        console.log('⚠️ Nenhum opcional encontrado ou formato inválido');
+        setOptionals([]);
       }
 
       // Carregar imagem atual
@@ -197,20 +215,6 @@ export default function EditProductPage() {
         label: category.name,
       }))
     : [];
-
-  const addVariation = () => {
-    setVariations([...variations, { type: "", value: "" }]);
-  };
-
-  const removeVariation = (index: number) => {
-    setVariations(variations.filter((_, i) => i !== index));
-  };
-
-  const updateVariation = (index: number, field: keyof Variation, value: string) => {
-    const updated = [...variations];
-    updated[index][field] = value;
-    setVariations(updated);
-  };
 
   const onSubmit = async (data: ProductFormValues) => {
     try {
@@ -265,10 +269,20 @@ export default function EditProductPage() {
         formData.append('warehouse_location', data.warehouse_location.trim());
       }
 
-      // Variações como JSON - só envia se tiver variações válidas
-      const validVariations = variations.filter(v => v.type.trim() && v.value.trim());
-      if (validVariations.length > 0) {
-        formData.append('variations', JSON.stringify(validVariations));
+      // Variações como JSON
+      console.log('📤 Enviando variations:', variations);
+      if (variations.length > 0) {
+        formData.append('variations', JSON.stringify(variations));
+      } else {
+        formData.append('variations', JSON.stringify([]));
+      }
+      
+      // Opcionais como JSON
+      console.log('📤 Enviando optionals:', optionals);
+      if (optionals.length > 0) {
+        formData.append('optionals', JSON.stringify(optionals));
+      } else {
+        formData.append('optionals', JSON.stringify([]));
       }
 
       // Categorias
@@ -777,51 +791,6 @@ export default function EditProductPage() {
               </CardContent>
             </Card>
 
-            {/* Variações */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Variações</CardTitle>
-                <CardDescription>Cores, tamanhos, voltagem, etc.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {variations.map((variation, index) => (
-                  <div key={index} className="flex gap-2 items-end">
-                    <div className="flex-1">
-                      <Input
-                        placeholder="Tipo (cor, tamanho, voltagem)"
-                        value={variation.type}
-                        onChange={(e) => updateVariation(index, 'type', e.target.value)}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <Input
-                        placeholder="Valor (azul, P, 110V)"
-                        value={variation.value}
-                        onChange={(e) => updateVariation(index, 'value', e.target.value)}
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => removeVariation(index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addVariation}
-                  className="w-full"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Adicionar Variação
-                </Button>
-              </CardContent>
-            </Card>
 
             {/* Imagem */}
             <Card>
@@ -919,6 +888,19 @@ export default function EditProductPage() {
                 />
               </CardContent>
             </Card>
+          </div>
+
+          {/* Variações e Opcionais - Full Width */}
+          <div className="space-y-6">
+            <ProductVariationsManager
+              variations={variations}
+              onChange={setVariations}
+            />
+
+            <ProductOptionalsManager
+              optionals={optionals}
+              onChange={setOptionals}
+            />
           </div>
 
           {/* Botões de ação */}

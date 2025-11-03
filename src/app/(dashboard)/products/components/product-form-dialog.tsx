@@ -67,9 +67,10 @@ const productFormSchema = z.object({
   }).optional(),
   shipping_info: z.string().optional(),
   warehouse_location: z.string().optional(),
-  variations: z.array(z.object({
-    type: z.string(),
-    value: z.string(),
+  optionals: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    price: z.number(),
   })).optional(),
   categories: z.array(z.string()).min(1, {
     message: "Por favor, selecione pelo menos uma categoria.",
@@ -95,7 +96,7 @@ interface ProductFormValues {
   depth?: number;
   shipping_info?: string;
   warehouse_location?: string;
-  variations?: Array<{ type: string; value: string }>;
+  optionals?: Array<{ id: string; name: string; price: number }>;
   categories: string[];
   qtd_stock: number;
   is_active?: boolean;

@@ -8,16 +8,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { MinusCircle, PlusCircle } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import Image from "next/image"
 import { maskCPF, validateCPF, maskPhone, validatePhone, maskZipCode, validateEmail } from '@/lib/masks'
 import { useViaCEP } from '@/hooks/use-viacep'
 import { StateCitySelect } from '@/components/location/state-city-select'
 import { StoreHoursBanner } from './components/store-hours-banner'
+
+interface ProductVariation {
+  id: string
+  name: string
+  price: number
+}
+
+interface ProductOptional {
+  id: string
+  name: string
+  price: number
+}
 
 interface Product {
   uuid: string
@@ -29,6 +44,8 @@ interface Product {
   qtd_stock: number
   brand: string
   categories: Array<{ uuid: string; name: string }>
+  variations?: ProductVariation[]   // Seleção única (tamanhos)
+  optionals?: ProductOptional[]     // Múltipla escolha com quantidade
 }
 
 interface StoreInfo {
@@ -46,6 +63,13 @@ interface StoreInfo {
 
 interface CartItem extends Product {
   quantity: number
+  selectedVariation?: ProductVariation    // Variação escolhida (apenas 1)
+  selectedOptionals?: Array<{             // Opcionais com quantidade
+    id: string
+    name: string
+    price: number
+    quantity: number
+  }>
 }
 
 export default function PublicStorePage() {
@@ -70,6 +94,12 @@ export default function PublicStorePage() {
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "checkout" | "success">("cart")
   const [submitting, setSubmitting] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  
+  // Estados para variações e opcionais
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [selectedVariation, setSelectedVariation] = useState<string>('') // ID da variação (radio)
+  const [selectedOptionalsQty, setSelectedOptionalsQty] = useState<Record<string, number>>({}) // {optionalId: quantidade}
+  const [showSelectionDialog, setShowSelectionDialog] = useState(false)
 
   // Form state
   const [clientData, setClientData] = useState({
@@ -173,6 +203,7 @@ export default function PublicStorePage() {
         if (data.data.length > 0) {
           // Usar UUID da forma de pagamento
           setPaymentMethod(data.data[0].uuid)
+          setPaymentMethodName(data.data[0].name) // ← CORRIGIDO: Setar o nome também
         }
       } else {
         setPaymentMethods([])
@@ -227,50 +258,160 @@ export default function PublicStorePage() {
     }
   }
 
-  function addToCart(product: Product) {
+  function addToCart(
+    product: Product, 
+    variation?: ProductVariation,
+    optionalsWithQty: Array<{ id: string; name: string; price: number; quantity: number }> = []
+  ) {
     setCart((prev) => {
-      const existing = prev.find((item) => item.uuid === product.uuid)
-      if (existing) {
-        if (existing.quantity >= product.qtd_stock) {
-          toast.error("Estoque insuficiente")
-          return prev
-        }
-        return prev.map((item) =>
-          item.uuid === product.uuid ? { ...item, quantity: item.quantity + 1 } : item
-        )
-      }
-      return [...prev, { ...product, quantity: 1 }]
+      // Não mesclar itens com configurações diferentes - cada um é único
+      return [...prev, { 
+        ...product, 
+        quantity: 1, 
+        selectedVariation: variation,
+        selectedOptionals: optionalsWithQty 
+      }]
     })
     toast.success("Produto adicionado ao carrinho")
   }
 
-  function updateQuantity(uuid: string, delta: number) {
-    setCart((prev) =>
-      prev
-        .map((item) => {
-          if (item.uuid === uuid) {
-            const newQty = item.quantity + delta
-            if (newQty > item.qtd_stock) {
-              toast.error("Estoque insuficiente")
-              return item
-            }
-            return { ...item, quantity: newQty }
-          }
-          return item
-        })
-        .filter((item) => item.quantity > 0)
-    )
+  function handleProductClick(product: Product) {
+    // DEBUG: Ver o produto clicado
+    console.log('🛒 Produto clicado:', product);
+    console.log('🔍 Variations:', product.variations);
+    console.log('🔍 Optionals:', product.optionals);
+    
+    // Se o produto tem variações OU opcionais, abrir modal de seleção
+    const hasVariations = product.variations && product.variations.length > 0
+    const hasOptionals = product.optionals && product.optionals.length > 0
+    
+    console.log('✅ hasVariations:', hasVariations);
+    console.log('✅ hasOptionals:', hasOptionals);
+    
+    if (hasVariations || hasOptionals) {
+      console.log('📱 Abrindo modal de seleção...');
+      setSelectedProduct(product)
+      setSelectedVariation('')
+      setSelectedOptionalsQty({})
+      setShowSelectionDialog(true)
+    } else {
+      console.log('➡️ Adicionando direto ao carrinho (sem opções)');
+      // Adicionar direto ao carrinho sem variações/opcionais
+      addToCart(product)
+    }
   }
 
-  function removeFromCart(uuid: string) {
-    setCart((prev) => prev.filter((item) => item.uuid !== uuid))
+  function handleOptionalQuantityChange(optionalId: string, delta: number) {
+    setSelectedOptionalsQty((prev) => {
+      const currentQty = prev[optionalId] || 0
+      const newQty = Math.max(0, currentQty + delta)
+      
+      if (newQty === 0) {
+        const { [optionalId]: _, ...rest } = prev
+        return rest
+      }
+      
+      return { ...prev, [optionalId]: newQty }
+    })
+  }
+
+  function confirmAddToCart() {
+    if (!selectedProduct) return
+    
+    // Validar: Se tem variações, é obrigatório selecionar uma
+    const hasVariations = selectedProduct.variations && selectedProduct.variations.length > 0
+    if (hasVariations && !selectedVariation) {
+      toast.error('Por favor, selecione uma variação')
+      return
+    }
+    
+    // Buscar variação selecionada
+    const variation = selectedProduct.variations?.find(v => v.id === selectedVariation)
+    
+    // Montar opcionais com quantidade
+    const optionalsWithQty = Object.entries(selectedOptionalsQty)
+      .map(([optId, qty]) => {
+        const optional = selectedProduct.optionals?.find(opt => opt.id === optId)
+        return optional ? { ...optional, quantity: qty } : null
+      })
+      .filter((opt): opt is { id: string; name: string; price: number; quantity: number } => opt !== null)
+    
+    addToCart(selectedProduct, variation, optionalsWithQty)
+    setShowSelectionDialog(false)
+    setSelectedProduct(null)
+    setSelectedVariation('')
+    setSelectedOptionalsQty({})
+  }
+
+  function calculateSelectionTotal(): number {
+    if (!selectedProduct) return 0
+    
+    const basePrice = getNumericPrice(selectedProduct.promotional_price || selectedProduct.price)
+    
+    // Adicionar preço da variação selecionada
+    const variation = selectedProduct.variations?.find(v => v.id === selectedVariation)
+    const variationPrice = variation ? variation.price : 0
+    
+    // Adicionar preço dos opcionais (preço × quantidade)
+    const optionalsTotal = Object.entries(selectedOptionalsQty).reduce((sum, [optId, qty]) => {
+      const optional = selectedProduct.optionals?.find(opt => opt.id === optId)
+      return sum + (optional ? optional.price * qty : 0)
+    }, 0)
+    
+    return basePrice + variationPrice + optionalsTotal
+  }
+
+  function updateQuantity(key: string, delta: number) {
+    const index = parseInt(key.split('-').pop() || '0')
+    setCart((prev) => {
+      const newCart = [...prev]
+      const item = newCart[index]
+      
+      if (!item) return prev
+      
+      const newQty = item.quantity + delta
+      
+      if (newQty > item.qtd_stock) {
+        toast.error("Estoque insuficiente")
+        return prev
+      }
+      
+      if (newQty <= 0) {
+        newCart.splice(index, 1)
+        return newCart
+      }
+      
+      newCart[index] = { ...item, quantity: newQty }
+      return newCart
+    })
+  }
+
+  function removeFromCart(key: string) {
+    const index = parseInt(key.split('-').pop() || '0')
+    setCart((prev) => {
+      const newCart = [...prev]
+      newCart.splice(index, 1)
+      return newCart
+    })
     toast.success("Produto removido do carrinho")
   }
 
   function getCartTotal() {
     return cart.reduce((sum, item) => {
-      const price = getNumericPrice(item.promotional_price || item.price)
-      return sum + price * item.quantity
+      const basePrice = getNumericPrice(item.promotional_price || item.price)
+      
+      // Adicionar preço da variação (se selecionada)
+      const variationPrice = item.selectedVariation ? item.selectedVariation.price : 0
+      
+      // Adicionar preço dos opcionais (preço × quantidade de cada opcional)
+      const optionalsPrice = item.selectedOptionals?.reduce(
+        (optSum, opt) => optSum + (opt.price * opt.quantity), 
+        0
+      ) || 0
+      
+      // Total do item = (base + variação + opcionais) × quantidade do produto
+      const itemTotal = (basePrice + variationPrice + optionalsPrice) * item.quantity
+      return sum + itemTotal
     }, 0)
   }
 
@@ -477,6 +618,7 @@ export default function PublicStorePage() {
         products: cart.map((item) => ({
           uuid: item.uuid,
           quantity: item.quantity,
+          optionals: item.selectedOptionals || [],
         })),
         payment_method: paymentMethod,
         shipping_method: shippingMethod,
@@ -781,9 +923,23 @@ export default function PublicStorePage() {
                               )}
                               <p className="text-2xl font-bold text-primary">R$ {formatPrice(price)}</p>
                             </div>
-                            <Button onClick={() => addToCart(product)} className="w-full" disabled={product.qtd_stock === 0}>
+                            <Button onClick={() => handleProductClick(product)} className="w-full" disabled={product.qtd_stock === 0}>
                               {product.qtd_stock === 0 ? "Esgotado" : "Adicionar ao Carrinho"}
                             </Button>
+                            {((product.variations && product.variations.length > 0) || (product.optionals && product.optionals.length > 0)) && (
+                              <div className="flex gap-2 justify-center mt-2 text-xs text-muted-foreground">
+                                {product.variations && product.variations.length > 0 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {product.variations.length} {product.variations.length === 1 ? 'variação' : 'variações'}
+                                  </Badge>
+                                )}
+                                {product.optionals && product.optionals.length > 0 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {product.optionals.length} {product.optionals.length === 1 ? 'opcional' : 'opcionais'}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
                           </CardContent>
                         </Card>
                       )
@@ -823,27 +979,78 @@ export default function PublicStorePage() {
                 {!cartCollapsed && (
                   <CardContent>
                     <div className="space-y-4 max-h-[400px] overflow-y-auto">
-                      {cart.map((item) => {
-                        const price = getNumericPrice(item.promotional_price || item.price)
+                      {cart.map((item, index) => {
+                        const basePrice = getNumericPrice(item.promotional_price || item.price)
+                        const variationPrice = item.selectedVariation ? item.selectedVariation.price : 0
+                        const optionalsPrice = item.selectedOptionals?.reduce(
+                          (sum, opt) => sum + (opt.price * opt.quantity), 
+                          0
+                        ) || 0
+                        const unitPrice = basePrice + variationPrice + optionalsPrice
+                        const totalPrice = unitPrice * item.quantity
+                        
                         return (
-                          <div key={item.uuid} className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">{item.name}</p>
-                              <p className="text-sm text-muted-foreground">R$ {formatPrice(item.promotional_price || item.price)}</p>
+                          <div key={`${item.uuid}-${index}`} className="p-4 rounded-lg border bg-card">
+                            <div className="flex items-start gap-4">
+                              <div className="flex-1 min-w-0 space-y-2">
+                                <p className="font-semibold text-lg">{item.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  Preço base: R$ {formatPrice(basePrice)}
+                                </p>
+                                
+                                {/* Variação Selecionada */}
+                                {item.selectedVariation && (
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="default" className="text-xs">
+                                      {item.selectedVariation.name}
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">
+                                      {item.selectedVariation.price > 0 && `+R$ ${item.selectedVariation.price.toFixed(2)}`}
+                                      {item.selectedVariation.price < 0 && `R$ ${item.selectedVariation.price.toFixed(2)}`}
+                                      {item.selectedVariation.price === 0 && 'Incluso'}
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {/* Opcionais Selecionados com Quantidade */}
+                                {item.selectedOptionals && item.selectedOptionals.length > 0 && (
+                                  <div className="space-y-1 mt-2 pl-2 border-l-2 border-muted">
+                                    <p className="text-xs font-medium text-muted-foreground mb-1">Opcionais:</p>
+                                    {item.selectedOptionals.map((opt) => (
+                                      <div key={opt.id} className="flex items-center justify-between text-xs">
+                                        <div className="flex items-center gap-2">
+                                          <Badge variant="outline" className="text-xs py-0">
+                                            {opt.name} × {opt.quantity}
+                                          </Badge>
+                                        </div>
+                                        <span className="text-muted-foreground">
+                                          R$ {(opt.price * opt.quantity).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="flex flex-col items-end gap-2">
+                                <div className="flex items-center gap-2">
+                                  <Button size="sm" variant="outline" onClick={() => updateQuantity(`${item.uuid}-${index}`, -1)}>
+                                    <Minus className="h-3 w-3" />
+                                  </Button>
+                                  <span className="w-8 text-center font-medium">{item.quantity}</span>
+                                  <Button size="sm" variant="outline" onClick={() => updateQuantity(`${item.uuid}-${index}`, 1)}>
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" onClick={() => removeFromCart(`${item.uuid}-${index}`)}>
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-xs text-muted-foreground">Unitário: R$ {formatPrice(unitPrice)}</p>
+                                  <p className="font-bold text-lg text-primary">R$ {formatPrice(totalPrice)}</p>
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Button size="sm" variant="outline" onClick={() => updateQuantity(item.uuid, -1)}>
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                              <span className="w-8 text-center font-medium">{item.quantity}</span>
-                              <Button size="sm" variant="outline" onClick={() => updateQuantity(item.uuid, 1)}>
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                              <Button size="sm" variant="ghost" onClick={() => removeFromCart(item.uuid)}>
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </div>
-                            <p className="font-bold w-24 text-right">R$ {formatPrice(price * item.quantity)}</p>
                           </div>
                         )
                       })}
@@ -1243,7 +1450,7 @@ export default function PublicStorePage() {
                   <p className="font-medium">Próximos Passos:</p>
                   <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
                     <li>Confirme seu pedido via WhatsApp</li>
-                    <li>Aguarde a confirmação da loja</li>
+                    <li>Aguarde a confirmação da restaurante</li>
                     <li>Você receberá atualizações sobre o status do pedido</li>
                   </ol>
                 </div>
@@ -1261,7 +1468,7 @@ export default function PublicStorePage() {
                   <div className="w-full p-4 text-center text-muted-foreground border rounded-lg">
                     <Phone className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">WhatsApp não disponível</p>
-                    <p className="text-xs">A loja não possui telefone cadastrado</p>
+                    <p className="text-xs">Restaurante não possui telefone cadastrado</p>
                   </div>
                 )}
 
@@ -1276,6 +1483,192 @@ export default function PublicStorePage() {
           </div>
         )}
       </div>
+
+      {/* Dialog de Seleção de Variações e Opcionais */}
+      <Dialog open={showSelectionDialog} onOpenChange={setShowSelectionDialog}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedProduct?.name}</DialogTitle>
+            <DialogDescription>
+              Escolha a variação e adicione opcionais conforme desejado
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* DEBUG: Ver produto selecionado */}
+          {selectedProduct && (
+            <div className="hidden">
+              {console.log('🎯 Modal aberto com produto:', selectedProduct)}
+              {console.log('🎯 Variations no modal:', selectedProduct.variations)}
+              {console.log('🎯 Optionals no modal:', selectedProduct.optionals)}
+              {console.log('🎯 Tem variations?', selectedProduct.variations && selectedProduct.variations.length > 0)}
+              {console.log('🎯 Tem optionals?', selectedProduct.optionals && selectedProduct.optionals.length > 0)}
+            </div>
+          )}
+          
+          <div className="space-y-6 py-4">
+            {/* Preço Base */}
+            <div className="bg-muted p-4 rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Preço Base</span>
+                <span className="text-xl font-bold">
+                  R$ {selectedProduct ? formatPrice(selectedProduct.promotional_price || selectedProduct.price) : '0.00'}
+                </span>
+              </div>
+            </div>
+
+            {/* Variações (Seleção Única - Radio) */}
+            {selectedProduct?.variations && selectedProduct.variations.length > 0 && (
+              <div>
+                <Label className="text-base font-semibold mb-3 block">
+                  Escolha uma variação <span className="text-destructive">*</span>
+                </Label>
+                <RadioGroup value={selectedVariation} onValueChange={setSelectedVariation}>
+                  <div className="space-y-2">
+                    {selectedProduct.variations.map((variation) => (
+                      <div key={variation.id} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                        <RadioGroupItem value={variation.id} id={`variation-${variation.id}`} />
+                        <Label
+                          htmlFor={`variation-${variation.id}`}
+                          className="flex-1 cursor-pointer flex items-center justify-between"
+                        >
+                          <span className="font-medium">{variation.name}</span>
+                          <Badge variant={variation.price > 0 ? "secondary" : variation.price < 0 ? "default" : "outline"}>
+                            {variation.price > 0 && '+'}
+                            {variation.price !== 0 && `R$ ${variation.price.toFixed(2)}`}
+                            {variation.price === 0 && 'Incluso'}
+                          </Badge>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
+
+            {/* Opcionais (Múltipla Escolha com Quantidade) */}
+            {selectedProduct?.optionals && selectedProduct.optionals.length > 0 && (
+              <div>
+                <Label className="text-base font-semibold mb-3 block">
+                  Opcionais (pode escolher vários)
+                </Label>
+                <div className="space-y-2">
+                  {selectedProduct.optionals.map((optional) => {
+                    const qty = selectedOptionalsQty[optional.id] || 0
+                    return (
+                      <div key={optional.id} className="p-3 rounded-lg border">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex-1">
+                            <span className="font-medium">{optional.name}</span>
+                            <p className="text-xs text-muted-foreground">
+                              R$ {optional.price.toFixed(2)} por unidade
+                            </p>
+                          </div>
+                          <Badge variant="secondary">
+                            R$ {optional.price.toFixed(2)}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleOptionalQuantityChange(optional.id, -1)}
+                            disabled={qty === 0}
+                          >
+                            <MinusCircle className="h-4 w-4" />
+                          </Button>
+                          <div className="flex-1 text-center">
+                            <span className="text-lg font-bold">{qty}</span>
+                            <span className="text-sm text-muted-foreground ml-1">
+                              {qty === 1 ? 'unidade' : 'unidades'}
+                            </span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleOptionalQuantityChange(optional.id, 1)}
+                          >
+                            <PlusCircle className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {qty > 0 && (
+                          <p className="text-xs text-right text-primary font-medium mt-2">
+                            Subtotal: R$ {(optional.price * qty).toFixed(2)}
+                          </p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Resumo do Pedido */}
+            <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
+              <h4 className="font-semibold mb-3">Resumo do Pedido</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Preço Base:</span>
+                  <span>R$ {selectedProduct ? formatPrice(selectedProduct.promotional_price || selectedProduct.price) : '0.00'}</span>
+                </div>
+                
+                {/* Variação Selecionada */}
+                {selectedVariation && selectedProduct?.variations && (
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>
+                      Variação: {selectedProduct.variations.find(v => v.id === selectedVariation)?.name}
+                    </span>
+                    <span>
+                      {selectedProduct.variations.find(v => v.id === selectedVariation)?.price && selectedProduct.variations.find(v => v.id === selectedVariation)!.price > 0 && '+'}
+                      R$ {(selectedProduct.variations.find(v => v.id === selectedVariation)?.price || 0).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Opcionais Selecionados */}
+                {Object.entries(selectedOptionalsQty).map(([optId, qty]) => {
+                  const optional = selectedProduct?.optionals?.find(opt => opt.id === optId)
+                  if (!optional) return null
+                  return (
+                    <div key={optId} className="flex justify-between text-sm text-muted-foreground">
+                      <span>{optional.name} × {qty}:</span>
+                      <span>R$ {(optional.price * qty).toFixed(2)}</span>
+                    </div>
+                  )
+                })}
+                
+                <Separator />
+                <div className="flex justify-between font-bold text-xl">
+                  <span>Total:</span>
+                  <span className="text-primary">
+                    R$ {formatPrice(calculateSelectionTotal())}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSelectionDialog(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={confirmAddToCart}
+              disabled={
+                selectedProduct?.variations && 
+                selectedProduct.variations.length > 0 && 
+                !selectedVariation
+              }
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Adicionar ao Carrinho
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

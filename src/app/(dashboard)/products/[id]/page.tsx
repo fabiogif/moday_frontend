@@ -53,10 +53,9 @@ interface Product {
     name: string
   }>
   variations?: Array<{
-    id: number
+    id: string
     name: string
     price: number
-    stock: number
   }>
 }
 
@@ -368,33 +367,45 @@ export default function ProductDetailPage() {
           </Card>
         </div>
         
-        {/* Variações do Produto */}
+        {/* Opcionais do Produto */}
         {product.variations && product.variations.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Package className="w-5 h-5" />
-                Variações do Produto
+                <DollarSign className="w-5 h-5" />
+                Opcionais do Produto
               </CardTitle>
               <CardDescription>
-                Diferentes versões deste produto
+                Itens adicionais que alteram o preço final (tamanhos, complementos, etc.)
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {product.variations.map((variation) => (
-                  <div key={variation.id} className="rounded-lg border p-4 space-y-2">
-                    <h4 className="font-medium">{variation.name}</h4>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">Preço:</span>
-                      <span className="font-bold">R$ {Number(variation.price).toFixed(2)}</span>
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {product.variations.map((optional) => (
+                  <div key={optional.id} className="rounded-lg border p-4 bg-muted/30">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-medium">{optional.name}</h4>
+                      {Number(optional.price) > 0 && (
+                        <Badge variant="secondary" className="shrink-0">
+                          +R$ {Number(optional.price).toFixed(2)}
+                        </Badge>
+                      )}
+                      {Number(optional.price) === 0 && (
+                        <Badge variant="outline" className="shrink-0">
+                          Incluso
+                        </Badge>
+                      )}
+                      {Number(optional.price) < 0 && (
+                        <Badge variant="default" className="shrink-0 bg-green-600">
+                          {Number(optional.price).toFixed(2)}
+                        </Badge>
+                      )}
                     </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">Estoque:</span>
-                      <Badge variant={variation.stock > 0 ? "default" : "secondary"}>
-                        {variation.stock} unidades
-                      </Badge>
-                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {Number(optional.price) > 0 && 'Valor adicional ao preço base'}
+                      {Number(optional.price) === 0 && 'Sem custo adicional'}
+                      {Number(optional.price) < 0 && 'Desconto no preço base'}
+                    </p>
                   </div>
                 ))}
               </div>

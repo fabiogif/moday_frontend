@@ -16,6 +16,9 @@ import { useAuthenticatedCategories, useMutation } from "@/hooks/use-authenticat
 import { useBackendValidation, commonFieldMappings } from "@/hooks/use-backend-validation";
 import { endpoints } from "@/lib/api-client";
 import { toast } from "sonner";
+import { ProductVariationsManager } from "@/components/product-variations-manager";
+import { ProductOptionalsManager } from "@/components/product-optionals-manager";
+import { ProductVariation, ProductOptional } from "@/types/product-variations";
 
 const productFormSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres."),
@@ -55,14 +58,10 @@ interface ProductFormValues {
   image?: File;
 }
 
-interface Variation {
-  type: string;
-  value: string;
-}
-
 export default function NewProductPage() {
   const router = useRouter();
-  const [variations, setVariations] = useState<Variation[]>([]);
+  const [variations, setVariations] = useState<ProductVariation[]>([]);
+  const [optionals, setOptionals] = useState<ProductOptional[]>([]);
   const { data: categories, loading: categoriesLoading } = useAuthenticatedCategories();
   const { mutate: createProduct, loading: creating } = useMutation();
 
@@ -95,20 +94,6 @@ export default function NewProductPage() {
         label: category.name,
       }))
     : [];
-
-  const addVariation = () => {
-    setVariations([...variations, { type: "", value: "" }]);
-  };
-
-  const removeVariation = (index: number) => {
-    setVariations(variations.filter((_, i) => i !== index));
-  };
-
-  const updateVariation = (index: number, field: keyof Variation, value: string) => {
-    const updated = [...variations];
-    updated[index][field] = value;
-    setVariations(updated);
-  };
 
   const onSubmit = async (data: ProductFormValues) => {
     try {
@@ -148,10 +133,14 @@ export default function NewProductPage() {
         formData.append('warehouse_location', data.warehouse_location.trim());
       }
 
-      // Variações como JSON - só envia se tiver variações válidas
-      const validVariations = variations.filter(v => v.type.trim() && v.value.trim());
-      if (validVariations.length > 0) {
-        formData.append('variations', JSON.stringify(validVariations));
+      // Variações como JSON
+      if (variations.length > 0) {
+        formData.append('variations', JSON.stringify(variations));
+      }
+      
+      // Opcionais como JSON
+      if (optionals.length > 0) {
+        formData.append('optionals', JSON.stringify(optionals));
       }
 
       // Categorias
@@ -548,51 +537,6 @@ export default function NewProductPage() {
               </CardContent>
             </Card>
 
-            {/* Variações */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Variações</CardTitle>
-                <CardDescription>Cores, tamanhos, voltagem, etc.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {variations.map((variation, index) => (
-                  <div key={index} className="flex gap-2 items-end">
-                    <div className="flex-1">
-                      <Input
-                        placeholder="Tipo (cor, tamanho, voltagem)"
-                        value={variation.type}
-                        onChange={(e) => updateVariation(index, 'type', e.target.value)}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <Input
-                        placeholder="Valor (azul, P, 110V)"
-                        value={variation.value}
-                        onChange={(e) => updateVariation(index, 'value', e.target.value)}
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => removeVariation(index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addVariation}
-                  className="w-full"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Adicionar Variação
-                </Button>
-              </CardContent>
-            </Card>
 
             {/* Imagem */}
             <Card>
@@ -623,6 +567,19 @@ export default function NewProductPage() {
                 />
               </CardContent>
             </Card>
+          </div>
+
+          {/* Variações e Opcionais - Full Width */}
+          <div className="space-y-6">
+            <ProductVariationsManager
+              variations={variations}
+              onChange={setVariations}
+            />
+
+            <ProductOptionalsManager
+              optionals={optionals}
+              onChange={setOptionals}
+            />
           </div>
 
           <div className="flex justify-end gap-4">
