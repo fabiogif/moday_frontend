@@ -47,44 +47,56 @@ export function PricingSection() {
         setPlans([
           {
             id: 1,
+            name: 'Grátis',
+            url: 'gratis',
+            price: 0.00,
+            description: 'Perfeito para testar o sistema',
+            details: [
+              { id: 1, name: 'Até 50 produtos cadastrados', plan_id: 1 },
+              { id: 2, name: '1 usuário', plan_id: 1 },
+              { id: 3, name: '30 pedidos por mês', plan_id: 1 },
+              { id: 4, name: 'Painel administrativo básico', plan_id: 1 },
+              { id: 5, name: 'Cardápio digital', plan_id: 1 },
+              { id: 6, name: 'Sem acesso a Marketing', plan_id: 1 },
+              { id: 7, name: 'Sem acesso a Relatórios', plan_id: 1 },
+            ]
+          },
+          {
+            id: 2,
             name: 'Básico',
             url: 'basico',
             price: 49.90,
             description: 'Perfeito para pequenos negócios começando',
             details: [
-              { id: 1, name: 'Até 100 produtos cadastrados', plan_id: 1 },
-              { id: 2, name: 'Painel administrativo completo', plan_id: 1 },
-              { id: 3, name: 'Suporte por email', plan_id: 1 },
-              { id: 4, name: 'Cardápio digital', plan_id: 1 },
-            ]
-          },
-          {
-            id: 2,
-            name: 'Profissional',
-            url: 'profissional',
-            price: 99.90,
-            description: 'Para negócios que precisam de mais recursos',
-            details: [
-              { id: 5, name: 'Produtos ilimitados', plan_id: 2 },
-              { id: 6, name: 'Painel avançado com relatórios', plan_id: 2 },
-              { id: 7, name: 'Suporte prioritário', plan_id: 2 },
-              { id: 8, name: 'Múltiplos usuários', plan_id: 2 },
-              { id: 9, name: 'Integrações com delivery', plan_id: 2 },
-              { id: 10, name: 'Personalização da marca', plan_id: 2 },
+              { id: 8, name: 'Até 100 produtos cadastrados', plan_id: 2 },
+              { id: 9, name: 'Até 5 usuários simultâneos', plan_id: 2 },
+              { id: 10, name: '100 pedidos por mês', plan_id: 2 },
+              { id: 11, name: 'Painel administrativo completo', plan_id: 2 },
+              { id: 12, name: 'Cardápio digital personalizado', plan_id: 2 },
+              { id: 13, name: '✅ Acesso a Marketing', plan_id: 2 },
+              { id: 14, name: '✅ Acesso a Relatórios', plan_id: 2 },
+              { id: 15, name: 'Suporte por email', plan_id: 2 },
             ]
           },
           {
             id: 3,
-            name: 'Enterprise',
-            url: 'enterprise',
-            price: 199.90,
+            name: 'Premium',
+            url: 'premium',
+            price: 99.90,
             description: 'Solução completa para grandes operações',
             details: [
-              { id: 11, name: 'Tudo do plano Profissional', plan_id: 3 },
-              { id: 12, name: 'Suporte 24/7', plan_id: 3 },
-              { id: 13, name: 'Gerente de conta dedicado', plan_id: 3 },
-              { id: 14, name: 'API personalizada', plan_id: 3 },
-              { id: 15, name: 'Treinamento da equipe', plan_id: 3 },
+              { id: 16, name: 'Produtos ilimitados', plan_id: 3 },
+              { id: 17, name: 'Usuários ilimitados', plan_id: 3 },
+              { id: 18, name: 'Pedidos ilimitados', plan_id: 3 },
+              { id: 19, name: 'Acesso a todas funcionalidades', plan_id: 3 },
+              { id: 20, name: '✅ Acesso a Marketing', plan_id: 3 },
+              { id: 21, name: '✅ Acesso a Relatórios', plan_id: 3 },
+              { id: 22, name: 'Suporte prioritário via WhatsApp', plan_id: 3 },
+              { id: 23, name: 'Múltiplos usuários e permissões', plan_id: 3 },
+              { id: 24, name: 'Integrações com delivery', plan_id: 3 },
+              { id: 25, name: 'Personalização completa da marca', plan_id: 3 },
+              { id: 26, name: 'Relatórios avançados e exportação', plan_id: 3 },
+              { id: 27, name: 'Controle de estoque inteligente', plan_id: 3 },
             ]
           }
         ])
@@ -101,7 +113,7 @@ export function PricingSection() {
     router.push(`/auth/register?plan=${planId}`)
   }
 
-  const isPopular = (index: number) => index === 1 // Segundo plano é popular
+  const isPopular = (index: number) => index === 1 // Segundo plano (Básico) é popular
 
   if (loading) {
     return (
@@ -163,7 +175,7 @@ export function PricingSection() {
             <div className="grid lg:grid-cols-3">
               {plans.map((plan, index) => (
                 <div
-                  key={plan.id}
+                  key={plan.url || `plan-${index}`}
                   className={`p-8 grid grid-rows-subgrid row-span-4 gap-6 ${
                     isPopular(index)
                       ? 'my-2 mx-4 rounded-xl bg-card border-transparent shadow-xl ring-1 ring-foreground/10 backdrop-blur'
@@ -179,12 +191,16 @@ export function PricingSection() {
                   {/* Pricing */}
                   <div>
                     <div className="text-4xl font-bold mb-1">
-                      R$ {isYearly 
-                        ? (Number(plan.price) * 12 * 0.8).toFixed(2) 
-                        : Number(plan.price).toFixed(2)}
+                      {plan.price === 0 || plan.price === '0' || Number(plan.price) === 0
+                        ? 'Grátis'
+                        : `R$ ${isYearly 
+                          ? (Number(plan.price) * 12 * 0.8).toFixed(2) 
+                          : Number(plan.price).toFixed(2)}`}
                     </div>
                     <div className="text-muted-foreground text-sm">
-                      Por mês
+                      {plan.price === 0 || plan.price === '0' || Number(plan.price) === 0
+                        ? 'Para sempre'
+                        : 'Por mês'}
                     </div>
                   </div>
 

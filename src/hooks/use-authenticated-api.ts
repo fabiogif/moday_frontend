@@ -185,6 +185,10 @@ export function useAuthenticatedTables() {
   return useAuthenticatedApi(endpoints.tables.list, { immediate: true })
 }
 
+export function useAuthenticatedPlans() {
+  return useAuthenticatedApi(endpoints.plans.list, { immediate: true })
+}
+
 export function useAuthenticatedTableStats() {
   return useAuthenticatedApi(endpoints.tables.stats, { immediate: true })
 }

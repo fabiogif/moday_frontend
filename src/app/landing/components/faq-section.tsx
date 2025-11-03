@@ -20,9 +20,15 @@ const faqItems: FaqItem[] = [
   },
   {
     value: 'item-2',
+    question: 'Como funcionam as variações e opcionais dos produtos?',
+    answer:
+      'O sistema permite configurar variações (escolha única) como tamanhos P/M/G, tipos de massa ou sabores, onde o cliente escolhe apenas uma opção. Também suporta opcionais (múltipla escolha) como bacon, queijo extra, bordas recheadas, onde o cliente pode adicionar múltiplos itens e até repetir o mesmo várias vezes. O preço total é calculado automaticamente em tempo real.',
+  },
+  {
+    value: 'item-2b',
     question: 'Posso personalizar o cardápio digital?',
     answer:
-      'Sim! Você tem total controle sobre seu cardápio digital. Adicione produtos, organize por categorias, defina preços, adicione imagens e descrições detalhadas. Seu cardápio fica disponível online com um link único que pode ser compartilhado com seus clientes via QR Code ou redes sociais.',
+      'Sim! Você tem total controle sobre seu cardápio digital. Adicione produtos com variações e opcionais, organize por categorias, defina preços (incluindo descontos e acréscimos), adicione imagens e descrições detalhadas. Seu cardápio fica disponível online com um link único que pode ser compartilhado com seus clientes via QR Code ou redes sociais.',
   },
   {
     value: 'item-3',

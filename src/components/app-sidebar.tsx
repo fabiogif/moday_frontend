@@ -207,7 +207,7 @@ const navGroups = [
         url: "/settings/store-hours",
         icon: Clock,
       },
-    ],
+      ],
   },
 ]
 

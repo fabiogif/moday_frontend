@@ -22,7 +22,7 @@ export function HeroSection() {
           <div className="mb-8 flex justify-center">
             <Badge variant="outline" className="px-4 py-2 border-foreground">
               <Star className="w-3 h-3 mr-2 fill-current" />
-              Novo: Sistema completo em nuvem
+              Novo: Variações e Opcionais Personalizáveis
               <ArrowRight className="w-3 h-3 ml-2" />
             </Badge>
           </div>
@@ -38,8 +38,8 @@ export function HeroSection() {
 
           {/* Subheading */}
           <p className="mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-            Controle completo de pedidos, cardápio digital, gestão de estoque e relatórios em tempo real. 
-            Tudo em uma única plataforma moderna, segura e fácil de usar.
+            Cardápio digital com variações e opcionais personalizáveis, controle completo de pedidos, 
+            gestão de estoque e relatórios em tempo real. Tudo em uma única plataforma moderna e intuitiva.
           </p>
 
           {/* CTA Buttons */}

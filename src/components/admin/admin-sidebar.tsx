@@ -17,6 +17,7 @@ import {
   LogOut,
   Shield,
   Users,
+  CreditCard,
 } from 'lucide-react'
 
 const menuItems = [
@@ -29,6 +30,11 @@ const menuItems = [
     title: 'Empresas',
     href: '/admin/empresas',
     icon: Building2,
+  },
+  {
+    title: 'Planos',
+    href: '/admin/plans',
+    icon: CreditCard,
   },
   {
     title: 'Métricas',
