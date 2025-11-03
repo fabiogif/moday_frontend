@@ -192,6 +192,31 @@ class AdminApiClient {
     })
   }
 
+  async pauseTenantAccess(id: string | number, reason: string) {
+    return this.request(`/tenants/${id}/pause-access`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    })
+  }
+
+  async restoreTenantAccess(id: string | number) {
+    return this.request(`/tenants/${id}/restore-access`, {
+      method: 'POST',
+    })
+  }
+
+  async deleteTenant(id: string | number) {
+    return this.request(`/tenants/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  async forceDeleteTenant(id: string | number) {
+    return this.request(`/tenants/${id}/force`, {
+      method: 'DELETE',
+    })
+  }
+
   // ============================================================================
   // METRICS
   // ============================================================================

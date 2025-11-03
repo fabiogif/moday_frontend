@@ -91,14 +91,18 @@ export default function AdminEmpresasPage() {
       </div>
 
       {/* Stat Cards */}
-      <StatCards stats={stats} />
+      <div className="@container/main">
+        <StatCards stats={stats} />
+      </div>
 
       {/* Data Table */}
-      <DataTable 
-        data={tenants} 
-        onRefresh={handleRefresh}
-        isLoading={isLoading}
-      />
+      <div className="@container/main">
+        <DataTable 
+          data={tenants} 
+          onRefresh={handleRefresh}
+          isLoading={isLoading}
+        />
+      </div>
     </div>
   )
 }
