@@ -469,6 +469,20 @@ export const endpoints = {
     adjustPoints: (clientId: number) => `/api/loyalty/client/${clientId}/adjust-points`,
     redeem: '/api/loyalty/redeem',
   },
+
+  // Bank Accounts (Contas Bancárias)
+  bankAccounts: {
+    list: '/api/bank-accounts',
+    create: '/api/bank-accounts',
+    banks: '/api/bank-accounts/banks',
+    show: (uuid: string) => `/api/bank-accounts/${uuid}`,
+    update: (uuid: string) => `/api/bank-accounts/${uuid}`,
+    delete: (uuid: string) => `/api/bank-accounts/${uuid}`,
+    setPrimary: (uuid: string) => `/api/bank-accounts/${uuid}/set-primary`,
+    verify: (uuid: string) => `/api/bank-accounts/${uuid}/verify`,
+    logs: (uuid: string) => `/api/bank-accounts/${uuid}/logs`,
+  },
 } as const
 
+export { endpoints }
 export default apiClient
