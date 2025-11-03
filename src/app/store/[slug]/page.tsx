@@ -1494,17 +1494,6 @@ export default function PublicStorePage() {
             </DialogDescription>
           </DialogHeader>
           
-          {/* DEBUG: Ver produto selecionado */}
-          {selectedProduct && (
-            <div className="hidden">
-              {console.log('🎯 Modal aberto com produto:', selectedProduct)}
-              {console.log('🎯 Variations no modal:', selectedProduct.variations)}
-              {console.log('🎯 Optionals no modal:', selectedProduct.optionals)}
-              {console.log('🎯 Tem variations?', selectedProduct.variations && selectedProduct.variations.length > 0)}
-              {console.log('🎯 Tem optionals?', selectedProduct.optionals && selectedProduct.optionals.length > 0)}
-            </div>
-          )}
-          
           <div className="space-y-6 py-4">
             {/* Preço Base */}
             <div className="bg-muted p-4 rounded-lg">

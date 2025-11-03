@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import { Plan, PlanFormValues } from "../page"
+import { Plan, PlanFormValues, PlanDetail } from "../page"
 import { PlanDetailsManager } from "./plan-details-manager"
 
 interface PlanFormDialogProps {
