@@ -21,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Table,
   TableBody,
@@ -47,6 +48,7 @@ import {
   Save,
   Trash2,
   ShieldAlert,
+  AlertTriangle,
 } from 'lucide-react'
 
 interface TenantDetails {
