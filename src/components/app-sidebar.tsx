@@ -127,6 +127,11 @@ const navGroups = [
         url: "/financial/categories",
         icon: FileText,
       },
+      {
+        title: "Dados Bancários",
+        url: "/contas-bancarias",
+        icon: Building2,
+      },
     ],
   },
   {

@@ -10,8 +10,76 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
 import api, { endpoints } from '@/lib/api-client'
 import { toast } from 'sonner'
-import { Bank, BankAccount, BankAccountFormData } from '@/types/bank-account'
+import { Bank, BankAccount, BankAccountDetail, BankAccountFormData } from '@/types/bank-account'
 import { Loader2 } from 'lucide-react'
+
+// Funções de máscara para Chave PIX
+const maskPixKey = (value: string, type: string): string => {
+  const cleaned = value.replace(/\D/g, '')
+  
+  switch (type) {
+    case 'cpf':
+      // 111.111.111-11
+      return cleaned
+        .slice(0, 11)
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+    
+    case 'cnpj':
+      // 11.111.111/1111-11
+      return cleaned
+        .slice(0, 14)
+        .replace(/(\d{2})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1/$2')
+        .replace(/(\d{4})(\d{1,2})$/, '$1-$2')
+    
+    case 'phone':
+      // (11) 99999-9999
+      return cleaned
+        .slice(0, 11)
+        .replace(/(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{5})(\d{1,4})$/, '$1-$2')
+    
+    default:
+      return value
+  }
+}
+
+const getPixKeyPlaceholder = (type?: string): string => {
+  switch (type) {
+    case 'cpf':
+      return '000.000.000-00'
+    case 'cnpj':
+      return '00.000.000/0000-00'
+    case 'phone':
+      return '(00) 00000-0000'
+    case 'email':
+      return 'email@exemplo.com'
+    case 'random':
+      return 'Chave aleatória do banco'
+    default:
+      return 'Digite a chave PIX'
+  }
+}
+
+const getPixKeyMaxLength = (type?: string): number => {
+  switch (type) {
+    case 'cpf':
+      return 14 // 111.111.111-11
+    case 'cnpj':
+      return 18 // 11.111.111/1111-11
+    case 'phone':
+      return 15 // (11) 99999-9999
+    case 'email':
+      return 100
+    case 'random':
+      return 100
+    default:
+      return 100
+  }
+}
 
 interface BankAccountFormProps {
   open: boolean
@@ -53,7 +121,7 @@ export function BankAccountForm({ open, account, onClose, onSuccess }: BankAccou
   const loadBanks = async () => {
     try {
       setIsLoadingBanks(true)
-      const response = await api.get(endpoints.bankAccounts.banks)
+      const response = await api.get<Bank[]>(endpoints.bankAccounts.banks)
       if (response.success && response.data) {
         setBanks(response.data)
       }
@@ -69,7 +137,7 @@ export function BankAccountForm({ open, account, onClose, onSuccess }: BankAccou
     if (!account) return
     
     try {
-      const response = await api.get(endpoints.bankAccounts.show(account.uuid))
+      const response = await api.get<BankAccountDetail>(endpoints.bankAccounts.show(account.uuid))
       if (response.success && response.data) {
         const data = response.data
         setFormData({
@@ -318,7 +386,10 @@ export function BankAccountForm({ open, account, onClose, onSuccess }: BankAccou
                 <Label>Tipo de Chave</Label>
                 <Select
                   value={formData.pix_key_type || ''}
-                  onValueChange={(value) => setFormData({ ...formData, pix_key_type: value as any })}
+                  onValueChange={(value) => {
+                    // Limpar o campo da chave quando mudar o tipo
+                    setFormData({ ...formData, pix_key_type: value as any, pix_key: '' })
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
@@ -335,9 +406,23 @@ export function BankAccountForm({ open, account, onClose, onSuccess }: BankAccou
               <div>
                 <Label>Chave</Label>
                 <Input
+                  type={formData.pix_key_type === 'email' ? 'email' : 'text'}
                   value={formData.pix_key}
-                  onChange={(e) => setFormData({ ...formData, pix_key: e.target.value })}
-                  placeholder="Digite a chave PIX"
+                  onChange={(e) => {
+                    const value = e.target.value
+                    const type = formData.pix_key_type
+                    
+                    // Aplicar máscara para CPF, CNPJ e Telefone
+                    if (type && ['cpf', 'cnpj', 'phone'].includes(type)) {
+                      const masked = maskPixKey(value, type)
+                      setFormData({ ...formData, pix_key: masked })
+                    } else {
+                      // E-mail e chave aleatória sem máscara
+                      setFormData({ ...formData, pix_key: value })
+                    }
+                  }}
+                  placeholder={getPixKeyPlaceholder(formData.pix_key_type)}
+                  maxLength={getPixKeyMaxLength(formData.pix_key_type)}
                   disabled={!formData.pix_key_type}
                 />
               </div>

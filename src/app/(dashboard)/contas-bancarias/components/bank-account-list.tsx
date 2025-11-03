@@ -4,7 +4,7 @@ import { BankAccount } from '@/types/bank-account'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { CreditCard, Star, Edit, Trash2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { CreditCard, Star, Edit, Trash2 } from 'lucide-react'
 
 interface Props {
   accounts: BankAccount[]
@@ -39,18 +39,6 @@ export function BankAccountList({ accounts, onEdit, onDelete, onSetPrimary }: Pr
                     <Badge variant="default" className="gap-1">
                       <Star className="h-3 w-3 fill-current" />
                       Principal
-                    </Badge>
-                  )}
-                  
-                  {account.is_verified ? (
-                    <Badge variant="outline" className="gap-1 border-green-600 text-green-600">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Verificada
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="gap-1 border-yellow-600 text-yellow-600">
-                      <AlertCircle className="h-3 w-3" />
-                      Pendente
                     </Badge>
                   )}
                   

@@ -484,5 +484,4 @@ export const endpoints = {
   },
 } as const
 
-export { endpoints }
 export default apiClient

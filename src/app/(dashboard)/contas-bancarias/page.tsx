@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, CreditCard, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { Plus, CreditCard, CheckCircle2, Loader2 } from 'lucide-react'
 import { BankAccountForm } from './components/bank-account-form'
 import { BankAccountList } from './components/bank-account-list'
 import api, { endpoints } from '@/lib/api-client'
@@ -134,17 +134,6 @@ export default function ContasBancariasPage() {
                     <p className="text-sm">{primaryAccount.account_holder_name}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    {primaryAccount.is_verified ? (
-                      <Badge variant="default" className="gap-1">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Verificada
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        Pendente Verificação
-                      </Badge>
-                    )}
                     {!primaryAccount.is_active && (
                       <Badge variant="destructive">Inativa</Badge>
                     )}
