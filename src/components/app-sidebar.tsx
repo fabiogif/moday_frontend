@@ -90,9 +90,19 @@ const navGroups = [
         icon: BarChart3,
       },
       {
-        title: "Programa de Fidelidade",
+        title: "Fidelidade",
         url: "/loyalty/program",
         icon: Gift,
+        items: [
+          {
+            title: "Programa",
+            url: "/loyalty/program",
+          },
+          {
+            title: "Recompensas",
+            url: "/loyalty/rewards",
+          },
+        ],
       },
     ],
   },

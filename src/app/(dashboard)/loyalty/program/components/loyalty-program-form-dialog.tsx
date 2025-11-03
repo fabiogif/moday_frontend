@@ -19,7 +19,7 @@ import { extractValidationErrors } from '@/lib/error-formatter'
 const programSchema = z.object({
   name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
   description: z.string().optional(),
-  is_active: z.boolean().default(true),
+  is_active: z.boolean(),
   points_per_currency: z.number().min(0.01, 'Mínimo 0.01 pontos por real'),
   min_purchase_amount: z.number().min(0).optional(),
   max_points_per_purchase: z.number().min(0).optional(),

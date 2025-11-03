@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Gift, Plus, Settings as SettingsIcon, Award, Users } from "lucide-react"
+import { Gift, Plus, Settings as SettingsIcon, Award, Users, ArrowRight } from "lucide-react"
 import { useLoyaltyProgram, useLoyaltyRewards } from "@/hooks/use-loyalty"
 import { LoyaltyProgramFormDialog } from "./components/loyalty-program-form-dialog"
 import { toast } from "sonner"
+import Link from "next/link"
 
 export default function LoyaltyProgramPage() {
   const { data: program, loading, refetch } = useLoyaltyProgram()
@@ -143,9 +144,17 @@ export default function LoyaltyProgramPage() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Recompensas</CardTitle>
-              <CardDescription>Benefícios disponíveis</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>Recompensas</CardTitle>
+                <CardDescription>Benefícios disponíveis</CardDescription>
+              </div>
+              <Link href="/loyalty/rewards">
+                <Button variant="outline" size="sm">
+                  Gerenciar
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </CardHeader>
             <CardContent>
               {rewards && rewards.length > 0 ? (
@@ -166,9 +175,17 @@ export default function LoyaltyProgramPage() {
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Nenhuma recompensa cadastrada
-                </p>
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Nenhuma recompensa cadastrada
+                  </p>
+                  <Link href="/loyalty/rewards">
+                    <Button variant="outline" size="sm">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Adicionar Recompensas
+                    </Button>
+                  </Link>
+                </div>
               )}
             </CardContent>
           </Card>
