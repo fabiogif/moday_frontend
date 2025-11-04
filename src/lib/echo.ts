@@ -61,9 +61,9 @@ export const initializeEcho = () => {
     window.Echo = createEchoInstance(token)
     
     // console.log('Echo: Initialized successfully', {
-      host: process.env.NEXT_PUBLIC_REVERB_HOST,
-      port: process.env.NEXT_PUBLIC_REVERB_PORT,
-    })
+    //   host: process.env.NEXT_PUBLIC_REVERB_HOST,
+    //   port: process.env.NEXT_PUBLIC_REVERB_PORT,
+    // })
     
     return window.Echo
   } catch (error) {

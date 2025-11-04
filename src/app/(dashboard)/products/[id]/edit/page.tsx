@@ -857,10 +857,10 @@ export default function EditProductPage() {
                               }
 
                               // console.log('Imagem selecionada:', {
-                                name: file.name,
-                                size: `${(file.size / 1024).toFixed(2)} KB`,
-                                type: file.type
-                              });
+                              //   name: file.name,
+                              //   size: `${(file.size / 1024).toFixed(2)} KB`,
+                              //   type: file.type
+                              // });
 
                               field.onChange(file);
                               // Preview da nova imagem

@@ -55,6 +55,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import type { Review } from '../page'
@@ -93,6 +103,10 @@ export function ReviewsDataTable({
   const [reviewToReject, setReviewToReject] = useState<Review | null>(null)
   const [rejectReason, setRejectReason] = useState('')
 
+  // Modal de exclusão
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [reviewToDelete, setReviewToDelete] = useState<Review | null>(null)
+
   const handleApproveClick = useCallback((review: Review) => {
     // // console.log('🟢 handleApproveClick chamado', review)
     setReviewToApprove(review)
@@ -125,6 +139,18 @@ export function ReviewsDataTable({
     setReviewToReject(null)
     setRejectReason('')
   }, [reviewToReject, rejectReason, onReject])
+
+  const handleDeleteClick = useCallback((review: Review) => {
+    setReviewToDelete(review)
+    setDeleteModalOpen(true)
+  }, [])
+
+  const handleDeleteConfirm = useCallback(() => {
+    if (!reviewToDelete) return
+    onDelete(reviewToDelete.uuid)
+    setDeleteModalOpen(false)
+    setReviewToDelete(null)
+  }, [reviewToDelete, onDelete])
 
   const renderStars = (rating: number) => {
     return (
@@ -265,11 +291,7 @@ export function ReviewsDataTable({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => {
-                if (confirm('Tem certeza que deseja deletar esta avaliação?')) {
-                  onDelete(review.uuid)
-                }
-              }}
+              onClick={() => handleDeleteClick(review)}
               title="Deletar"
             >
               <Trash2 className="h-4 w-4 text-red-600" />
@@ -278,7 +300,7 @@ export function ReviewsDataTable({
         )
       },
     },
-  ], [onToggleFeatured, onDelete, handleApproveClick, handleRejectClick])
+  ], [onToggleFeatured, handleApproveClick, handleRejectClick, handleDeleteClick])
 
   // Filtro customizado para rating com useMemo
   const filteredReviews = useMemo(() => {
@@ -572,6 +594,39 @@ export function ReviewsDataTable({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Exclusão */}
+      <AlertDialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Avaliação</AlertDialogTitle>
+            <AlertDialogDescription>
+              {reviewToDelete && (
+                <>
+                  Tem certeza que deseja excluir a avaliação de{' '}
+                  <strong>{reviewToDelete.customer_name}</strong>
+                  {reviewToDelete.comment && (
+                    <>
+                      : <em>"{reviewToDelete.comment.substring(0, 50)}
+                      {reviewToDelete.comment.length > 50 && '...'}"</em>
+                    </>
+                  )}
+                  ? Esta ação não pode ser desfeita.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir Avaliação
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

@@ -310,13 +310,13 @@ export default function NewOrderPage() {
       const hasStock = p.qtd_stock > 0;
       
       // console.log('Filtrando produto:', {
-        name: p?.name,
-        identify: p?.identify,
-        hasRequiredFields,
-        isActive,
-        hasStock,
-        shouldInclude: hasRequiredFields && isActive && hasStock
-      });
+      //   name: p?.name,
+      //   identify: p?.identify,
+      //   hasRequiredFields,
+      //   isActive,
+      //   hasStock,
+      //   shouldInclude: hasRequiredFields && isActive && hasStock
+      // });
       
       return hasRequiredFields && isActive && hasStock;
     });
@@ -476,12 +476,12 @@ export default function NewOrderPage() {
         : getPriceAsNumber(product.price);
       
       // console.log('Produto selecionado:', {
-        name: product.name,
-        uuid: product.uuid,
-        priceOriginal: product.price,
-        promotionalPrice: product.promotional_price,
-        finalPrice: price
-      });
+      //   name: product.name,
+      //   uuid: product.uuid,
+      //   priceOriginal: product.price,
+      //   promotionalPrice: product.promotional_price,
+      //   finalPrice: price
+      // });
       
       form.setValue(`products.${index}.price`, price);
     } else {

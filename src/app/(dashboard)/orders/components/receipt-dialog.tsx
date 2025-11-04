@@ -58,12 +58,12 @@ export function ReceiptDialog({ order, open, onOpenChange }: ReceiptDialogProps)
   // console.log('ReceiptDialog - Cliente JSON:', JSON.stringify(order.client, null, 2))
   // console.log('ReceiptDialog - Todas as keys do pedido:', Object.keys(order))
   // console.log('ReceiptDialog - Tentando acessar:', {
-    'order.client?.name': order.client?.name,
-    'order.client?.email': order.client?.email,
-    'order.client?.phone': order.client?.phone,
-    'order.customerName': (order as any).customerName,
-    'order.customer?.name': (order as any).customer?.name
-  })
+  //   'order.client?.name': order.client?.name,
+  //   'order.client?.email': order.client?.email,
+  //   'order.client?.phone': order.client?.phone,
+  //   'order.customerName': (order as any).customerName,
+  //   'order.customer?.name': (order as any).customer?.name
+  // })
   // console.log('ReceiptDialog - Produtos:', orderItems)
 
   // Get order number from either type

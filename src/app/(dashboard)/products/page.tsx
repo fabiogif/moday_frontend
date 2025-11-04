@@ -44,11 +44,11 @@ export default function ProductsPage() {
 
   // Debug: Log dos produtos recebidos
   // console.log('ProductsPage - Produtos recebidos:', {
-    products,
-    isArray: Array.isArray(products),
-    length: Array.isArray(products) ? products.length : 0,
-    sample: Array.isArray(products) && products.length > 0 ? products[0] : null
-  });
+  //   products,
+  //   isArray: Array.isArray(products),
+  //   length: Array.isArray(products) ? products.length : 0,
+  //   sample: Array.isArray(products) && products.length > 0 ? products[0] : null
+  // });
 
   // Estados para o alert de sucesso
   const [successAlert, setSuccessAlert] = useState({

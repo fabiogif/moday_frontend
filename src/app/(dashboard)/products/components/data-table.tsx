@@ -263,10 +263,10 @@ export function DataTable({ products, onDeleteProduct, onEditProduct, onAddProdu
         
         // Debug: Log do produto para verificar estrutura
         // console.log('Product data in actions:', {
-          id: product.id,
-          name: product.name,
-          fullProduct: product
-        });
+        //   id: product.id,
+        //   name: product.name,
+        //   fullProduct: product
+        // });
 
         return (
           <DropdownMenu>
