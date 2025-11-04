@@ -1,5 +1,7 @@
 import { ForgotPasswordForm3 } from "./components/forgot-password-form-3"
 
+export const dynamic = 'force-dynamic'
+
 export default function ForgotPassword3Page() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">

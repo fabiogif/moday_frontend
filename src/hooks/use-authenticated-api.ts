@@ -57,15 +57,20 @@ export function useAuthenticatedApi<T>(
       // Reconstruir queryParams do queryParamsKey para garantir atualização
       const currentQueryParams = queryParamsKey ? JSON.parse(queryParamsKey) : {}
       
-      // Construir URL com query parameters
-      const url = new URL(endpoint, window.location.origin)
-      Object.entries(currentQueryParams).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          url.searchParams.append(key, value.toString())
-        }
-      })
+      // Construir URL com query parameters apenas se houver queryParams adicionais
+      let finalEndpoint = endpoint
       
-      const response = await apiClient.get<T>(url.pathname + url.search)
+      if (Object.keys(currentQueryParams).length > 0) {
+        const url = new URL(endpoint, window.location.origin)
+        Object.entries(currentQueryParams).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            url.searchParams.append(key, value.toString())
+          }
+        })
+        finalEndpoint = url.pathname + url.search
+      }
+      
+      const response = await apiClient.get<T>(finalEndpoint)
       
       if (response.success) {
         // Verificar diferentes estruturas de resposta
@@ -237,6 +242,19 @@ export function useAuthenticatedClients() {
 
 export function useAuthenticatedClientStats() {
   return useAuthenticatedApi(endpoints.clients.stats, { immediate: true })
+}
+
+// Reviews
+export function useAuthenticatedReviews(status?: string) {
+  return useAuthenticatedApi(endpoints.reviews.list(status), { immediate: true })
+}
+
+export function useAuthenticatedReviewStats() {
+  return useAuthenticatedApi(endpoints.reviews.stats, { immediate: true })
+}
+
+export function useAuthenticatedRecentReviews(limit: number = 5) {
+  return useAuthenticatedApi(endpoints.reviews.recent(limit), { immediate: true })
 }
 
 // Hook para operações de mutação (POST, PUT, DELETE)

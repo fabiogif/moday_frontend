@@ -3,6 +3,8 @@ import { Logo } from "@/components/logo"
 import Link from "next/link"
 import Image from "next/image"
 
+export const dynamic = 'force-dynamic'
+
 export default function ForgotPassword2Page() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">

@@ -5,6 +5,7 @@ import { TopProducts } from "./components/top-products"
 import { QuickActions } from "./components/quick-actions"
 import { OrdersVolumeChart } from "./components/orders-volume-chart"
 import { CustomersChart } from "./components/customers-chart"
+import { RecentReviewsCard } from "./components/recent-reviews-card"
 
 export default function Dashboard() {
   return (
@@ -41,6 +42,11 @@ export default function Dashboard() {
           <div className="grid gap-6 grid-cols-1 @5xl:grid-cols-2">
             <RecentTransactions />
             <TopProducts />
+          </div>
+
+          {/* Avaliações Recentes */}
+          <div className="grid gap-6 grid-cols-1">
+            <RecentReviewsCard limit={5} />
           </div>
         </div>
       </div>

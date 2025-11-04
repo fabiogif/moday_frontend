@@ -1,7 +1,7 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { ShoppingCart, Plus, Minus, Trash2, Store, MapPin, Phone, Mail, Image as ImageIcon, Loader2, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,6 +22,9 @@ import { useViaCEP } from '@/hooks/use-viacep'
 import { StateCitySelect } from '@/components/location/state-city-select'
 import { StoreHoursBanner } from './components/store-hours-banner'
 import { SiteFooter } from '@/components/site-footer'
+import { ReviewModal } from './components/review-modal'
+import { ReviewsSection } from './components/reviews-section'
+import { apiClient, endpoints } from '@/lib/api-client'
 
 interface ProductVariation {
   id: string
@@ -50,6 +53,8 @@ interface Product {
 }
 
 interface StoreInfo {
+  id?: number
+  tenant_id?: number
   name: string
   slug: string
   email: string
@@ -106,6 +111,10 @@ export default function PublicStorePage() {
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "checkout" | "success">("cart")
   const [submitting, setSubmitting] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  
+  // Estados para avaliação
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [completedOrderId, setCompletedOrderId] = useState<number | null>(null)
   
   // Estados para variações e opcionais
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -186,11 +195,7 @@ export default function PublicStorePage() {
     .sort(() => Math.random() - 0.5) // Por enquanto, aleatório
     .slice(0, 4)
 
-  useEffect(() => {
-    loadStoreData()
-  }, [slug])
-
-  async function loadPaymentMethods() {
+  const loadPaymentMethods = useCallback(async () => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
       const response = await fetch(`${apiUrl}/api/store/${slug}/payment-methods`, {
@@ -225,9 +230,9 @@ export default function PublicStorePage() {
       toast.error('Erro ao carregar formas de pagamento')
       setPaymentMethods([])
     }
-  }
+  }, [slug])
 
-  async function loadStoreData() {
+  const loadStoreData = useCallback(async () => {
     try {
       setLoading(true)
 
@@ -268,7 +273,11 @@ export default function PublicStorePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [slug, loadPaymentMethods])
+
+  useEffect(() => {
+    loadStoreData()
+  }, [loadStoreData])
 
   function addToCart(
     product: Product, 
@@ -670,15 +679,7 @@ export default function PublicStorePage() {
       const result = await response.json()
       
       // Debug log for response
-      console.log('=== DEBUG: Backend Response ===')
-      console.log('response status:', response.status)
-      console.log('response result:', result)
-
       if (result.success) {
-        console.log('=== DEBUG: Order Result ===')
-        console.log('Full result:', result)
-        console.log('result.data:', result.data)
-        console.log('whatsapp_link:', result.data?.whatsapp_link)
         setOrderResult(result.data)
         setCheckoutStep("success")
         setCart([])
@@ -755,6 +756,44 @@ export default function PublicStorePage() {
     } else {
       console.error('WhatsApp link não encontrado no resultado do pedido:', orderResult)
       toast.error('Link do WhatsApp não disponível. Verifique se a loja possui telefone cadastrado.')
+    }
+  }
+
+  const handleReviewSubmit = async (reviewData: any) => {
+    try {
+      if (!storeInfo) {
+        throw new Error('Dados da loja não encontrados')
+      }
+      
+      // Usar order_id (identify) do orderResult
+      const orderIdentify = orderResult?.order_id
+      
+      if (!orderIdentify) {
+        throw new Error('Identificador do pedido não encontrado')
+      }
+      
+      // Usar tenant_id ou id (fallback)
+      const tenantId = storeInfo.tenant_id || storeInfo.id
+      
+      if (!tenantId) {
+        throw new Error('ID do tenant não encontrado. Dados da loja incompletos.')
+      }
+
+      const response = await apiClient.post(endpoints.reviews.public.create, {
+        tenant_id: tenantId,
+        order_identify: orderIdentify,
+        rating: reviewData.rating,
+        comment: reviewData.comment,
+        customer_name: reviewData.customer_name || clientData.name,
+        customer_email: reviewData.customer_email || clientData.email,
+      })
+
+      if (response.success) {
+        setShowReviewModal(false)
+        toast.success('Avaliação enviada! Obrigado pelo feedback.')
+      }
+    } catch (error: any) {
+      throw new Error(error.message || 'Erro ao enviar avaliação')
     }
   }
 
@@ -1516,6 +1555,21 @@ export default function PublicStorePage() {
                 }}>
                   Fazer Novo Pedido
                 </Button>
+
+                {/* Botão de Avaliação */}
+                <Button 
+                  variant="secondary" 
+                  className="w-full" 
+                  onClick={() => {
+                    if (!orderResult?.order_id) {
+                      toast.error('Identificador do pedido não encontrado.')
+                      return
+                    }
+                    setShowReviewModal(true)
+                  }}
+                >
+                  ⭐ Avaliar Pedido
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -1696,6 +1750,27 @@ export default function PublicStorePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Avaliação */}
+      {orderResult?.order_id && (
+        <ReviewModal
+          isOpen={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          onSubmit={handleReviewSubmit}
+          orderData={{
+            id: 0, // Não usado (enviamos order_identify)
+            identify: orderResult.order_id
+          }}
+          tenantId={storeInfo?.tenant_id || storeInfo?.id || 0}
+          customerData={{
+            name: clientData.name,
+            email: clientData.email
+          }}
+        />
+      )}
+
+      {/* Seção de Avaliações */}
+      <ReviewsSection tenantSlug={slug} />
 
       {/* Footer */}
       <SiteFooter />

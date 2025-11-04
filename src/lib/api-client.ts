@@ -97,6 +97,14 @@ class ApiClient {
 
     if (this.token) {
       headers.Authorization = `Bearer ${this.token}`
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔑 ApiClient - Header Authorization:', `Bearer ${this.token.substring(0, 20)}...`)
+      }
+    } else {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('⚠️ ApiClient - Sem token! Headers sem Authorization')
+      }
     }
 
     return headers
@@ -348,6 +356,29 @@ export const endpoints = {
     update: (id: string | number) => `/api/plan/${id}`,
     delete: (id: string | number) => `/api/plan/${id}`,
     details: (id: string | number) => `/api/plan/${id}/details`,
+  },
+
+  // Avaliações
+  reviews: {
+    // Admin
+    list: (status?: string) => `/api/reviews${status ? `?status=${status}` : ''}`,
+    pending: '/api/reviews/pending',
+    stats: '/api/reviews/stats',
+    recent: (limit?: number) => `/api/reviews/recent${limit ? `?limit=${limit}` : ''}`,
+    show: (uuid: string) => `/api/reviews/${uuid}`,
+    approve: (uuid: string) => `/api/reviews/${uuid}/approve`,
+    reject: (uuid: string) => `/api/reviews/${uuid}/reject`,
+    toggleFeatured: (uuid: string) => `/api/reviews/${uuid}/toggle-featured`,
+    delete: (uuid: string) => `/api/reviews/${uuid}`,
+    
+    // Público
+    public: {
+      list: (slug: string) => `/api/store/${slug}/reviews`,
+      featured: (slug: string) => `/api/store/${slug}/reviews/featured`,
+      stats: (slug: string) => `/api/store/${slug}/reviews/stats`,
+      create: '/api/public/reviews',
+      helpful: (uuid: string) => `/api/public/reviews/${uuid}/helpful`,
+    }
   },
 
   // Tenant
