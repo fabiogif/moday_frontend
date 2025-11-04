@@ -99,8 +99,8 @@ export default function DeliverySettingsPage() {
       setSaving(true)
 
       // Buscar tenant UUID
-      const userResponse = await apiClient.get('/api/auth/me')
-      const tenantUuid = userResponse.data?.tenant?.uuid
+      const userResponse = await apiClient.get<{ tenant?: { uuid?: string } }>('/api/auth/me')
+      const tenantUuid = (userResponse.data as any)?.tenant?.uuid
 
       if (!tenantUuid) {
         throw new Error('Tenant não encontrado')
