@@ -21,6 +21,7 @@ import { maskCPF, validateCPF, maskPhone, validatePhone, maskZipCode, validateEm
 import { useViaCEP } from '@/hooks/use-viacep'
 import { StateCitySelect } from '@/components/location/state-city-select'
 import { StoreHoursBanner } from './components/store-hours-banner'
+import { SiteFooter } from '@/components/site-footer'
 
 interface ProductVariation {
   id: string
@@ -1695,6 +1696,9 @@ export default function PublicStorePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Footer */}
+      <SiteFooter />
     </div>
   )
 }

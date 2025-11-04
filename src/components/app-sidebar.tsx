@@ -25,6 +25,7 @@ import {
   Store,
   Receipt,
   LayoutDashboard,
+  Utensils,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -236,24 +237,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                {tenantData?.logo ? (
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden border border-border">
-                    <Image 
-                      src={tenantData.logo} 
-                      alt={tenantData.name || "Logo"} 
-                      width={32} 
-                      height={32} 
-                      className="w-full h-full object-cover"
-                    />
+                
+                     <Utensils className="h-4 w-4 text-primary" />
                   </div>
-                ) : (
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                    <Logo size={24} className="text-current" />
-                  </div>
-                )}
+                 
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">
-                    {"Tahan"}
+                    {/* {tenantData?.name || "Tahan"} */}
+                    Tahan
                   </span>
                   <span className="truncate text-xs">Sistema de Gestão de Restaurante</span>
                 </div>
