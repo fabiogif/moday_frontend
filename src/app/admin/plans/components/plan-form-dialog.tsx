@@ -76,7 +76,12 @@ export function PlanFormDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
+    // Incluir details junto com formData
+    const dataToSubmit = {
+      ...formData,
+      details: details.map(d => ({ name: d.name }))
+    }
+    onSubmit(dataToSubmit as any)
   }
 
   // Gerar URL automaticamente a partir do nome

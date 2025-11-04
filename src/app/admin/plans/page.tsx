@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DataTable } from "./components/data-table"
 import { PlanFormDialog } from "./components/plan-form-dialog"
 import { SuccessAlert } from "./components/success-alert"
@@ -43,14 +43,18 @@ export interface PlanFormValues {
   max_orders_per_month: number | null
   has_marketing: boolean
   has_reports: boolean
+  details?: Array<{ name: string }>
 }
 
 export default function PlansPage() {
-  const { data: plans, loading, error, refetch, isAuthenticated } = useAuthenticatedPlans()
+  const { data: plansFromApi, loading, error, refetch, isAuthenticated } = useAuthenticatedPlans()
   const { mutate: createPlan, loading: creating } = useMutation()
   const { mutate: updatePlan, loading: updating } = useMutation()
   const { mutate: deletePlan, loading: deleting } = useMutation()
 
+  // Estado local para manipulação otimista da lista
+  const [localPlans, setLocalPlans] = useState<Plan[]>([])
+  
   const [successAlert, setSuccessAlert] = useState({
     open: false,
     title: "",
@@ -59,6 +63,13 @@ export default function PlansPage() {
 
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null)
   const [formDialogOpen, setFormDialogOpen] = useState(false)
+
+  // Sincronizar planos da API com estado local
+  useEffect(() => {
+    if (plansFromApi && Array.isArray(plansFromApi)) {
+      setLocalPlans(plansFromApi)
+    }
+  }, [plansFromApi])
 
   const handleAddPlan = async (planData: PlanFormValues) => {
     try {
@@ -69,13 +80,20 @@ export default function PlansPage() {
       )
 
       if (result) {
+        // Adicionar plano à lista local imediatamente
+        if (result && typeof result === 'object' && 'id' in result) {
+          setLocalPlans((prevPlans) => [...prevPlans, result as Plan])
+        }
+
         setSuccessAlert({
           open: true,
           title: "Sucesso!",
           message: "Plano criado com sucesso!",
         })
         setFormDialogOpen(false)
-        await refetch()
+        
+        // Recarregar da API em segundo plano
+        refetch()
       }
     } catch (error) {
       console.error("Erro ao criar plano:", error)
@@ -97,16 +115,25 @@ export default function PlansPage() {
         planData
       )
 
-      if (result) {
-        setSuccessAlert({
-          open: true,
-          title: "Sucesso!",
-          message: "Plano atualizado com sucesso!",
-        })
-        setFormDialogOpen(false)
-        setEditingPlan(null)
-        await refetch()
-      }
+      // Atualizar plano na lista local imediatamente
+      setLocalPlans((prevPlans) =>
+        prevPlans.map((p) =>
+          p.id === editingPlan.id
+            ? { ...p, ...planData, id: editingPlan.id, details: editingPlan.details }
+            : p
+        )
+      )
+
+      setSuccessAlert({
+        open: true,
+        title: "Sucesso!",
+        message: "Plano atualizado com sucesso!",
+      })
+      setFormDialogOpen(false)
+      setEditingPlan(null)
+
+      // Recarregar da API em segundo plano
+      refetch()
     } catch (error) {
       console.error("Erro ao editar plano:", error)
       setSuccessAlert({
@@ -114,6 +141,8 @@ export default function PlansPage() {
         title: "Erro!",
         message: "Erro ao editar plano. Tente novamente."
       })
+      // Em caso de erro, recarregar lista para garantir consistência
+      refetch()
     }
   }
 
@@ -124,14 +153,17 @@ export default function PlansPage() {
         "DELETE"
       )
 
-      if (result) {
-        setSuccessAlert({
-          open: true,
-          title: "Sucesso!",
-          message: "Plano excluído com sucesso!",
-        })
-        await refetch()
-      }
+      // Remover plano da lista local imediatamente (UI otimista)
+      setLocalPlans((prevPlans) => prevPlans.filter((p) => p.id !== id))
+
+      setSuccessAlert({
+        open: true,
+        title: "Sucesso!",
+        message: "Plano excluído com sucesso!",
+      })
+
+      // Recarregar da API em segundo plano para garantir sincronização
+      refetch()
     } catch (error) {
       console.error("Erro ao excluir plano:", error)
       setSuccessAlert({
@@ -139,6 +171,8 @@ export default function PlansPage() {
         title: "Erro!",
         message: "Erro ao excluir plano. Tente novamente."
       })
+      // Em caso de erro, recarregar lista para garantir consistência
+      refetch()
     }
   }
 
@@ -185,7 +219,7 @@ export default function PlansPage() {
         </div>
 
         <DataTable
-          plans={Array.isArray(plans) ? plans : []}
+          plans={Array.isArray(localPlans) ? localPlans : []}
           onDeletePlan={handleDeletePlan}
           onEditPlan={handleStartEdit}
         />

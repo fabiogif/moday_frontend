@@ -103,6 +103,15 @@ class ApiClient {
   }
 
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
+    // Tratar resposta 204 No Content (comum em DELETE)
+    if (response.status === 204) {
+      return {
+        success: true,
+        message: 'Operação realizada com sucesso',
+        data: null as T
+      }
+    }
+
     try {
       const data = await response.json()
 
