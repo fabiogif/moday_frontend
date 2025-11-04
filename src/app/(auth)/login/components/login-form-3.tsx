@@ -15,6 +15,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { Utensils } from "lucide-react"
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -76,8 +77,9 @@ export function LoginForm3({
             <div className="flex flex-col gap-6">
               <div className="flex justify-center mb-2">
                 <Link href="/" className="flex items-center gap-2 font-medium">
-                  <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md">
-                    <Logo size={24} />
+                  <div className="text-muted-foreground flex size-8 items-center justify-center rounded-md">
+                    {/* <Logo size={24} /> */}
+                    <Utensils className="h-4 w-4 text-primary" />
                   </div>
                   <span className="text-xl">Tahan</span>
                 </Link>
