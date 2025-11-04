@@ -61,8 +61,8 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
       
-      console.log('🔍 API URL:', apiUrl)
-      console.log('🔍 Full URL:', `${apiUrl}/api/admin/auth/login`)
+      // console.log('🔍 API URL:', apiUrl)
+      // console.log('🔍 Full URL:', `${apiUrl}/api/admin/auth/login`)
       
       const response = await fetch(`${apiUrl}/api/admin/auth/login`, {
         method: 'POST',

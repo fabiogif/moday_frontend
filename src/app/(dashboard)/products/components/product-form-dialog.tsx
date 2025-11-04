@@ -387,7 +387,7 @@ export function ProductFormDialog({ onAddProduct, renderAsPage = false }: Produc
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        console.log("Arquivo selecionado:", file);
+                        // console.log("Arquivo selecionado:", file);
                         onChange(file || undefined);
                       }}
                       {...field}

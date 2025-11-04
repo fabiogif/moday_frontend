@@ -77,13 +77,13 @@ export function PermissionForm({ onSuccess, initialData }: PermissionFormProps) 
 
   const onSubmit = async (data: PermissionFormValues) => {
     try {
-      console.log('Dados da permissão:', data)
+      // console.log('Dados da permissão:', data)
       
       // Aqui você faria a chamada para a API
       // const result = await createPermission(data)
       
       // Simular sucesso
-      console.log('Permissão criada com sucesso:', data)
+      // console.log('Permissão criada com sucesso:', data)
       
       if (onSuccess) {
         onSuccess()

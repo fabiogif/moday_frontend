@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -93,31 +93,38 @@ export function ReviewsDataTable({
   const [reviewToReject, setReviewToReject] = useState<Review | null>(null)
   const [rejectReason, setRejectReason] = useState('')
 
-  const handleApproveClick = (review: Review) => {
+  const handleApproveClick = useCallback((review: Review) => {
+    // // console.log('🟢 handleApproveClick chamado', review)
     setReviewToApprove(review)
     setApproveModalOpen(true)
-  }
+    // // console.log('🟢 Modal deve abrir agora')
+  }, [])
 
-  const handleApproveConfirm = () => {
+  const handleApproveConfirm = useCallback(async () => {
     if (!reviewToApprove) return
-    onApprove(reviewToApprove.uuid)
-    setApproveModalOpen(false)
-    setReviewToApprove(null)
-  }
+    // // console.log('🟢 handleApproveConfirm chamado', reviewToApprove.uuid)
+    try {
+      await onApprove(reviewToApprove.uuid)
+      setApproveModalOpen(false)
+      setReviewToApprove(null)
+    } catch (error) {
+      console.error('❌ Erro ao aprovar:', error)
+    }
+  }, [reviewToApprove, onApprove])
 
-  const handleRejectClick = (review: Review) => {
+  const handleRejectClick = useCallback((review: Review) => {
     setReviewToReject(review)
     setRejectReason('')
     setRejectModalOpen(true)
-  }
+  }, [])
 
-  const handleRejectConfirm = () => {
+  const handleRejectConfirm = useCallback(() => {
     if (!reviewToReject) return
     onReject(reviewToReject.uuid, rejectReason)
     setRejectModalOpen(false)
     setReviewToReject(null)
     setRejectReason('')
-  }
+  }, [reviewToReject, rejectReason, onReject])
 
   const renderStars = (rating: number) => {
     return (
@@ -147,7 +154,7 @@ export function ReviewsDataTable({
     return <Badge variant={config.variant}>{config.text}</Badge>
   }
 
-  const columns: ColumnDef<Review>[] = [
+  const columns: ColumnDef<Review>[] = useMemo(() => [
     {
       accessorKey: 'customer_name',
       header: 'Cliente',
@@ -221,7 +228,11 @@ export function ReviewsDataTable({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleApproveClick(review)}
+                  onClick={(e) => {
+                    // // console.log('🔴 BOTÃO APROVAR CLICADO!', e)
+                    // // console.log('🔴 Review:', review)
+                    handleApproveClick(review)
+                  }}
                   title="Aprovar"
                 >
                   <Check className="h-4 w-4 text-green-600" />
@@ -229,7 +240,10 @@ export function ReviewsDataTable({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleRejectClick(review)}
+                  onClick={(e) => {
+                    // // console.log('🟡 BOTÃO REJEITAR CLICADO!', e)
+                    handleRejectClick(review)
+                  }}
                   title="Rejeitar"
                 >
                   <X className="h-4 w-4 text-red-600" />
@@ -264,15 +278,17 @@ export function ReviewsDataTable({
         )
       },
     },
-  ]
+  ], [onToggleFeatured, onDelete, handleApproveClick, handleRejectClick])
 
-  // Filtro customizado para rating
-  const filteredReviews = reviews.filter((review) => {
-    if (ratingFilter !== 'all') {
-      return review.rating === parseInt(ratingFilter)
-    }
-    return true
-  })
+  // Filtro customizado para rating com useMemo
+  const filteredReviews = useMemo(() => {
+    return reviews.filter((review) => {
+      if (ratingFilter !== 'all') {
+        return review.rating === parseInt(ratingFilter)
+      }
+      return true
+    })
+  }, [reviews, ratingFilter])
 
   const table = useReactTable({
     data: filteredReviews,

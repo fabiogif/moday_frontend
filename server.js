@@ -7,7 +7,7 @@ const path = require('path');
 
 const serverPath = path.join(__dirname, '.next', 'standalone', 'server.js');
 
-console.log('Starting Next.js server from:', serverPath);
+// console.log('Starting Next.js server from:', serverPath);
 
 // Start the actual server
 const server = spawn('node', [serverPath], {

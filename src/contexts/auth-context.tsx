@@ -65,9 +65,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const savedTrialStatus = localStorage.getItem('trial-status')
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('AuthContext: Inicializando autenticação')
-      console.log('AuthContext: Token presente?', !!savedToken)
-      console.log('AuthContext: Token é JWT?', savedToken?.startsWith('eyJ'))
+      // console.log('AuthContext: Inicializando autenticação')
+      // console.log('AuthContext: Token presente?', !!savedToken)
+      // console.log('AuthContext: Token é JWT?', savedToken?.startsWith('eyJ'))
     }
     
     if (savedUser && savedToken) {
@@ -99,7 +99,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           apiClient.setToken(savedToken)
           
           if (process.env.NODE_ENV === 'development') {
-            console.log('AuthContext: Autenticação restaurada com sucesso')
+            // console.log('AuthContext: Autenticação restaurada com sucesso')
           }
         } catch (error) {
           console.error('Erro ao recuperar dados de autenticação:', error)
@@ -136,10 +136,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const data = result.data // Extract the data object from the response
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('AuthContext: Login bem-sucedido')
-        console.log('AuthContext: Token recebido?', !!data.token)
-        console.log('AuthContext: Token é JWT?', data.token?.startsWith('eyJ'))
-        console.log('AuthContext: Trial status:', data.trial_status)
+        // console.log('AuthContext: Login bem-sucedido')
+        // console.log('AuthContext: Token recebido?', !!data.token)
+        // console.log('AuthContext: Token é JWT?', data.token?.startsWith('eyJ'))
+        // console.log('AuthContext: Trial status:', data.trial_status)
       }
       
       setUser(data.user)

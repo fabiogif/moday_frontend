@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { ReviewStatCards } from './components/review-stat-cards'
 import { ReviewsDataTable } from './components/reviews-data-table'
 import { useAuthenticatedReviews, useAuthenticatedReviewStats, useMutation } from '@/hooks/use-authenticated-api'
@@ -53,17 +53,21 @@ export default function ReviewsPage() {
   const reviews = Array.isArray(reviewsData) ? reviewsData : []
   const stats = statsData as ReviewStats | null
 
-  const handleApprove = async (uuid: string) => {
+  const handleApprove = useCallback(async (uuid: string) => {
+    // console.log('🔵 handleApprove chamado com uuid:', uuid)
     try {
+      // console.log('🔵 Chamando approveReview...')
       await approveReview(endpoints.reviews.approve(uuid), 'POST', {})
+      // console.log('🔵 approveReview concluído')
       toast.success('Avaliação aprovada!')
       refetch()
     } catch (error: any) {
+      console.error('🔴 Erro no handleApprove:', error)
       toast.error(error.message || 'Erro ao aprovar avaliação')
     }
-  }
+  }, [approveReview, refetch])
 
-  const handleReject = async (uuid: string, reason: string) => {
+  const handleReject = useCallback(async (uuid: string, reason: string) => {
     try {
       await rejectReview(endpoints.reviews.reject(uuid), 'POST', {
         reason: reason || 'Conteúdo inadequado'
@@ -73,9 +77,9 @@ export default function ReviewsPage() {
     } catch (error: any) {
       toast.error(error.message || 'Erro ao rejeitar avaliação')
     }
-  }
+  }, [rejectReview, refetch])
 
-  const handleToggleFeatured = async (uuid: string) => {
+  const handleToggleFeatured = useCallback(async (uuid: string) => {
     try {
       await toggleFeatured(endpoints.reviews.toggleFeatured(uuid), 'POST', {})
       toast.success('Status de destaque atualizado')
@@ -83,9 +87,9 @@ export default function ReviewsPage() {
     } catch (error: any) {
       toast.error(error.message || 'Erro ao atualizar destaque')
     }
-  }
+  }, [toggleFeatured, refetch])
 
-  const handleDelete = async (uuid: string) => {
+  const handleDelete = useCallback(async (uuid: string) => {
     try {
       await deleteReview(endpoints.reviews.delete(uuid), 'DELETE')
       toast.success('Avaliação removida')
@@ -93,7 +97,7 @@ export default function ReviewsPage() {
     } catch (error: any) {
       toast.error(error.message || 'Erro ao deletar avaliação')
     }
-  }
+  }, [deleteReview, refetch])
 
   if (!isAuthenticated) {
     return (

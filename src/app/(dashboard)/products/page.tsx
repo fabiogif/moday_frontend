@@ -43,7 +43,7 @@ export default function ProductsPage() {
   const { mutate: deleteProduct, loading: deleting } = useMutation()
 
   // Debug: Log dos produtos recebidos
-  console.log('ProductsPage - Produtos recebidos:', {
+  // console.log('ProductsPage - Produtos recebidos:', {
     products,
     isArray: Array.isArray(products),
     length: Array.isArray(products) ? products.length : 0,
@@ -67,7 +67,7 @@ export default function ProductsPage() {
 
   const handleAddProduct = async (productData: ProductFormValues) => {
     try {
-      console.log('Dados do produto antes do envio:', productData)
+      // console.log('Dados do produto antes do envio:', productData)
       
       // Validar se categories está definido
       if (!productData.categories || productData.categories.length === 0) {
@@ -96,15 +96,15 @@ export default function ProductsPage() {
       }
       
       // Debug: Log do FormData criado
-      console.log('FormData criado:')
+      // console.log('FormData criado:')
       for (const [key, value] of formData.entries()) {
-        console.log(`${key}:`, value)
+        // console.log(`${key}:`, value)
       }
       
       // Teste: Se não há imagem, enviar como JSON ao invés de FormData
       let result
       if (!productData.image || !(productData.image instanceof File)) {
-        console.log('Sem imagem - enviando como JSON')
+        // console.log('Sem imagem - enviando como JSON')
         const jsonData = {
           name: productData.name,
           description: productData.description,
@@ -114,14 +114,14 @@ export default function ProductsPage() {
           is_active: productData.is_active ?? true,
           categories: productData.categories
         }
-        console.log('Dados JSON:', jsonData)
+        // console.log('Dados JSON:', jsonData)
         result = await createProduct(
           endpoints.products.create,
           'POST',
           jsonData
         )
       } else {
-        console.log('Com imagem - enviando como FormData')
+        // console.log('Com imagem - enviando como FormData')
         result = await createProduct(
           endpoints.products.create,
           'POST',
@@ -130,7 +130,7 @@ export default function ProductsPage() {
       }
       
       if (result) {
-        console.log('Produto criado com sucesso:', result)
+        // console.log('Produto criado com sucesso:', result)
         // ✅ Atualizar grid automaticamente sem refresh
         await refetch()
         handleShowSuccessAlert('Sucesso!', 'Produto criado com sucesso!')
@@ -188,7 +188,7 @@ export default function ProductsPage() {
   const handleEditProduct = async (product: Product) => {
     // Esta função não é mais necessária, pois a edição é feita via página dedicada
     // Mantida apenas para compatibilidade com a interface DataTable
-    console.log('handleEditProduct chamado - redirecionando para página de edição')
+    // console.log('handleEditProduct chamado - redirecionando para página de edição')
   }
 
   if (!isAuthenticated) {

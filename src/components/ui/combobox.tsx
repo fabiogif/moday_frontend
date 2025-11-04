@@ -75,7 +75,7 @@ export function Combobox({
   // Log para debug
   React.useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 [Combobox] Debug:', {
+      // console.log('🔍 [Combobox] Debug:', {
         totalOptions: options.length,
         filteredOptions: filteredOptions.length,
         selectedValue: value,
@@ -175,7 +175,7 @@ export function ComboboxForm({
   // Log para debug do ComboboxForm
   React.useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 [ComboboxForm] Debug:', {
+      // console.log('🔍 [ComboboxForm] Debug:', {
         fieldValue: field?.value,
         safeValue,
         hasOnChange: !!field?.onChange,

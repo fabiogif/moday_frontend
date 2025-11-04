@@ -137,10 +137,10 @@ export default function ClientsPage() {
       // Log organizado em desenvolvimento
       if (process.env.NODE_ENV === 'development') {
         console.group('🔴 Erro ao Criar Cliente')
-        console.log('Error:', error)
-        console.log('Message:', error?.message)
-        console.log('Data:', error?.data)
-        console.log('Errors:', error?.errors)
+        // console.log('Error:', error)
+        // console.log('Message:', error?.message)
+        // console.log('Data:', error?.data)
+        // console.log('Errors:', error?.errors)
         console.groupEnd()
       }
       
@@ -182,7 +182,7 @@ export default function ClientsPage() {
       
       if (process.env.NODE_ENV === 'development') {
         console.group('🔴 Erro ao Excluir Cliente')
-        console.log('Error:', error)
+        // console.log('Error:', error)
         console.groupEnd()
       }
       
@@ -235,10 +235,10 @@ export default function ClientsPage() {
     } catch (error: any) {
       if (process.env.NODE_ENV === 'development') {
         console.group('🔴 Erro ao Atualizar Cliente')
-        console.log('Error:', error)
-        console.log('Message:', error?.message)
-        console.log('Data:', error?.data)
-        console.log('Errors:', error?.errors)
+        // console.log('Error:', error)
+        // console.log('Message:', error?.message)
+        // console.log('Data:', error?.data)
+        // console.log('Errors:', error?.errors)
         console.groupEnd()
       }
       

@@ -48,7 +48,7 @@ class ApiClient {
       }
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('ApiClient: Token carregado:', this.token ? 'Sim' : 'Não')
+        // console.log('ApiClient: Token carregado:', this.token ? 'Sim' : 'Não')
       }
     }
   }
@@ -61,7 +61,7 @@ class ApiClient {
       document.cookie = `auth-token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`
     }
     if (process.env.NODE_ENV === 'development') {
-      console.log('ApiClient: Token definido:', token ? 'Sim' : 'Não')
+      // console.log('ApiClient: Token definido:', token ? 'Sim' : 'Não')
     }
   }
 
@@ -119,9 +119,9 @@ class ApiClient {
         // Log amigável apenas em desenvolvimento
         if (process.env.NODE_ENV === 'development') {
           console.group(`🔴 Erro ${response.status} - ${response.statusText}`)
-          console.log('Mensagem:', data.message || 'Sem mensagem')
+          // console.log('Mensagem:', data.message || 'Sem mensagem')
           if (data.errors) {
-            console.log('Erros de validação:', data.errors)
+            // console.log('Erros de validação:', data.errors)
           }
           console.groupEnd()
         }
@@ -160,7 +160,7 @@ class ApiClient {
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('ApiClient: GET:', url.toString())
+      // console.log('ApiClient: GET:', url.toString())
     }
 
     const response = await fetch(url.toString(), {
@@ -176,7 +176,7 @@ class ApiClient {
     const isFormData = data instanceof FormData
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('ApiClient: POST:', `${this.baseURL}${endpoint}`, 'isFormData:', isFormData)
+      // console.log('ApiClient: POST:', `${this.baseURL}${endpoint}`, 'isFormData:', isFormData)
     }
 
     const response = await fetch(`${this.baseURL}${endpoint}`, {

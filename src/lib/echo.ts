@@ -60,7 +60,7 @@ export const initializeEcho = () => {
 
     window.Echo = createEchoInstance(token)
     
-    console.log('Echo: Initialized successfully', {
+    // console.log('Echo: Initialized successfully', {
       host: process.env.NEXT_PUBLIC_REVERB_HOST,
       port: process.env.NEXT_PUBLIC_REVERB_PORT,
     })
@@ -78,7 +78,7 @@ export const initializeEcho = () => {
 export const disconnectEcho = () => {
   if (typeof window !== 'undefined' && window.Echo) {
     window.Echo.disconnect()
-    console.log('Echo: Disconnected')
+    // console.log('Echo: Disconnected')
   }
 }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Script para remover console.log de produção
+ * Script para remover // console.log de produção
  * Mantém apenas console.error em blocos catch
  */
 
@@ -23,14 +23,14 @@ const filesToProcess = [
 
 function removeConsoleLogs(filePath) {
   if (!fs.existsSync(filePath)) {
-    console.log(`❌ Arquivo não encontrado: ${filePath}`)
+    // console.log(`❌ Arquivo não encontrado: ${filePath}`)
     return
   }
 
   let content = fs.readFileSync(filePath, 'utf8')
   const originalContent = content
   
-  // Remover console.log
+  // Remover // console.log
   content = content.replace(/\s*console\.log\([^)]*\);?\n?/g, '')
   
   // Remover console.debug
@@ -51,16 +51,16 @@ function removeConsoleLogs(filePath) {
   
   if (content !== originalContent) {
     fs.writeFileSync(filePath, content, 'utf8')
-    console.log(`✅ Limpo: ${path.relative(srcDir, filePath)}`)
+    // console.log(`✅ Limpo: ${path.relative(srcDir, filePath)}`)
   } else {
-    console.log(`⏭️  Sem alterações: ${path.relative(srcDir, filePath)}`)
+    // console.log(`⏭️  Sem alterações: ${path.relative(srcDir, filePath)}`)
   }
 }
 
-console.log('🧹 Removendo console.log de produção...\n')
+// console.log('🧹 Removendo // console.log de produção...\n')
 
 filesToProcess.forEach(removeConsoleLogs)
 
-console.log('\n✅ Processo concluído!')
-console.log('\n💡 Nota: console.error em blocos catch foram mantidos para debug de erros')
+// console.log('\n✅ Processo concluído!')
+// console.log('\n💡 Nota: console.error em blocos catch foram mantidos para debug de erros')
 

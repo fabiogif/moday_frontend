@@ -48,7 +48,7 @@ export function MetricsOverview() {
     tenantId: user?.tenant_id ? parseInt(user.tenant_id) : 0,
     enabled: isAuthenticated && !!user?.tenant_id,
     onMetricsUpdate: (data) => {
-      console.log('Dashboard metrics updated in real-time:', data)
+      // console.log('Dashboard metrics updated in real-time:', data)
       refetch() // Reload when update received
     }
   })

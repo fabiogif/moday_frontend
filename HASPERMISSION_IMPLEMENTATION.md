@@ -587,7 +587,7 @@ const usePermissions = () => {
     const fetchPermissions = async () => {
       try {
         const response = await apiService.getUserPermissions();
-        console.log("🔐 Permissões carregadas:", response.data);
+        // console.log("🔐 Permissões carregadas:", response.data);
         setPermissions(response.data || []);
       } catch (error) {
         console.error("❌ Erro ao carregar permissões:", error);
@@ -600,7 +600,7 @@ const usePermissions = () => {
 
   const hasPermission = (permission: string): boolean => {
     const result = permissions.includes(permission);
-    console.log(`🔍 Verificando permissão "${permission}":`, result);
+    // console.log(`🔍 Verificando permissão "${permission}":`, result);
     return result;
   };
 

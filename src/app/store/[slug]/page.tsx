@@ -214,7 +214,7 @@ export default function PublicStorePage() {
       const data = await response.json()
       
       if (data.success && data.data) {
-        console.log('data.data', data.data, data)
+        // console.log('data.data', data.data, data)
         setPaymentMethods(data.data)
         // Selecionar primeiro método por padrão
         if (data.data.length > 0) {
@@ -298,25 +298,25 @@ export default function PublicStorePage() {
 
   function handleProductClick(product: Product) {
     // DEBUG: Ver o produto clicado
-    console.log('🛒 Produto clicado:', product);
-    console.log('🔍 Variations:', product.variations);
-    console.log('🔍 Optionals:', product.optionals);
+    // console.log('🛒 Produto clicado:', product);
+    // console.log('🔍 Variations:', product.variations);
+    // console.log('🔍 Optionals:', product.optionals);
     
     // Se o produto tem variações OU opcionais, abrir modal de seleção
     const hasVariations = product.variations && product.variations.length > 0
     const hasOptionals = product.optionals && product.optionals.length > 0
     
-    console.log('✅ hasVariations:', hasVariations);
-    console.log('✅ hasOptionals:', hasOptionals);
+    // console.log('✅ hasVariations:', hasVariations);
+    // console.log('✅ hasOptionals:', hasOptionals);
     
     if (hasVariations || hasOptionals) {
-      console.log('📱 Abrindo modal de seleção...');
+      // console.log('📱 Abrindo modal de seleção...');
       setSelectedProduct(product)
       setSelectedVariation('')
       setSelectedOptionalsQty({})
       setShowSelectionDialog(true)
     } else {
-      console.log('➡️ Adicionando direto ao carrinho (sem opções)');
+      // console.log('➡️ Adicionando direto ao carrinho (sem opções)');
       // Adicionar direto ao carrinho sem variações/opcionais
       addToCart(product)
     }
@@ -646,18 +646,18 @@ export default function PublicStorePage() {
       }
 
       // Debug log to see what's being sent
-      console.log('=== DEBUG: Order Data Being Sent ===')
-      console.log('shippingMethod:', shippingMethod)
-      console.log('deliveryDataToSend:', deliveryDataToSend)
-      console.log('full orderData:', orderData)
+      // console.log('=== DEBUG: Order Data Being Sent ===')
+      // console.log('shippingMethod:', shippingMethod)
+      // console.log('deliveryDataToSend:', deliveryDataToSend)
+      // console.log('full orderData:', orderData)
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
       const fullUrl = `${apiUrl}/api/store/${slug}/orders`
       
-      console.log('=== DEBUG: Request Info ===')
-      console.log('API URL:', apiUrl)
-      console.log('Full URL:', fullUrl)
-      console.log('Slug:', slug)
+      // console.log('=== DEBUG: Request Info ===')
+      // console.log('API URL:', apiUrl)
+      // console.log('Full URL:', fullUrl)
+      // console.log('Slug:', slug)
       
       const response = await fetch(fullUrl, {
         method: "POST",
@@ -748,10 +748,10 @@ export default function PublicStorePage() {
   }
 
   function openWhatsApp() {
-    console.log('openWhatsApp called - orderResult:', orderResult)
+    // console.log('openWhatsApp called - orderResult:', orderResult)
     
     if (orderResult?.whatsapp_link) {
-      console.log('Opening WhatsApp link:', orderResult.whatsapp_link)
+      // console.log('Opening WhatsApp link:', orderResult.whatsapp_link)
       window.open(orderResult.whatsapp_link, "_blank")
     } else {
       console.error('WhatsApp link não encontrado no resultado do pedido:', orderResult)

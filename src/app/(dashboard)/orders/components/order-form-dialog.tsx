@@ -182,7 +182,7 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
       setLocalClients(clientsFromApi)
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔄 [Dialog] Clientes sincronizados:', clientsFromApi.length)
+        // console.log('🔄 [Dialog] Clientes sincronizados:', clientsFromApi.length)
       }
     }
   }, [clientsData])
@@ -295,9 +295,9 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
         
         if (process.env.NODE_ENV === 'development') {
           console.group('✅ [Dialog] Cliente Criado')
-          console.log('Novo cliente:', newClient)
-          console.log('ID:', newClient.id)
-          console.log('Nome:', newClient.name)
+          // console.log('Novo cliente:', newClient)
+          // console.log('ID:', newClient.id)
+          // console.log('Nome:', newClient.name)
           console.groupEnd()
         }
         
@@ -306,7 +306,7 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
           const updated = [newClient, ...prev]
           
           if (process.env.NODE_ENV === 'development') {
-            console.log('📝 [Dialog] Lista de clientes atualizada:', updated.length, 'clientes')
+            // console.log('📝 [Dialog] Lista de clientes atualizada:', updated.length, 'clientes')
           }
           
           return updated
@@ -322,7 +322,7 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
         form.setValue('clientId', clientId)
         
         if (process.env.NODE_ENV === 'development') {
-          console.log('🎯 [Dialog] Cliente selecionado:', clientId)
+          // console.log('🎯 [Dialog] Cliente selecionado:', clientId)
         }
         
         // Fechar o modal de adicionar cliente

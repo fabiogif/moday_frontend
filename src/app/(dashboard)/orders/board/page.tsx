@@ -299,7 +299,7 @@ export default function OrdersBoardPage() {
     tenantId,
     enabled: !!user?.tenant_id,
     onOrderCreated: useCallback((newOrder: any) => {
-      console.log('Real-time: New order created', newOrder)
+      // console.log('Real-time: New order created', newOrder)
       const normalized = normalizeOrder(newOrder)
       
       setOrders((prev) => {
@@ -313,7 +313,7 @@ export default function OrdersBoardPage() {
     }, [normalizeOrder]),
     
     onOrderStatusUpdated: useCallback(({ order: updatedOrder, oldStatus, newStatus }: any) => {
-      console.log('Real-time: Order status updated', { updatedOrder, oldStatus, newStatus })
+      // console.log('Real-time: Order status updated', { updatedOrder, oldStatus, newStatus })
       
       setOrders((prev) =>
         prev.map((o) =>
@@ -327,7 +327,7 @@ export default function OrdersBoardPage() {
     }, [normalizeOrder]),
     
     onOrderUpdated: useCallback((updatedOrder: any) => {
-      console.log('Real-time: Order updated', updatedOrder)
+      // console.log('Real-time: Order updated', updatedOrder)
       
       setOrders((prev) =>
         prev.map((o) =>

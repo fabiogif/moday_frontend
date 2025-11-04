@@ -311,12 +311,12 @@ export function useMutation<T, P = any>() {
       // Log detalhado apenas em desenvolvimento
       if (process.env.NODE_ENV === 'development') {
         console.group('🔴 AuthenticatedMutation: Erro na Requisição')
-        console.log('Tipo:', err?.constructor?.name || typeof err)
-        console.log('Mensagem:', err?.message || 'Sem mensagem')
-        console.log('Data:', err?.data)
-        console.log('Errors:', err?.errors)
-        console.log('Status:', err?.status)
-        console.log('Erro completo:', err)
+        // console.log('Tipo:', err?.constructor?.name || typeof err)
+        // console.log('Mensagem:', err?.message || 'Sem mensagem')
+        // console.log('Data:', err?.data)
+        // console.log('Errors:', err?.errors)
+        // console.log('Status:', err?.status)
+        // console.log('Erro completo:', err)
         console.groupEnd()
       }
       

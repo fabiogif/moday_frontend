@@ -393,7 +393,7 @@ Antes de fazer commit:
 - [ ] Nomes de testes são descritivos
 - [ ] Usa queries semânticas (role, label)
 - [ ] Operações assíncronas usam `waitFor`
-- [ ] Não há `console.log` esquecidos
+- [ ] Não há `// console.log` esquecidos
 
 ---
 

@@ -124,7 +124,7 @@ export default function CompanySettings() {
         form.setValue('city', address.city);
       }, 500);
       
-      console.log('Endereço da empresa preenchido:', address);
+      // console.log('Endereço da empresa preenchido:', address);
     }
   }
   
@@ -162,7 +162,7 @@ export default function CompanySettings() {
         if (company.state) form.setValue('state', company.state);
         if (company.zipCode) form.setValue('zipcode', company.zipCode);
         
-        console.log('Dados da empresa preenchidos:', company);
+        // console.log('Dados da empresa preenchidos:', company);
         toast.success('Dados da empresa preenchidos automaticamente!');
       }
     }

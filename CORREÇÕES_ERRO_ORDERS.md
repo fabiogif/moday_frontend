@@ -117,10 +117,10 @@ Adicionado `useEffect` para debug:
 ```typescript
 useEffect(() => {
   if (tablesData) {
-    console.log("Tables Data (raw):", tablesData);
-    console.log("Tables Array (filtered):", tables);
+    // console.log("Tables Data (raw):", tablesData);
+    // console.log("Tables Array (filtered):", tables);
     if (tables.length > 0) {
-      console.log("First table:", tables[0]);
+      // console.log("First table:", tables[0]);
     }
   }
 }, [tablesData, tables]);

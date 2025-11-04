@@ -4,11 +4,11 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
     
-    console.log('Tentativa de login:', { email })
+    // console.log('Tentativa de login:', { email })
 
     // Fazer requisição para o backend Laravel
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
-    console.log('Backend URL:', backendUrl)
+    // console.log('Backend URL:', backendUrl)
     
     const response = await fetch(`${backendUrl}/api/auth/login`, {
       method: 'POST',
@@ -19,8 +19,8 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({ email, password }),
     })
 
-    console.log('Response status:', response.status)
-    console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+    // console.log('Response status:', response.status)
+    // console.log('Response headers:', Object.fromEntries(response.headers.entries()))
 
     if (!response.ok) {
       let errorMessage = 'Erro ao fazer login'
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       
       try {
         const error = await response.json()
-        console.log('Error response:', error)
+        // console.log('Error response:', error)
         
         // Tratar diferentes estruturas de erro do backend
         if (error.errors) {
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
           errorMessage = `Erro ${response.status}: ${response.statusText}`
         }
       } catch (parseError) {
-        console.log('Erro ao parsear resposta de erro:', parseError)
+        // console.log('Erro ao parsear resposta de erro:', parseError)
         errorMessage = `Erro ${response.status}: ${response.statusText}`
       }
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json()
-    console.log('Login successful, data received from backend')
+    // console.log('Login successful, data received from backend')
 
     // Ajustar para a estrutura de resposta do backend (ApiResponseClass)
     const responseData = {

@@ -23,11 +23,11 @@ export default function OrdersPage() {
   // Debug: Log dos pedidos recebidos
   useEffect(() => {
     if (orders) {
-      console.log('OrdersPage - Total de pedidos:', Array.isArray(orders) ? orders.length : 'não é array')
-      console.log('OrdersPage - Pedidos:', orders)
+      // console.log('OrdersPage - Total de pedidos:', Array.isArray(orders) ? orders.length : 'não é array')
+      // console.log('OrdersPage - Pedidos:', orders)
       if (Array.isArray(orders) && orders.length > 0) {
-        console.log('OrdersPage - Primeiro pedido completo:', orders[0])
-        console.log('OrdersPage - Cliente do primeiro pedido:', orders[0].client)
+        // console.log('OrdersPage - Primeiro pedido completo:', orders[0])
+        // console.log('OrdersPage - Cliente do primeiro pedido:', orders[0].client)
       }
     }
   }, [orders])

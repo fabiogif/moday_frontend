@@ -262,7 +262,7 @@ export function DataTable({ products, onDeleteProduct, onEditProduct, onAddProdu
         const product = row.original
         
         // Debug: Log do produto para verificar estrutura
-        console.log('Product data in actions:', {
+        // console.log('Product data in actions:', {
           id: product.id,
           name: product.name,
           fullProduct: product

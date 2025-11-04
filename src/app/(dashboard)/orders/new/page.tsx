@@ -224,51 +224,51 @@ export default function NewOrderPage() {
   const discountType = form.watch("discountType");
 
   // Debug dos hooks após todas as declarações
-  console.log('=== COMPARAÇÃO DE HOOKS ===');
-  console.log('Hook NÃO autenticado:');
-  console.log('  - loading:', productsLoading);
-  console.log('  - data:', productsData);
-  console.log('Hook AUTENTICADO:');
-  console.log('  - loading:', productsLoadingAuth);
-  console.log('  - data:', productsDataAuth);
-  console.log('===========================');
+  // console.log('=== COMPARAÇÃO DE HOOKS ===');
+  // console.log('Hook NÃO autenticado:');
+  // console.log('  - loading:', productsLoading);
+  // console.log('  - data:', productsData);
+  // console.log('Hook AUTENTICADO:');
+  // console.log('  - loading:', productsLoadingAuth);
+  // console.log('  - data:', productsDataAuth);
+  // console.log('===========================');
 
   // Transformar dados da API com logs mais detalhados
   const getArrayFromData = (data: any) => {
-    console.log('getArrayFromData entrada:', data);
-    console.log('tipo:', typeof data);
-    console.log('é array?', Array.isArray(data));
+    // console.log('getArrayFromData entrada:', data);
+    // console.log('tipo:', typeof data);
+    // console.log('é array?', Array.isArray(data));
     
     if (!data) {
-      console.log('data é null/undefined');
+      // console.log('data é null/undefined');
       return [];
     }
     
     if (Array.isArray(data)) {
-      console.log('data é array direto, length:', data.length);
-      console.log('primeiros itens:', data.slice(0, 2));
+      // console.log('data é array direto, length:', data.length);
+      // console.log('primeiros itens:', data.slice(0, 2));
       return data;
     }
     
     if (data.data && Array.isArray(data.data)) {
-      console.log('data.data é array, length:', data.data.length);
-      console.log('primeiros itens:', data.data.slice(0, 2));
+      // console.log('data.data é array, length:', data.data.length);
+      // console.log('primeiros itens:', data.data.slice(0, 2));
       return data.data;
     }
     
     if (data.success && data.data && Array.isArray(data.data)) {
-      console.log('data.success.data é array, length:', data.data.length);
-      console.log('primeiros itens:', data.data.slice(0, 2));
+      // console.log('data.success.data é array, length:', data.data.length);
+      // console.log('primeiros itens:', data.data.slice(0, 2));
       return data.data;
     }
     
     // Tentar extrair se for Laravel Resource Collection
     if (data.data && data.data.data && Array.isArray(data.data.data)) {
-      console.log('Laravel Resource Collection detectada, length:', data.data.data.length);
+      // console.log('Laravel Resource Collection detectada, length:', data.data.data.length);
       return data.data.data;
     }
     
-    console.log('Não conseguiu extrair array, estrutura completa:', JSON.stringify(data, null, 2));
+    // console.log('Não conseguiu extrair array, estrutura completa:', JSON.stringify(data, null, 2));
     return [];
   };
 
@@ -278,18 +278,18 @@ export default function NewOrderPage() {
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       console.group('🔄 [useEffect] Sincronização de Clientes')
-      console.log('clientsData:', clientsData)
-      console.log('clientsFromApi.length:', clientsFromApi.length)
-      console.log('clientsFromApi:', clientsFromApi)
-      console.log('localClients.length (antes):', localClients.length)
+      // console.log('clientsData:', clientsData)
+      // console.log('clientsFromApi.length:', clientsFromApi.length)
+      // console.log('clientsFromApi:', clientsFromApi)
+      // console.log('localClients.length (antes):', localClients.length)
     }
     
     if (clientsFromApi.length > 0 || clientsData) {
       setLocalClients(clientsFromApi);
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('✅ [useEffect] Clientes sincronizados:', clientsFromApi.length);
-        console.log('localClients.length (depois):', clientsFromApi.length);
+        // console.log('✅ [useEffect] Clientes sincronizados:', clientsFromApi.length);
+        // console.log('localClients.length (depois):', clientsFromApi.length);
       }
     }
     
@@ -309,7 +309,7 @@ export default function NewOrderPage() {
       const isActive = p.is_active === true || p.is_active === 1;
       const hasStock = p.qtd_stock > 0;
       
-      console.log('Filtrando produto:', {
+      // console.log('Filtrando produto:', {
         name: p?.name,
         identify: p?.identify,
         hasRequiredFields,
@@ -323,22 +323,22 @@ export default function NewOrderPage() {
   const tables = getArrayFromData(tablesData).filter((t: any) => t && t.id);
   const paymentMethods = getArrayFromData(paymentMethodsData).filter((pm: any) => pm && pm.uuid && pm.is_active);
 
-  console.log('=== DADOS FINAIS ===');
-  console.log('finalProductsData:', finalProductsData);
-  console.log('finalProductsLoading:', finalProductsLoading);
-  console.log('produtos após filtro:', products.length);
-  console.log('produtos brutos antes do filtro:', getArrayFromData(finalProductsData).length);
-  console.log('primeiro produto filtrado:', products[0]);
-  console.log('==================');
+  // console.log('=== DADOS FINAIS ===');
+  // console.log('finalProductsData:', finalProductsData);
+  // console.log('finalProductsLoading:', finalProductsLoading);
+  // console.log('produtos após filtro:', products.length);
+  // console.log('produtos brutos antes do filtro:', getArrayFromData(finalProductsData).length);
+  // console.log('primeiro produto filtrado:', products[0]);
+  // console.log('==================');
 
-  console.log('=== COMPARAÇÃO DE HOOKS ===');
-  console.log('Hook NÃO autenticado:');
-  console.log('  - loading:', productsLoading);
-  console.log('  - data:', productsData);
-  console.log('Hook AUTENTICADO:');
-  console.log('  - loading:', productsLoadingAuth);
-  console.log('  - data:', productsDataAuth);
-  console.log('===========================');
+  // console.log('=== COMPARAÇÃO DE HOOKS ===');
+  // console.log('Hook NÃO autenticado:');
+  // console.log('  - loading:', productsLoading);
+  // console.log('  - data:', productsData);
+  // console.log('Hook AUTENTICADO:');
+  // console.log('  - loading:', productsLoadingAuth);
+  // console.log('  - data:', productsDataAuth);
+  // console.log('===========================');
 
   const clientOptions: ComboboxOption[] = clients.map((client: Client) => ({
     value: client.uuid || client.identify || client.id.toString(),
@@ -347,16 +347,16 @@ export default function NewOrderPage() {
 
   // Debug do clientOptions
   if (process.env.NODE_ENV === 'development') {
-    console.log('🔍 [clientOptions] Atualizado:');
-    console.log('  - clients.length:', clients.length);
-    console.log('  - clientOptions.length:', clientOptions.length);
-    console.log('  - localClients.length:', localClients.length);
-    console.log('  - clientsFromApi.length:', clientsFromApi.length);
-    console.log('  - Primeiros 3 clientOptions:', clientOptions.slice(0, 3));
+    // console.log('🔍 [clientOptions] Atualizado:');
+    // console.log('  - clients.length:', clients.length);
+    // console.log('  - clientOptions.length:', clientOptions.length);
+    // console.log('  - localClients.length:', localClients.length);
+    // console.log('  - clientsFromApi.length:', clientsFromApi.length);
+    // console.log('  - Primeiros 3 clientOptions:', clientOptions.slice(0, 3));
   }
 
   const productOptions: ComboboxOption[] = products.map((product: Product) => {
-    console.log('Mapeando produto para opção:', product);
+    // console.log('Mapeando produto para opção:', product);
     
     // Converter price de string para number se necessário
     const price = typeof product.price === 'string' 
@@ -384,10 +384,10 @@ export default function NewOrderPage() {
     };
   });
 
-  console.log('=== PRODUTO OPTIONS FINAL ===');
-  console.log('Total de options:', productOptions.length);
-  console.log('Primeiras 3 options:', productOptions.slice(0, 3));
-  console.log('============================');
+  // console.log('=== PRODUTO OPTIONS FINAL ===');
+  // console.log('Total de options:', productOptions.length);
+  // console.log('Primeiras 3 options:', productOptions.slice(0, 3));
+  // console.log('============================');
 
   const tableOptions: ComboboxOption[] = tables.map((table: Table) => ({
     value: table.uuid || table.identify || table.id.toString(),
@@ -475,7 +475,7 @@ export default function NewOrderPage() {
         ? getPriceAsNumber(product.promotional_price)
         : getPriceAsNumber(product.price);
       
-      console.log('Produto selecionado:', {
+      // console.log('Produto selecionado:', {
         name: product.name,
         uuid: product.uuid,
         priceOriginal: product.price,
@@ -493,8 +493,8 @@ export default function NewOrderPage() {
   const handleAddClient = async (clientData: any) => {
     if (process.env.NODE_ENV === 'development') {
       console.group('🚀 [handleAddClient] Iniciando criação de cliente')
-      console.log('clientData recebido:', clientData)
-      console.log('localClients.length (antes):', localClients.length)
+      // console.log('clientData recebido:', clientData)
+      // console.log('localClients.length (antes):', localClients.length)
     }
     
     try {
@@ -505,7 +505,7 @@ export default function NewOrderPage() {
       )
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('✅ [handleAddClient] Resultado da API:', result)
+        // console.log('✅ [handleAddClient] Resultado da API:', result)
       }
       
       if (result && typeof result === 'object' && 'data' in result && result.data && typeof result.data === 'object' && 'id' in result.data) {
@@ -513,11 +513,11 @@ export default function NewOrderPage() {
         
         if (process.env.NODE_ENV === 'development') {
           console.group('✅ [handleAddClient] Cliente Criado')
-          console.log('Novo cliente:', newClient)
-          console.log('ID:', newClient.id)
-          console.log('Nome:', newClient.name)
-          console.log('UUID:', newClient.uuid)
-          console.log('Identify:', newClient.identify)
+          // console.log('Novo cliente:', newClient)
+          // console.log('ID:', newClient.id)
+          // console.log('Nome:', newClient.name)
+          // console.log('UUID:', newClient.uuid)
+          // console.log('Identify:', newClient.identify)
           console.groupEnd()
         }
         
@@ -526,8 +526,8 @@ export default function NewOrderPage() {
           const updated = [newClient, ...prev];
           
           if (process.env.NODE_ENV === 'development') {
-            console.log('📝 [handleAddClient] Lista de clientes atualizada:', updated.length, 'clientes');
-            console.log('Primeiros 3 clientes:', updated.slice(0, 3));
+            // console.log('📝 [handleAddClient] Lista de clientes atualizada:', updated.length, 'clientes');
+            // console.log('Primeiros 3 clientes:', updated.slice(0, 3));
           }
           
           return updated;
@@ -536,7 +536,7 @@ export default function NewOrderPage() {
         // Recarregar lista de clientes para sincronizar com backend
         setTimeout(async () => {
           if (process.env.NODE_ENV === 'development') {
-            console.log('🔄 [handleAddClient] Refetching clients...');
+            // console.log('🔄 [handleAddClient] Refetching clients...');
           }
           await refetchClients();
         }, 100);
@@ -546,7 +546,7 @@ export default function NewOrderPage() {
         form.setValue('clientId', clientId);
         
         if (process.env.NODE_ENV === 'development') {
-          console.log('🎯 [handleAddClient] Cliente selecionado:', clientId);
+          // console.log('🎯 [handleAddClient] Cliente selecionado:', clientId);
         }
         
         // Fechar o modal de adicionar cliente
@@ -559,7 +559,7 @@ export default function NewOrderPage() {
         toast.success(successMessage);
         
         if (process.env.NODE_ENV === 'development') {
-          console.log('✅ [handleAddClient] Processo concluído com sucesso');
+          // console.log('✅ [handleAddClient] Processo concluído com sucesso');
         }
       } else {
         if (process.env.NODE_ENV === 'development') {
@@ -581,18 +581,18 @@ export default function NewOrderPage() {
 
   const onSubmit = async (data: OrderFormValues) => {
     try {
-      console.log('=== DEBUG onSubmit ===');
-      console.log('auth object:', auth);
-      console.log('auth.user:', auth.user);
+      // console.log('=== DEBUG onSubmit ===');
+      // console.log('auth object:', auth);
+      // console.log('auth.user:', auth.user);
       
       // Obter token da empresa do usuário autenticado
       const user = auth.user;
-      console.log('user from auth:', user);
-      console.log('user?.tenant:', user?.tenant);
-      console.log('user?.tenant_id:', user?.tenant_id);
+      // console.log('user from auth:', user);
+      // console.log('user?.tenant:', user?.tenant);
+      // console.log('user?.tenant_id:', user?.tenant_id);
       
       const tenantId = user?.tenant?.uuid || user?.tenant_id;
-      console.log('tenantId calculated:', tenantId);
+      // console.log('tenantId calculated:', tenantId);
       
       if (!tenantId) {
         console.error('tenantId is falsy:', tenantId);
@@ -624,11 +624,11 @@ export default function NewOrderPage() {
         }))
       };
       
-      console.log('=== DADOS CONVERTIDOS PARA O BACKEND ===');
-      console.log('orderData:', orderData);
-      console.log('token_company:', orderData.token_company);
-      console.log('table:', orderData.table);
-      console.log('products:', orderData.products);
+      // console.log('=== DADOS CONVERTIDOS PARA O BACKEND ===');
+      // console.log('orderData:', orderData);
+      // console.log('token_company:', orderData.token_company);
+      // console.log('table:', orderData.table);
+      // console.log('products:', orderData.products);
       
       const result = await createOrder(endpoints.orders.create, 'POST', orderData);
       

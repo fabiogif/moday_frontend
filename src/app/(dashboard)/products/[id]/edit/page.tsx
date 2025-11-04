@@ -157,35 +157,35 @@ export default function EditProductPage() {
       form.reset(productData);
 
       // DEBUG: Ver o que está chegando do backend
-      console.log('🔍 Produto carregado:', product);
-      console.log('🔍 Variations recebidas:', product.variations);
-      console.log('🔍 Optionals recebidos:', product.optionals);
+      // console.log('🔍 Produto carregado:', product);
+      // console.log('🔍 Variations recebidas:', product.variations);
+      // console.log('🔍 Optionals recebidos:', product.optionals);
 
       // Carregar variações se existirem
       if (product.variations && Array.isArray(product.variations)) {
-        console.log('✅ Carregando', product.variations.length, 'variações');
+        // console.log('✅ Carregando', product.variations.length, 'variações');
         setVariations(product.variations);
       } else {
-        console.log('⚠️ Nenhuma variação encontrada ou formato inválido');
+        // console.log('⚠️ Nenhuma variação encontrada ou formato inválido');
         setVariations([]);
       }
       
       // Carregar opcionais se existirem
       if (product.optionals && Array.isArray(product.optionals)) {
-        console.log('✅ Carregando', product.optionals.length, 'opcionais');
+        // console.log('✅ Carregando', product.optionals.length, 'opcionais');
         setOptionals(product.optionals);
       } else {
-        console.log('⚠️ Nenhum opcional encontrado ou formato inválido');
+        // console.log('⚠️ Nenhum opcional encontrado ou formato inválido');
         setOptionals([]);
       }
 
       // Carregar imagem atual
       if (product.url || product.image) {
         const imageUrl = product.url || product.image;
-        console.log('Carregando imagem do produto:', imageUrl);
+        // console.log('Carregando imagem do produto:', imageUrl);
         setCurrentImage(imageUrl || null);
       } else {
-        console.log('Produto sem imagem');
+        // console.log('Produto sem imagem');
         setCurrentImage(null);
       }
     }
@@ -218,8 +218,8 @@ export default function EditProductPage() {
 
   const onSubmit = async (data: ProductFormValues) => {
     try {
-      console.log('Dados do formulário:', data);
-      console.log('Produto original:', product);
+      // console.log('Dados do formulário:', data);
+      // console.log('Produto original:', product);
       
       const formData = new FormData();
       
@@ -270,7 +270,7 @@ export default function EditProductPage() {
       }
 
       // Variações como JSON
-      console.log('📤 Enviando variations:', variations);
+      // console.log('📤 Enviando variations:', variations);
       if (variations.length > 0) {
         formData.append('variations', JSON.stringify(variations));
       } else {
@@ -278,7 +278,7 @@ export default function EditProductPage() {
       }
       
       // Opcionais como JSON
-      console.log('📤 Enviando optionals:', optionals);
+      // console.log('📤 Enviando optionals:', optionals);
       if (optionals.length > 0) {
         formData.append('optionals', JSON.stringify(optionals));
       } else {
@@ -293,15 +293,15 @@ export default function EditProductPage() {
       // Nova imagem (se selecionada)
       if (data.image && data.image instanceof File) {
         formData.append('image', data.image);
-        console.log('Nova imagem selecionada:', data.image.name);
+        // console.log('Nova imagem selecionada:', data.image.name);
       } else {
-        console.log('Sem nova imagem - mantendo a atual');
+        // console.log('Sem nova imagem - mantendo a atual');
       }
 
       // Debug: Log de tudo que está sendo enviado
-      console.log('Dados enviados para API:');
+      // console.log('Dados enviados para API:');
       for (const [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
+        // console.log(`${key}:`, value);
       }
 
       // IMPORTANTE: Usar POST ao invés de PUT quando enviando FormData com _method
@@ -856,7 +856,7 @@ export default function EditProductPage() {
                                 return;
                               }
 
-                              console.log('Imagem selecionada:', {
+                              // console.log('Imagem selecionada:', {
                                 name: file.name,
                                 size: `${(file.size / 1024).toFixed(2)} KB`,
                                 type: file.type

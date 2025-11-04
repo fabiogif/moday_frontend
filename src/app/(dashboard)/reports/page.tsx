@@ -67,10 +67,10 @@ export default function ReportsPage() {
       const fullUrl = `${API_URL}${endpoint}`
       const token = apiClient.getToken()
       
-      console.log('🔍 Gerando relatório:')
-      console.log('  URL:', fullUrl)
-      console.log('  Token:', token ? 'Presente' : 'Ausente')
-      console.log('  Filtros:', filters)
+      // console.log('🔍 Gerando relatório:')
+      // console.log('  URL:', fullUrl)
+      // console.log('  Token:', token ? 'Presente' : 'Ausente')
+      // console.log('  Filtros:', filters)
       
       if (!token) {
         throw new Error('Você precisa estar logado para gerar relatórios')
@@ -87,7 +87,7 @@ export default function ReportsPage() {
         body: JSON.stringify(filters),
       })
 
-      console.log('📡 Resposta:', response.status, response.statusText)
+      // console.log('📡 Resposta:', response.status, response.statusText)
 
       if (!response.ok) {
         const errorText = await response.text()

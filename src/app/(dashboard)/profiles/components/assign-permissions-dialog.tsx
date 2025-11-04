@@ -117,7 +117,7 @@ export function AssignPermissionsDialog({
     if (!profile) return
 
     try {
-      console.log('Vinculando permissões:', { profileId: profile.id, permissionIds: selectedPermissions })
+      // console.log('Vinculando permissões:', { profileId: profile.id, permissionIds: selectedPermissions })
       const result = await syncPermissions(
         endpoints.profiles.syncPermissions(profile.id),
         'PUT',

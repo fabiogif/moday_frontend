@@ -27,9 +27,9 @@ export async function PUT(
       }
       
       // Debug: Log dos dados recebidos na API Route PUT
-      console.log('API Route PUT: FormData recebido:')
+      // console.log('API Route PUT: FormData recebido:')
       for (const [key, value] of formData.entries()) {
-        console.log(`${key}:`, value)
+        // console.log(`${key}:`, value)
       }
       
       response = await fetch(`${backendUrl}/api/product/${id}`, {

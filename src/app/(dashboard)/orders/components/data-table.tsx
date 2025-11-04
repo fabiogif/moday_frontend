@@ -130,7 +130,7 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
         const client = row.getValue("client") as any
           // Debug: verificar estrutura do cliente
           if (!client?.name) {
-            console.log('Client data:', client, 'Full row:', row.original)
+            // console.log('Client data:', client, 'Full row:', row.original)
           }
         return (
           <div>

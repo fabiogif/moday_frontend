@@ -67,7 +67,7 @@ export default function CategoriesPage() {
   }
 
   const handleEditCategory = (category: Category) => {
-    console.log("Edit category:", category)
+    // console.log("Edit category:", category)
   }
 
   if (!isAuthenticated) {

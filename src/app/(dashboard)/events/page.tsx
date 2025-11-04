@@ -114,12 +114,12 @@ export default function EventsPage() {
       setSelectedDate(undefined)
       
       // Recarregar dados em paralelo
-      console.log('🔄 Recarregando eventos e estatísticas...')
+      // console.log('🔄 Recarregando eventos e estatísticas...')
       await Promise.all([
         refetchEvents(),
         refetchStats(),
       ])
-      console.log('✅ Dados recarregados com sucesso!')
+      // console.log('✅ Dados recarregados com sucesso!')
       
     } catch (error: any) {
       // Erro já foi tratado no EventFormDialog

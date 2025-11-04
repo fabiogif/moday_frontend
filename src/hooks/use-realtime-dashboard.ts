@@ -26,7 +26,7 @@ export function useRealtimeDashboard({
   const channelRef = useRef<any>(null)
 
   const handleMetricsUpdate = useCallback((data: { metrics: DashboardMetrics }) => {
-    console.log('Dashboard metrics updated:', data.metrics)
+    // console.log('Dashboard metrics updated:', data.metrics)
     onMetricsUpdate?.(data.metrics)
   }, [onMetricsUpdate])
 
@@ -48,7 +48,7 @@ export function useRealtimeDashboard({
 
     // Subscribe to private channel for tenant dashboard
     const channelName = `tenant.${tenantId}.dashboard`
-    console.log(`useRealtimeDashboard: Subscribing to channel: ${channelName}`)
+    // console.log(`useRealtimeDashboard: Subscribing to channel: ${channelName}`)
 
     const channel = echo.private(channelName)
     channelRef.current = channel
@@ -58,7 +58,7 @@ export function useRealtimeDashboard({
 
     // Handle connection status
     channel.subscribed(() => {
-      console.log(`useRealtimeDashboard: Successfully subscribed to ${channelName}`)
+      // console.log(`useRealtimeDashboard: Successfully subscribed to ${channelName}`)
       setIsConnected(true)
     })
 
@@ -69,7 +69,7 @@ export function useRealtimeDashboard({
 
     // Cleanup function
     return () => {
-      console.log(`useRealtimeDashboard: Cleaning up channel ${channelName}`)
+      // console.log(`useRealtimeDashboard: Cleaning up channel ${channelName}`)
       
       if (channelRef.current) {
         echo.leave(channelName)
