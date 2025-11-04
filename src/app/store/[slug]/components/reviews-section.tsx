@@ -113,10 +113,10 @@ export function ReviewsSection({ tenantSlug }: ReviewsSectionProps) {
 
   if (loading) {
     return (
-      <section className="py-8">
-        <div className="container">
+      <section className="py-8 bg-muted/30">
+        <div className="w-full max-w-6xl mx-auto px-4 md:px-6 lg:px-8">
           <div className="flex items-center justify-center py-12">
-            <div className="animate-pulse space-y-4 w-full max-w-4xl">
+            <div className="animate-pulse space-y-4 w-full max-w-4xl mx-auto">
               <div className="h-8 bg-gray-200 rounded w-1/3"></div>
               <div className="h-32 bg-gray-200 rounded"></div>
               <div className="space-y-3">
@@ -147,7 +147,7 @@ export function ReviewsSection({ tenantSlug }: ReviewsSectionProps) {
 
   return (
     <section className="py-12 bg-muted/30">
-      <div className="container max-w-6xl">
+      <div className="w-full max-w-6xl mx-auto px-4 md:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-10">
           <h2 className="text-3xl font-bold mb-2 flex items-center justify-center gap-2">
@@ -160,7 +160,7 @@ export function ReviewsSection({ tenantSlug }: ReviewsSectionProps) {
         </div>
 
         {/* Estatísticas */}
-        <div className="grid md:grid-cols-2 gap-6 mb-10">
+        <div className="grid md:grid-cols-2 gap-6 mb-10 max-w-4xl mx-auto">
           {/* Rating Geral */}
           <Card>
             <CardHeader>
@@ -236,7 +236,7 @@ export function ReviewsSection({ tenantSlug }: ReviewsSectionProps) {
         </div>
 
         {/* Lista de Avaliações */}
-        <div className="space-y-4">
+        <div className="space-y-4 max-w-4xl mx-auto">
           {displayedReviews.map((review) => (
             <Card 
               key={review.uuid} 

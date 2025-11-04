@@ -84,10 +84,26 @@ export function ReviewsDataTable({
   const [globalFilter, setGlobalFilter] = useState('')
   const [ratingFilter, setRatingFilter] = useState<string>('all')
   
+  // Modal de aprovação
+  const [approveModalOpen, setApproveModalOpen] = useState(false)
+  const [reviewToApprove, setReviewToApprove] = useState<Review | null>(null)
+  
   // Modal de rejeição
   const [rejectModalOpen, setRejectModalOpen] = useState(false)
   const [reviewToReject, setReviewToReject] = useState<Review | null>(null)
   const [rejectReason, setRejectReason] = useState('')
+
+  const handleApproveClick = (review: Review) => {
+    setReviewToApprove(review)
+    setApproveModalOpen(true)
+  }
+
+  const handleApproveConfirm = () => {
+    if (!reviewToApprove) return
+    onApprove(reviewToApprove.uuid)
+    setApproveModalOpen(false)
+    setReviewToApprove(null)
+  }
 
   const handleRejectClick = (review: Review) => {
     setReviewToReject(review)
@@ -205,7 +221,7 @@ export function ReviewsDataTable({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => onApprove(review.uuid)}
+                  onClick={() => handleApproveClick(review)}
                   title="Aprovar"
                 >
                   <Check className="h-4 w-4 text-green-600" />
@@ -437,6 +453,69 @@ export function ReviewsDataTable({
           </div>
         </div>
       </div>
+
+      {/* Modal de Aprovação */}
+      <Dialog open={approveModalOpen} onOpenChange={setApproveModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Aprovar Avaliação</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja aprovar esta avaliação?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {reviewToApprove && (
+            <div className="space-y-4 py-4">
+              <div className="rounded-lg border p-4 bg-muted/50">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-semibold">
+                    {reviewToApprove.customer_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold">{reviewToApprove.customer_name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {renderStars(reviewToApprove.rating)}
+                    </div>
+                  </div>
+                </div>
+                
+                {reviewToApprove.comment && (
+                  <p className="text-sm text-muted-foreground">
+                    "{reviewToApprove.comment}"
+                  </p>
+                )}
+                
+                {reviewToApprove.order && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Pedido #{reviewToApprove.order.identify}
+                  </p>
+                )}
+              </div>
+              
+              <p className="text-sm text-muted-foreground">
+                Ao aprovar, esta avaliação será publicada e ficará visível para todos os clientes na página pública.
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setApproveModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="default"
+              onClick={handleApproveConfirm}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Aprovar Avaliação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal de Rejeição */}
       <Dialog open={rejectModalOpen} onOpenChange={setRejectModalOpen}>
