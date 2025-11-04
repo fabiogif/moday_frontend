@@ -247,7 +247,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     {/* {tenantData?.name || "Tahan"} */}
                     Tahan
                   </span>
-                  <span className="truncate text-xs">Sistema de Gestão de Restaurante</span>
+                  <span className="truncate text-xs">Gestão de Restaurante</span>
                 </div>
               </Link>
             </SidebarMenuButton>
