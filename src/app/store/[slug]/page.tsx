@@ -59,6 +59,17 @@ interface StoreInfo {
   zipcode: string
   logo: string
   whatsapp: string
+  settings?: {
+    delivery_pickup?: {
+      pickup_enabled?: boolean
+      pickup_time_minutes?: number
+      pickup_discount_enabled?: boolean
+      pickup_discount_percent?: number
+      delivery_enabled?: boolean
+      delivery_minimum_order_value?: number
+      delivery_free_above_value?: number
+    }
+  }
 }
 
 interface CartItem extends Product {
@@ -1454,6 +1465,32 @@ export default function PublicStorePage() {
                     <li>Você receberá atualizações sobre o status do pedido</li>
                   </ol>
                 </div>
+
+                {/* Pickup Time Estimate (if pickup is selected) */}
+                {shippingMethod === "pickup" && storeInfo?.settings?.delivery_pickup?.pickup_enabled && (
+                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-green-900">⏰ Tempo Estimado para Retirada</p>
+                        <p className="text-sm text-green-700 mt-1">
+                          Seu pedido estará pronto em aproximadamente{" "}
+                          <strong>{storeInfo.settings.delivery_pickup.pickup_time_minutes || 35} minutos</strong>
+                        </p>
+                        {storeInfo.settings.delivery_pickup.pickup_discount_enabled && 
+                         (storeInfo.settings.delivery_pickup.pickup_discount_percent || 0) > 0 && (
+                          <p className="text-sm text-green-700 mt-2 font-medium">
+                            🎉 Desconto de {storeInfo.settings.delivery_pickup.pickup_discount_percent}% aplicado por retirada no local!
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {orderResult?.whatsapp_link ? (
                   <Button 

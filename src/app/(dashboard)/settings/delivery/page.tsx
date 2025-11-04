@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Separator } from "@/components/ui/separator"
 import { Clock, Percent, DollarSign, Package, Truck, Save, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
@@ -44,6 +45,7 @@ export default function DeliverySettingsPage() {
   const { user } = useAuth()
   const { toast } = useToast()
   const [settings, setSettings] = useState<DeliveryPickupSettings>(defaultSettings)
+  const [initialSettings, setInitialSettings] = useState<DeliveryPickupSettings>(defaultSettings)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
@@ -62,10 +64,14 @@ export default function DeliverySettingsPage() {
           const tenantSettings = userData.tenant?.settings || {}
           
           // Mesclar com defaults
-          setSettings({
+          const loadedSettings = {
             ...defaultSettings,
             ...tenantSettings.delivery_pickup
-          })
+          }
+          
+          setSettings(loadedSettings)
+          setInitialSettings(loadedSettings) // Salvar estado inicial
+          setHasChanges(false) // Resetar flag de mudanças
         }
       } catch (error) {
         toast({
@@ -79,12 +85,14 @@ export default function DeliverySettingsPage() {
     }
 
     loadSettings()
-  }, [toast])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Executar apenas uma vez ao montar
 
-  // Detectar mudanças
+  // Detectar mudanças comparando com estado inicial
   useEffect(() => {
-    setHasChanges(true)
-  }, [settings])
+    const changed = JSON.stringify(settings) !== JSON.stringify(initialSettings)
+    setHasChanges(changed)
+  }, [settings, initialSettings])
 
   const handleSave = async () => {
     try {
@@ -110,6 +118,7 @@ export default function DeliverySettingsPage() {
           title: "Sucesso!",
           description: "Configurações de delivery e retirada salvas com sucesso",
         })
+        setInitialSettings(settings) // Atualizar estado inicial
         setHasChanges(false)
       }
     } catch (error: any) {
@@ -128,13 +137,23 @@ export default function DeliverySettingsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="space-y-6 px-4 lg:px-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Delivery e Retirada</h1>
-        <p className="text-muted-foreground">
-          Configure como os clientes podem receber seus pedidos
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Delivery e Retirada</h1>
+          <p className="text-muted-foreground">
+            Configure como os clientes podem receber seus pedidos
+          </p>
+        </div>
+        <Button
+          onClick={handleSave}
+          disabled={saving || !hasChanges}
+          className="cursor-pointer"
+        >
+          <Save className="w-4 h-4 mr-2" />
+          {saving ? "Salvando..." : "Salvar"}
+        </Button>
       </div>
 
       {/* Alerta de Mudanças */}
@@ -142,7 +161,7 @@ export default function DeliverySettingsPage() {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Você tem alterações não salvas. Clique em "Salvar Configurações" para aplicar.
+            Você tem alterações não salvas. Clique em "Salvar" para aplicar.
           </AlertDescription>
         </Alert>
       )}
@@ -160,14 +179,14 @@ export default function DeliverySettingsPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Ativar Retirada */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
-              <Label htmlFor="pickup_enabled" className="text-base font-medium">
+              <Label htmlFor="pickup_enabled" className="text-base">
                 Permitir Retirada no Local
               </Label>
-              <p className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground">
                 Clientes poderão escolher retirar o pedido no estabelecimento
-              </p>
+              </div>
             </div>
             <Switch
               id="pickup_enabled"
@@ -205,15 +224,16 @@ export default function DeliverySettingsPage() {
           </div>
 
           {/* Desconto para Retirada */}
+          {settings.pickup_enabled && <Separator />}
           <div className={`space-y-4 transition-opacity ${settings.pickup_enabled ? 'opacity-100' : 'opacity-50'}`}>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
-                <Label htmlFor="pickup_discount_enabled" className="text-base font-medium">
+                <Label htmlFor="pickup_discount_enabled" className="text-base">
                   Desconto para Retirada no Local
                 </Label>
-                <p className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground">
                   Oferecer desconto percentual para quem retirar no local
-                </p>
+                </div>
               </div>
               <Switch
                 id="pickup_discount_enabled"
@@ -270,14 +290,14 @@ export default function DeliverySettingsPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Ativar Delivery */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
-              <Label htmlFor="delivery_enabled" className="text-base font-medium">
+              <Label htmlFor="delivery_enabled" className="text-base">
                 Permitir Delivery
               </Label>
-              <p className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground">
                 Clientes poderão escolher receber o pedido em casa
-              </p>
+              </div>
             </div>
             <Switch
               id="delivery_enabled"
@@ -289,15 +309,16 @@ export default function DeliverySettingsPage() {
           </div>
 
           {/* Pedido Mínimo */}
+          {settings.delivery_enabled && <Separator />}
           <div className={`space-y-4 transition-opacity ${settings.delivery_enabled ? 'opacity-100' : 'opacity-50'}`}>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
-                <Label htmlFor="delivery_minimum_order_enabled" className="text-base font-medium">
+                <Label htmlFor="delivery_minimum_order_enabled" className="text-base">
                   Exigir Pedido Mínimo
                 </Label>
-                <p className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground">
                   Definir valor mínimo para aceitar pedidos de delivery
-                </p>
+                </div>
               </div>
               <Switch
                 id="delivery_minimum_order_enabled"
@@ -339,15 +360,16 @@ export default function DeliverySettingsPage() {
           </div>
 
           {/* Entrega Grátis */}
+          {settings.delivery_enabled && <Separator />}
           <div className={`space-y-4 transition-opacity ${settings.delivery_enabled ? 'opacity-100' : 'opacity-50'}`}>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
-                <Label htmlFor="delivery_free_above_enabled" className="text-base font-medium">
+                <Label htmlFor="delivery_free_above_enabled" className="text-base">
                   Entrega Grátis Acima de
                 </Label>
-                <p className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground">
                   Oferecer frete grátis para pedidos grandes
-                </p>
+                </div>
               </div>
               <Switch
                 id="delivery_free_above_enabled"
@@ -454,27 +476,6 @@ export default function DeliverySettingsPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Botão de Salvar */}
-      <div className="flex justify-end gap-3">
-        <Button
-          variant="outline"
-          onClick={() => window.location.reload()}
-          disabled={saving || !hasChanges}
-          className="cursor-pointer"
-        >
-          Cancelar
-        </Button>
-        <Button
-          onClick={handleSave}
-          disabled={saving || !hasChanges}
-          className="cursor-pointer"
-          size="lg"
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {saving ? "Salvando..." : "Salvar Configurações"}
-        </Button>
-      </div>
     </div>
   )
 }
