@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -43,20 +43,25 @@ export function LoginForm3({
     },
   })
 
+  // Proteção: Limpar query params com credenciais da URL (segurança)
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    if (url.searchParams.has('email') || url.searchParams.has('password')) {
+      // Remover credenciais da URL sem recarregar a página
+      window.history.replaceState({}, '', window.location.pathname)
+      
+      toast.error("⚠️ Credenciais não devem ser enviadas via URL. Use o formulário.")
+    }
+  }, [])
+
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
-    console.log('Tentando fazer login com:', data.email)
     try {
       await login(data.email, data.password)
-      console.log('Login realizado com sucesso!')
       toast.success("Login realizado com sucesso!")
       router.push("/dashboard")
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Erro ao fazer login"
-      
-      // Mostrar mensagem de erro completa para debug
-      console.error('Erro de login:', error)
-      console.error('Mensagem de erro:', errorMessage)
       toast.error(errorMessage)
     } finally {
       setIsLoading(false)
@@ -67,7 +72,7 @@ export function LoginForm3({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden p-0">
         <CardContent className="grid p-0 md:grid-cols-2">
-          <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
+          <form className="p-6 md:p-8" method="post" onSubmit={handleSubmit(onSubmit)}>
             <div className="flex flex-col gap-6">
               <div className="flex justify-center mb-2">
                 <Link href="/" className="flex items-center gap-2 font-medium">

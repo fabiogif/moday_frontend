@@ -262,7 +262,6 @@ export function useMutation<T, P = any>() {
     setError(null)
 
     try {
-      console.log('AuthenticatedMutation: Fazendo requisição para:', endpoint)
       let response
       switch (method) {
         case 'POST':
@@ -364,7 +363,6 @@ export function useMutationWithValidation<T, P = any>(
     setError(null)
 
     try {
-      console.log('AuthenticatedMutation: Fazendo requisição para:', endpoint)
       let response
       switch (method) {
         case 'POST':

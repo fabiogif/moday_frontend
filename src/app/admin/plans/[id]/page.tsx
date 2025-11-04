@@ -34,7 +34,6 @@ export default function PlanDetailPage({ params }: PageProps) {
           setError("Plano não encontrado")
         }
       } catch (err: any) {
-        console.error("Erro ao carregar plano:", err)
         setError(err.message || "Erro ao carregar plano")
       } finally {
         setLoading(false)

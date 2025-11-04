@@ -207,6 +207,11 @@ const navGroups = [
         url: "/settings/store-hours",
         icon: Clock,
       },
+      {
+        title: "Delivery e Retirada",
+        url: "/settings/delivery",
+        icon: Truck,
+      },
       ],
   },
 ]

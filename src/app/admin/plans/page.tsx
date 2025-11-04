@@ -96,7 +96,6 @@ export default function PlansPage() {
         refetch()
       }
     } catch (error) {
-      console.error("Erro ao criar plano:", error)
       setSuccessAlert({
         open: true,
         title: "Erro!",
@@ -135,7 +134,6 @@ export default function PlansPage() {
       // Recarregar da API em segundo plano
       refetch()
     } catch (error) {
-      console.error("Erro ao editar plano:", error)
       setSuccessAlert({
         open: true,
         title: "Erro!",
@@ -165,7 +163,6 @@ export default function PlansPage() {
       // Recarregar da API em segundo plano para garantir sincronização
       refetch()
     } catch (error) {
-      console.error("Erro ao excluir plano:", error)
       setSuccessAlert({
         open: true,
         title: "Erro!",
