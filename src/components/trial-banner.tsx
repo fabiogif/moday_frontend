@@ -59,7 +59,7 @@ export function TrialBanner() {
           </div>
           
           <div className="text-sm opacity-90 mb-2">
-            {daysRemaining === 0 && "Não perca o acesso ao Moday. Faça upgrade agora!"}
+            {daysRemaining === 0 && "Não perca o acesso ao Tahan. Faça upgrade agora!"}
             {daysRemaining === 1 && "Amanhã seu acesso será bloqueado. Escolha um plano hoje!"}
             {daysRemaining > 1 && "Continue aproveitando todos os recursos. Escolha um plano antes que expire."}
           </div>

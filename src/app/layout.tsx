@@ -9,7 +9,7 @@ import { ToasterProvider } from "@/components/toaster-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
-  title: "Moday - Gestão",
+  title: "Tahan - Gestão",
   description: "A dashboard built with Next.js and shadcn/ui",
 };
 

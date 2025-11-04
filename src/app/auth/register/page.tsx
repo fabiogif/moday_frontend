@@ -16,7 +16,7 @@ export default async function RegisterPage({
           <div className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-md">
             <Logo size={24} />
           </div>
-          Moday
+          Tahan
         </Link>
         <RegisterForm preSelectedPlanId={params.plan} />
       </div>

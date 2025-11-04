@@ -96,7 +96,7 @@ export function ContactSection() {
             Precisa de ajuda ou tem dúvidas?
           </h2>
           <p className="text-lg text-muted-foreground">
-            Nossa equipe está aqui para ajudá-lo a aproveitar ao máximo o Moday. Entre em contato conosco.
+            Nossa equipe está aqui para ajudá-lo a aproveitar ao máximo o Tahan. Entre em contato conosco.
           </p>
         </div>
 
@@ -216,7 +216,7 @@ export function ContactSection() {
                           <FormLabel>Mensagem</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Conte-nos como podemos ajudá-lo com o sistema Moday..."
+                              placeholder="Conte-nos como podemos ajudá-lo com o sistema Tahan..."
                               rows={10}
                               className="min-h-50"
                               {...field}

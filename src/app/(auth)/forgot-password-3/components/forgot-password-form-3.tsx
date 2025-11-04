@@ -24,7 +24,7 @@ export function ForgotPasswordForm3({
                   <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md">
                     <Logo size={24} />
                   </div>
-                  <span className="text-xl">Moday - Sistema de Gestão</span>
+                  <span className="text-xl">Tahan - Sistema de Gestão</span>
                 </Link>
               </div>
               <div className="flex flex-col items-center text-center">

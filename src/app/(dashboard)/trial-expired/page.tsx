@@ -38,7 +38,7 @@ export default function TrialExpiredPage() {
             Seu Período de Teste Expirou
           </CardTitle>
           <CardDescription className="text-lg mt-2">
-            Obrigado por testar o Moday! Para continuar aproveitando todos os recursos, escolha um plano.
+            Obrigado por testar o Tahan! Para continuar aproveitando todos os recursos, escolha um plano.
           </CardDescription>
         </CardHeader>
 

@@ -7,7 +7,7 @@ export function SiteFooter() {
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
             <Utensils className="h-4 w-4 text-primary" />
-            <span className="font-semibold text-foreground">Moday</span>
+            <span className="font-semibold text-foreground">Tahan</span>
             <span>- Sistema de Gestão de Restaurante</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-muted-foreground">

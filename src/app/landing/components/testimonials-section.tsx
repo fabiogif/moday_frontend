@@ -17,7 +17,7 @@ const testimonials: Testimonial[] = [
     role: 'Proprietária - Restaurante Sabor & Arte',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=female-1',
     quote:
-      'O Moday revolucionou a gestão do meu restaurante. Agora consigo acompanhar pedidos em tempo real, controlar estoque e gerar relatórios precisos. Nossa eficiência aumentou 40%!',
+      'O Tahan revolucionou a gestão do meu restaurante. Agora consigo acompanhar pedidos em tempo real, controlar estoque e gerar relatórios precisos. Nossa eficiência aumentou 40%!',
   },
   {
     name: 'João Silva',
@@ -37,14 +37,14 @@ const testimonials: Testimonial[] = [
     role: 'Proprietário - Burger House',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=male-2',
     quote:
-      'Migrei de um sistema antigo para o Moday e foi a melhor decisão. Os relatórios me ajudam a tomar decisões estratégicas baseadas em dados reais.',
+      'Migrei de um sistema antigo para o Tahan e foi a melhor decisão. Os relatórios me ajudam a tomar decisões estratégicas baseadas em dados reais.',
   },
   {
     name: 'Lucia Oliveira',
     role: 'Administradora - Rede de Lanchonetes',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=female-3',
     quote:
-      'Gerencio 5 unidades com o Moday. A visão consolidada de todas as lojas me permite identificar oportunidades e otimizar operações. Indispensável para nossa rede!',
+      'Gerencio 5 unidades com o Tahan. A visão consolidada de todas as lojas me permite identificar oportunidades e otimizar operações. Indispensável para nossa rede!',
   },
   {
     name: 'Roberto Alves',
@@ -89,7 +89,7 @@ const testimonials: Testimonial[] = [
     name: 'Ricardo Ferreira',
     role: 'Empresário - Rede de Pizzarias',
     image: 'https://notion-avatars.netlify.app/api/avatar?preset=male-6',
-    quote: 'Escalei meu negócio de 1 para 8 unidades usando o Moday. O sistema cresce com o negócio. Investimento que vale cada centavo!',
+    quote: 'Escalei meu negócio de 1 para 8 unidades usando o Tahan. O sistema cresce com o negócio. Investimento que vale cada centavo!',
   },
 ]
 
@@ -104,7 +104,7 @@ export function TestimonialsSection() {
             O Que Nossos Clientes Dizem
           </h2>
           <p className="text-lg text-muted-foreground">
-            Milhares de restaurantes confiam no Moday para gerenciar seus negócios e aumentar suas vendas.
+            Milhares de restaurantes confiam no Tahan para gerenciar seus negócios e aumentar suas vendas.
           </p>
         </div>
 
