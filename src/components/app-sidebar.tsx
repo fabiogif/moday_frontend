@@ -253,9 +253,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 )}
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">
-                    {tenantData?.name || "Tahan"}
+                    {"Tahan"}
                   </span>
-                  <span className="truncate text-xs">Sistema de Gestão</span>
+                  <span className="truncate text-xs">Sistema de Gestão de Restaurante</span>
                 </div>
               </Link>
             </SidebarMenuButton>
