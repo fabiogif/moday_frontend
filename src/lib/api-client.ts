@@ -97,14 +97,6 @@ class ApiClient {
 
     if (this.token) {
       headers.Authorization = `Bearer ${this.token}`
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔑 ApiClient - Header Authorization:', `Bearer ${this.token.substring(0, 20)}...`)
-      }
-    } else {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('⚠️ ApiClient - Sem token! Headers sem Authorization')
-      }
     }
 
     return headers
