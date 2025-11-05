@@ -246,9 +246,17 @@ export default function StoreHoursSettings() {
                               <div>
                                 <p className="font-medium">
                                   {hour.start_time} - {hour.end_time}
+                                  {hour.start_time_2 && hour.end_time_2 && (
+                                    <span className="ml-2 text-muted-foreground">
+                                      • {hour.start_time_2} - {hour.end_time_2}
+                                    </span>
+                                  )}
                                 </p>
                                 <p className="text-sm text-muted-foreground">
                                   {hour.delivery_type_label}
+                                  {hour.start_time_2 && hour.end_time_2 && (
+                                    <span className="ml-1">(com intervalo)</span>
+                                  )}
                                 </p>
                               </div>
                             </div>

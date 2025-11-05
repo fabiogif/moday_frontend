@@ -13,6 +13,8 @@ export interface StoreHour {
   delivery_type_label: string
   start_time?: string
   end_time?: string
+  start_time_2?: string
+  end_time_2?: string
   start_time_formatted?: string
   end_time_formatted?: string
   is_active: boolean
@@ -26,6 +28,8 @@ export interface StoreHourFormData {
   delivery_type: 'delivery' | 'pickup' | 'both'
   start_time?: string
   end_time?: string
+  start_time_2?: string | null
+  end_time_2?: string | null
   is_active?: boolean
 }
 

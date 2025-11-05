@@ -29,16 +29,44 @@ const storeHourSchema = z.object({
   delivery_type: z.enum(['delivery', 'pickup', 'both']),
   start_time: z.string().optional(),
   end_time: z.string().optional(),
+  start_time_2: z.string().optional(),
+  end_time_2: z.string().optional(),
+  has_interval: z.boolean().optional(),
   is_active: z.boolean().optional(),
 }).refine((data) => {
-  // Se start_time e end_time estão preenchidos, validar que end_time > start_time
+  // Validar primeiro período
   if (data.start_time && data.end_time) {
-    return data.end_time > data.start_time
+    if (data.end_time <= data.start_time) {
+      return false
+    }
   }
   return true
 }, {
-  message: "O horário de término deve ser posterior ao horário de início",
+  message: "O horário de término do 1º período deve ser posterior ao horário de início",
   path: ["end_time"],
+}).refine((data) => {
+  // Validar segundo período (se existir)
+  if (data.has_interval && data.start_time_2 && data.end_time_2) {
+    // Segundo período deve terminar depois de começar
+    if (data.end_time_2 <= data.start_time_2) {
+      return false
+    }
+  }
+  return true
+}, {
+  message: "O horário de término do 2º período deve ser posterior ao seu início",
+  path: ["end_time_2"],
+}).refine((data) => {
+  // Validar que segundo período começa APÓS o primeiro terminar
+  if (data.has_interval && data.end_time && data.start_time_2) {
+    if (data.start_time_2 <= data.end_time) {
+      return false
+    }
+  }
+  return true
+}, {
+  message: "⚠️ O 2º período deve começar APÓS o 1º terminar. Ajuste o horário de término do 1º período para antes do intervalo (ex: 12:00) e o 2º período para começar depois (ex: 13:00)",
+  path: ["start_time_2"],
 })
 
 type StoreHourFormValues = z.infer<typeof storeHourSchema>
@@ -76,6 +104,9 @@ export function StoreHourFormDialog({
   const selectedDay = watch('day_of_week')
   const startTime = watch('start_time')
   const endTime = watch('end_time')
+  const hasInterval = watch('has_interval')
+  const startTime2 = watch('start_time_2')
+  const endTime2 = watch('end_time_2')
 
   useEffect(() => {
     if (hour) {
@@ -83,6 +114,9 @@ export function StoreHourFormDialog({
       setValue('delivery_type', hour.delivery_type)
       setValue('start_time', hour.start_time || '')
       setValue('end_time', hour.end_time || '')
+      setValue('start_time_2', (hour as any).start_time_2 || '')
+      setValue('end_time_2', (hour as any).end_time_2 || '')
+      setValue('has_interval', !!(hour as any).start_time_2 || !!(hour as any).end_time_2)
       setValue('is_active', hour.is_active)
       setBackendErrors({})
     } else {
@@ -91,6 +125,9 @@ export function StoreHourFormDialog({
         delivery_type: 'both',
         start_time: '08:00',
         end_time: '18:00',
+        start_time_2: '',
+        end_time_2: '',
+        has_interval: false,
         is_active: true,
       })
       setBackendErrors({})
@@ -178,6 +215,8 @@ export function StoreHourFormDialog({
         delivery_type: data.delivery_type,
         start_time: data.start_time,
         end_time: data.end_time,
+        start_time_2: data.has_interval ? data.start_time_2 : null,
+        end_time_2: data.has_interval ? data.end_time_2 : null,
         is_active: data.is_active ?? true,
         is_always_open: false,
       }
@@ -259,36 +298,136 @@ export function StoreHourFormDialog({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="start_time">
-                Horário de Início <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="start_time"
-                type="time"
-                {...register('start_time')}
-                className={hasError('start_time') ? 'border-destructive' : ''}
-              />
-              {hasError('start_time') && (
-                <p className="text-sm text-destructive">{getErrorMessage('start_time')}</p>
-              )}
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm font-medium mb-2">
+                {hasInterval ? 'Primeiro Período (Manhã)' : 'Horário de Funcionamento'}
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start_time">
+                    {hasInterval ? 'Abre às' : 'Horário de Início'} <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="start_time"
+                    type="time"
+                    placeholder="08:00"
+                    {...register('start_time')}
+                    className={hasError('start_time') ? 'border-destructive' : ''}
+                  />
+                  {hasError('start_time') && (
+                    <p className="text-sm text-destructive">{getErrorMessage('start_time')}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="end_time">
+                    {hasInterval ? 'Fecha às (antes do intervalo)' : 'Horário de Término'} <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="end_time"
+                    type="time"
+                    placeholder={hasInterval ? '12:00' : '18:00'}
+                    {...register('end_time')}
+                    className={hasError('end_time') ? 'border-destructive' : ''}
+                  />
+                  {hasError('end_time') && (
+                    <p className="text-sm text-destructive">{getErrorMessage('end_time')}</p>
+                  )}
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="end_time">
-                Horário de Término <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="end_time"
-                type="time"
-                {...register('end_time')}
-                className={hasError('end_time') ? 'border-destructive' : ''}
-              />
-              {hasError('end_time') && (
-                <p className="text-sm text-destructive">{getErrorMessage('end_time')}</p>
-              )}
+            {/* Checkbox para adicionar intervalo */}
+            <div className="space-y-3 rounded-lg border-2 border-dashed border-amber-300 bg-amber-50/50 dark:bg-amber-950/20 p-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="has_interval"
+                  checked={hasInterval}
+                  onCheckedChange={(checked) => {
+                    setValue('has_interval', checked)
+                    if (checked) {
+                      // Pré-preencher com valores sugeridos
+                      if (startTime === '08:00' && endTime === '18:00') {
+                        setValue('end_time', '12:00') // Termina meio-dia
+                        setValue('start_time_2', '13:00') // Retorna 13h
+                        setValue('end_time_2', '18:00') // Termina 18h
+                      }
+                    } else {
+                      setValue('start_time_2', '')
+                      setValue('end_time_2', '')
+                      // Restaurar horário completo se estava com intervalo
+                      if (endTime === '12:00' && !startTime2) {
+                        setValue('end_time', '18:00')
+                      }
+                    }
+                  }}
+                />
+                <Label htmlFor="has_interval" className="cursor-pointer font-medium">
+                  🍴 Adicionar intervalo (ex: horário de almoço)
+                </Label>
+              </div>
+              <Alert className="border-amber-200 dark:border-amber-800">
+                <Clock className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  <strong>💡 Como funciona:</strong><br/>
+                  Ao marcar esta opção, o horário do 1º período será ajustado automaticamente.<br/>
+                  <strong>Exemplo:</strong> Se você trabalha das 08:00 às 18:00 com intervalo de almoço:<br/>
+                  • 1º período: 08:00-<strong>12:00</strong> (ajuste o término para meio-dia)<br/>
+                  • 2º período: <strong>13:00</strong>-18:00 (reabertura após almoço)
+                </AlertDescription>
+              </Alert>
             </div>
+
+            {/* Segundo período (visível apenas se has_interval = true) */}
+            {hasInterval && (
+              <div className="pl-4 border-l-2 border-primary/30 bg-primary/5 rounded-lg p-4">
+                <p className="text-sm font-medium mb-2 text-primary">
+                  🕐 Segundo Período (Tarde - após intervalo)
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="start_time_2">
+                      Reabre às <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="start_time_2"
+                      type="time"
+                      placeholder="13:00"
+                      {...register('start_time_2')}
+                      className={hasError('start_time_2') ? 'border-destructive' : ''}
+                    />
+                    {hasError('start_time_2') && (
+                      <p className="text-sm text-destructive">{getErrorMessage('start_time_2')}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="end_time_2">
+                      Fecha às <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="end_time_2"
+                      type="time"
+                      placeholder="18:00"
+                      {...register('end_time_2')}
+                      className={hasError('end_time_2') ? 'border-destructive' : ''}
+                    />
+                    {hasError('end_time_2') && (
+                      <p className="text-sm text-destructive">{getErrorMessage('end_time_2')}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    ✅ <strong>Exemplo correto:</strong><br/>
+                    • Manhã: 08:00-12:00<br/>
+                    • Intervalo: 12:00-13:00 (fechado)<br/>
+                    • Tarde: 13:00-18:00
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
