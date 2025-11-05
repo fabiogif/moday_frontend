@@ -197,7 +197,7 @@ export function OrderNotificationsProvider({ children }: OrderNotificationsProvi
             const latestOrder = orders[0]
             const orderId = latestOrder.id?.toString() || latestOrder.identify
             
-            // Verificar se é um pedido novo (criado nos últimos 5 minutos = 300 segundos)
+            // Verificar se é um pedido novo (criado nos últimos 1 minuto = 60 segundos)
             // Tentar parsear a data em diferentes formatos
             let createdAt: Date
             const createdAtStr = latestOrder.created_at
@@ -231,17 +231,17 @@ export function OrderNotificationsProvider({ children }: OrderNotificationsProvi
               createdAtParsed: createdAt.toISOString(),
               diffSeconds,
               diffMinutes: (diffSeconds / 60).toFixed(2),
-              isNew: diffSeconds < 300, // 5 minutos
+              isNew: diffSeconds < 60, // 1 minuto
               alreadyProcessed: processedOrderIds.has(orderId)
             })
             
-            // Aceitar pedidos criados nos últimos 5 minutos (300 segundos)
-            if (diffSeconds < 300 && !processedOrderIds.has(orderId)) {
+            // Aceitar pedidos criados nos últimos 1 minuto (60 segundos)
+            if (diffSeconds < 60 && !processedOrderIds.has(orderId)) {
               console.log('🎯 Polling: Pedido novo detectado! Chamando handleNewOrder...')
               handleNewOrder(latestOrder)
             } else {
               console.log('⏭️ Polling: Pedido ignorado', {
-                reason: diffSeconds >= 300 ? 'Muito antigo (>5min)' : 'Já processado',
+                reason: diffSeconds >= 60 ? 'Muito antigo (>1min)' : 'Já processado',
                 diffMinutes: (diffSeconds / 60).toFixed(2)
               })
             }
