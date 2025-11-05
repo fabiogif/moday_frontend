@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences"
+import { OrderNotificationToggle } from "@/components/order-notification-toggle"
 
 const notificationsFormSchema = z.object({
   // Usuários
@@ -222,6 +223,9 @@ export default function NotificationSettings() {
           Configure como você recebe notificações sobre eventos do sistema.
         </p>
       </div>
+
+      {/* Notificações Sonoras de Pedidos */}
+      <OrderNotificationToggle />
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

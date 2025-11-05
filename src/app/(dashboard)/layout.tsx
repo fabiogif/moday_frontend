@@ -10,6 +10,7 @@ import { useSidebarConfig } from "@/hooks/use-sidebar-config";
 import { useAuthSync } from "@/hooks/use-auth-sync";
 import { AuthDebug } from "@/components/auth-debug";
 import { ForceLogoutButton } from "@/components/force-logout-button";
+import { OrderNotificationsProvider } from "@/contexts/order-notifications-context";
 
 export default function DashboardLayout({
   children,
@@ -23,7 +24,8 @@ export default function DashboardLayout({
   useAuthSync();
 
   return (
-    <SidebarProvider
+    <OrderNotificationsProvider>
+      <SidebarProvider
       style={{
         "--sidebar-width": "16rem",
         "--sidebar-width-icon": "3rem",
@@ -83,6 +85,7 @@ export default function DashboardLayout({
       
       {/* Botão para forçar logout em caso de token inválido */}
     {/* <ForceLogoutButton /> */}
-    </SidebarProvider>
+      </SidebarProvider>
+    </OrderNotificationsProvider>
   );
 }
