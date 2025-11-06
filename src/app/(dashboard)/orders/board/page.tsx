@@ -18,11 +18,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { PageLoading } from "@/components/ui/loading-progress"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { apiClient, endpoints } from "@/lib/api-client"
 import { toast } from "sonner"
 import { useRealtimeOrders } from "@/hooks/use-realtime"
-import { Wifi, WifiOff, RefreshCw } from "lucide-react"
+import { 
+  Wifi, 
+  WifiOff, 
+  RefreshCw, 
+  Clock, 
+  User, 
+  Package, 
+  MapPin,
+  Truck,
+  UtensilsCrossed
+} from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
+import { cn } from "@/lib/utils"
 
 interface Product {
   identify?: string
@@ -70,13 +82,50 @@ interface Order {
   comment?: string
 }
 
-type OrderStatus = "Em Preparo" | "Pronto" | "Entregue" | "Cancelado"
+type OrderStatus = "Em Preparo" | "Pronto" | "Em rota de entrega" | "Entregue" | "Cancelado"
 
-const COLUMNS: Array<{ id: OrderStatus; title: string; color: string }> = [
-  { id: "Em Preparo", title: "Em Preparo", color: "bg-yellow-100 text-yellow-800" },
-  { id: "Pronto", title: "Pronto", color: "bg-blue-100 text-blue-800" },
-  { id: "Entregue", title: "Entregue", color: "bg-green-100 text-green-800" },
-  { id: "Cancelado", title: "Cancelado", color: "bg-red-100 text-red-800" },
+const COLUMNS: Array<{ 
+  id: OrderStatus
+  title: string
+  badgeColor: string
+  headerGradient: string
+  icon: React.ReactNode
+}> = [
+  { 
+    id: "Em Preparo", 
+    title: "Em Preparo", 
+    badgeColor: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800",
+    headerGradient: "from-amber-50 to-amber-100/50 dark:from-amber-950/50 dark:to-amber-900/30",
+    icon: <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+  },
+  { 
+    id: "Pronto", 
+    title: "Pronto", 
+    badgeColor: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+    headerGradient: "from-blue-50 to-blue-100/50 dark:from-blue-950/50 dark:to-blue-900/30",
+    icon: <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+  },
+  { 
+    id: "Em rota de entrega", 
+    title: "Em rota de entrega", 
+    badgeColor: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800",
+    headerGradient: "from-purple-50 to-purple-100/50 dark:from-purple-950/50 dark:to-purple-900/30",
+    icon: <Truck className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+  },
+  { 
+    id: "Entregue", 
+    title: "Entregue", 
+    badgeColor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
+    headerGradient: "from-emerald-50 to-emerald-100/50 dark:from-emerald-950/50 dark:to-emerald-900/30",
+    icon: <Truck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+  },
+  { 
+    id: "Cancelado", 
+    title: "Cancelado", 
+    badgeColor: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800",
+    headerGradient: "from-rose-50 to-rose-100/50 dark:from-rose-950/50 dark:to-rose-900/30",
+    icon: <RefreshCw className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+  },
 ]
 
 interface OrderCardProps {
@@ -98,7 +147,7 @@ function OrderCard({ order, isDragOverlay = false }: OrderCardProps) {
   
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.4 : 1,
     cursor: isDragOverlay ? 'grabbing' : 'grab',
   }
   
@@ -110,78 +159,113 @@ function OrderCard({ order, isDragOverlay = false }: OrderCardProps) {
   const customerName = order.client?.name || order.client_full_name
   const total = typeof order.total === 'string' ? parseFloat(order.total) : order.total
   
+  const columnInfo = COLUMNS.find(col => col.id === order.status)
+  
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`rounded-md border bg-card p-3 text-sm shadow-sm hover:shadow-md transition-all ${
-        isDragging ? "shadow-lg border-primary ring-2 ring-primary ring-offset-2" : ""
-      } ${isDragOverlay ? "shadow-2xl" : ""}`}
+      className={cn(
+        "group relative rounded-lg border bg-card transition-all duration-200",
+        "hover:shadow-lg hover:scale-[1.02] active:scale-100",
+        isDragging && "shadow-2xl border-primary ring-2 ring-primary/50 ring-offset-2 scale-105",
+        isDragOverlay && "shadow-2xl rotate-2",
+        "cursor-grab active:cursor-grabbing"
+      )}
       {...attributes}
       {...listeners}
     >
-      <div className="flex items-center justify-between mb-2">
-        <span className="font-medium text-base">#{order.identify}</span>
-        <Badge variant="secondary" className="text-xs">{order.status}</Badge>
-      </div>
+      {/* Barra de cor superior */}
+      <div className={cn(
+        "h-1 rounded-t-lg",
+        order.status === "Em Preparo" && "bg-gradient-to-r from-amber-400 to-amber-600",
+        order.status === "Pronto" && "bg-gradient-to-r from-blue-400 to-blue-600",
+        order.status === "Em rota de entrega" && "bg-gradient-to-r from-purple-400 to-purple-600",
+        order.status === "Entregue" && "bg-gradient-to-r from-emerald-400 to-emerald-600",
+        order.status === "Cancelado" && "bg-gradient-to-r from-rose-400 to-rose-600"
+      )} />
       
-      <div className="space-y-2">
-        {customerName && (
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <span className="text-xs">👤</span>
-            <span className="text-xs truncate">{customerName}</span>
+      <div className="p-4 space-y-3">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {columnInfo?.icon}
+            <span className="font-semibold text-base tracking-tight">#{order.identify}</span>
           </div>
-        )}
-
-        {order.table && (
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <span className="text-xs">🪑</span>
-            <span className="text-xs truncate">{order.table.name}</span>
-          </div>
-        )}
+          <Badge 
+            variant="outline" 
+            className={cn("text-xs font-medium border", columnInfo?.badgeColor)}
+          >
+            {order.status}
+          </Badge>
+        </div>
         
-        {deliveryAddress && (
-          <div className="space-y-1">
-            <div className="flex items-start gap-1 text-muted-foreground">
-              <span className="text-xs shrink-0">🚚</span>
-              <span className="text-xs line-clamp-2">{deliveryAddress}</span>
+        {/* Info Section */}
+        <div className="space-y-2.5">
+          {customerName && (
+            <div className="flex items-center gap-2 text-sm">
+              <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="truncate font-medium">{customerName}</span>
             </div>
-            {order.delivery_notes && (
-              <div className="text-xs text-muted-foreground italic ml-4">
-                Obs: {order.delivery_notes}
+          )}
+
+          {order.table && (
+            <div className="flex items-center gap-2 text-sm">
+              <UtensilsCrossed className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="truncate">{order.table.name}</span>
+            </div>
+          )}
+          
+          {deliveryAddress && (
+            <div className="space-y-1.5">
+              <div className="flex items-start gap-2 text-sm">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                <span className="text-xs leading-relaxed line-clamp-2">{deliveryAddress}</span>
               </div>
-            )}
-          </div>
-        )}
-        
-        {order.products && order.products.length > 0 && (
-          <div className="space-y-1">
-            <div className="text-xs font-medium text-muted-foreground">Produtos:</div>
-            <div className="space-y-0.5">
-              {order.products.slice(0, 3).map((product, idx) => (
-                <div key={product.identify || idx} className="text-xs flex items-start gap-1">
-                  <span className="text-muted-foreground shrink-0">
-                    {product.quantity ? `${product.quantity}x` : '1x'}
-                  </span>
-                  <span className="truncate">{product.name}</span>
-                </div>
-              ))}
-              {order.products.length > 3 && (
-                <div className="text-xs text-muted-foreground">
-                  +{order.products.length - 3} item(s)...
+              {order.delivery_notes && (
+                <div className="text-xs text-muted-foreground italic pl-5 line-clamp-1">
+                  "{order.delivery_notes}"
                 </div>
               )}
             </div>
-          </div>
-        )}
+          )}
+          
+          {order.products && order.products.length > 0 && (
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <Package className="h-3 w-3" />
+                Produtos ({order.products.length})
+              </div>
+              <div className="space-y-1 pl-5">
+                {order.products.slice(0, 2).map((product, idx) => (
+                  <div key={product.identify || idx} className="flex items-start gap-2 text-xs">
+                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-medium">
+                      {product.quantity || 1}x
+                    </Badge>
+                    <span className="truncate leading-5">{product.name}</span>
+                  </div>
+                ))}
+                {order.products.length > 2 && (
+                  <div className="text-xs text-muted-foreground font-medium">
+                    +{order.products.length - 2} item(s)
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
         
-        <div className="flex items-center justify-between pt-1 border-t">
-          <span className="text-xs text-muted-foreground">Total:</span>
-          <span className="text-sm font-semibold">
+        {/* Footer - Total */}
+        <div className="flex items-center justify-between pt-3 border-t">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total</span>
+          <span className="text-lg font-bold bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent">
             R$ {total.toFixed(2)}
           </span>
         </div>
       </div>
+      
+      {/* Indicador de drag */}
+      <div className="absolute inset-0 rounded-lg bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
     </div>
   )
 }
@@ -200,9 +284,10 @@ function DroppableColumnArea({ columnId, children }: DroppableColumnAreaProps) {
   return (
     <div 
       ref={setNodeRef} 
-      className={`flex flex-col gap-2 min-h-[200px] rounded-md p-2 transition-colors ${
-        isOver ? 'bg-accent/50 border-2 border-dashed border-primary' : ''
-      }`}
+      className={cn(
+        "flex flex-col gap-3 min-h-[400px] p-3 rounded-lg transition-all duration-200",
+        isOver && "bg-primary/5 border-2 border-dashed border-primary ring-2 ring-primary/20"
+      )}
     >
       {children}
     </div>
@@ -210,31 +295,64 @@ function DroppableColumnArea({ columnId, children }: DroppableColumnAreaProps) {
 }
 
 interface BoardColumnProps {
-  column: { id: OrderStatus; title: string; color: string }
+  column: { 
+    id: OrderStatus
+    title: string
+    badgeColor: string
+    headerGradient: string
+    icon: React.ReactNode
+  }
   orders: Order[]
   isUpdating: boolean
 }
 
 function BoardColumn({ column, orders, isUpdating }: BoardColumnProps) {
   return (
-    <Card className="border">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-base font-medium flex items-center gap-2">
-          {column.title}
-          <Badge className={column.color}>{orders.length}</Badge>
+    <Card className="border-2 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
+      <CardHeader className={cn(
+        "flex flex-row items-center justify-between space-y-0 pb-4 rounded-t-lg bg-gradient-to-br",
+        column.headerGradient
+      )}>
+        <CardTitle className="flex items-center gap-2.5">
+          {column.icon}
+          <span className="text-lg font-bold tracking-tight">{column.title}</span>
         </CardTitle>
-      </CardHeader>
-      <CardContent className="p-2">
-        <DroppableColumnArea columnId={column.id}>
-          {orders.map((order) => (
-            <OrderCard key={order.identify} order={order} />
-          ))}
-          {isUpdating && (
-            <div className="text-xs text-muted-foreground text-center py-2">
-              Atualizando...
-            </div>
+        <Badge 
+          variant="outline" 
+          className={cn(
+            "text-sm font-bold px-2.5 py-1 border-2",
+            column.badgeColor
           )}
-        </DroppableColumnArea>
+        >
+          {orders.length}
+        </Badge>
+      </CardHeader>
+      <CardContent className="p-0 flex-1 flex flex-col">
+        <ScrollArea className="flex-1">
+          <DroppableColumnArea columnId={column.id}>
+            {orders.length === 0 && !isUpdating && (
+              <div className="flex flex-col items-center justify-center py-12 text-center space-y-2">
+                <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center">
+                  {column.icon}
+                </div>
+                <p className="text-sm text-muted-foreground font-medium">
+                  Nenhum pedido
+                </p>
+              </div>
+            )}
+            
+            {orders.map((order) => (
+              <OrderCard key={order.identify} order={order} />
+            ))}
+            
+            {isUpdating && (
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-4">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                <span className="font-medium">Atualizando...</span>
+              </div>
+            )}
+          </DroppableColumnArea>
+        </ScrollArea>
       </CardContent>
     </Card>
   )
@@ -365,6 +483,7 @@ export default function OrdersBoardPage() {
     const map: Record<OrderStatus, Order[]> = { 
       "Em Preparo": [], 
       "Pronto": [], 
+      "Em rota de entrega": [],
       "Entregue": [], 
       "Cancelado": [] 
     }
@@ -452,57 +571,98 @@ export default function OrdersBoardPage() {
     return <PageLoading />
   }
 
+  const totalOrders = orders.length
+  const pendingOrders = groupedOrders["Em Preparo"]?.length || 0
+  const readyOrders = groupedOrders["Pronto"]?.length || 0
+
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Quadro de Pedidos</h1>
-          <p className="text-muted-foreground">Arraste os pedidos entre para atualizar1</p>
+    <div className="flex flex-col gap-6 p-4 lg:p-6 h-full">
+      {/* Header Section */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">
+            Quadro de Pedidos
+          </h1>
+          <p className="text-sm text-muted-foreground flex items-center gap-2">
+            <span>Arraste os pedidos entre colunas para atualizar o status</span>
+            <Badge variant="outline" className="ml-2 font-mono text-xs">
+              {totalOrders} {totalOrders === 1 ? 'pedido' : 'pedidos'}
+            </Badge>
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Connection Status */}
           <Badge 
             variant={isConnected ? "default" : "secondary"} 
-            className="flex items-center gap-1.5 px-3"
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 transition-all",
+              isConnected && "bg-emerald-500 hover:bg-emerald-600"
+            )}
           >
             {isConnected ? (
-              <Wifi className="h-3.5 w-3.5" />
+              <Wifi className="h-3.5 w-3.5 animate-pulse" />
             ) : (
               <WifiOff className="h-3.5 w-3.5" />
             )}
-            <span>{isConnected ? "Online" : "Offline"}</span>
+            <span className="font-medium">{isConnected ? "Tempo Real" : "Offline"}</span>
           </Badge>
+          
+          {/* Quick Stats */}
+          {pendingOrders > 0 && (
+            <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400 px-3 py-1.5">
+              <Clock className="h-3.5 w-3.5 mr-1" />
+              {pendingOrders} em preparo
+            </Badge>
+          )}
+          
+          {readyOrders > 0 && (
+            <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400 px-3 py-1.5">
+              <Package className="h-3.5 w-3.5 mr-1" />
+              {readyOrders} pronto{readyOrders > 1 && 's'}
+            </Badge>
+          )}
+          
+          {/* Refresh Button */}
           <Button 
             variant="outline" 
             size="sm"
             onClick={loadOrders} 
             disabled={loading}
-            className="gap-2"
+            className="gap-2 shadow-sm"
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Atualizar
+            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+            <span className="hidden sm:inline">Atualizar</span>
           </Button>
         </div>
       </div>
 
+      {/* Board Section */}
       <DndContext 
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd} 
         collisionDetection={closestCorners} 
         sensors={sensors}
       >
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {COLUMNS.map((column) => (
-            <BoardColumn 
-              key={column.id} 
-              column={column} 
-              orders={groupedOrders[column.id] || []}
-              isUpdating={groupedOrders[column.id]?.some(o => o.identify === updatingIdentify) || false}
-            />
-          ))}
+        <div className="flex-1 overflow-x-auto pb-4">
+          <div className="grid gap-4 lg:grid-cols-3 xl:grid-cols-5 min-w-max xl:min-w-0">
+            {COLUMNS.map((column) => (
+              <BoardColumn 
+                key={column.id} 
+                column={column} 
+                orders={groupedOrders[column.id] || []}
+                isUpdating={groupedOrders[column.id]?.some(o => o.identify === updatingIdentify) || false}
+              />
+            ))}
+          </div>
         </div>
         
         <DragOverlay>
-          {activeOrder ? <OrderCard order={activeOrder} isDragOverlay /> : null}
+          {activeOrder ? (
+            <div className="rotate-3 scale-105">
+              <OrderCard order={activeOrder} isDragOverlay />
+            </div>
+          ) : null}
         </DragOverlay>
       </DndContext>
     </div>

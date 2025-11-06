@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode, useRef } from 'react'
 import { useAuth } from './auth-context'
 import { useRealtimeOrders } from '@/hooks/use-realtime'
 import { playNotificationSound } from '@/lib/notification-sound'
@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ShoppingCart, Eye } from 'lucide-react'
+import { useOrderRefresh } from '@/hooks/use-order-refresh'
 
 interface OrderNotification {
   id: string
@@ -36,9 +37,18 @@ interface OrderNotificationsProviderProps {
 export function OrderNotificationsProvider({ children }: OrderNotificationsProviderProps) {
   const router = useRouter()
   const { user } = useAuth()
+  const { triggerRefresh } = useOrderRefresh()
   const [notifications, setNotifications] = useState<OrderNotification[]>([])
   const [soundEnabled, setSoundEnabled] = useState(true)
-  const [processedOrderIds, setProcessedOrderIds] = useState<Set<string>>(new Set())
+  
+  // Usar refs para evitar re-renders no useEffect de polling
+  const processedOrderIdsRef = useRef<Set<string>>(new Set())
+  
+  // Inicializar lastCheckedOrderId do localStorage
+  const initialLastCheckedOrderId = typeof window !== 'undefined' 
+    ? localStorage.getItem('lastCheckedOrderId') 
+    : null
+  const lastCheckedOrderIdRef = useRef<string | null>(initialLastCheckedOrderId)
 
   // Carregar preferência de som do localStorage
   useEffect(() => {
@@ -65,15 +75,15 @@ export function OrderNotificationsProvider({ children }: OrderNotificationsProvi
     
     // Verificar se já processamos este pedido
     const orderId = order.id?.toString() || order.identify
-    console.log('🔔 Verificando duplicata:', { orderId, jaProcessado: processedOrderIds.has(orderId) })
+    console.log('🔔 Verificando duplicata:', { orderId, jaProcessado: processedOrderIdsRef.current.has(orderId) })
     
-    if (processedOrderIds.has(orderId)) {
+    if (processedOrderIdsRef.current.has(orderId)) {
       console.log('⚠️ Pedido já processado, ignorando')
       return
     }
-
+    
     // Marcar como processado
-    setProcessedOrderIds((prev) => new Set([...prev, orderId]))
+    processedOrderIdsRef.current.add(orderId)
     console.log('✅ Pedido marcado como processado:', orderId)
 
     const notification: OrderNotification = {
@@ -128,7 +138,8 @@ export function OrderNotificationsProvider({ children }: OrderNotificationsProvi
         className: 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800',
       }
     )
-  }, [soundEnabled, processedOrderIds, router])
+  }, [soundEnabled, router])
+  // processedOrderIdsRef é ref, não precisa estar nas dependências
 
   console.log('🌐 OrderNotificationsProvider:', { 
     tenantId, 
@@ -197,52 +208,51 @@ export function OrderNotificationsProvider({ children }: OrderNotificationsProvi
             const latestOrder = orders[0]
             const orderId = latestOrder.id?.toString() || latestOrder.identify
             
-            // Verificar se é um pedido novo (criado nos últimos 1 minuto = 60 segundos)
-            // Tentar parsear a data em diferentes formatos
-            let createdAt: Date
-            const createdAtStr = latestOrder.created_at
+            const lastCheckedOrderId = lastCheckedOrderIdRef.current
             
-            // Formato ISO ou timestamp
-            if (createdAtStr.includes('T') || createdAtStr.includes('Z')) {
-              createdAt = new Date(createdAtStr)
-            } 
-            // Formato brasileiro DD/MM/YYYY HH:MM:SS
-            else if (createdAtStr.includes('/')) {
-              const parts = createdAtStr.split(' ')
-              const dateParts = parts[0].split('/')
-              const timeParts = parts[1]?.split(':') || ['00', '00', '00']
-              
-              // Converter de DD/MM/YYYY para YYYY-MM-DD
-              createdAt = new Date(
-                `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${timeParts[0]}:${timeParts[1]}:${timeParts[2]}`
-              )
-            }
-            // Formato padrão
-            else {
-              createdAt = new Date(createdAtStr)
-            }
-            
-            const now = new Date()
-            const diffSeconds = (now.getTime() - createdAt.getTime()) / 1000
-            
-            console.log('⏰ Polling: Verificando idade do pedido', { 
+            console.log('🔍 Polling: Verificando último pedido', { 
               orderId, 
-              createdAtOriginal: latestOrder.created_at,
-              createdAtParsed: createdAt.toISOString(),
-              diffSeconds,
-              diffMinutes: (diffSeconds / 60).toFixed(2),
-              isNew: diffSeconds < 60, // 1 minuto
-              alreadyProcessed: processedOrderIds.has(orderId)
+              lastCheckedOrderId,
+              localStorage: localStorage.getItem('lastCheckedOrderId'),
+              isNewOrder: orderId !== lastCheckedOrderId,
+              alreadyProcessed: processedOrderIdsRef.current.has(orderId)
             })
             
-            // Aceitar pedidos criados nos últimos 1 minuto (60 segundos)
-            if (diffSeconds < 60 && !processedOrderIds.has(orderId)) {
-              console.log('🎯 Polling: Pedido novo detectado! Chamando handleNewOrder...')
+            // SOLUÇÃO DEFINITIVA: Detectar por mudança de ID ao invés de timestamp
+            // Se o ID do último pedido mudou, é um pedido novo
+            const isNewOrder = lastCheckedOrderId !== null && orderId !== lastCheckedOrderId
+            
+            if (isNewOrder && !processedOrderIdsRef.current.has(orderId)) {
+              console.log('🎯🎯🎯 POLLING: NOVO PEDIDO DETECTADO (ID MUDOU)! 🎯🎯🎯', {
+                newOrderId: orderId,
+                previousOrderId: lastCheckedOrderId,
+                timestamp: new Date().toLocaleString('pt-BR')
+              })
               handleNewOrder(latestOrder)
+              
+              // Salvar imediatamente no localStorage e ref
+              localStorage.setItem('lastCheckedOrderId', orderId)
+              lastCheckedOrderIdRef.current = orderId
+              
+              // Disparar atualização da lista de pedidos
+              console.log('🔄 Disparando refresh da lista de pedidos...')
+              triggerRefresh()
+            } else if (lastCheckedOrderId === null) {
+              // Primeira verificação - não notificar, apenas registrar
+              console.log('📝 Polling: Primeira verificação, registrando último pedido:', orderId)
+              // Salvar no localStorage e ref
+              localStorage.setItem('lastCheckedOrderId', orderId)
+              lastCheckedOrderIdRef.current = orderId
+            } else if (processedOrderIdsRef.current.has(orderId)) {
+              console.log('⏭️ Polling: Pedido já foi processado (não notificar novamente)', {
+                orderId,
+                lastCheckedOrderId
+              })
             } else {
-              console.log('⏭️ Polling: Pedido ignorado', {
-                reason: diffSeconds >= 60 ? 'Muito antigo (>1min)' : 'Já processado',
-                diffMinutes: (diffSeconds / 60).toFixed(2)
+              console.log('⏭️ Polling: Mesmo pedido da última verificação', {
+                orderId,
+                lastCheckedOrderId,
+                idsIguais: orderId === lastCheckedOrderId
               })
             }
           }
@@ -266,7 +276,10 @@ export function OrderNotificationsProvider({ children }: OrderNotificationsProvi
       console.log('🛑 Polling: Limpando interval')
       clearInterval(interval)
     }
-  }, [isConnected, tenantId, handleNewOrder, processedOrderIds])
+  }, [isConnected, tenantId, handleNewOrder])
+  
+  // processedOrderIdsRef, lastCheckedOrderIdRef e triggerRefresh são refs/funções estáveis
+  // NÃO devem estar nas dependências para evitar re-renders infinitos
 
   const clearNotification = useCallback((id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id))

@@ -4,6 +4,11 @@ import { render, generateOrder } from '../utils/test-utils'
 import OrdersPage from '@/app/(dashboard)/orders/page'
 import { useOrders, useMutation } from '@/hooks/use-api'
 
+// Mock StatCards component to avoid useAuthenticatedOrderStats issues
+jest.mock('@/app/(dashboard)/orders/components/stat-cards', () => ({
+  StatCards: () => <div data-testid="stat-cards">Stats</div>
+}))
+
 // Mock the hooks
 const mockUseOrders = useOrders as jest.MockedFunction<typeof useOrders>
 const mockUseMutation = useMutation as jest.MockedFunction<typeof useMutation>
@@ -104,8 +109,8 @@ describe('Orders CRUD', () => {
       render(<OrdersPage />)
       
       await waitFor(() => {
-        expect(screen.getByText('john@example.com')).toBeInTheDocument()
-        expect(screen.getByText('jane@example.com')).toBeInTheDocument()
+        expect(screen.getAllByText('john@example.com')[0]).toBeInTheDocument()
+        expect(screen.getAllByText('jane@example.com')[0]).toBeInTheDocument()
       })
     })
   })

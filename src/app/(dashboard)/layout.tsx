@@ -11,6 +11,7 @@ import { useAuthSync } from "@/hooks/use-auth-sync";
 import { AuthDebug } from "@/components/auth-debug";
 import { ForceLogoutButton } from "@/components/force-logout-button";
 import { OrderNotificationsProvider } from "@/contexts/order-notifications-context";
+import { NotificationsSidebar } from "@/components/notifications/notifications-sidebar";
 
 export default function DashboardLayout({
   children,
@@ -18,6 +19,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [themeCustomizerOpen, setThemeCustomizerOpen] = React.useState(false);
+  const [notificationsSidebarOpen, setNotificationsSidebarOpen] = React.useState(false);
   const { config } = useSidebarConfig();
   
   // Sincronizar autenticação entre AuthContext e ApiClient
@@ -41,7 +43,7 @@ export default function DashboardLayout({
             side={config.side}
           />
           <SidebarInset>
-            <SiteHeader />
+            <SiteHeader onNotificationsClick={() => setNotificationsSidebarOpen(true)} />
             <div className="flex flex-1 flex-col">
               <div className="@container/main flex flex-1 flex-col gap-2">
                 <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -55,7 +57,7 @@ export default function DashboardLayout({
       ) : (
         <>
           <SidebarInset>
-            <SiteHeader />
+            <SiteHeader onNotificationsClick={() => setNotificationsSidebarOpen(true)} />
             <div className="flex flex-1 flex-col">
               <div className="@container/main flex flex-1 flex-col gap-2">
                 <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -72,6 +74,12 @@ export default function DashboardLayout({
           />
         </>
       )}
+
+      {/* Notifications Sidebar */}
+      <NotificationsSidebar
+        open={notificationsSidebarOpen}
+        onClose={() => setNotificationsSidebarOpen(false)}
+      />
 
       {/* Theme Customizer */}
       {/* <ThemeCustomizerTrigger onClick={() => setThemeCustomizerOpen(true)} /> */}

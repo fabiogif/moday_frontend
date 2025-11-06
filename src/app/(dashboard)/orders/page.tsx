@@ -23,20 +23,26 @@ export default function OrdersPage() {
   // Debug: Log dos pedidos recebidos
   useEffect(() => {
     if (orders) {
-      // console.log('OrdersPage - Total de pedidos:', Array.isArray(orders) ? orders.length : 'não é array')
-      // console.log('OrdersPage - Pedidos:', orders)
+      console.log('📊 OrdersPage - Total de pedidos:', Array.isArray(orders) ? orders.length : 'não é array')
       if (Array.isArray(orders) && orders.length > 0) {
-        // console.log('OrdersPage - Primeiro pedido completo:', orders[0])
-        // console.log('OrdersPage - Cliente do primeiro pedido:', orders[0].client)
+        console.log('📝 Primeiro pedido:', orders[0].identify)
       }
     }
   }, [orders])
+  
   const { mutate: createOrder, loading: creating } = useMutation()
   const { mutate: deleteOrder, loading: deleting } = useMutation()
   const { mutate: invoiceOrder, loading: invoicing } = useMutation()
   
   // Hook para detectar quando precisa atualizar
   const { shouldRefresh, resetRefresh } = useOrderRefresh()
+  
+  // Forçar atualização quando a página é montada
+  useEffect(() => {
+    console.log('🚀 Página de pedidos montada, forçando atualização...')
+    refetch()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -45,10 +51,22 @@ export default function OrdersPage() {
   // Atualizar lista quando shouldRefresh for true
   useEffect(() => {
     if (shouldRefresh) {
+      console.log('🔄 Atualizando lista de pedidos...')
       refetch()
       resetRefresh()
     }
   }, [shouldRefresh, refetch, resetRefresh])
+
+  // Atualizar automaticamente quando a página for montada/focada
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('👁️ Página de pedidos focada, atualizando...')
+      refetch()
+    }
+    
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [refetch])
 
   // Handle auto-opening order details from URL parameter
   useEffect(() => {
@@ -142,7 +160,7 @@ export default function OrdersPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-destructive">Erro ao carregar pedidos:</div>
+        <div className="text-destructive">Erro ao carregar pedidos: {error}</div>
       </div>
     )
   }

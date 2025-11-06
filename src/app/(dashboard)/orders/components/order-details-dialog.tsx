@@ -66,17 +66,12 @@ export function OrderDetailsDialog({ order, open, onOpenChange }: OrderDetailsDi
   }
 
   const formatDate = (dateString: string) => {
-    // Se já está formatado (dd/mm/yyyy), usar diretamente
-    if (dateString && dateString.includes('/')) {
-      return dateString
-    }
-    // Caso contrário, formatar ISO date
-    try {
-      return format(new Date(dateString), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
-    } catch (error) {
-      console.error('Erro ao formatar data:', dateString, error)
-      return dateString || 'Data inválida'
-    }
+    // SEMPRE usar o valor exato do banco, sem conversões de timezone
+    // Se já está formatado (dd/mm/yyyy), retornar diretamente
+    if (!dateString) return 'Data não informada'
+    
+    // Retornar exatamente como veio do banco
+    return dateString
   }
 
   const getFullDeliveryAddress = () => {

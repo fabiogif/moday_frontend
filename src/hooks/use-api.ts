@@ -82,11 +82,12 @@ export function useApi<T>(
 
   const refetch = useCallback(async () => {
     // Limpar cache se existir
-    if (useCache && cacheKey) {
-      cache.delete(cacheKey)
+    const key = cacheKey || endpoint
+    if (useCache) {
+      cache.delete(key)
     }
     await fetchData()
-  }, [fetchData, useCache, cacheKey])
+  }, [fetchData, useCache, cacheKey, endpoint])
 
   useEffect(() => {
     if (immediate) {

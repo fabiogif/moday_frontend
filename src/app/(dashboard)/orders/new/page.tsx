@@ -633,9 +633,16 @@ export default function NewOrderPage() {
       const result = await createOrder(endpoints.orders.create, 'POST', orderData);
       
       if (result) {
-        toast.success('Pedido criado com sucesso!');
-        router.push('/orders');
-          triggerRefresh();
+        const orderId = (result as any)?.identify || (result as any)?.id;
+        
+        // Disparar atualização antes de redirecionar
+        triggerRefresh();
+        
+        // Pequeno delay para garantir que o trigger foi registrado
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Redirecionar para página de sucesso
+        router.push(`/orders/success?orderId=${orderId}`);
       }
     } catch (error: any) {
       console.error('Erro ao criar pedido:', error);

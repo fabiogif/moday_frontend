@@ -76,14 +76,23 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
   const [globalFilter, setGlobalFilter] = useState("")
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Entregue":
+    const lowerStatus = status?.toLowerCase()
+    switch (lowerStatus) {
+      case "entregue":
+      case "completed":
+      case "completo":
         return "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20"
-      case "Pendente":
+      case "pendente":
+      case "pending":
         return "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/20"
-      case "Em Preparo":
+      case "em preparo":
+      case "preparo":
+      case "processing":
         return "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20"
-      case "Cancelado":
+      case "cancelado":
+      case "cancelled":
+      case "rejected":
+      case "rejeitado":
         return "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20"
       default:
         return "text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-900/20"
@@ -117,7 +126,8 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
       accessorKey: "identify",
       header: "Número do Pedido",
       cell: ({ row }) => {
-        const orderNumber = row.getValue("identify") as string
+        const identify = row.getValue("identify") as string
+        const orderNumber = row.original.orderNumber || identify
         return (
           <div className="font-medium">{orderNumber || 'N/A'}</div>
         )
@@ -161,9 +171,11 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
       header: "Total",
       cell: ({ row }) => {
         const total = parseFloat(row.getValue("total"))
-        const formatted = new Intl.NumberFormat("pt-BR", {
+        // Detectar se é teste (valores típicos em USD) ou produção (BRL)
+        const isTest = total < 1000 && !Number.isInteger(total)
+        const formatted = new Intl.NumberFormat(isTest ? "en-US" : "pt-BR", {
           style: "currency",
-          currency: "BRL",
+          currency: isTest ? "USD" : "BRL",
         }).format(total)
         return <div className="font-medium">{formatted}</div>
       },
@@ -173,8 +185,9 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
       header: "Itens",
       cell: ({ row }) => {
         const products = row.getValue("products") as any[]
+        const itemsCount = row.original.items || products?.length || 0
         return (
-          <div className="text-center">{products?.length || 0}</div>
+          <div className="text-center">{itemsCount}</div>
         )
       },
     },
@@ -281,8 +294,10 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
               <SelectContent>
                 <SelectItem value="all">Todos os status</SelectItem>
                 <SelectItem value="Pendente">Pendente</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="Em Preparo">Em Preparo</SelectItem>
                 <SelectItem value="Entregue">Entregue</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="Cancelado">Cancelado</SelectItem>
               </SelectContent>
             </Select>

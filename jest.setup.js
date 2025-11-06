@@ -94,3 +94,19 @@ jest.mock('recharts', () => {
   )
   return { ...Original, ResponsiveContainer }
 })
+
+// Mock use-authenticated-api
+jest.mock('@/hooks/use-authenticated-api', () => ({
+  useAuthenticatedOrderStats: jest.fn(() => ({
+    data: {
+      total_orders: { current: 100, previous: 90, growth: 11.1 },
+      pending_orders: { current: 20, previous: 15, growth: 33.3 },
+      paid_orders: { current: 60, previous: 55, growth: 9.1 },
+      delivered_orders: { current: 80, previous: 75, growth: 6.7 },
+      total_revenue: { current: 15000, previous: 14000, growth: 7.1 }
+    },
+    loading: false,
+    error: null,
+    refetch: jest.fn()
+  })),
+}))
