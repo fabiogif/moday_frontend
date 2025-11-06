@@ -9,7 +9,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 
-type OrderStatus = 'Em Preparo' | 'Pronto' | 'Em rota de entrega' | 'Entregue' | 'Cancelado'
+type OrderStatus = 'Em Preparo' | 'Pronto' | 'Saiu para entrega' | 'A Caminho' | 'Entregue' | 'Concluído' | 'Cancelado'
 
 interface Step {
   id: number
@@ -36,13 +36,20 @@ const DELIVERY_STEPS: Step[] = [
   },
   {
     id: 3,
-    status: 'Em rota de entrega',
-    label: 'Em Rota',
+    status: 'Saiu para entrega',
+    label: 'Saiu para entrega',
+    icon: <Truck className="h-5 w-5" />,
+    description: 'Pedido saiu para entrega'
+  },
+  {
+    id: 4,
+    status: 'A Caminho',
+    label: 'A Caminho',
     icon: <Truck className="h-5 w-5" />,
     description: 'Seu pedido está a caminho'
   },
   {
-    id: 4,
+    id: 5,
     status: 'Entregue',
     label: 'Entregue',
     icon: <CheckCircle2 className="h-5 w-5" />,
@@ -220,7 +227,7 @@ export function OrderStatusTracker({
             </div>
           )}
 
-          {estimatedDelivery && currentStatus !== 'Entregue' && (
+          {estimatedDelivery && currentStatus !== 'Entregue' && currentStatus !== 'Concluído' && (
             <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
               <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide mb-1">
                 Previsão de Entrega
@@ -231,10 +238,10 @@ export function OrderStatusTracker({
             </div>
           )}
 
-          {currentStatus === 'Entregue' && updatedAt && (
+          {(currentStatus === 'Entregue' || currentStatus === 'Concluído') && updatedAt && (
             <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
               <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-1">
-                Entregue Em
+                {currentStatus === 'Concluído' ? 'Concluído Em' : 'Entregue Em'}
               </p>
               <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
                 {new Date(updatedAt).toLocaleString('pt-BR', {

@@ -28,10 +28,24 @@ export default function ContasBancariasPage() {
       
       if (response.success && response.data) {
         setAccounts(response.data)
+      } else {
+        console.warn('Resposta sem dados:', response)
+        setAccounts([])
       }
     } catch (error: any) {
-      console.error('Erro ao carregar contas:', error)
-      toast.error(error.message || 'Erro ao carregar contas bancárias')
+      console.error('Erro ao carregar contas:', {
+        error,
+        message: error?.message,
+        response: error?.response?.data,
+        stack: error?.stack
+      })
+      
+      const errorMessage = error?.response?.data?.message || 
+                          error?.message || 
+                          'Erro ao carregar contas bancárias'
+      
+      toast.error(errorMessage)
+      setAccounts([])
     } finally {
       setIsLoading(false)
     }

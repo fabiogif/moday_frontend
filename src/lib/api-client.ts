@@ -383,6 +383,16 @@ export const endpoints = {
     isOpen: (slug: string) => `/api/store/${slug}/is-open`,
   },
 
+  // Status de Pedidos
+  orderStatuses: {
+    list: (activeOnly?: boolean) => `/api/order-statuses${activeOnly ? '?active_only=true' : ''}`,
+    show: (uuid: string) => `/api/order-statuses/${uuid}`,
+    create: '/api/order-statuses',
+    update: (uuid: string) => `/api/order-statuses/${uuid}`,
+    delete: (uuid: string) => `/api/order-statuses/${uuid}`,
+    reorder: '/api/order-statuses/reorder',
+  },
+
   // Tenant
   tenant: {
     current: '/api/tenant/current',

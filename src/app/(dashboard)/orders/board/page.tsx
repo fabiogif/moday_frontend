@@ -82,7 +82,7 @@ interface Order {
   comment?: string
 }
 
-type OrderStatus = "Em Preparo" | "Pronto" | "Em rota de entrega" | "Entregue" | "Cancelado"
+type OrderStatus = "Em Preparo" | "Pronto" | "Saiu para entrega" | "A Caminho" | "Entregue" | "Concluído" | "Cancelado"
 
 const COLUMNS: Array<{ 
   id: OrderStatus
@@ -106,11 +106,18 @@ const COLUMNS: Array<{
     icon: <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
   },
   { 
-    id: "Em rota de entrega", 
-    title: "Em rota de entrega", 
+    id: "Saiu para entrega", 
+    title: "Saiu para entrega", 
     badgeColor: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800",
     headerGradient: "from-purple-50 to-purple-100/50 dark:from-purple-950/50 dark:to-purple-900/30",
     icon: <Truck className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+  },
+  { 
+    id: "A Caminho", 
+    title: "A Caminho", 
+    badgeColor: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800",
+    headerGradient: "from-indigo-50 to-indigo-100/50 dark:from-indigo-950/50 dark:to-indigo-900/30",
+    icon: <Truck className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
   },
   { 
     id: "Entregue", 
@@ -118,6 +125,13 @@ const COLUMNS: Array<{
     badgeColor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
     headerGradient: "from-emerald-50 to-emerald-100/50 dark:from-emerald-950/50 dark:to-emerald-900/30",
     icon: <Truck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+  },
+  { 
+    id: "Concluído", 
+    title: "Concluído", 
+    badgeColor: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800",
+    headerGradient: "from-green-50 to-green-100/50 dark:from-green-950/50 dark:to-green-900/30",
+    icon: <Package className="h-4 w-4 text-green-600 dark:text-green-400" />
   },
   { 
     id: "Cancelado", 
@@ -180,8 +194,10 @@ function OrderCard({ order, isDragOverlay = false }: OrderCardProps) {
         "h-1 rounded-t-lg",
         order.status === "Em Preparo" && "bg-gradient-to-r from-amber-400 to-amber-600",
         order.status === "Pronto" && "bg-gradient-to-r from-blue-400 to-blue-600",
-        order.status === "Em rota de entrega" && "bg-gradient-to-r from-purple-400 to-purple-600",
+        order.status === "Saiu para entrega" && "bg-gradient-to-r from-purple-400 to-purple-600",
+        order.status === "A Caminho" && "bg-gradient-to-r from-indigo-400 to-indigo-600",
         order.status === "Entregue" && "bg-gradient-to-r from-emerald-400 to-emerald-600",
+        order.status === "Concluído" && "bg-gradient-to-r from-green-400 to-green-600",
         order.status === "Cancelado" && "bg-gradient-to-r from-rose-400 to-rose-600"
       )} />
       
@@ -364,6 +380,7 @@ export default function OrdersBoardPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [updatingIdentify, setUpdatingIdentify] = useState<string | null>(null)
   const [activeOrder, setActiveOrder] = useState<Order | null>(null)
+  const [dynamicColumns, setDynamicColumns] = useState(COLUMNS)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -457,6 +474,37 @@ export default function OrdersBoardPage() {
     }, [normalizeOrder]),
   })
 
+  const loadStatuses = useCallback(async () => {
+    try {
+      const res = await apiClient.get<any>(endpoints.orderStatuses.list(true))
+      
+      if (res.success && res.data && Array.isArray(res.data)) {
+        // Mapear status da API para formato das colunas
+        const iconMap: Record<string, React.ReactNode> = {
+          'clock': <Clock className="h-4 w-4" />,
+          'package': <Package className="h-4 w-4" />,
+          'check-circle': <Package className="h-4 w-4" />,
+          'check-circle-2': <Package className="h-4 w-4" />,
+          'truck': <Truck className="h-4 w-4" />,
+          'x-circle': <RefreshCw className="h-4 w-4" />,
+        }
+
+        const columns = res.data.map((status: any) => ({
+          id: status.name,
+          title: status.name,
+          badgeColor: `bg-[${status.color}]/10 text-[${status.color}] border-[${status.color}]/20`,
+          headerGradient: `from-[${status.color}]/5 to-[${status.color}]/10`,
+          icon: iconMap[status.icon] || <Package className="h-4 w-4" />,
+        }))
+
+        setDynamicColumns(columns)
+      }
+    } catch (e: any) {
+      console.warn("Erro ao carregar status, usando padrões:", e)
+      // Manter colunas padrão em caso de erro
+    }
+  }, [])
+
   const loadOrders = useCallback(async () => {
     try {
       setLoading(true)
@@ -476,31 +524,33 @@ export default function OrdersBoardPage() {
   }, [normalizeOrder])
 
   useEffect(() => {
+    loadStatuses()
     loadOrders()
-  }, [loadOrders])
+  }, [loadOrders, loadStatuses])
 
   const groupedOrders = useMemo(() => {
-    const map: Record<OrderStatus, Order[]> = { 
-      "Em Preparo": [], 
-      "Pronto": [], 
-      "Em rota de entrega": [],
-      "Entregue": [], 
-      "Cancelado": [] 
-    }
+    // Criar map dinâmico baseado nas colunas carregadas
+    const map: Record<string, Order[]> = {}
+    
+    dynamicColumns.forEach((col) => {
+      map[col.id] = []
+    })
     
     for (const order of orders) {
-      const status = COLUMNS.find((c) => c.id === order.status)?.id || "Em Preparo"
-      map[status].push(order)
+      const status = dynamicColumns.find((c) => c.id === order.status)?.id || dynamicColumns[0]?.id || "Em Preparo"
+      if (map[status]) {
+        map[status].push(order)
+      }
     }
     
-    return map
-  }, [orders])
+    return map as Record<OrderStatus, Order[]>
+  }, [orders, dynamicColumns])
 
   const updateOrderStatus = async (orderIdentify: string, newStatus: OrderStatus) => {
     const order = orders.find((o) => o.identify === orderIdentify)
     if (!order) return
     
-    const columnInfo = COLUMNS.find((c) => c.id === newStatus)
+    const columnInfo = dynamicColumns.find((c) => c.id === newStatus)
     
     try {
       setUpdatingIdentify(orderIdentify)
@@ -556,7 +606,7 @@ export default function OrdersBoardPage() {
       }
     }
 
-    if (!newStatus || !COLUMNS.find((c) => c.id === newStatus)) {
+    if (!newStatus || !dynamicColumns.find((c) => c.id === newStatus)) {
       return
     }
 
@@ -645,8 +695,23 @@ export default function OrdersBoardPage() {
         sensors={sensors}
       >
         <div className="flex-1 overflow-x-auto pb-4">
-          <div className="grid gap-4 lg:grid-cols-3 xl:grid-cols-5 min-w-max xl:min-w-0">
-            {COLUMNS.map((column) => (
+          <div 
+            className={cn(
+              "grid gap-4 min-w-max",
+              dynamicColumns.length <= 3 && "lg:grid-cols-3",
+              dynamicColumns.length === 4 && "lg:grid-cols-2 xl:grid-cols-4",
+              dynamicColumns.length === 5 && "lg:grid-cols-3 xl:grid-cols-5",
+              dynamicColumns.length === 6 && "lg:grid-cols-3 xl:grid-cols-6",
+              dynamicColumns.length === 7 && "lg:grid-cols-3 xl:grid-cols-7",
+              dynamicColumns.length >= 8 && "lg:grid-cols-4 xl:grid-cols-8"
+            )}
+            style={{
+              gridTemplateColumns: dynamicColumns.length > 0 
+                ? `repeat(${Math.min(dynamicColumns.length, 8)}, minmax(300px, 1fr))` 
+                : undefined
+            }}
+          >
+            {dynamicColumns.map((column) => (
               <BoardColumn 
                 key={column.id} 
                 column={column} 

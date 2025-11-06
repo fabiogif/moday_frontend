@@ -68,10 +68,12 @@ const orderEditSchema = z.object({
 type OrderEditFormValues = z.infer<typeof orderEditSchema>
 
 const statusOptions = [
-  { value: "Pendente", label: "Pendente" },
   { value: "Em Preparo", label: "Em Preparo" },
   { value: "Pronto", label: "Pronto" },
+  { value: "Saiu para entrega", label: "Saiu para entrega" },
+  { value: "A Caminho", label: "A Caminho" },
   { value: "Entregue", label: "Entregue" },
+  { value: "Concluído", label: "Concluído" },
   { value: "Cancelado", label: "Cancelado" },
 ]
 

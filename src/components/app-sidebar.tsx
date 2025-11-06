@@ -27,6 +27,7 @@ import {
   Receipt,
   LayoutDashboard,
   Utensils,
+  ListOrdered,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -219,7 +220,12 @@ const navGroups = [
         url: "/settings/delivery",
         icon: Truck,
       },
-      ],
+      {
+        title: "Status de Pedidos",
+        url: "/configuracoes/status-pedidos",
+        icon: ListOrdered,
+      },
+    ],
   },
 ]
 
