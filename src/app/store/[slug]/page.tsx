@@ -1,8 +1,9 @@
 "use client"
 
 import { useParams } from "next/navigation"
+import Link from "next/link"
 import { useEffect, useState, useCallback } from "react"
-import { ShoppingCart, Plus, Minus, Trash2, Store, MapPin, Phone, Mail, Image as ImageIcon, Loader2, Search } from "lucide-react"
+import { ShoppingCart, Plus, Minus, Trash2, Store, MapPin, Phone, Mail, Image as ImageIcon, Loader2, Search, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -871,6 +872,16 @@ export default function PublicStorePage() {
                   {cartCollapsed ? 'Mostrar' : 'Ocultar'} Carrinho
                 </span>
               </Button>
+
+              <Link href={`/store/${slug}/track`}>
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Package className="h-5 w-5" />
+                  <span className="hidden md:inline">Meu Pedido</span>
+                </Button>
+              </Link>
               
               {checkoutStep === "cart" && cart.length > 0 && (
                 <Button

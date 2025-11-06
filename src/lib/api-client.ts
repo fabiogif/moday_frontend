@@ -373,6 +373,16 @@ export const endpoints = {
     }
   },
 
+  // Loja Pública (Store)
+  store: {
+    info: (slug: string) => `/api/store/${slug}/info`,
+    products: (slug: string) => `/api/store/${slug}/products`,
+    paymentMethods: (slug: string) => `/api/store/${slug}/payment-methods`,
+    createOrder: (slug: string) => `/api/store/${slug}/orders`,
+    trackOrder: (slug: string) => `/api/store/${slug}/orders/track`,
+    isOpen: (slug: string) => `/api/store/${slug}/is-open`,
+  },
+
   // Tenant
   tenant: {
     current: '/api/tenant/current',
