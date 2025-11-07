@@ -180,6 +180,11 @@ export default function ClientsPage() {
       // Rollback: restaurar cliente removido
       setLocalClients(previousClients);
       
+      if (error?.status === 409) {
+        showErrorToast(error, "Ação não permitida");
+        throw error;
+      }
+
       if (process.env.NODE_ENV === 'development') {
         console.group('🔴 Erro ao Excluir Cliente')
         // console.log('Error:', error)
@@ -187,6 +192,7 @@ export default function ClientsPage() {
       }
       
       showErrorToast(error, "Erro ao Excluir Cliente");
+      throw error;
     }
   };
 

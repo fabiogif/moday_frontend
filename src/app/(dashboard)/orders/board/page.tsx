@@ -31,10 +31,21 @@ import {
   Package, 
   MapPin,
   Truck,
-  UtensilsCrossed
+  UtensilsCrossed,
+  Archive
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Product {
   identify?: string
@@ -145,9 +156,10 @@ const COLUMNS: Array<{
 interface OrderCardProps {
   order: Order
   isDragOverlay?: boolean
+  onArchive: (order: Order) => void
 }
 
-function OrderCard({ order, isDragOverlay = false }: OrderCardProps) {
+function OrderCard({ order, isDragOverlay = false, onArchive }: OrderCardProps) {
   const { 
     setNodeRef, 
     attributes, 
@@ -208,12 +220,30 @@ function OrderCard({ order, isDragOverlay = false }: OrderCardProps) {
             {columnInfo?.icon}
             <span className="font-semibold text-base tracking-tight">#{order.identify}</span>
           </div>
+        <div className="flex items-center gap-1.5">
           <Badge 
             variant="outline" 
             className={cn("text-xs font-medium border", columnInfo?.badgeColor)}
           >
             {order.status}
           </Badge>
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Arquivar pedido"
+            aria-label={`Arquivar pedido ${order.identify}`}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            disabled={isDragOverlay}
+            onClick={(event) => {
+              event.stopPropagation()
+              onArchive(order)
+            }}
+            onMouseDown={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            <Archive className="h-4 w-4" />
+          </Button>
+        </div>
         </div>
         
         {/* Info Section */}
@@ -320,9 +350,10 @@ interface BoardColumnProps {
   }
   orders: Order[]
   isUpdating: boolean
+  onArchive: (order: Order) => void
 }
 
-function BoardColumn({ column, orders, isUpdating }: BoardColumnProps) {
+function BoardColumn({ column, orders, isUpdating, onArchive }: BoardColumnProps) {
   return (
     <Card className="border-2 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
       <CardHeader className={cn(
@@ -358,7 +389,7 @@ function BoardColumn({ column, orders, isUpdating }: BoardColumnProps) {
             )}
             
             {orders.map((order) => (
-              <OrderCard key={order.identify} order={order} />
+              <OrderCard key={order.identify} order={order} onArchive={onArchive} />
             ))}
             
             {isUpdating && (
@@ -381,6 +412,8 @@ export default function OrdersBoardPage() {
   const [updatingIdentify, setUpdatingIdentify] = useState<string | null>(null)
   const [activeOrder, setActiveOrder] = useState<Order | null>(null)
   const [dynamicColumns, setDynamicColumns] = useState(COLUMNS)
+  const [orderToArchive, setOrderToArchive] = useState<Order | null>(null)
+  const [archiving, setArchiving] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -391,6 +424,32 @@ export default function OrdersBoardPage() {
   )
 
   const tenantId = user?.tenant_id ? parseInt(user.tenant_id, 10) : 0
+
+  const openArchiveDialog = useCallback((order: Order) => {
+    setOrderToArchive(order)
+  }, [])
+
+  const cancelArchiveDialog = useCallback(() => {
+    if (!archiving) {
+      setOrderToArchive(null)
+    }
+  }, [archiving])
+
+  const confirmArchiveOrder = useCallback(async () => {
+    if (!orderToArchive) return
+
+    try {
+      setArchiving(true)
+      await apiClient.patch(endpoints.orders.archive(orderToArchive.identify))
+      toast.success(`Pedido #${orderToArchive.identify} arquivado com sucesso!`)
+      setOrders((prev) => prev.filter((order) => order.identify !== orderToArchive.identify))
+      setOrderToArchive(null)
+    } catch (error: any) {
+      toast.error(error?.message || 'Erro ao arquivar pedido')
+    } finally {
+      setArchiving(false)
+    }
+  }, [orderToArchive])
 
   const normalizeOrder = useCallback((rawOrder: any): Order => {
     const total = typeof rawOrder.total === 'string' 
@@ -436,41 +495,58 @@ export default function OrdersBoardPage() {
     onOrderCreated: useCallback((newOrder: any) => {
       // console.log('Real-time: New order created', newOrder)
       const normalized = normalizeOrder(newOrder)
-      
+
+      if (normalized.status === 'Arquivado') {
+        return
+      }
+
       setOrders((prev) => {
         if (prev.some(o => o.identify === normalized.identify)) {
           return prev
         }
         return [normalized, ...prev]
       })
-      
+
       toast.success(`Novo pedido #${normalized.identify} criado!`)
     }, [normalizeOrder]),
     
     onOrderStatusUpdated: useCallback(({ order: updatedOrder, oldStatus, newStatus }: any) => {
       // console.log('Real-time: Order status updated', { updatedOrder, oldStatus, newStatus })
-      
+      const normalized = normalizeOrder(updatedOrder)
+
+      if (newStatus === 'Arquivado' || normalized.status === 'Arquivado') {
+        setOrders((prev) => prev.filter((o) => o.identify !== updatedOrder.identify))
+        toast.info(`Pedido #${updatedOrder.identify} foi arquivado.`)
+        return
+      }
+
       setOrders((prev) =>
         prev.map((o) =>
           o.identify === updatedOrder.identify
-            ? { ...normalizeOrder(updatedOrder), status: newStatus }
+            ? { ...normalized, status: newStatus }
             : o
         )
       )
-      
+
       toast.info(`Pedido #${updatedOrder.identify} mudou de "${oldStatus}" para "${newStatus}"`)
     }, [normalizeOrder]),
     
     onOrderUpdated: useCallback((updatedOrder: any) => {
       // console.log('Real-time: Order updated', updatedOrder)
       
-      setOrders((prev) =>
-        prev.map((o) =>
+      setOrders((prev) => {
+        const normalized = normalizeOrder(updatedOrder)
+
+        if (normalized.status === 'Arquivado') {
+          return prev.filter((o) => o.identify !== normalized.identify)
+        }
+
+        return prev.map((o) =>
           o.identify === updatedOrder.identify
-            ? normalizeOrder(updatedOrder)
+            ? normalized
             : o
         )
-      )
+      })
     }, [normalizeOrder]),
   })
 
@@ -514,7 +590,10 @@ export default function OrdersBoardPage() {
         ? res.data
         : (res.data?.orders || res.data?.data || [])
       
-      const normalized: Order[] = raw.map((o: any) => normalizeOrder(o))
+      const normalized: Order[] = raw
+        .map((o: any) => normalizeOrder(o))
+        .filter((order: Order) => order.status !== 'Arquivado')
+
       setOrders(normalized)
     } catch (e: any) {
       toast.error(e?.message || "Erro ao carregar pedidos")
@@ -717,6 +796,7 @@ export default function OrdersBoardPage() {
                 column={column} 
                 orders={groupedOrders[column.id] || []}
                 isUpdating={groupedOrders[column.id]?.some(o => o.identify === updatingIdentify) || false}
+                onArchive={openArchiveDialog}
               />
             ))}
           </div>
@@ -725,11 +805,36 @@ export default function OrdersBoardPage() {
         <DragOverlay>
           {activeOrder ? (
             <div className="rotate-3 scale-105">
-              <OrderCard order={activeOrder} isDragOverlay />
+              <OrderCard order={activeOrder} isDragOverlay onArchive={() => {}} />
             </div>
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      <AlertDialog open={!!orderToArchive} onOpenChange={(open) => {
+        if (!open) {
+          cancelArchiveDialog()
+        }
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Arquivar pedido</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja arquivar o pedido <strong>#{orderToArchive?.identify}</strong>? Essa ação não poderá ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={archiving}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmArchiveOrder}
+              disabled={archiving}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {archiving ? 'Arquivando...' : 'Arquivar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

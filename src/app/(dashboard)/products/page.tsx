@@ -165,9 +165,14 @@ export default function ProductsPage() {
       }
     } catch (error) {
       console.error('Erro ao excluir produto:', error)
+      const apiError = error as any
+      if (apiError?.status === 409) {
+        handleShowSuccessAlert('Atenção!', apiError?.message || 'Produto não pode ser excluído, existe um pedido ativo ou não arquivado vinculado.')
+        return
+      }
       // Mostrar mensagem detalhada do backend (422 validationError)
-      const backendMessage = (error as any)?.data?.message
-      const backendErrors = (error as any)?.data?.errors
+      const backendMessage = apiError?.data?.message
+      const backendErrors = apiError?.data?.errors
       if (backendMessage) {
         // Montar detalhe com lista quando existir
         let detail = backendMessage

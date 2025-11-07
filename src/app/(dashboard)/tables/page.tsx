@@ -78,6 +78,15 @@ export default function TablesPage() {
       }
     } catch (error) {
       console.error("Erro ao excluir mesa:", error);
+      const apiError = error as any;
+      if (apiError?.status === 409) {
+        setSuccessAlert({
+          open: true,
+          title: "Ação não permitida",
+          message: apiError?.message || "Mesa não pode ser excluída, existe um pedido ativo ou não arquivado vinculado.",
+        });
+        return;
+      }
       setSuccessAlert({
         open: true,
         title: "Erro!",

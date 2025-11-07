@@ -22,6 +22,7 @@ interface ApiError {
   message: string
   data?: any
   errors?: Record<string, string[]>
+  status?: number
 }
 
 class ApiClient {
@@ -130,7 +131,8 @@ class ApiClient {
           success: false,
           message: data.message || 'Erro na requisição',
           data: data.data,
-          errors: data.errors
+          errors: data.errors,
+          status: response.status,
         }
         throw error
       }
@@ -202,6 +204,19 @@ class ApiClient {
     return this.handleResponse<T>(response)
   }
 
+  async patch<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    const isFormData = data instanceof FormData
+
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
+      method: 'PATCH',
+      headers: this.getHeaders(isFormData),
+      credentials: 'include',
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
+    })
+
+    return this.handleResponse<T>(response)
+  }
+
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: 'DELETE',
@@ -260,6 +275,7 @@ export const endpoints = {
     create: '/api/order',
     show: (id: string) => `/api/order/${id}`,
     update: (id: string) => `/api/order/${id}`,
+    archive: (id: string) => `/api/order/${id}/archive`,
     delete: (id: string) => `/api/order/${id}`,
     invoice: (id: string) => `/api/order/${id}/invoice`,
     receipt: (id: string) => `/api/order/${id}/receipt`,

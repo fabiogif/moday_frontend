@@ -48,6 +48,7 @@ import { endpoints } from "@/lib/api-client"
 import { toast } from "sonner"
 import { useInputMask } from "@/hooks/use-input-mask"
 import { validateCPF, validateEmail, validatePhone } from "@/lib/masks"
+import { showErrorToast } from "@/components/ui/error-toast"
 
 // Schema de validação
 const clientSchema = z.object({
@@ -177,6 +178,10 @@ export default function ClientDetailPage() {
         router.push("/clients")
       }
     } catch (error: any) {
+      if (error?.status === 409) {
+        showErrorToast(error, "Ação não permitida")
+        return
+      }
       toast.error(error.message || "Erro ao excluir cliente")
     }
   }
