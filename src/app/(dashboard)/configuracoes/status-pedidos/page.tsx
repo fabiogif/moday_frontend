@@ -50,7 +50,7 @@ export default function OrderStatusesPage() {
   const fetchStatuses = async () => {
     try {
       setLoading(true)
-      const response = await apiClient.get(endpoints.orderStatuses.list(false))
+      const response = await apiClient.get<OrderStatus[]>(endpoints.orderStatuses.list(false))
       
       if (response.success) {
         setStatuses(response.data)
