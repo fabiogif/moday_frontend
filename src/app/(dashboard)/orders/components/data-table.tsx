@@ -58,10 +58,20 @@ import {
 import { OrderDetailsDialog } from "./order-details-dialog"
 import { ReceiptDialog } from "./receipt-dialog"
 import { Order } from "../types"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface DataTableProps {
   orders: Order[]
-  onDeleteOrder: (id: number) => void
+  onDeleteOrder: (order: Order) => void
   onEditOrder: (order: Order) => void
   onViewOrder: (order: Order) => void
   onInvoiceOrder: (order: Order) => void
@@ -74,6 +84,36 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
   const [globalFilter, setGlobalFilter] = useState("")
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null)
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setDeleteDialogOpen(open)
+    if (!open) {
+      setOrderToDelete(null)
+    }
+  }
+
+  const handleDeleteClick = (order: Order) => {
+    setOrderToDelete(order)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false)
+    setOrderToDelete(null)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!orderToDelete) return
+
+    try {
+      await onDeleteOrder(orderToDelete)
+    } finally {
+      setDeleteDialogOpen(false)
+      setOrderToDelete(null)
+    }
+  }
 
   const getStatusColor = (status: string) => {
     const lowerStatus = status?.toLowerCase()
@@ -232,9 +272,9 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => order.id && onDeleteOrder(order.id)}
+                onClick={() => handleDeleteClick(order)}
                 className="text-red-600"
-                disabled={!order.id}
+                disabled={!order.identify && !order.id}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Excluir
@@ -410,6 +450,34 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={handleDialogOpenChange}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza de que deseja excluir o pedido
+              {" "}
+              <span className="font-semibold">
+                {orderToDelete?.orderNumber || orderToDelete?.identify || orderToDelete?.id}
+              </span>
+              ?<br />
+              <span className="text-red-600 font-medium">
+                Esta ação não poderá ser desfeita.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

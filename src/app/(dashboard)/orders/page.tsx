@@ -82,19 +82,21 @@ export default function OrdersPage() {
     }
   }, [searchParams, orders, router])
 
-  const handleDeleteOrder = async (id: number) => {
+  const handleDeleteOrder = async (order: Order) => {
+    const identifier = order.identify || order.id?.toString()
+    if (!identifier) {
+      toast.error('Pedido não encontrado')
+      return
+    }
+
     try {
-      const result = await deleteOrder(
-        endpoints.orders.delete(id.toString()),
+      await deleteOrder(
+        endpoints.orders.delete(identifier),
         'DELETE'
       )
 
-      // Para exclusão, o backend retorna success: true mesmo com data vazia
-      if (result !== null) {
-        toast.success('Pedido excluído com sucesso!')
-        // Recarregar dados após exclusão
-        await refetch()
-      }
+      toast.success('Pedido excluído com sucesso!')
+      await refetch()
     } catch (error: any) {
       console.error('Erro ao excluir pedido:', error)
       toast.error(error.message || 'Erro ao excluir pedido')
