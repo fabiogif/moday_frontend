@@ -1,6 +1,22 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import {
+  DndContext,
+  type DragEndEvent,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
 import { Plus, Edit, Trash2, GripVertical, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,9 +43,149 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { toast } from "sonner"
 import { apiClient, endpoints } from "@/lib/api-client"
 import type { OrderStatus } from "@/types/order-status"
+import { StatusStatCards } from "./components/status-stat-cards"
+import { cn } from "@/lib/utils"
+
+interface SortableStatusRowProps {
+  status: OrderStatus
+  onEdit: (status: OrderStatus) => void
+  onDelete: (uuid: string) => void
+  onToggleActive: (uuid: string, isActive: boolean) => Promise<void> | void
+  disableInteractions?: boolean
+}
+
+function SortableStatusRow({
+  status,
+  onEdit,
+  onDelete,
+  onToggleActive,
+  disableInteractions = false,
+}: SortableStatusRowProps) {
+  const {
+    attributes,
+    listeners,
+    setActivatorNodeRef,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: status.uuid,
+    disabled: disableInteractions,
+  })
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : undefined,
+  }
+
+  const canDrag = (status.can_reorder ?? true) && !disableInteractions
+
+  return (
+    <TableRow
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "bg-background transition-shadow",
+        isDragging && "shadow-lg ring-2 ring-primary/40"
+      )}
+    >
+      <TableCell className="w-14">
+        <Button
+          variant="ghost"
+          size="icon"
+          ref={canDrag ? setActivatorNodeRef : undefined}
+          {...(canDrag ? listeners : {})}
+          {...(canDrag ? attributes : {})}
+          disabled={!canDrag}
+          className={cn("cursor-grab", !canDrag && "cursor-not-allowed")}
+          aria-label={`Reordenar status ${status.name}`}
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </Button>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-3">
+          <span
+            className="h-3 w-3 rounded-full border border-border"
+            style={{ backgroundColor: status.color }}
+            aria-hidden
+          />
+          <div className="flex flex-col">
+            <span className="font-medium">{status.name}</span>
+            {status.description && (
+              <span className="text-xs text-muted-foreground line-clamp-1">
+                {status.description}
+              </span>
+            )}
+          </div>
+        </div>
+      </TableCell>
+      <TableCell className="w-48">
+        <div className="flex flex-wrap items-center gap-2">
+          {status.is_initial && <Badge variant="outline">Inicial</Badge>}
+          {status.is_final && <Badge variant="secondary">Final</Badge>}
+          {!status.is_active && <Badge variant="destructive">Inativo</Badge>}
+        </div>
+      </TableCell>
+      <TableCell className="w-40 font-mono text-sm">{status.icon}</TableCell>
+      <TableCell className="w-32 text-sm text-muted-foreground">
+        {status.orders_count ?? 0}
+      </TableCell>
+      <TableCell className="w-24 text-sm text-muted-foreground">
+        {status.order_position}
+      </TableCell>
+      <TableCell className="w-56">
+        <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center gap-2">
+            <Label htmlFor={`active-${status.uuid}`} className="text-xs">
+              {status.is_active ? "Ativo" : "Inativo"}
+            </Label>
+            <Switch
+              id={`active-${status.uuid}`}
+              checked={status.is_active}
+              onCheckedChange={(checked) => onToggleActive(status.uuid, checked)}
+              disabled={disableInteractions}
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => onEdit(status)}
+            disabled={disableInteractions}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => onDelete(status.uuid)}
+            disabled={disableInteractions || status.can_delete === false}
+            title={
+              status.can_delete === false
+                ? "Não é possível deletar status com pedidos associados"
+                : "Excluir status"
+            }
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  )
+}
 
 export default function OrderStatusesPage() {
   const [statuses, setStatuses] = useState<OrderStatus[]>([])
@@ -37,6 +193,7 @@ export default function OrderStatusesPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingStatus, setEditingStatus] = useState<OrderStatus | null>(null)
   const [deletingUuid, setDeletingUuid] = useState<string | null>(null)
+  const [isReordering, setIsReordering] = useState(false)
   
   // Form states
   const [formName, setFormName] = useState("")
@@ -46,6 +203,12 @@ export default function OrderStatusesPage() {
   const [formIsInitial, setFormIsInitial] = useState(false)
   const [formIsFinal, setFormIsFinal] = useState(false)
   const [formIsActive, setFormIsActive] = useState(true)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    })
+  )
 
   const fetchStatuses = async () => {
     try {
@@ -160,6 +323,42 @@ export default function OrderStatusesPage() {
     }
   }
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (!over || active.id === over.id) {
+      return
+    }
+
+    const activeId = String(active.id)
+    const overId = String(over.id)
+
+    const oldIndex = statuses.findIndex((status) => status.uuid === activeId)
+    const newIndex = statuses.findIndex((status) => status.uuid === overId)
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return
+    }
+
+    const previousStatuses = statuses
+    const reordered = arrayMove(previousStatuses, oldIndex, newIndex)
+
+    setStatuses(reordered)
+    setIsReordering(true)
+
+    try {
+      await apiClient.post(endpoints.orderStatuses.reorder, {
+        order: reordered.map((status) => status.uuid),
+      })
+      toast.success('Ordem atualizada com sucesso')
+    } catch (error: any) {
+      setStatuses(previousStatuses)
+      toast.error(error?.response?.data?.message || 'Não foi possível atualizar a ordem')
+    } finally {
+      setIsReordering(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -172,8 +371,13 @@ export default function OrderStatusesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-6">
+      <div className="@container/main px-4 lg:px-6">
+        <StatusStatCards statuses={statuses} />
+      </div>
+
+      <div className="@container/main px-4 lg:px-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Status de Pedidos</h1>
           <p className="text-muted-foreground">
@@ -186,100 +390,72 @@ export default function OrderStatusesPage() {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Status Cadastrados</CardTitle>
+        <Card className="mt-6">
+          <CardHeader className="flex flex-col gap-1">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <CardTitle className="text-lg font-semibold">Status Cadastrados</CardTitle>
           <CardDescription>
-            {statuses.length} status cadastrados
+                  Organize a ordem arrastando as linhas da tabela
           </CardDescription>
+              </div>
+              {isReordering && (
+                <Badge variant="outline" className="text-xs">
+                  Atualizando ordem...
+                </Badge>
+              )}
+            </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
+          <CardContent className="p-0">
             {statuses.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <p>Nenhum status cadastrado ainda.</p>
-                <p className="text-sm mt-2">Clique em "Novo Status" para começar.</p>
+              <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-muted-foreground">
+                <p className="text-base font-medium">Nenhum status cadastrado ainda.</p>
+                <p className="text-sm">Clique em &quot;Novo Status&quot; para começar.</p>
               </div>
             ) : (
-              statuses.map((status) => (
-                <div
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                modifiers={[restrictToVerticalAxis]}
+                onDragEnd={handleDragEnd}
+              >
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-14" />
+                        <TableHead>Status</TableHead>
+                        <TableHead>Uso</TableHead>
+                        <TableHead>Ícone</TableHead>
+                        <TableHead>Pedidos</TableHead>
+                        <TableHead>Posição</TableHead>
+                        <TableHead className="w-56 text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <SortableContext
+                        items={statuses.map((status) => status.uuid)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        {statuses.map((status) => (
+                          <SortableStatusRow
                   key={status.uuid}
-                  className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <GripVertical className="h-5 w-5 text-muted-foreground" />
-                  
-                  <div
-                    className="w-6 h-6 rounded-full border-2 border-background shadow-sm"
-                    style={{ backgroundColor: status.color }}
-                  />
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold">{status.name}</p>
-                      {status.is_initial && (
-                        <Badge variant="secondary" className="text-xs">Inicial</Badge>
-                      )}
-                      {status.is_final && (
-                        <Badge variant="secondary" className="text-xs">Final</Badge>
-                      )}
-                      {!status.is_active && (
-                        <Badge variant="outline" className="text-xs">Inativo</Badge>
-                      )}
-                    </div>
-                    {status.description && (
-                      <p className="text-sm text-muted-foreground mt-1">{status.description}</p>
-                    )}
-                    <div className="flex items-center gap-4 mt-2">
-                      <span className="text-xs text-muted-foreground">
-                        Ícone: {status.icon}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        Posição: {status.order_position}
-                      </span>
-                      {status.orders_count !== undefined && (
-                        <span className="text-xs text-muted-foreground">
-                          {status.orders_count} pedido(s)
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 mr-2">
-                      <Label htmlFor={`active-${status.uuid}`} className="text-xs">
-                        {status.is_active ? 'Ativo' : 'Inativo'}
-                      </Label>
-                      <Switch
-                        id={`active-${status.uuid}`}
-                        checked={status.is_active}
-                        onCheckedChange={(checked) => handleToggleActive(status.uuid, checked)}
-                      />
-                    </div>
-                    
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openEditDialog(status)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setDeletingUuid(status.uuid)}
-                      disabled={status.can_delete === false}
-                      title={status.can_delete === false ? 'Não pode deletar status com pedidos' : 'Deletar'}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                            status={status}
+                            onEdit={openEditDialog}
+                            onDelete={(uuid) => setDeletingUuid(uuid)}
+                            onToggleActive={handleToggleActive}
+                            disableInteractions={isReordering}
+                          />
+                        ))}
+                      </SortableContext>
+                    </TableBody>
+                  </Table>
                 </div>
-              ))
+              </DndContext>
             )}
-          </div>
         </CardContent>
       </Card>
+      </div>
 
       {/* Dialog de Criação/Edição */}
       <Dialog open={dialogOpen} onOpenChange={(open) => {

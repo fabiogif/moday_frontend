@@ -11,6 +11,7 @@ export interface OrderStatus {
   is_active: boolean
   orders_count?: number
   can_delete?: boolean
+  can_reorder?: boolean
 }
 
 export interface OrderStatusForm {
