@@ -389,6 +389,17 @@ export const endpoints = {
     }
   },
 
+  marketing: {
+    coupons: {
+      list: '/api/marketing/coupons',
+      stats: '/api/marketing/coupons/stats',
+      create: '/api/marketing/coupons',
+      update: (uuid: string) => `/api/marketing/coupons/${uuid}`,
+      toggle: (uuid: string) => `/api/marketing/coupons/${uuid}/toggle`,
+      delete: (uuid: string) => `/api/marketing/coupons/${uuid}`,
+    },
+  },
+
   // Loja Pública (Store)
   store: {
     info: (slug: string) => `/api/store/${slug}/info`,

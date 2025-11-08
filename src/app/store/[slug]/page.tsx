@@ -3,18 +3,19 @@
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useState, useCallback } from "react"
-import { ShoppingCart, Plus, Minus, Trash2, Store, MapPin, Phone, Mail, Image as ImageIcon, Loader2, Search, Package } from "lucide-react"
+import { ShoppingCart, Plus, Minus, Trash2, Store, MapPin, Phone, Mail, Image as ImageIcon, Loader2, Search, Package, Menu, X, MessageCircle, UserCircle2, Check, Clock, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { MinusCircle, PlusCircle } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import Image from "next/image"
@@ -97,7 +98,13 @@ export default function PublicStorePage() {
   // Helper function to convert price to number and format
   const formatPrice = (price: number | string): string => {
     const numPrice = typeof price === 'string' ? parseFloat(price) : price
-    return isNaN(numPrice) ? '0.00' : numPrice.toFixed(2)
+    if (isNaN(numPrice)) {
+      return '0,00'
+    }
+    return numPrice.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
   }
 
   // Helper function to get numeric price
@@ -154,7 +161,13 @@ export default function PublicStorePage() {
     whatsapp_link?: string | null
   } | null>(null)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
-  const [cartCollapsed, setCartCollapsed] = useState(false)
+  const [mobileSummaryOpen, setMobileSummaryOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [contactExpanded, setContactExpanded] = useState<{ whatsapp: boolean; location: boolean }>({
+    whatsapp: false,
+    location: false,
+  })
+  const [couponCode, setCouponCode] = useState("")
   const [isStoreOpen, setIsStoreOpen] = useState(true) // Default true para não bloquear até carregar
 
   // Hook para buscar CEP
@@ -280,6 +293,10 @@ export default function PublicStorePage() {
     loadStoreData()
   }, [loadStoreData])
 
+  useEffect(() => {
+    setMobileSummaryOpen(false)
+  }, [checkoutStep])
+
   function addToCart(
     product: Product, 
     variation?: ProductVariation,
@@ -313,7 +330,7 @@ export default function PublicStorePage() {
     if (hasVariations || hasOptionals) {
       // console.log('📱 Abrindo modal de seleção...');
       setSelectedProduct(product)
-      setSelectedVariation('')
+      setSelectedVariation(product.variations?.[0]?.id || '')
       setSelectedOptionalsQty({})
       setShowSelectionDialog(true)
     } else {
@@ -360,9 +377,7 @@ export default function PublicStorePage() {
     
     addToCart(selectedProduct, variation, optionalsWithQty)
     setShowSelectionDialog(false)
-    setSelectedProduct(null)
-    setSelectedVariation('')
-    setSelectedOptionalsQty({})
+    resetSelectionState()
   }
 
   function calculateSelectionTotal(): number {
@@ -801,6 +816,243 @@ export default function PublicStorePage() {
   const cartTotal = getCartTotal()
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
 
+  const progressSteps = [
+    { key: 'cart', label: 'Seleção de Itens', description: 'Escolha seus produtos favoritos' },
+    { key: 'checkout', label: 'Dados de Entrega', description: 'Informe seus dados e endereço' },
+    { key: 'payment', label: 'Pagamento', description: 'Revise e confirme o pagamento' },
+    { key: 'success', label: 'Confirmação', description: 'Pedido finalizado com sucesso' },
+  ] as const
+
+  const currentProgressKey =
+    checkoutStep === 'cart'
+      ? 'cart'
+      : checkoutStep === 'checkout'
+        ? (submitting ? 'payment' : 'checkout')
+        : 'success'
+
+  const currentStepIndex = progressSteps.findIndex((step) => step.key === currentProgressKey)
+
+  const whatsappNumber = storeInfo?.whatsapp || storeInfo?.phone || ''
+  const sanitizedWhatsapp = whatsappNumber.replace(/\D/g, '')
+  const whatsappLink = sanitizedWhatsapp ? `https://wa.me/${sanitizedWhatsapp}` : undefined
+  const displayWhatsapp = whatsappNumber ? maskPhone(whatsappNumber) : 'Não informado'
+
+  const locationText = [
+    storeInfo?.address,
+    storeInfo?.city && storeInfo?.state ? `${storeInfo.city} - ${storeInfo.state}` : storeInfo?.city || storeInfo?.state,
+    storeInfo?.zipcode && `CEP: ${storeInfo.zipcode}`,
+  ].filter(Boolean).join(' • ')
+
+  const attendanceText = storeInfo?.settings?.delivery_pickup?.pickup_time_minutes
+    ? `Retirada pronta em aproximadamente ${storeInfo.settings.delivery_pickup.pickup_time_minutes} minutos`
+    : 'Atendimento disponível durante o horário de funcionamento.'
+
+  const estimatedTime = storeInfo?.settings?.delivery_pickup?.pickup_time_minutes
+  const estimatedTimeLabel = estimatedTime ? `${estimatedTime} min` : '30-45 min'
+  const acceptedPayments = paymentMethods.length > 0 ? paymentMethods.map((method) => method.name) : ['Verificar na loja']
+
+  const handleContactToggle = (type: 'whatsapp' | 'location') => {
+    setContactExpanded((prev) => ({
+      ...prev,
+      [type]: !prev[type],
+    }))
+  }
+
+  const handleScrollToSummary = () => {
+    if (typeof document === 'undefined') return
+    const element = document.getElementById('order-summary')
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
+  const handleStartCheckout = () => {
+    if (!isStoreOpen) {
+      toast.error('A loja está fechada no momento. Volte durante o horário de funcionamento.')
+      return
+    }
+
+    if (cart.length === 0) {
+      toast.error('Adicione ao menos um item ao carrinho para continuar.')
+      return
+    }
+
+    setCheckoutStep('checkout')
+    setMobileSummaryOpen(false)
+    setTimeout(() => handleScrollToSummary(), 150)
+  }
+
+  const handleApplyCoupon = () => {
+    if (!couponCode.trim()) {
+      toast.error('Digite um cupom antes de aplicar.')
+      return
+    }
+
+    toast.info('Aplicação de cupom em desenvolvimento.', {
+      description: 'Em breve você poderá validar descontos automaticamente.',
+    })
+  }
+
+  const showMobileSummaryButton = cart.length > 0 && checkoutStep !== 'success'
+
+  const renderSummaryContent = (variant: 'cart' | 'checkout') => {
+    if (cart.length === 0) {
+      return (
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <p>Nenhum item no carrinho ainda.</p>
+          <p>Explore o cardápio e adicione seus produtos favoritos!</p>
+        </div>
+      )
+    }
+
+    const buttonLabel =
+      variant === 'cart'
+        ? 'Ir para Dados de Entrega'
+        : submitting
+          ? 'Finalizando...'
+          : 'Confirmar Pedido'
+
+    const buttonAction = variant === 'cart' ? handleStartCheckout : handleCheckout
+    const buttonDisabled = variant === 'checkout' ? submitting : !isStoreOpen
+
+    return (
+      <div className="space-y-4">
+        <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1">
+          {cart.map((item, index) => {
+            const basePrice = getNumericPrice(item.promotional_price || item.price)
+            const variationPrice = item.selectedVariation ? item.selectedVariation.price : 0
+            const optionalsPrice =
+              item.selectedOptionals?.reduce((sum, opt) => sum + (opt.price * opt.quantity), 0) || 0
+            const unitPrice = basePrice + variationPrice + optionalsPrice
+            const totalPrice = unitPrice * item.quantity
+
+            return (
+              <div key={`${item.uuid}-${index}`} className="rounded-xl border bg-card/90 p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <p className="font-semibold text-sm sm:text-base text-foreground line-clamp-2">{item.name}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
+                        {item.quantity}
+                      </span>
+                      <span>R$ {formatPrice(unitPrice)}</span>
+                    </div>
+                    {item.selectedVariation && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Badge variant="outline" className="text-xs">
+                          {item.selectedVariation.name}
+                        </Badge>
+                        <span>
+                          {item.selectedVariation.price > 0 && `+R$ ${item.selectedVariation.price.toFixed(2)}`}
+                          {item.selectedVariation.price === 0 && 'Incluso'}
+                        </span>
+                      </div>
+                    )}
+                    {item.selectedOptionals && item.selectedOptionals.length > 0 && (
+                      <div className="space-y-1 border-l border-border/60 pl-2 text-xs text-muted-foreground">
+                        {item.selectedOptionals.map((opt) => (
+                          <div key={opt.id} className="flex items-center justify-between">
+                            <span>{opt.name} × {opt.quantity}</span>
+                            <span>R$ {(opt.price * opt.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <span className="font-semibold text-base text-foreground">
+                    R$ {formatPrice(totalPrice)}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <Separator />
+
+        {variant === 'cart' && (
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="order-notes" className="text-sm font-medium">Observações do pedido</Label>
+              <Textarea
+                id="order-notes"
+                value={deliveryData.notes}
+                onChange={(e) => setDeliveryData((prev) => ({ ...prev, notes: e.target.value }))}
+                placeholder="Ex: Retirar ingredientes, ponto da carne, instruções especiais..."
+                className="min-h-[90px] resize-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="coupon-code" className="text-sm font-medium">Cupom de desconto</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="coupon-code"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  placeholder="DIGITE AQUI"
+                  className="uppercase"
+                />
+                <Button type="button" variant="secondary" onClick={handleApplyCoupon} className="whitespace-nowrap">
+                  Aplicar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Itens ({cartCount})</span>
+            <span>R$ {formatPrice(cartTotal)}</span>
+          </div>
+
+          <div className="rounded-xl bg-muted/40 px-4 py-3 text-xs text-muted-foreground flex items-center gap-3">
+            <Clock className="h-4 w-4 text-primary" />
+            <div>
+              <p className="font-medium text-muted-foreground/90">Tempo estimado</p>
+              <p>{estimatedTimeLabel}</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-muted-foreground/90">
+              <CreditCard className="h-4 w-4 text-primary" />
+              <span className="font-medium">Formas de pagamento</span>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {acceptedPayments.map((method) => (
+                <Badge key={method} variant="outline" className="text-xs">
+                  {method}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-lg font-semibold">
+            <span>Total</span>
+            <span className="text-primary">R$ {formatPrice(cartTotal)}</span>
+          </div>
+
+        </div>
+
+        <Button
+          className="w-full rounded-full"
+          size="lg"
+          onClick={buttonAction}
+          disabled={buttonDisabled}
+        >
+          {buttonLabel}
+        </Button>
+
+        {variant === 'cart' && (
+          <Button variant="ghost" className="w-full" onClick={() => setCart([])}>
+            Limpar carrinho
+          </Button>
+        )}
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -825,178 +1077,390 @@ export default function PublicStorePage() {
     )
   }
 
+  const resetSelectionState = () => {
+    setSelectedProduct(null)
+    setSelectedVariation('')
+    setSelectedOptionalsQty({})
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Store Hours Banner */}
       <StoreHoursBanner slug={slug} onStatusChange={setIsStoreOpen} />
       
       {/* Header */}
-      <header className="border-b sticky top-0 bg-background z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {storeInfo.logo && (
-                <Image src={storeInfo.logo} alt={storeInfo.name} width={50} height={50} className="rounded-full" />
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur shadow-md">
+        <div className="border-b">
+          <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4">
+            <div className="flex items-center gap-3">
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="lg:hidden">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Abrir menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-full p-0 sm:max-w-sm">
+                  <div className="space-y-6 p-6">
+                    <div className="flex items-center gap-3">
+                      {storeInfo.logo ? (
+                        <Image
+                          src={storeInfo.logo}
+                          alt={storeInfo.name}
+                          width={48}
+                          height={48}
+                          className="h-12 w-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                          <Store className="h-6 w-6 text-muted-foreground" />
+                        </div>
               )}
               <div>
-                <h1 className="text-2xl font-bold">{storeInfo.name}</h1>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                  {storeInfo.phone && (
-                    <span className="flex items-center gap-1">
-                      <Phone className="h-3 w-3" />
-                      {storeInfo.phone}
-                    </span>
+                        <h2 className="text-lg font-semibold">{storeInfo.name}</h2>
+                        {locationText && <p className="text-sm text-muted-foreground">{locationText}</p>}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Button
+                        className="w-full gap-2"
+                        onClick={() => {
+                          setMobileSummaryOpen(true)
+                          setMobileMenuOpen(false)
+                        }}
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                        Ver carrinho ({cartCount})
+                      </Button>
+                      <Button variant="outline" className="w-full gap-2" asChild>
+                        <Link href={`/store/${slug}/track`} onClick={() => setMobileMenuOpen(false)}>
+                          <Package className="h-4 w-4" />
+                          Acompanhar pedido
+                        </Link>
+                      </Button>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-3 text-sm text-muted-foreground">
+                      {displayWhatsapp !== 'Não informado' && (
+                        <a
+                          href={whatsappLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-2 rounded-lg border border-transparent bg-muted/50 px-4 py-2 transition hover:border-primary hover:text-primary"
+                        >
+                          <MessageCircle className="h-4 w-4 text-primary" />
+                          <span>WhatsApp: {displayWhatsapp}</span>
+                        </a>
                   )}
-                  {storeInfo.email && (
-                    <span className="flex items-center gap-1">
-                      <Mail className="h-3 w-3" />
-                      {storeInfo.email}
-                    </span>
-                  )}
+                      {locationText && (
+                        <div className="flex items-start gap-2 rounded-lg bg-muted/40 px-4 py-2">
+                          <MapPin className="mt-1 h-4 w-4 text-primary" />
+                          <span>{locationText}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-4 py-2">
+                        <Clock className="h-4 w-4 text-primary" />
+                        <span>{attendanceText}</span>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                className="relative"
-                onClick={() => setCartCollapsed(!cartCollapsed)}
-              >
-                <ShoppingCart className="h-5 w-5" />
+                </SheetContent>
+              </Sheet>
+
+              {storeInfo.logo ? (
+                <Image
+                  src={storeInfo.logo}
+                  alt={storeInfo.name}
+                  width={48}
+                  height={48}
+                  className="hidden h-12 w-12 rounded-full object-cover sm:block"
+                />
+              ) : (
+                <div className="hidden h-12 w-12 items-center justify-center rounded-full bg-muted sm:flex">
+                  <Store className="h-6 w-6 text-muted-foreground" />
+                </div>
+              )}
+
+              <div>
+                <h1 className="text-lg font-semibold sm:text-xl">{storeInfo.name}</h1>
+                {locationText && (
+                  <p className="hidden text-xs text-muted-foreground sm:block">{locationText}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="hidden items-center gap-3 lg:flex">
+              <Button variant="ghost" className="relative gap-2" onClick={handleScrollToSummary}>
+                <ShoppingCart className="h-4 w-4" />
+                <span>Carrinho</span>
                 {cartCount > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0">
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 items-center justify-center p-0">
                     {cartCount}
                   </Badge>
                 )}
-                <span className="ml-2 hidden md:inline">
-                  {cartCollapsed ? 'Mostrar' : 'Ocultar'} Carrinho
-                </span>
               </Button>
 
+              <Button variant="ghost" className="gap-2" asChild>
               <Link href={`/store/${slug}/track`}>
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <Package className="h-5 w-5" />
-                  <span className="hidden md:inline">Meu Pedido</span>
+                  <Package className="h-4 w-4" />
+                  Meu pedido
+                </Link>
                 </Button>
-              </Link>
-              
-              {checkoutStep === "cart" && cart.length > 0 && (
+            </div>
+
+            <div className="flex items-center gap-2 lg:hidden">
                 <Button
-                  onClick={() => {
-                    if (!isStoreOpen) {
-                      toast.error('A loja está fechada no momento. Volte durante o horário de funcionamento.')
-                      return
-                    }
-                    setCheckoutStep("checkout")
-                  }}
-                  disabled={!isStoreOpen}
-                  className="hidden md:inline-flex"
-                  title={!isStoreOpen ? 'Loja fechada - fora do horário de atendimento' : ''}
+                variant="ghost"
+                size="icon"
+                className="relative"
+                onClick={() => setMobileSummaryOpen(true)}
                 >
-                  Finalizar Pedido
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 items-center justify-center p-0">
+                    {cartCount}
+                  </Badge>
+                )}
+                <span className="sr-only">Abrir resumo do carrinho</span>
+                </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-b bg-muted/50">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+                <div className="relative flex-1 min-w-[200px] max-w-sm">
+                  <button
+                    type="button"
+                    onClick={() => handleContactToggle('whatsapp')}
+                    className="flex w-full items-center justify-center gap-2 rounded-full border bg-background px-4 py-2 text-sm font-medium shadow-sm transition hover:border-primary hover:text-primary"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    <span>WhatsApp</span>
+                    <span className="text-xs text-muted-foreground">(toque para ver detalhes)</span>
+                  </button>
+                  <div
+                    className={`overflow-hidden transition-all ${contactExpanded.whatsapp ? 'max-h-32 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}
+                  >
+                    <div className="rounded-lg border bg-background/95 px-4 py-3 text-xs text-muted-foreground shadow-sm">
+                      <p className="font-medium text-foreground">
+                        {displayWhatsapp !== 'Não informado' ? displayWhatsapp : 'Contato não informado'}
+                      </p>
+                      <p className="mt-1">{attendanceText}</p>
+                      {whatsappLink && (
+                        <Button variant="link" className="px-0 text-primary" asChild>
+                          <a href={whatsappLink} target="_blank" rel="noreferrer">
+                            Conversar no WhatsApp
+                          </a>
                 </Button>
               )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative flex-1 min-w-[200px] max-w-sm">
+                  <button
+                    type="button"
+                    onClick={() => handleContactToggle('location')}
+                    className="flex w-full items-center justify-center gap-2 rounded-full border bg-background px-4 py-2 text-sm font-medium shadow-sm transition hover:border-primary hover:text-primary"
+                  >
+                    <MapPin className="h-4 w-4" />
+                    <span>Localização</span>
+                    <span className="text-xs text-muted-foreground">(toque para ver detalhes)</span>
+                  </button>
+                  <div
+                    className={`overflow-hidden transition-all ${contactExpanded.location ? 'max-h-32 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}
+                  >
+                    <div className="rounded-lg border bg-background/95 px-4 py-3 text-xs text-muted-foreground shadow-sm">
+                      <p className="font-medium text-foreground">
+                        {locationText || 'Endereço não informado'}
+                      </p>
+                      <p className="mt-1">{attendanceText}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-b bg-background/90">
+          <div className="container mx-auto px-4 py-2 sm:py-3">
+            <div className="flex items-stretch gap-3 overflow-x-auto pb-2 pt-1 md:gap-4">
+              {progressSteps.map((step, index) => {
+                const isCompleted = index < currentStepIndex
+                const isActive = index === currentStepIndex
+
+                return (
+                  <div
+                    key={step.key}
+                    className={`flex flex-none items-center gap-3 rounded-2xl border border-border/60 bg-background px-3 py-2 text-xs shadow-sm transition md:flex-1 md:px-5 md:py-3 md:text-sm ${
+                      isActive ? 'ring-1 ring-primary/30' : ''
+                    }`}
+                  >
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-semibold transition-all md:h-10 md:w-10 md:text-sm ${
+                        isActive
+                          ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                          : isCompleted
+                            ? 'border-primary/60 bg-primary/10 text-primary'
+                            : 'border-border text-muted-foreground'
+                      }`}
+                    >
+                      {isCompleted ? <Check className="h-4 w-4 md:h-5 md:w-5" /> : index + 1}
+                    </div>
+                    <div className="min-w-[110px] md:min-w-0">
+                      <span
+                        className={`block font-semibold ${
+                          isActive ? 'text-foreground' : isCompleted ? 'text-primary' : 'text-muted-foreground'
+                        }`}
+                      >
+                        {step.label}
+                      </span>
+                      <span className="hidden text-xs text-muted-foreground sm:block">{step.description}</span>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <main className="flex-1">
         {checkoutStep === "cart" && (
-          <>
-            {/* Products with Category Tabs */}
-            <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-              <TabsList className="w-full justify-start overflow-x-auto flex-wrap h-auto gap-2 mb-6 bg-transparent">
-                <TabsTrigger 
-                  value="all" 
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                >
-                  Todos ({products.length})
-                </TabsTrigger>
-                {categories.map((category) => {
-                  const count = products.filter(p => 
-                    p.categories?.some(c => c.name === category)
-                  ).length
+          <section className="container mx-auto space-y-10 px-4 py-10">
+            <div className="flex flex-col gap-10 lg:flex-row">
+              <div className="flex-1 space-y-6">
+            <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full space-y-4">
+                {(() => {
+                  const buildTrigger = (category: string | "all", prefix: string) => {
+                    const count = category === "all"
+                      ? products.length
+                      : products.filter((p) => p.categories?.some((c) => c.name === category)).length
+                    const label = category === "all" ? "Todos" : category
+                    const value = category === "all" ? "all" : category
+
+                    return (
+                      <TabsTrigger
+                        key={`${prefix}-${value}`}
+                        value={value}
+                        className="group flex items-center justify-center gap-2 rounded-full border border-transparent bg-background px-4 py-2 text-sm font-semibold transition data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:hover:border-primary/40 data-[state=inactive]:hover:text-primary"
+                      >
+                        <span>{label}</span>
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                          {count}
+                        </span>
+                      </TabsTrigger>
+                    )
+                  }
+
                   return (
-                    <TabsTrigger 
-                      key={category} 
-                      value={category}
-                      className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                    >
-                      {category} ({count})
-                    </TabsTrigger>
+                    <>
+                      <div className="md:hidden">
+                        <div className="rounded-3xl border border-border/60 bg-background/80 p-2 shadow-sm">
+                          <ScrollArea className="w-full">
+                            <TabsList className="flex w-max gap-2">
+                              {buildTrigger("all", "mobile")}
+                              {categories.map((category) => buildTrigger(category, "mobile"))}
+                            </TabsList>
+                            <ScrollBar orientation="horizontal" />
+                          </ScrollArea>
+                        </div>
+                      </div>
+
+                      <TabsList className="hidden w-full flex-wrap gap-3 rounded-3xl border border-border/60 bg-background/80 p-3 shadow-sm md:flex">
+                        {buildTrigger("all", "desktop")}
+                        {categories.map((category) => buildTrigger(category, "desktop"))}
+                      </TabsList>
+                    </>
                   )
-                })}
-              </TabsList>
+                })()}
 
               <TabsContent value={selectedCategory} className="mt-6">
                 {filteredProducts.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground text-lg">Nenhum produto encontrado nesta categoria.</p>
+                      <div className="rounded-2xl border border-dashed border-muted p-12 text-center">
+                        <p className="text-lg text-muted-foreground">Nenhum produto encontrado nesta categoria.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                     {filteredProducts.map((product) => {
                       const price = product.promotional_price || product.price
                       const hasDiscount = product.promotional_price && product.promotional_price < product.price
 
                       return (
-                        <Card key={product.uuid} className="overflow-hidden">
-                          <div className="aspect-square relative bg-muted">
+                            <Card
+                              key={product.uuid}
+                              className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/90 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                            >
+                              <div className="relative aspect-square bg-muted">
                             {product.image ? (
                               <Image
                                 src={product.image}
                                 alt={product.name}
                                 fill
                                 className="object-cover"
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
                               />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-muted">
-                                <ImageIcon className="h-16 w-16 text-muted-foreground/50" />
+                                  <div className="flex h-full w-full items-center justify-center bg-muted">
+                                    <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
                               </div>
                             )}
                             {hasDiscount && (
-                              <Badge className="absolute top-2 right-2 bg-red-500 text-white">
+                                  <Badge className="absolute right-2 top-2 rounded-full bg-red-500 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
                                 {Math.round((1 - (getNumericPrice(product.promotional_price!) / getNumericPrice(product.price))) * 100)}% OFF
                               </Badge>
                             )}
                             {product.categories && product.categories.length > 0 && (
-                              <Badge className="absolute bottom-2 left-2 bg-black/70 text-white">
+                                  <Badge className="absolute bottom-2 left-2 rounded-full bg-black/70 px-3 py-1 text-xs font-medium text-white">
                                 {product.categories[0].name}
                               </Badge>
                             )}
                           </div>
-                          <CardHeader className="p-4">
-                            <CardTitle className="text-lg line-clamp-2">{product.name}</CardTitle>
+                              <CardHeader className="flex-1 space-y-2 p-4">
+                                <CardTitle className="line-clamp-2 text-base font-semibold leading-tight sm:text-lg">
+                                  {product.name}
+                                </CardTitle>
                             {product.description && (
-                              <CardDescription className="line-clamp-2">{product.description}</CardDescription>
+                                  <CardDescription className="line-clamp-2 text-xs sm:text-sm">
+                                    {product.description}
+                                  </CardDescription>
                             )}
                           </CardHeader>
-                          <CardContent className="p-4 pt-0">
-                            <div className="mb-3">
+                              <CardContent className="space-y-4 p-4 pt-0">
+                                <div className="space-y-1">
                               {hasDiscount && (
-                                <p className="text-sm text-muted-foreground line-through">
+                                    <p className="text-xs text-muted-foreground line-through">
                                   R$ {formatPrice(product.price)}
                                 </p>
                               )}
-                              <p className="text-2xl font-bold text-primary">R$ {formatPrice(price)}</p>
+                                  <p className="text-lg font-semibold text-primary sm:text-2xl">
+                                    R$ {formatPrice(price)}
+                                  </p>
                             </div>
-                            <Button onClick={() => handleProductClick(product)} className="w-full" disabled={product.qtd_stock === 0}>
-                              {product.qtd_stock === 0 ? "Esgotado" : "Adicionar ao Carrinho"}
+                                <Button
+                                  onClick={() => handleProductClick(product)}
+                                  className="w-full rounded-full py-5 text-sm font-semibold sm:text-base"
+                                  disabled={product.qtd_stock === 0}
+                                >
+                                  {product.qtd_stock === 0 ? "Esgotado" : "Adicionar"}
                             </Button>
-                            {((product.variations && product.variations.length > 0) || (product.optionals && product.optionals.length > 0)) && (
-                              <div className="flex gap-2 justify-center mt-2 text-xs text-muted-foreground">
+                                {((product.variations && product.variations.length > 0) ||
+                                  (product.optionals && product.optionals.length > 0)) && (
+                                  <div className="flex flex-wrap items-center justify-center gap-2 text-[10px] text-muted-foreground sm:text-xs">
                                 {product.variations && product.variations.length > 0 && (
-                                  <Badge variant="outline" className="text-xs">
+                                      <Badge variant="outline" className="rounded-full px-3 py-1">
                                     {product.variations.length} {product.variations.length === 1 ? 'variação' : 'variações'}
                                   </Badge>
                                 )}
                                 {product.optionals && product.optionals.length > 0 && (
-                                  <Badge variant="outline" className="text-xs">
+                                      <Badge variant="outline" className="rounded-full px-3 py-1">
                                     {product.optionals.length} {product.optionals.length === 1 ? 'opcional' : 'opcionais'}
                                   </Badge>
                                 )}
@@ -1010,152 +1474,37 @@ export default function PublicStorePage() {
                 )}
               </TabsContent>
             </Tabs>
+                    </div>
 
-            {/* Cart Summary - Collapsible */}
-            {cart.length > 0 && (
-              <Card className={`mt-8 sticky bottom-4 transition-all duration-300 ${cartCollapsed ? 'shadow-lg' : 'shadow-xl'}`}>
-                <CardHeader className="cursor-pointer" onClick={() => setCartCollapsed(!cartCollapsed)}>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <ShoppingCart className="h-5 w-5" />
-                      Carrinho ({cartCount} {cartCount === 1 ? "item" : "itens"})
-                    </CardTitle>
-                    <div className="flex items-center gap-4">
-                      {cartCollapsed && (
-                        <span className="text-lg font-bold">R$ {formatPrice(cartTotal)}</span>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setCartCollapsed(!cartCollapsed)
-                        }}
-                      >
-                        {cartCollapsed ? 'Expandir' : 'Recolher'}
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                {!cartCollapsed && (
-                  <CardContent>
-                    <div className="space-y-4 max-h-[400px] overflow-y-auto">
-                      {cart.map((item, index) => {
-                        const basePrice = getNumericPrice(item.promotional_price || item.price)
-                        const variationPrice = item.selectedVariation ? item.selectedVariation.price : 0
-                        const optionalsPrice = item.selectedOptionals?.reduce(
-                          (sum, opt) => sum + (opt.price * opt.quantity), 
-                          0
-                        ) || 0
-                        const unitPrice = basePrice + variationPrice + optionalsPrice
-                        const totalPrice = unitPrice * item.quantity
-                        
-                        return (
-                          <div key={`${item.uuid}-${index}`} className="p-4 rounded-lg border bg-card">
-                            <div className="flex items-start gap-4">
-                              <div className="flex-1 min-w-0 space-y-2">
-                                <p className="font-semibold text-lg">{item.name}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  Preço base: R$ {formatPrice(basePrice)}
-                                </p>
-                                
-                                {/* Variação Selecionada */}
-                                {item.selectedVariation && (
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="default" className="text-xs">
-                                      {item.selectedVariation.name}
+              <aside className="hidden w-full max-w-sm lg:block" id="order-summary">
+                <Card className="sticky top-32 space-y-0 rounded-3xl border border-border/60 shadow-2xl">
+                  <CardHeader className="space-y-1 pb-0">
+                    <CardTitle className="flex items-center justify-between text-xl">
+                      <span>Resumo do Pedido</span>
+                      <Badge variant="outline" className="rounded-full text-xs">
+                        {cartCount} {cartCount === 1 ? 'item' : 'itens'}
                                     </Badge>
-                                    <span className="text-xs text-muted-foreground">
-                                      {item.selectedVariation.price > 0 && `+R$ ${item.selectedVariation.price.toFixed(2)}`}
-                                      {item.selectedVariation.price < 0 && `R$ ${item.selectedVariation.price.toFixed(2)}`}
-                                      {item.selectedVariation.price === 0 && 'Incluso'}
-                                    </span>
-                                  </div>
-                                )}
-                                
-                                {/* Opcionais Selecionados com Quantidade */}
-                                {item.selectedOptionals && item.selectedOptionals.length > 0 && (
-                                  <div className="space-y-1 mt-2 pl-2 border-l-2 border-muted">
-                                    <p className="text-xs font-medium text-muted-foreground mb-1">Opcionais:</p>
-                                    {item.selectedOptionals.map((opt) => (
-                                      <div key={opt.id} className="flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-2">
-                                          <Badge variant="outline" className="text-xs py-0">
-                                            {opt.name} × {opt.quantity}
-                                          </Badge>
-                                        </div>
-                                        <span className="text-muted-foreground">
-                                          R$ {(opt.price * opt.quantity).toFixed(2)}
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                              
-                              <div className="flex flex-col items-end gap-2">
-                                <div className="flex items-center gap-2">
-                                  <Button size="sm" variant="outline" onClick={() => updateQuantity(`${item.uuid}-${index}`, -1)}>
-                                    <Minus className="h-3 w-3" />
-                                  </Button>
-                                  <span className="w-8 text-center font-medium">{item.quantity}</span>
-                                  <Button size="sm" variant="outline" onClick={() => updateQuantity(`${item.uuid}-${index}`, 1)}>
-                                    <Plus className="h-3 w-3" />
-                                  </Button>
-                                  <Button size="sm" variant="ghost" onClick={() => removeFromCart(`${item.uuid}-${index}`)}>
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                  </Button>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-xs text-muted-foreground">Unitário: R$ {formatPrice(unitPrice)}</p>
-                                  <p className="font-bold text-lg text-primary">R$ {formatPrice(totalPrice)}</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                    <Separator className="my-4" />
-                    <div className="flex items-center justify-between text-xl font-bold mb-4">
-                      <span>Total</span>
-                      <span className="text-primary">R$ {formatPrice(cartTotal)}</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" className="flex-1" onClick={() => setCart([])}>
-                        Limpar Carrinho
-                      </Button>
-                      <Button 
-                        className="flex-1" 
-                        size="lg" 
-                        onClick={() => {
-                          if (!isStoreOpen) {
-                            toast.error('A loja está fechada no momento. Volte durante o horário de funcionamento.')
-                            return
-                          }
-                          setCheckoutStep("checkout")
-                        }}
-                        disabled={!isStoreOpen}
-                        title={!isStoreOpen ? 'Loja fechada - fora do horário de atendimento' : ''}
-                      >
-                        Finalizar Pedido
-                      </Button>
-                    </div>
+                    </CardTitle>
+                    <CardDescription className="text-sm">
+                      Revise os itens selecionados antes de prosseguir.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4 pt-4">
+                    {renderSummaryContent('cart')}
                   </CardContent>
-                )}
               </Card>
-            )}
-          </>
+              </aside>
+            </div>
+          </section>
         )}
 
         {checkoutStep === "checkout" && (
-          <div className="max-w-4xl mx-auto">
+          <section className="container mx-auto px-4 py-10">
             <Button variant="outline" onClick={() => setCheckoutStep("cart")} className="mb-6">
               ← Voltar para o carrinho
             </Button>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               <div className="lg:col-span-2 space-y-6">
                 {/* Client Information */}
                 <Card>
@@ -1383,40 +1732,30 @@ export default function PublicStorePage() {
               </div>
 
               {/* Order Summary */}
-              <div>
-                <Card className="sticky top-24">
-                  <CardHeader>
-                    <CardTitle>Resumo do Pedido</CardTitle>
+              <div className="w-full lg:max-w-sm" id="order-summary">
+                <Card className="sticky top-24 space-y-0 rounded-3xl border border-border/60 shadow-2xl">
+                  <CardHeader className="space-y-1 pb-0">
+                    <CardTitle className="flex items-center justify-between text-xl">
+                      <span>Resumo do Pedido</span>
+                      <Badge variant="outline" className="rounded-full text-xs">
+                        {cartCount} {cartCount === 1 ? 'item' : 'itens'}
+                      </Badge>
+                    </CardTitle>
+                    <CardDescription className="text-sm">
+                      Confira os valores antes de finalizar.
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {cart.map((item) => {
-                      const price = getNumericPrice(item.promotional_price || item.price)
-                      return (
-                        <div key={item.uuid} className="flex justify-between text-sm">
-                          <span>
-                            {item.quantity}x {item.name}
-                          </span>
-                          <span>R$ {formatPrice(price * item.quantity)}</span>
-                        </div>
-                      )
-                    })}
-                    <Separator />
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>Total</span>
-                      <span>R$ {formatPrice(cartTotal)}</span>
-                    </div>
-                    <Button className="w-full" size="lg" onClick={handleCheckout} disabled={submitting}>
-                      {submitting ? "Finalizando..." : "Confirmar Pedido"}
-                    </Button>
+                  <CardContent className="space-y-4 pt-4">
+                    {renderSummaryContent('checkout')}
                   </CardContent>
                 </Card>
               </div>
             </div>
-          </div>
+          </section>
         )}
 
         {checkoutStep === "success" && orderResult && (
-          <div className="max-w-2xl mx-auto">
+          <section className="container mx-auto flex justify-center px-4 py-12">
             <Card>
               <CardHeader className="text-center">
                 <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
@@ -1692,204 +2031,200 @@ export default function PublicStorePage() {
                 </Button>
               </CardContent>
             </Card>
-          </div>
+          </section>
         )}
-      </div>
+      </main>
 
-      {/* Dialog de Seleção de Variações e Opcionais */}
-      <Dialog open={showSelectionDialog} onOpenChange={setShowSelectionDialog}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{selectedProduct?.name}</DialogTitle>
-            <DialogDescription>
-              Escolha a variação e adicione opcionais conforme desejado
+      {showMobileSummaryButton && (
+        <Button
+          onClick={() => setMobileSummaryOpen(true)}
+          size="icon"
+          className="fixed bottom-6 right-6 z-[60] h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-xl transition hover:scale-105 lg:hidden"
+        >
+          <div className="relative">
+            <ShoppingCart className="h-6 w-6" />
+            {cartCount > 0 && (
+              <Badge className="absolute -top-3 -right-3 h-6 min-w-[1.5rem] rounded-full px-1 text-xs">
+                {cartCount}
+                          </Badge>
+            )}
+          </div>
+          <span className="sr-only">Abrir resumo do pedido</span>
+                          </Button>
+      )}
+
+      <Sheet open={mobileSummaryOpen} onOpenChange={setMobileSummaryOpen}>
+        <SheetContent side="bottom" className="w-full max-h-[85vh] overflow-y-auto px-6 py-6 sm:mx-auto sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle>Resumo do Pedido</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4 space-y-4">
+            {renderSummaryContent(checkoutStep === 'checkout' ? 'checkout' : 'cart')}
+      </div>
+        </SheetContent>
+      </Sheet>
+
+      <Dialog
+        open={showSelectionDialog}
+        onOpenChange={(open) => {
+          setShowSelectionDialog(open)
+          if (!open) {
+            resetSelectionState()
+          }
+        }}
+      >
+        <DialogContent className="max-w-2xl rounded-3xl border border-border/50 bg-background/95 p-0 shadow-2xl backdrop-blur">
+          {selectedProduct && (
+            <div className="space-y-6 overflow-y-auto p-6 sm:p-8">
+              <DialogHeader className="space-y-2 text-left">
+                <DialogTitle className="text-xl font-semibold sm:text-2xl">{selectedProduct.name}</DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground">
+                  Personalize o pedido antes de adicionar ao carrinho.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-6 py-4">
-            {/* Preço Base */}
-            <div className="bg-muted p-4 rounded-lg">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Preço Base</span>
-                <span className="text-xl font-bold">
-                  R$ {selectedProduct ? formatPrice(selectedProduct.promotional_price || selectedProduct.price) : '0.00'}
-                </span>
+              <div className="flex items-start gap-4">
+                <div className="relative h-20 w-20 overflow-hidden rounded-2xl bg-muted sm:h-24 sm:w-24">
+                  {selectedProduct.image ? (
+                    <Image
+                      src={selectedProduct.image}
+                      alt={selectedProduct.name}
+                      fill
+                      className="object-cover"
+                      sizes="96px"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    {selectedProduct.description || 'Selecione as opções disponíveis e adicione ao seu pedido.'}
+                  </p>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+                    Preço base: <span className="text-primary font-semibold whitespace-nowrap">R$ {formatPrice(selectedProduct.promotional_price || selectedProduct.price)}</span>
+                  </div>
               </div>
             </div>
 
-            {/* Variações (Seleção Única - Radio) */}
-            {selectedProduct?.variations && selectedProduct.variations.length > 0 && (
+              {selectedProduct.variations && selectedProduct.variations.length > 0 && (
+                <div className="space-y-3">
               <div>
-                <Label className="text-base font-semibold mb-3 block">
-                  Escolha uma variação <span className="text-destructive">*</span>
-                </Label>
-                <RadioGroup value={selectedVariation} onValueChange={setSelectedVariation}>
-                  <div className="space-y-2">
-                    {selectedProduct.variations.map((variation) => (
-                      <div key={variation.id} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
-                        <RadioGroupItem value={variation.id} id={`variation-${variation.id}`} />
-                        <Label
-                          htmlFor={`variation-${variation.id}`}
-                          className="flex-1 cursor-pointer flex items-center justify-between"
-                        >
-                          <span className="font-medium">{variation.name}</span>
-                          <Badge variant={variation.price > 0 ? "secondary" : variation.price < 0 ? "default" : "outline"}>
-                            {variation.price > 0 && '+'}
-                            {variation.price !== 0 && `R$ ${variation.price.toFixed(2)}`}
-                            {variation.price === 0 && 'Incluso'}
-                          </Badge>
-                        </Label>
-                      </div>
-                    ))}
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Variações</p>
+                    <p className="text-sm text-muted-foreground">Escolha uma opção</p>
                   </div>
+                  <RadioGroup value={selectedVariation} onValueChange={setSelectedVariation} className="grid gap-2">
+                    {selectedProduct.variations.map((variation) => {
+                      const isSelected = selectedVariation === variation.id
+                      return (
+                        <div
+                          key={variation.id}
+                          className={`flex items-center justify-between rounded-2xl border px-4 py-3 transition ${
+                            isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:bg-muted/40'
+                          }`}
+                        >
+                          <RadioGroupItem value={variation.id} id={`variation-${variation.id}`} className="sr-only" />
+                          <label htmlFor={`variation-${variation.id}`} className="flex flex-1 cursor-pointer items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{variation.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {variation.price > 0 ? `+ R$ ${formatPrice(variation.price)}` : 'Sem custo adicional'}
+                              </p>
+                      </div>
+                            <div className={`flex h-5 w-5 items-center justify-center rounded-full border ${isSelected ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground'}`}>
+                              {isSelected ? <Check className="h-3 w-3" /> : null}
+                  </div>
+                          </label>
+                        </div>
+                      )
+                    })}
                 </RadioGroup>
               </div>
             )}
 
-            {/* Opcionais (Múltipla Escolha com Quantidade) */}
-            {selectedProduct?.optionals && selectedProduct.optionals.length > 0 && (
+              {selectedProduct.optionals && selectedProduct.optionals.length > 0 && (
+                <div className="space-y-3">
               <div>
-                <Label className="text-base font-semibold mb-3 block">
-                  Opcionais (pode escolher vários)
-                </Label>
-                <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Opcionais</p>
+                    <p className="text-sm text-muted-foreground">Adicione itens extras ao seu pedido</p>
+                  </div>
+                  <div className="space-y-3">
                   {selectedProduct.optionals.map((optional) => {
                     const qty = selectedOptionalsQty[optional.id] || 0
                     return (
-                      <div key={optional.id} className="p-3 rounded-lg border">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex-1">
-                            <span className="font-medium">{optional.name}</span>
-                            <p className="text-xs text-muted-foreground">
-                              R$ {optional.price.toFixed(2)} por unidade
-                            </p>
-                          </div>
-                          <Badge variant="secondary">
-                            R$ {optional.price.toFixed(2)}
-                          </Badge>
+                        <div
+                          key={optional.id}
+                          className="flex items-center justify-between rounded-2xl border border-dashed border-border/80 bg-muted/30 px-4 py-3"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{optional.name}</p>
+                            <p className="text-xs text-muted-foreground">+ R$ {formatPrice(optional.price)}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button
                             type="button"
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8"
                             onClick={() => handleOptionalQuantityChange(optional.id, -1)}
                             disabled={qty === 0}
                           >
-                            <MinusCircle className="h-4 w-4" />
+                              <Minus className="h-4 w-4" />
+                              <span className="sr-only">Remover opcional</span>
                           </Button>
-                          <div className="flex-1 text-center">
-                            <span className="text-lg font-bold">{qty}</span>
-                            <span className="text-sm text-muted-foreground ml-1">
-                              {qty === 1 ? 'unidade' : 'unidades'}
-                            </span>
-                          </div>
+                            <span className="w-6 text-center text-sm font-semibold">{qty}</span>
                           <Button
                             type="button"
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8"
                             onClick={() => handleOptionalQuantityChange(optional.id, 1)}
                           >
-                            <PlusCircle className="h-4 w-4" />
+                              <Plus className="h-4 w-4" />
+                              <span className="sr-only">Adicionar opcional</span>
                           </Button>
                         </div>
-                        {qty > 0 && (
-                          <p className="text-xs text-right text-primary font-medium mt-2">
-                            Subtotal: R$ {(optional.price * qty).toFixed(2)}
-                          </p>
-                        )}
                       </div>
                     )
                   })}
                 </div>
               </div>
             )}
-
-            {/* Resumo do Pedido */}
-            <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
-              <h4 className="font-semibold mb-3">Resumo do Pedido</h4>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Preço Base:</span>
-                  <span>R$ {selectedProduct ? formatPrice(selectedProduct.promotional_price || selectedProduct.price) : '0.00'}</span>
-                </div>
-                
-                {/* Variação Selecionada */}
-                {selectedVariation && selectedProduct?.variations && (
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>
-                      Variação: {selectedProduct.variations.find(v => v.id === selectedVariation)?.name}
-                    </span>
-                    <span>
-                      {selectedProduct.variations.find(v => v.id === selectedVariation)?.price && selectedProduct.variations.find(v => v.id === selectedVariation)!.price > 0 && '+'}
-                      R$ {(selectedProduct.variations.find(v => v.id === selectedVariation)?.price || 0).toFixed(2)}
-                    </span>
-                  </div>
-                )}
-                
-                {/* Opcionais Selecionados */}
-                {Object.entries(selectedOptionalsQty).map(([optId, qty]) => {
-                  const optional = selectedProduct?.optionals?.find(opt => opt.id === optId)
-                  if (!optional) return null
-                  return (
-                    <div key={optId} className="flex justify-between text-sm text-muted-foreground">
-                      <span>{optional.name} × {qty}:</span>
-                      <span>R$ {(optional.price * qty).toFixed(2)}</span>
-                    </div>
-                  )
-                })}
                 
                 <Separator />
-                <div className="flex justify-between font-bold text-xl">
-                  <span>Total:</span>
-                  <span className="text-primary">
-                    R$ {formatPrice(calculateSelectionTotal())}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSelectionDialog(false)}>
+              <DialogFooter className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex w-full flex-col sm:w-auto">
+                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total estimado</span>
+                  <span className="text-xl font-semibold text-primary sm:text-2xl whitespace-nowrap">R$ {formatPrice(calculateSelectionTotal())}</span>
+                </div>
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="sm:min-w-[140px]"
+                    onClick={() => {
+                      setShowSelectionDialog(false)
+                      resetSelectionState()
+                    }}
+                  >
               Cancelar
             </Button>
             <Button 
-              onClick={confirmAddToCart}
-              disabled={
-                selectedProduct?.variations && 
-                selectedProduct.variations.length > 0 && 
-                !selectedVariation
-              }
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Adicionar ao Carrinho
-            </Button>
+                    type="button"
+                    className="sm:min-w-[180px]"
+                    onClick={confirmAddToCart}
+                    disabled={selectedProduct.variations && selectedProduct.variations.length > 0 && !selectedVariation}
+                  >
+                    <span className="whitespace-nowrap text-sm sm:text-base">Adicionar • R$ {formatPrice(calculateSelectionTotal())}</span>
+                  </Button>
+                </div>
           </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Avaliação */}
-      {orderResult?.order_id && (
-        <ReviewModal
-          isOpen={showReviewModal}
-          onClose={() => setShowReviewModal(false)}
-          onSubmit={handleReviewSubmit}
-          orderData={{
-            id: 0, // Não usado (enviamos order_identify)
-            identify: orderResult.order_id
-          }}
-          tenantId={storeInfo?.tenant_id || storeInfo?.id || 0}
-          customerData={{
-            name: clientData.name,
-            email: clientData.email
-          }}
-        />
-      )}
-
-      {/* Seção de Avaliações */}
       <ReviewsSection tenantSlug={slug} />
 
       {/* Footer */}

@@ -28,6 +28,7 @@ import {
   LayoutDashboard,
   Utensils,
   ListOrdered,
+  TicketPercent,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -159,6 +160,11 @@ const navGroups = [
             url: "/loyalty/rewards",
           },
         ],
+      },
+      {
+        title: "Cupons",
+        url: "/marketing/coupons",
+        icon: TicketPercent,
       },
       {
         title: "Eventos",
