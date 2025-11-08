@@ -140,7 +140,6 @@ function SortableStatusRow({
           {!status.is_active && <Badge variant="destructive">Inativo</Badge>}
         </div>
       </TableCell>
-      <TableCell className="w-40 font-mono text-sm">{status.icon}</TableCell>
       <TableCell className="w-32 text-sm text-muted-foreground">
         {status.orders_count ?? 0}
       </TableCell>
@@ -426,7 +425,6 @@ export default function OrderStatusesPage() {
                         <TableHead className="w-14" />
                         <TableHead>Status</TableHead>
                         <TableHead>Uso</TableHead>
-                        <TableHead>Ícone</TableHead>
                         <TableHead>Pedidos</TableHead>
                         <TableHead>Posição</TableHead>
                         <TableHead className="w-56 text-right">Ações</TableHead>
