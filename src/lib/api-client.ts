@@ -394,9 +394,11 @@ export const endpoints = {
       list: '/api/marketing/coupons',
       stats: '/api/marketing/coupons/stats',
       create: '/api/marketing/coupons',
+      show: (uuid: string) => `/api/marketing/coupons/${uuid}`,
       update: (uuid: string) => `/api/marketing/coupons/${uuid}`,
       toggle: (uuid: string) => `/api/marketing/coupons/${uuid}/toggle`,
       delete: (uuid: string) => `/api/marketing/coupons/${uuid}`,
+      uploadImage: (uuid: string) => `/api/marketing/coupons/${uuid}/image`,
     },
   },
 

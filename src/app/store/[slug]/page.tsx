@@ -1330,175 +1330,132 @@ export default function PublicStorePage() {
             </div>
           </div>
         </div>
+
       </header>
 
       <main className="flex-1">
-        {checkoutStep === "cart" && (
-          <section className="container mx-auto space-y-10 px-4 py-10">
-            <div className="flex flex-col gap-10 lg:flex-row">
-              <div className="flex-1 space-y-6">
-            <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full space-y-4">
-                {(() => {
-                  const buildTrigger = (category: string | "all", prefix: string) => {
-                    const count = category === "all"
-                      ? products.length
-                      : products.filter((p) => p.categories?.some((c) => c.name === category)).length
-                    const label = category === "all" ? "Todos" : category
-                    const value = category === "all" ? "all" : category
-
-                    return (
-                      <TabsTrigger
-                        key={`${prefix}-${value}`}
-                        value={value}
-                        className="group flex items-center justify-center gap-2 rounded-full border border-transparent bg-background px-4 py-2 text-sm font-semibold transition data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:hover:border-primary/40 data-[state=inactive]:hover:text-primary"
-                      >
-                        <span>{label}</span>
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                          {count}
-                        </span>
-                      </TabsTrigger>
-                    )
-                  }
-
-                  return (
-                    <>
-                      <div className="md:hidden">
-                        <div className="rounded-3xl border border-border/60 bg-background/80 p-2 shadow-sm">
-                          <ScrollArea className="w-full">
-                            <TabsList className="flex w-max gap-2">
-                              {buildTrigger("all", "mobile")}
-                              {categories.map((category) => buildTrigger(category, "mobile"))}
-                            </TabsList>
-                            <ScrollBar orientation="horizontal" />
-                          </ScrollArea>
-                        </div>
-                      </div>
-
-                      <TabsList className="hidden w-full flex-wrap gap-3 rounded-3xl border border-border/60 bg-background/80 p-3 shadow-sm md:flex">
-                        {buildTrigger("all", "desktop")}
-                        {categories.map((category) => buildTrigger(category, "desktop"))}
-                      </TabsList>
-                    </>
-                  )
-                })()}
-
-              <TabsContent value={selectedCategory} className="mt-6">
-                {filteredProducts.length === 0 ? (
+        <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
+          {checkoutStep === "cart" && (
+            <section className="container mx-auto space-y-10 px-4 py-10">
+              <div className="flex flex-col gap-10 lg:flex-row">
+                <div className="flex-1 space-y-6">
+                  <TabsContent value={selectedCategory} className="mt-0">
+                    {filteredProducts.length === 0 ? (
                       <div className="rounded-2xl border border-dashed border-muted p-12 text-center">
                         <p className="text-lg text-muted-foreground">Nenhum produto encontrado nesta categoria.</p>
-                  </div>
-                ) : (
+                      </div>
+                    ) : (
                       <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-                    {filteredProducts.map((product) => {
-                      const price = product.promotional_price || product.price
-                      const hasDiscount = product.promotional_price && product.promotional_price < product.price
+                        {filteredProducts.map((product) => {
+                          const price = product.promotional_price || product.price;
+                          const hasDiscount = product.promotional_price && product.promotional_price < product.price;
 
-                      return (
+                          return (
                             <Card
                               key={product.uuid}
                               className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/90 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
                             >
                               <div className="relative aspect-square bg-muted">
-                            {product.image ? (
-                              <Image
-                                src={product.image}
-                                alt={product.name}
-                                fill
-                                className="object-cover"
+                                {product.image ? (
+                                  <Image
+                                    src={product.image}
+                                    alt={product.name}
+                                    fill
+                                    className="object-cover"
                                     sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
-                              />
-                            ) : (
+                                  />
+                                ) : (
                                   <div className="flex h-full w-full items-center justify-center bg-muted">
                                     <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
-                              </div>
-                            )}
-                            {hasDiscount && (
+                                  </div>
+                                )}
+                                {hasDiscount && (
                                   <Badge className="absolute right-2 top-2 rounded-full bg-red-500 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
-                                {Math.round((1 - (getNumericPrice(product.promotional_price!) / getNumericPrice(product.price))) * 100)}% OFF
-                              </Badge>
-                            )}
-                            {product.categories && product.categories.length > 0 && (
+                                    {Math.round((1 - (getNumericPrice(product.promotional_price!) / getNumericPrice(product.price))) * 100)}% OFF
+                                  </Badge>
+                                )}
+                                {product.categories && product.categories.length > 0 && (
                                   <Badge className="absolute bottom-2 left-2 rounded-full bg-black/70 px-3 py-1 text-xs font-medium text-white">
-                                {product.categories[0].name}
-                              </Badge>
-                            )}
-                          </div>
+                                    {product.categories[0].name}
+                                  </Badge>
+                                )}
+                              </div>
                               <CardHeader className="flex-1 space-y-2 p-4">
                                 <CardTitle className="line-clamp-2 text-base font-semibold leading-tight sm:text-lg">
                                   {product.name}
                                 </CardTitle>
-                            {product.description && (
+                                {product.description && (
                                   <CardDescription className="line-clamp-2 text-xs sm:text-sm">
                                     {product.description}
                                   </CardDescription>
-                            )}
-                          </CardHeader>
+                                )}
+                              </CardHeader>
                               <CardContent className="space-y-4 p-4 pt-0">
                                 <div className="space-y-1">
-                              {hasDiscount && (
+                                  {hasDiscount && (
                                     <p className="text-xs text-muted-foreground line-through">
-                                  R$ {formatPrice(product.price)}
-                                </p>
-                              )}
+                                      R$ {formatPrice(product.price)}
+                                    </p>
+                                  )}
                                   <p className="text-lg font-semibold text-primary sm:text-2xl">
                                     R$ {formatPrice(price)}
                                   </p>
-                            </div>
+                                </div>
                                 <Button
                                   onClick={() => handleProductClick(product)}
                                   className="w-full rounded-full py-5 text-sm font-semibold sm:text-base"
                                   disabled={product.qtd_stock === 0}
                                 >
                                   {product.qtd_stock === 0 ? "Esgotado" : "Adicionar"}
-                            </Button>
+                                </Button>
                                 {((product.variations && product.variations.length > 0) ||
                                   (product.optionals && product.optionals.length > 0)) && (
-                                  <div className="flex flex-wrap items-center justify-center gap-2 text-[10px] text-muted-foreground sm:text-xs">
-                                {product.variations && product.variations.length > 0 && (
-                                      <Badge variant="outline" className="rounded-full px-3 py-1">
-                                    {product.variations.length} {product.variations.length === 1 ? 'variação' : 'variações'}
-                                  </Badge>
-                                )}
-                                {product.optionals && product.optionals.length > 0 && (
-                                      <Badge variant="outline" className="rounded-full px-3 py-1">
-                                    {product.optionals.length} {product.optionals.length === 1 ? 'opcional' : 'opcionais'}
-                                  </Badge>
-                                )}
+                                    <div className="flex flex-wrap items-center justify-center gap-2 text-[10px] text-muted-foreground sm:text-xs">
+                                      {product.variations && product.variations.length > 0 && (
+                                        <Badge variant="outline" className="rounded-full px-3 py-1">
+                                          {product.variations.length} {product.variations.length === 1 ? 'variação' : 'variações'}
+                                        </Badge>
+                                      )}
+                                      {product.optionals && product.optionals.length > 0 && (
+                                        <Badge variant="outline" className="rounded-full px-3 py-1">
+                                          {product.optionals.length} {product.optionals.length === 1 ? 'opcional' : 'opcionais'}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  )}
+                              </CardContent>
+                            </Card>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </TabsContent>
+                </div>
+
+                <aside className="hidden w-full max-w-sm lg:block" id="order-summary">
+                  <Card className="sticky top-32 space-y-0 rounded-3xl border border-border/60 shadow-2xl">
+                    <CardHeader className="space-y-1 pb-0">
+                      <CardTitle className="flex items-center justify-between text-xl">
+                        <span>Resumo do Pedido</span>
+                        <Badge variant="outline" className="rounded-full text-xs">
+                          {cartCount} {cartCount === 1 ? 'item' : 'itens'}
+                        </Badge>
+                      </CardTitle>
+                      <CardDescription className="text-sm">
+                        Revise os itens selecionados antes de prosseguir.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4 pt-4">
+                      {renderSummaryContent('cart')}
+                    </CardContent>
+                  </Card>
+                </aside>
                               </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      )
-                    })}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-                    </div>
-
-              <aside className="hidden w-full max-w-sm lg:block" id="order-summary">
-                <Card className="sticky top-32 space-y-0 rounded-3xl border border-border/60 shadow-2xl">
-                  <CardHeader className="space-y-1 pb-0">
-                    <CardTitle className="flex items-center justify-between text-xl">
-                      <span>Resumo do Pedido</span>
-                      <Badge variant="outline" className="rounded-full text-xs">
-                        {cartCount} {cartCount === 1 ? 'item' : 'itens'}
-                                    </Badge>
-                    </CardTitle>
-                    <CardDescription className="text-sm">
-                      Revise os itens selecionados antes de prosseguir.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4 pt-4">
-                    {renderSummaryContent('cart')}
-                  </CardContent>
-              </Card>
-              </aside>
-            </div>
-          </section>
-        )}
-
-        {checkoutStep === "checkout" && (
+                            </section>
+                          )}
+                        </Tabs>
+                
+                        {checkoutStep === "checkout" && (
           <section className="container mx-auto px-4 py-10">
             <Button variant="outline" onClick={() => setCheckoutStep("cart")} className="mb-6">
               ← Voltar para o carrinho

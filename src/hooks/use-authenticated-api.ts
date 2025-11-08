@@ -265,7 +265,7 @@ export function useMutation<T, P = any>() {
 
   const mutate = useCallback(async (
     endpoint: string,
-    method: 'POST' | 'PUT' | 'DELETE',
+    method: 'POST' | 'PUT' | 'DELETE' | 'PATCH',
     data?: P
   ): Promise<T | null> => {
     if (!isAuthenticated || !token) {
@@ -290,6 +290,9 @@ export function useMutation<T, P = any>() {
           break
         case 'DELETE':
           response = await apiClient.delete<T>(endpoint)
+          break
+        case 'PATCH':
+          response = await apiClient.patch<T>(endpoint, data)
           break
       }
 
@@ -366,7 +369,7 @@ export function useMutationWithValidation<T, P = any>(
 
   const mutate = useCallback(async (
     endpoint: string,
-    method: 'POST' | 'PUT' | 'DELETE',
+    method: 'POST' | 'PUT' | 'DELETE' | 'PATCH',
     data?: P
   ): Promise<T | null> => {
     if (!isAuthenticated || !token) {
@@ -391,6 +394,9 @@ export function useMutationWithValidation<T, P = any>(
           break
         case 'DELETE':
           response = await apiClient.delete<T>(endpoint)
+          break
+        case 'PATCH':
+          response = await apiClient.patch<T>(endpoint, data)
           break
       }
 
