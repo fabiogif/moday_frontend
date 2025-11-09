@@ -171,7 +171,7 @@ export default function CouponsPage() {
               refetchStats()
             }}
           >
-            <RefreshCcw className={cn("mr-2 h-4 w-4", loading ? "animate-spin" : "")} /> Atualizar
+            {/* <RefreshCcw className={cn("mr-2 h-4 w-4", loading ? "animate-spin" : "")} /> Atualizar */}
           </Button>
           <Button onClick={() => router.push("/marketing/coupons/new")}>
             <Plus className="mr-2 h-4 w-4" /> Novo Cupom
