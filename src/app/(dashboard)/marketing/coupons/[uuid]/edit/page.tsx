@@ -47,8 +47,7 @@ export default function EditCouponPage() {
     }
   }, [couponUuid, refetch])
 
-  const { mutate: mutateCoupon, loading: saving } = useMutation<any, Partial<CouponFormValues>>()
-  const { mutate: mutateUpload, loading: uploading } = useMutation()
+  const { mutate: mutateCoupon, loading: saving } = useMutation<any, FormData>()
   const [redirecting, setRedirecting] = useState(false)
 
   const coupon: CouponResponse | null = useMemo(() => {
@@ -78,6 +77,8 @@ export default function EditCouponPage() {
     }
   }, [coupon])
 
+  const fullImageUrl = coupon?.image_url ?? null
+
   const handleSubmit = async ({
     values,
     imageFile,
@@ -89,30 +90,30 @@ export default function EditCouponPage() {
   }) => {
     if (!couponUuid) return
 
-    const payload: any = {
-      code: values.code.trim(),
-      name: values.name.trim(),
-      description: values.description.trim() || null,
-      discount_type: values.discount_type,
-      discount_value: Number(values.discount_value) || 0,
-      max_discount_amount: parseNumber(values.max_discount_amount) ?? null,
-      minimum_order_amount: parseNumber(values.minimum_order_amount) ?? null,
-      usage_limit: parseNumber(values.usage_limit) ?? null,
-      usage_limit_per_client: parseNumber(values.usage_limit_per_client) ?? null,
-      start_at: values.start_at || null,
-      end_at: values.end_at || null,
-      is_active: values.is_active,
-      is_featured: values.is_featured,
+    const formData = new FormData()
+
+    Object.entries(values).forEach(([key, value]) => {
+      if (value === null || value === undefined) return
+      if (typeof value === "string" && value.trim() === "") return
+
+      if (typeof value === "boolean") {
+        formData.append(key, value ? "1" : "0")
+        return
+      }
+
+      formData.append(key, String(value))
+    })
+
+    if (imageFile) {
+      formData.append("image", imageFile)
+    } else if (removeImage) {
+      formData.append("remove_image", "1")
     }
+    
+    formData.append("_method", "PUT")
 
     try {
-      await mutateCoupon(endpoints.marketing.coupons.update(couponUuid), "PUT", payload)
-
-      if (imageFile) {
-        const formData = new FormData()
-        formData.append("image", imageFile)
-        await mutateUpload(endpoints.marketing.coupons.uploadImage(couponUuid), "POST", formData)
-      }
+      await mutateCoupon(endpoints.marketing.coupons.update(couponUuid), "POST", formData)
 
       toast.success("Cupom atualizado com sucesso!")
       setRedirecting(true)
@@ -122,7 +123,7 @@ export default function EditCouponPage() {
     }
   }
 
-  const busy = saving || uploading || redirecting
+  const busy = saving || redirecting
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -146,7 +147,7 @@ export default function EditCouponPage() {
             mode="edit"
             busy={busy || loadingCoupon}
             initialValues={initialValues}
-            initialImageUrl={coupon?.image_url ?? null}
+            initialImageUrl={fullImageUrl}
             onCancel={() => router.push("/marketing/coupons")}
             onSubmit={handleSubmit}
           />
@@ -159,10 +160,3 @@ export default function EditCouponPage() {
     </div>
   )
 }
-
-function parseNumber(value: string) {
-  if (!value) return undefined
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : undefined
-}
-

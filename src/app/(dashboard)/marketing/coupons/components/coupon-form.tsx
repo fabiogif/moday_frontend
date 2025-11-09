@@ -72,12 +72,28 @@ export function CouponForm({
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(initialImageUrl)
   const [removeImage, setRemoveImage] = useState(false)
+  const [timeInputs, setTimeInputs] = useState({ start_at: "", end_at: "" })
+
+  const parseDateValue = (value: string) => {
+    if (!value) return undefined
+    try {
+      return parseISO(value)
+    } catch (error) {
+      return undefined
+    }
+  }
 
   useEffect(() => {
-    setFormState((prev) => ({
-      ...prev,
-      ...normalizeValues(initialValues),
-    }))
+    const normalized = normalizeValues(initialValues)
+    setFormState(normalized)
+
+    const startDate = normalized.start_at ? parseDateValue(normalized.start_at) : undefined
+    const endDate = normalized.end_at ? parseDateValue(normalized.end_at) : undefined
+
+    setTimeInputs({
+      start_at: startDate ? format(startDate, "HH:mm") : "",
+      end_at: endDate ? format(endDate, "HH:mm") : "",
+    })
   }, [initialValues])
 
   useEffect(() => {
@@ -98,38 +114,66 @@ export function CouponForm({
     setFormState((prev) => ({ ...prev, [field]: value }))
   }
 
-  const parseDateValue = (value: string) => {
-    if (!value) return undefined
-    try {
-      return parseISO(value)
-    } catch (error) {
-      return undefined
-    }
-  }
-
   const handleDateSelection = (
     field: keyof Pick<CouponFormValues, "start_at" | "end_at">,
     date: Date | undefined
   ) => {
     if (!date) {
       handleInputChange(field, "")
+      setTimeInputs((prev) => ({ ...prev, [field]: "" }))
       return
     }
-    const current = parseDateValue(formState[field]) ?? new Date()
+
+    const fallbackTime =
+      timeInputs[field] && timeInputs[field].includes(":") ? timeInputs[field] : "00:00"
+
+    const [hours, minutes] = fallbackTime.split(":").map((value) => Number(value) || 0)
+
     const updated = new Date(date)
-    updated.setHours(current.getHours(), current.getMinutes(), 0, 0)
+    updated.setHours(hours, minutes, 0, 0)
     handleInputChange(field, updated.toISOString())
+    setTimeInputs((prev) => ({ ...prev, [field]: fallbackTime }))
   }
 
-  const handleTimeSelection = (
+  const handleTimeChange = (
     field: keyof Pick<CouponFormValues, "start_at" | "end_at">,
-    time: string
+    value: string
   ) => {
-    const [hours, minutes] = time.split(":").map(Number)
-    const current = parseDateValue(formState[field]) ?? new Date()
-    const updated = new Date(current)
-    updated.setHours(hours || 0, minutes || 0, 0, 0)
-    handleInputChange(field, updated.toISOString())
+    let input = value.replace(/[^0-9]/g, "").slice(0, 4);
+    if (input.length > 2) {
+      input = `${input.slice(0, 2)}:${input.slice(2)}`;
+    }
+    setTimeInputs(prev => ({...prev, [field]: input}));
+  };
+
+  const handleTimeBlur = (
+    field: keyof Pick<CouponFormValues, "start_at" | "end_at">,
+  ) => {
+    const time = timeInputs[field];
+    let [hoursStr, minutesStr] = time.split(":");
+
+    let hours = parseInt(hoursStr, 10);
+    let minutes = parseInt(minutesStr, 10);
+
+    if (isNaN(hours) || hours < 0 || hours > 23) hours = 0;
+    if (isNaN(minutes) || minutes < 0 || minutes > 59) minutes = 0;
+
+    const formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    setTimeInputs(prev => ({...prev, [field]: formattedTime}));
+
+    const current = parseDateValue(formState[field]) ?? new Date();
+    const updated = new Date(current);
+    updated.setHours(hours, minutes, 0, 0);
+    handleInputChange(field, updated.toISOString());
+  };
+
+  const handleImageReset = () => {
+    if (imagePreview && imagePreview.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview)
+    }
+    setImageFile(null)
+    setImagePreview(null)
+    setRemoveImage(true)
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -217,29 +261,18 @@ export function CouponForm({
                   setRemoveImage(false)
                   return
                 }
+
                 if (imagePreview && imagePreview.startsWith("blob:")) {
                   URL.revokeObjectURL(imagePreview)
                 }
+
                 setImageFile(file)
                 setImagePreview(URL.createObjectURL(file))
                 setRemoveImage(false)
               }}
             />
             {(imageFile || imagePreview) && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (imagePreview && imagePreview.startsWith("blob:")) {
-                    URL.revokeObjectURL(imagePreview)
-                  }
-                  setImageFile(null)
-                  setImagePreview(null)
-                  setRemoveImage(true)
-                }}
-                disabled={busy}
-              >
+              <Button type="button" variant="outline" size="sm" onClick={handleImageReset} disabled={busy}>
                 Remover imagem
               </Button>
             )}
@@ -349,7 +382,7 @@ export function CouponForm({
         </div>
         {(["start_at", "end_at"] as const).map((field) => {
           const parsedDate = parseDateValue(formState[field])
-          const timeValue = parsedDate ? format(parsedDate, "HH:mm") : ""
+          const timeValue = timeInputs[field]
 
           return (
             <div key={field} className="space-y-2">
@@ -382,9 +415,12 @@ export function CouponForm({
                   </PopoverContent>
                 </Popover>
                 <Input
-                  type="time"
+                  type="text"
+                  placeholder="HH:MM"
                   value={timeValue}
-                  onChange={(event) => handleTimeSelection(field, event.target.value)}
+                  onChange={(event) => handleTimeChange(field, event.target.value)}
+                  onBlur={() => handleTimeBlur(field)}
+                  maxLength={5}
                   disabled={busy}
                   className="h-10 sm:max-w-[120px]"
                 />

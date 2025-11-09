@@ -122,7 +122,7 @@ export default function PublicStorePage() {
   
   // Estados para avaliação
   const [showReviewModal, setShowReviewModal] = useState(false)
-  const [completedOrderId, setCompletedOrderId] = useState<number | null>(null)
+  const [completedOrderId, setCompletedOrderId] = useState<string | null>(null)
   
   // Estados para variações e opcionais
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -697,6 +697,7 @@ export default function PublicStorePage() {
       // Debug log for response
       if (result.success) {
         setOrderResult(result.data)
+        setCompletedOrderId(result.data?.order_id ?? null)
         setCheckoutStep("success")
         setCart([])
         toast.success(result.message)
@@ -782,7 +783,7 @@ export default function PublicStorePage() {
       }
       
       // Usar order_id (identify) do orderResult
-      const orderIdentify = orderResult?.order_id
+      const orderIdentify = orderResult?.order_id || completedOrderId
       
       if (!orderIdentify) {
         throw new Error('Identificador do pedido não encontrado')
@@ -815,6 +816,8 @@ export default function PublicStorePage() {
 
   const cartTotal = getCartTotal()
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
+  const currentOrderIdentify = orderResult?.order_id || completedOrderId || ''
+  const tenantIdForReview = storeInfo?.tenant_id || storeInfo?.id || 0
 
   const progressSteps = [
     { key: 'cart', label: 'Seleção de Itens', description: 'Escolha seus produtos favoritos' },
@@ -1964,6 +1967,7 @@ export default function PublicStorePage() {
                   onClick={() => {
                     setCheckoutStep("cart")
                     setOrderResult(null)
+                    setCompletedOrderId(null)
                   }}
                 >
                   <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1977,8 +1981,13 @@ export default function PublicStorePage() {
                   variant="secondary" 
                   className="w-full" 
                   onClick={() => {
-                    if (!orderResult?.order_id) {
+                    const orderIdentify = orderResult?.order_id || completedOrderId
+                    if (!orderIdentify) {
                       toast.error('Identificador do pedido não encontrado.')
+                      return
+                    }
+                    if (!storeInfo || !(storeInfo.tenant_id || storeInfo.id)) {
+                      toast.error('Não foi possível carregar os dados da loja para avaliação.')
                       return
                     }
                     setShowReviewModal(true)
@@ -2181,6 +2190,21 @@ export default function PublicStorePage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <ReviewModal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        onSubmit={handleReviewSubmit}
+        orderData={{
+          id: 0,
+          identify: currentOrderIdentify || '—',
+        }}
+        tenantId={tenantIdForReview}
+        customerData={{
+          name: clientData.name,
+          email: clientData.email,
+        }}
+      />
 
       <ReviewsSection tenantSlug={slug} />
 
