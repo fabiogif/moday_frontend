@@ -27,6 +27,7 @@ export type CouponFormValues = {
   end_at: string
   is_active: boolean
   is_featured: boolean
+  optionals: string[]
 }
 
 const defaultValues: CouponFormValues = {
@@ -43,6 +44,7 @@ const defaultValues: CouponFormValues = {
   end_at: "",
   is_active: true,
   is_featured: false,
+  optionals: [],
 }
 
 type CouponFormSubmitPayload = {
@@ -179,7 +181,15 @@ export function CouponForm({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     await onSubmit({
-      values: formState,
+      values: {
+        ...formState,
+        optionals: Array.isArray(formState.optionals)
+          ? formState.optionals
+          : String(formState.optionals ?? "")
+              .split(",")
+              .map((item: string) => item.trim())
+              .filter(Boolean),
+      },
       imageFile,
       removeImage,
     })
@@ -495,6 +505,7 @@ function normalizeValues(values?: Partial<CouponFormValues>): CouponFormValues {
     end_at: values.end_at ?? defaultValues.end_at,
     is_active: values.is_active ?? defaultValues.is_active,
     is_featured: values.is_featured ?? defaultValues.is_featured,
+    optionals: Array.isArray(values.optionals) ? values.optionals : defaultValues.optionals,
   }
 }
 
