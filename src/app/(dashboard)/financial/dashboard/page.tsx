@@ -19,9 +19,28 @@ export default function FinancialDashboardPage() {
   const { data: receivableStats } = useAccountReceivableStats()
 
   // Calcular totais
-  const totalExpenses = (expenseStats?.total_month || 0) + (payableStats?.total_pending || 0) + (payableStats?.total_overdue || 0)
-  const totalRevenues = (receivableStats?.total_pending || 0) + (receivableStats?.total_received || 0)
-  const balance = totalRevenues - totalExpenses
+  const parseAmount = (value: number | string | null | undefined): number => {
+    if (value === null || value === undefined) return 0
+    if (typeof value === 'number') return value
+
+    const normalized = value
+      .toString()
+      .replace(/\./g, '')
+      .replace(/,/g, '.')
+
+    const parsed = Number(normalized)
+    return Number.isNaN(parsed) ? 0 : parsed
+  }
+
+  const totalExpenses =
+    parseAmount(expenseStats?.total_month) +
+    parseAmount(payableStats?.total_pending) +
+    parseAmount(payableStats?.total_overdue)
+
+  const totalRevenues =
+    parseAmount(receivableStats?.total_pending) +
+    parseAmount(receivableStats?.total_received)
+  const balance = parseFloat((totalRevenues - totalExpenses).toFixed(2))
 
   return (
     <div className="flex flex-col gap-4">
