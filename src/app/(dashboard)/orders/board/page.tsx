@@ -358,7 +358,7 @@ function BoardColumn({ column, orders, isUpdating, onArchive }: BoardColumnProps
     <Card
       className={cn(
         "border-2 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col h-full",
-        "w-[260px] sm:w-[300px] md:w-[320px] xl:w-[340px] flex-shrink-0"
+        "w-[260px] sm:w-[300px] md:w-[320px] xl:w-full flex-shrink-0 xl:flex-shrink"
       )}
     >
       <CardHeader className={cn(
@@ -778,25 +778,35 @@ export default function OrdersBoardPage() {
         collisionDetection={closestCorners} 
         sensors={sensors}
       >
-        <div className="flex-1 overflow-hidden pb-4">
-          <div className="relative h-full">
-            <div className="overflow-x-auto overflow-y-hidden pb-2">
-              <div
-                className={cn(
-                  "flex gap-4 min-w-min pr-4",
-                  "lg:pr-6"
-                )}
-              >
+        <div className="flex-1 pb-4">
+          <div className="hidden xl:grid xl:grid-cols-5 xl:gap-4">
             {dynamicColumns.map((column) => (
-              <BoardColumn 
-                key={column.id} 
-                column={column} 
+              <BoardColumn
+                key={`grid-${column.id}`}
+                column={column}
                 orders={groupedOrders[column.id] || []}
                 isUpdating={groupedOrders[column.id]?.some(o => o.identify === updatingIdentify) || false}
                 onArchive={openArchiveDialog}
               />
             ))}
-              </div>
+          </div>
+
+          <div className="xl:hidden overflow-x-auto overflow-y-hidden">
+            <div
+              className={cn(
+                "flex gap-4 min-w-max pr-4",
+                "lg:pr-6"
+              )}
+            >
+              {dynamicColumns.map((column) => (
+                <BoardColumn 
+                  key={column.id} 
+                  column={column} 
+                  orders={groupedOrders[column.id] || []}
+                  isUpdating={groupedOrders[column.id]?.some(o => o.identify === updatingIdentify) || false}
+                  onArchive={openArchiveDialog}
+                />
+              ))}
             </div>
           </div>
         </div>
