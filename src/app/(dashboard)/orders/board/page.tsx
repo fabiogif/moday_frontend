@@ -266,7 +266,7 @@ function OrderCard({ order, isDragOverlay = false, onArchive }: OrderCardProps) 
             <div className="space-y-1.5">
               <div className="flex items-start gap-2 text-sm">
                 <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                <span className="text-xs leading-relaxed line-clamp-2">{deliveryAddress}</span>
+                <span className="text-xs leading-relaxed line-clamp-2 break-words">{deliveryAddress}</span>
               </div>
               {order.delivery_notes && (
                 <div className="text-xs text-muted-foreground italic pl-5 line-clamp-1">
@@ -358,7 +358,7 @@ function BoardColumn({ column, orders, isUpdating, onArchive }: BoardColumnProps
     <Card
       className={cn(
         "border-2 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col h-full",
-        "min-w-[280px] lg:min-w-[320px] xl:min-w-[340px] flex-shrink-0"
+        "w-[260px] sm:w-[300px] md:w-[320px] xl:w-[340px] flex-shrink-0"
       )}
     >
       <CardHeader className={cn(
