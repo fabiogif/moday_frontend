@@ -162,7 +162,7 @@ export default function OrdersPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-destructive">Erro ao carregar pedidos: {error}</div>
+        <div className="text-destructive">Erro ao carregar pedidos: Não autenticado.</div>
       </div>
     )
   }

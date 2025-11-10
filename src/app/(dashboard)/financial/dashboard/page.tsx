@@ -23,10 +23,29 @@ export default function FinancialDashboardPage() {
     if (value === null || value === undefined) return 0
     if (typeof value === 'number') return value
 
-    const normalized = value
-      .toString()
-      .replace(/\./g, '')
-      .replace(/,/g, '.')
+    const raw = value.toString().trim()
+    if (!raw) return 0
+
+    const sanitized = raw.replace(/[^\d.,-]/g, '')
+    if (!sanitized) return 0
+
+    const lastComma = sanitized.lastIndexOf(',')
+    const lastDot = sanitized.lastIndexOf('.')
+    const decimalSeparator = lastComma > lastDot ? ',' : '.'
+
+    let normalized = sanitized
+
+    if (decimalSeparator === ',') {
+      normalized = normalized.replace(/\./g, '').replace(/,/g, '.')
+    } else {
+      const firstDot = sanitized.indexOf('.')
+      normalized =
+        firstDot === lastDot
+          ? sanitized.replace(/,/g, '')
+          : sanitized
+              .replace(/,/g, '')
+              .replace(/\.(?=.*\.)/g, '')
+    }
 
     const parsed = Number(normalized)
     return Number.isNaN(parsed) ? 0 : parsed
