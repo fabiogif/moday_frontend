@@ -355,7 +355,12 @@ interface BoardColumnProps {
 
 function BoardColumn({ column, orders, isUpdating, onArchive }: BoardColumnProps) {
   return (
-    <Card className="border-2 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
+    <Card
+      className={cn(
+        "border-2 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col h-full",
+        "min-w-[280px] lg:min-w-[320px] xl:min-w-[340px] flex-shrink-0"
+      )}
+    >
       <CardHeader className={cn(
         "flex flex-row items-center justify-between space-y-0 pb-4 rounded-t-lg bg-gradient-to-br",
         column.headerGradient
@@ -773,23 +778,15 @@ export default function OrdersBoardPage() {
         collisionDetection={closestCorners} 
         sensors={sensors}
       >
-        <div className="flex-1 overflow-x-auto pb-4">
-          <div 
-            className={cn(
-              "grid gap-4 min-w-max",
-              dynamicColumns.length <= 3 && "lg:grid-cols-3",
-              dynamicColumns.length === 4 && "lg:grid-cols-2 xl:grid-cols-4",
-              dynamicColumns.length === 5 && "lg:grid-cols-3 xl:grid-cols-5",
-              dynamicColumns.length === 6 && "lg:grid-cols-3 xl:grid-cols-6",
-              dynamicColumns.length === 7 && "lg:grid-cols-3 xl:grid-cols-7",
-              dynamicColumns.length >= 8 && "lg:grid-cols-4 xl:grid-cols-8"
-            )}
-            style={{
-              gridTemplateColumns: dynamicColumns.length > 0 
-                ? `repeat(${Math.min(dynamicColumns.length, 8)}, minmax(300px, 1fr))` 
-                : undefined
-            }}
-          >
+        <div className="flex-1 overflow-hidden pb-4">
+          <div className="relative h-full">
+            <div className="overflow-x-auto overflow-y-hidden pb-2">
+              <div
+                className={cn(
+                  "flex gap-4 min-w-min pr-4",
+                  "lg:pr-6"
+                )}
+              >
             {dynamicColumns.map((column) => (
               <BoardColumn 
                 key={column.id} 
@@ -799,6 +796,8 @@ export default function OrdersBoardPage() {
                 onArchive={openArchiveDialog}
               />
             ))}
+              </div>
+            </div>
           </div>
         </div>
         
