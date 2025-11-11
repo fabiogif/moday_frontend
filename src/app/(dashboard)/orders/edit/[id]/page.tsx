@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -48,6 +48,8 @@ import { useAuthenticatedApi, useMutation } from "@/hooks/use-authenticated-api"
 import { endpoints } from "@/lib/api-client"
 import { OrderDetails } from "../../types"
 import { toast } from "sonner"
+import { useViaCEP } from "@/hooks/use-viacep"
+import { maskZipCode } from "@/lib/masks"
 
 // Schema de validação para edição de pedido
 const orderEditSchema = z.object({
@@ -85,12 +87,14 @@ export default function EditOrderPage() {
   const [order, setOrder] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [pendingCity, setPendingCity] = useState<string | null>(null)
 
   const { data: orderData, loading: apiLoading, error: apiError } = useAuthenticatedApi<OrderDetails>(
     orderId ? endpoints.orders.show(orderId) : ''
   )
 
   const { mutate: updateOrder, loading: updating } = useMutation()
+  const { loading: loadingCEP, searchCEP } = useViaCEP()
 
   const form = useForm<OrderEditFormValues>({
     resolver: zodResolver(orderEditSchema),
@@ -112,6 +116,62 @@ export default function EditOrderPage() {
 
   const isDelivery = form.watch("is_delivery")
   const useClientAddress = form.watch("use_client_address")
+  const deliveryStateValue = form.watch("delivery_state")
+
+  useEffect(() => {
+    if (pendingCity && deliveryStateValue) {
+      const timer = setTimeout(() => {
+        form.setValue("delivery_city", pendingCity, { shouldDirty: true })
+        setPendingCity(null)
+      }, 600)
+
+      return () => clearTimeout(timer)
+    }
+  }, [pendingCity, deliveryStateValue, form])
+
+  const handleDeliveryCepLookup = useCallback(
+    async (cepValue: string) => {
+      if (!cepValue || useClientAddress) return
+
+      const cleanCEP = cepValue.replace(/\D/g, "")
+      if (cleanCEP.length !== 8) {
+        return
+      }
+
+      try {
+        const address = await searchCEP(cepValue)
+        if (address) {
+          const street = address.address || address.logradouro || ""
+          const neighborhood = address.neighborhood || address.bairro || ""
+          const stateToSet = address.state || address.uf || ""
+          const cityToSet = address.city || address.localidade || ""
+
+          if (street) {
+            form.setValue("delivery_address", street, { shouldDirty: true })
+          }
+
+          if (neighborhood) {
+            form.setValue("delivery_neighborhood", neighborhood, { shouldDirty: true })
+          }
+
+          if (stateToSet) {
+            form.setValue("delivery_state", stateToSet, { shouldDirty: true })
+          }
+
+          if (cityToSet) {
+            setPendingCity(cityToSet)
+          } else {
+            setPendingCity(null)
+          }
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV === "development") {
+          console.error("Erro ao buscar CEP no formulário de edição:", err)
+        }
+      }
+    },
+    [form, searchCEP, useClientAddress]
+  )
 
   useEffect(() => {
     if (orderData) {
@@ -441,47 +501,77 @@ export default function EditOrderPage() {
                             )}
                           />
 
-                          <FormField
-                            control={form.control}
-                            name="delivery_city"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Cidade</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="São Paulo" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 md:items-end">
+                            <FormField
+                              control={form.control}
+                              name="delivery_state"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Estado</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="SP" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
 
-                          <FormField
-                            control={form.control}
-                            name="delivery_state"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Estado</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="SP" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                            <FormField
+                              control={form.control}
+                              name="delivery_city"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Cidade</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="São Paulo" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
 
-                          <FormField
-                            control={form.control}
-                            name="delivery_zip_code"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>CEP</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="01234-567" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                            <FormField
+                              control={form.control}
+                              name="delivery_zip_code"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>
+                                    CEP{" "}
+                                    <span className="text-muted-foreground text-xs font-normal">
+                                    Ao informar o CEP o preenchimento do endereço será automático
+                                    </span>
+                                  </FormLabel>
+                                  <FormControl>
+                                    <div className="relative">
+                                      <Input
+                                        placeholder="01234-567"
+                                        value={field.value || ""}
+                                        onChange={(event) => {
+                                          const masked = maskZipCode(event.target.value)
+                                          field.onChange(masked)
+                                        }}
+                                        onBlur={(event) => {
+                                          field.onBlur()
+                                          handleDeliveryCepLookup(event.target.value)
+                                        }}
+                                        maxLength={9}
+                                        disabled={loadingCEP}
+                                      />
+                                      {loadingCEP && (
+                                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </FormControl>
+                                  <p className="text-xs text-muted-foreground mt-1 md:hidden">
+                                    {loadingCEP ? "Buscando endereço..." : "Preenchimento automático ativo"}
+                                  </p>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
 
                           <FormField
                             control={form.control}

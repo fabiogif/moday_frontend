@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,13 +16,16 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuthenticatedClients, useAuthenticatedProducts, useAuthenticatedTables, useAuthenticatedActivePaymentMethods, useMutation } from "@/hooks/use-authenticated-api";
 import { useProducts } from "@/hooks/use-api"; // Temporário para teste
-import { endpoints } from "@/lib/api-client";
+import { apiClient, endpoints } from "@/lib/api-client";
 import { toast } from "sonner";
 import { useOrderRefresh } from "@/hooks/use-order-refresh";
 import { useAuth } from "@/contexts/auth-context";
 import { useBackendValidation } from "@/hooks/use-backend-validation";
 import { ClientFormDialog } from "../../clients/components/client-form-dialog";
 import { StateCityFormFields } from "@/components/location/state-city-form-fields";
+import { useViaCEP } from "@/hooks/use-viacep";
+import { maskZipCode } from "@/lib/masks";
+import { SuccessAlert } from "../components/success-alert";
 
 const orderFormSchema = z.object({
   clientId: z.string().min(1, "Por favor, selecione um cliente."),
@@ -173,8 +176,9 @@ export default function NewOrderPage() {
   const { data: productsData, loading: productsLoading } = useProducts(); // Teste não autenticado
   const { data: tablesData, loading: tablesLoading } = useAuthenticatedTables();
   const { data: paymentMethodsData, loading: paymentMethodsLoading } = useAuthenticatedActivePaymentMethods();
-  const { mutate: createOrder, loading: creating } = useMutation();
   const { mutate: createClient } = useMutation();
+  const { loading: loadingCEP, searchCEP } = useViaCEP();
+  const [creating, setCreating] = useState(false);
   
   // Hook autenticado para produtos (inicializado após os outros)
   const { data: productsDataAuth, loading: productsLoadingAuth } = useAuthenticatedProducts();
@@ -184,6 +188,10 @@ export default function NewOrderPage() {
   
   // Estado local para forçar atualização de clientes
   const [localClients, setLocalClients] = useState<Client[]>([]);
+  const [pendingDeliveryCity, setPendingDeliveryCity] = useState<string | null>(null);
+  const [successAlertOpen, setSuccessAlertOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('Pedido cadastrado com sucesso');
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
 
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
@@ -222,6 +230,62 @@ export default function NewOrderPage() {
   const watchProducts = form.watch("products");
   const discountValue = form.watch("discountValue");
   const discountType = form.watch("discountType");
+  const deliveryStateValue = form.watch("deliveryState");
+
+  useEffect(() => {
+    if (pendingDeliveryCity && deliveryStateValue) {
+      const timer = setTimeout(() => {
+        form.setValue("deliveryCity", pendingDeliveryCity, { shouldDirty: true });
+        setPendingDeliveryCity(null);
+      }, 600);
+
+      return () => clearTimeout(timer);
+    }
+  }, [pendingDeliveryCity, deliveryStateValue, form]);
+
+  const handleDeliveryCepLookup = useCallback(
+    async (cepValue: string) => {
+      if (!cepValue || useClientAddress) return;
+
+      const cleanCEP = cepValue.replace(/\D/g, "");
+      if (cleanCEP.length !== 8) {
+        return;
+      }
+
+      try {
+        const address = await searchCEP(cepValue);
+        if (address) {
+          const street = address.address || address.logradouro || "";
+          const neighborhood = address.neighborhood || address.bairro || "";
+          const stateToSet = address.state || address.uf || "";
+          const cityToSet = address.city || address.localidade || "";
+
+          if (street) {
+            form.setValue("deliveryAddress", street, { shouldDirty: true });
+          }
+
+          if (neighborhood) {
+            form.setValue("deliveryNeighborhood", neighborhood, { shouldDirty: true });
+          }
+
+          if (stateToSet) {
+            form.setValue("deliveryState", stateToSet, { shouldDirty: true });
+          }
+
+          if (cityToSet) {
+            setPendingDeliveryCity(cityToSet);
+          } else {
+            setPendingDeliveryCity(null);
+          }
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === "development") {
+          console.error("Erro ao buscar CEP para entrega:", error);
+        }
+      }
+    },
+    [form, searchCEP, useClientAddress]
+  );
 
   // Debug dos hooks após todas as declarações
   // console.log('=== COMPARAÇÃO DE HOOKS ===');
@@ -581,6 +645,7 @@ export default function NewOrderPage() {
 
   const onSubmit = async (data: OrderFormValues) => {
     try {
+      setCreating(true);
       // console.log('=== DEBUG onSubmit ===');
       // console.log('auth object:', auth);
       // console.log('auth.user:', auth.user);
@@ -630,19 +695,23 @@ export default function NewOrderPage() {
       // console.log('table:', orderData.table);
       // console.log('products:', orderData.products);
       
-      const result = await createOrder(endpoints.orders.create, 'POST', orderData);
+      const response = await apiClient.post(endpoints.orders.create, orderData);
       
-      if (result) {
-        const orderId = (result as any)?.identify || (result as any)?.id;
-        
-        // Disparar atualização antes de redirecionar
+      if (response.success) {
+        const orderResponse: any = response.data ?? {};
+        const message = response.message || 'Pedido cadastrado com sucesso';
+        const orderId =
+          orderResponse.identify ||
+          orderResponse.order_id ||
+          orderResponse.uuid ||
+          (orderResponse.id ? String(orderResponse.id) : null);
+
         triggerRefresh();
-        
-        // Pequeno delay para garantir que o trigger foi registrado
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Redirecionar para página de sucesso
-        router.push(`/orders/success?orderId=${orderId}`);
+        setCreatedOrderId(orderId);
+        setSuccessMessage(message);
+        setSuccessAlertOpen(true);
+      } else {
+        toast.error(response.message || 'Erro ao criar pedido');
       }
     } catch (error: any) {
       console.error('Erro ao criar pedido:', error);
@@ -683,6 +752,8 @@ export default function NewOrderPage() {
         const errorMsg = error.data?.message || error.message || 'Erro ao criar pedido';
         toast.error(errorMsg);
       }
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -706,6 +777,24 @@ export default function NewOrderPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
+      <SuccessAlert
+        open={successAlertOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSuccessAlertOpen(false);
+            if (createdOrderId) {
+              router.push(`/orders/success?orderId=${createdOrderId}`);
+            } else {
+              router.push('/orders');
+            }
+            setCreatedOrderId(null);
+          } else {
+            setSuccessAlertOpen(true);
+          }
+        }}
+        title="Pedido criado"
+        message={successMessage}
+      />
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4" />
@@ -886,12 +975,12 @@ export default function NewOrderPage() {
                   )}
 
                   {(!useClientAddress || !selectedClient?.has_complete_address) && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name="deliveryAddress"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="md:col-span-2">
                             <FormLabel>Endereço *</FormLabel>
                             <FormControl>
                               <Input placeholder="Rua das Flores, 123" {...field} value={field.value || ""} />
@@ -901,22 +990,38 @@ export default function NewOrderPage() {
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name="deliveryNeighborhood"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Bairro</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Centro" {...field} value={field.value || ""} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="deliveryNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Número</FormLabel>
+                              <FormControl>
+                                <Input placeholder="123" {...field} value={field.value || ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="deliveryNeighborhood"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Bairro</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Centro" {...field} value={field.value || ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
                       {/* Estado e Cidade */}
-                      <div className="md:col-span-2">
+                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 md:items-end">
                         <StateCityFormFields
                           control={form.control}
                           stateFieldName="deliveryState"
@@ -926,35 +1031,46 @@ export default function NewOrderPage() {
                           required
                           gridCols="equal"
                         />
+
+                        <FormField
+                          control={form.control}
+                          name="deliveryZipCode"
+                          render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>
+                                CEP <span className="text-muted-foreground text-xs font-normal">Ao informar o CEP o preenchimento do endereço será automático</span>
+                              </FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Input
+                                    placeholder="01000-000"
+                                    value={field.value || ""}
+                                    onChange={(event) => {
+                                      const masked = maskZipCode(event.target.value);
+                                      field.onChange(masked);
+                                    }}
+                                    onBlur={(event) => {
+                                      field.onBlur();
+                                      handleDeliveryCepLookup(event.target.value);
+                                    }}
+                                    maxLength={9}
+                                    disabled={loadingCEP}
+                                  />
+                                  {loadingCEP && (
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                    </div>
+                                  )}
+                                </div>
+                              </FormControl>
+                              <p className="text-xs text-muted-foreground mt-1 md:hidden">
+                                {loadingCEP ? "Buscando endereço..." : "Preenchimento automático ativo"}
+                              </p>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
-
-                      <FormField
-                        control={form.control}
-                        name="deliveryZipCode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CEP</FormLabel>
-                            <FormControl>
-                              <Input placeholder="01000-000" {...field} value={field.value || ""} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="deliveryNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Número</FormLabel>
-                            <FormControl>
-                              <Input placeholder="123" {...field} value={field.value || ""} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
 
                       <FormField
                         control={form.control}

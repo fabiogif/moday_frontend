@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { CheckCircle2, Package, MapPin, User, Phone, Mail, ArrowLeft, Download } from 'lucide-react'
+import { CheckCircle2, Package, MapPin, User, Phone, Mail, ArrowLeft, Download, CreditCard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
@@ -16,14 +16,16 @@ import { cn } from '@/lib/utils'
 interface OrderProduct {
   name: string
   quantity: number
-  price: number
+  price: number | string
 }
 
 interface OrderData {
   identify: string
   status: string
-  total: number
+  total: number | string
   is_delivery: boolean
+  payment_method?: string
+  payment_method_name?: string
   client?: {
     name: string
     email?: string
@@ -84,6 +86,21 @@ function OrderSuccessContent() {
   if (!order) {
     return null
   }
+
+  const toNumber = (value: unknown): number => {
+    if (typeof value === 'number') return value
+    if (typeof value === 'string') {
+      const parsed = Number(value)
+      return Number.isNaN(parsed) ? 0 : parsed
+    }
+    return 0
+  }
+
+  const formatCurrency = (value: number): string =>
+    value.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
 
   const fullAddress = order.is_delivery && order.delivery_address
     ? `${order.delivery_address}${order.delivery_number ? ', ' + order.delivery_number : ''} - ${order.delivery_neighborhood || ''}, ${order.delivery_city || ''} - ${order.delivery_state || ''} ${order.delivery_zip_code ? '- CEP: ' + order.delivery_zip_code : ''}`
@@ -164,21 +181,38 @@ function OrderSuccessContent() {
               <CardContent className="space-y-4">
                 {/* Products */}
                 <div className="space-y-3">
-                  {order.products.map((product, index) => (
-                    <div key={index} className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {product.quantity}x
-                          </Badge>
-                          <span className="text-sm font-medium">{product.name}</span>
+                  {order.products.map((product, index) => {
+                    const quantityRaw =
+                      (product as any).quantity ??
+                      (product as any).qty ??
+                      (product as any).amount ??
+                      (product as any)?.pivot?.quantity ??
+                      (product as any)?.pivot?.qty ??
+                      1
+
+                    const quantity = Number(quantityRaw) > 0 ? Number(quantityRaw) : 1
+                    const unitPrice = toNumber(product.price)
+                    const lineTotal = unitPrice * quantity
+
+                    return (
+                      <div key={index} className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {quantity}x
+                            </Badge>
+                            <span className="text-sm font-medium">{product.name}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Unitário: R$ {formatCurrency(unitPrice)}
+                          </p>
                         </div>
+                        <span className="text-sm font-semibold">
+                          R$ {formatCurrency(lineTotal)}
+                        </span>
                       </div>
-                      <span className="text-sm font-semibold">
-                        R$ {(product.price * product.quantity).toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
 
                 <Separator />
@@ -187,7 +221,7 @@ function OrderSuccessContent() {
                 <div className="flex justify-between items-center pt-2">
                   <span className="text-base font-semibold">Total</span>
                   <span className="text-2xl font-bold bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent">
-                    R$ {order.total.toFixed(2)}
+                    R$ {formatCurrency(toNumber(order.total))}
                   </span>
                 </div>
               </CardContent>
@@ -228,6 +262,26 @@ function OrderSuccessContent() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Payment Method */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  Forma de Pagamento
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Método selecionado</span>
+                  <span className="font-semibold">
+                    {order.payment_method_name ||
+                      order.payment_method ||
+                      'Não informado'}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Delivery Address */}
             {order.is_delivery && fullAddress && (
