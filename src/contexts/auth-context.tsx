@@ -160,7 +160,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       apiClient.setToken(data.token)
       
       // Também salvar no cookie para compatibilidade
-      document.cookie = `auth-token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}`
+      document.cookie = `auth-token=${data.token}; path=/; max-age=${2 * 60 * 60}`
     } catch (error) {
       throw error
     } finally {

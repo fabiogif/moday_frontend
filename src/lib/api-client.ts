@@ -59,7 +59,7 @@ class ApiClient {
     if (typeof window !== 'undefined') {
       localStorage.setItem('auth-token', token)
       // Também salvar no cookie para sincronizar com AuthContext
-      document.cookie = `auth-token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`
+      document.cookie = `auth-token=${token}; path=/; max-age=${2 * 60 * 60}`
     }
     if (process.env.NODE_ENV === 'development') {
       // console.log('ApiClient: Token definido:', token ? 'Sim' : 'Não')
