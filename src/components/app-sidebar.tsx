@@ -189,6 +189,26 @@ const navGroups = [
     ],
   },
   {
+    label: "Integrações",
+    items: [
+      {
+        title: "Catálogo iFood",
+        url: "/integrations/ifood/catalogs",
+        icon: Store,
+      },
+      {
+        title: "Autorização iFood",
+        url: "/integrations/ifood/oauth",
+        icon: Shield,
+      },
+      {
+        title: "Pedidos iFood",
+        url: "/integrations/ifood/orders",
+        icon: ShoppingCart,
+      },
+    ],
+  },
+  {
     label: "Administração",
     items: [
       {

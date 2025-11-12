@@ -402,6 +402,25 @@ export const endpoints = {
     },
   },
 
+  integrations: {
+    ifood: {
+      catalogs: '/api/integrations/ifood/catalogs',
+      categories: (catalogId: string) => `/api/integrations/ifood/catalogs/${catalogId}/categories`,
+      groups: (catalogId: string) => `/api/integrations/ifood/catalogs/${catalogId}/groups`,
+      unsellableItems: (catalogId: string) => `/api/integrations/ifood/catalogs/${catalogId}/unsellable-items`,
+      sellableItems: (groupId: string) => `/api/integrations/ifood/catalog-groups/${groupId}/sellable-items`,
+      catalogVersion: '/api/integrations/ifood/catalog/version',
+      snapshots: '/api/integrations/ifood/catalog/snapshots',
+      requestUserCode: '/api/integrations/ifood/oauth/user-code',
+      orders: {
+        list: '/api/integrations/ifood/orders',
+        show: (externalOrderId: string) => `/api/integrations/ifood/orders/${externalOrderId}`,
+        resendStatus: (externalOrderId: string) => `/api/integrations/ifood/orders/${externalOrderId}/status`,
+        confirm: (externalOrderId: string) => `/api/integrations/ifood/orders/${externalOrderId}/confirm`,
+      },
+    },
+  },
+
   // Loja Pública (Store)
   store: {
     info: (slug: string) => `/api/store/${slug}/info`,
