@@ -819,6 +819,7 @@ export default function PublicStorePage() {
   const currentOrderIdentify = orderResult?.order_id || completedOrderId || ''
   const tenantIdForReview = storeInfo?.tenant_id || storeInfo?.id || 0
 
+  
   const progressSteps = [
     { key: 'cart', label: 'Seleção de Itens', description: 'Escolha seus produtos favoritos' },
     { key: 'checkout', label: 'Dados de Entrega', description: 'Informe seus dados e endereço' },
