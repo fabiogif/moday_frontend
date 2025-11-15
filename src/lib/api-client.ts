@@ -582,6 +582,27 @@ export const endpoints = {
     verify: (uuid: string) => `/api/bank-accounts/${uuid}/verify`,
     logs: (uuid: string) => `/api/bank-accounts/${uuid}/logs`,
   },
+
+  // Sales Performance (Desempenho/Vendas)
+  salesPerformance: {
+    list: (params?: { start_date?: string; end_date?: string; days?: number }) => {
+      const queryParams = new URLSearchParams()
+      if (params?.start_date) queryParams.append('start_date', params.start_date)
+      if (params?.end_date) queryParams.append('end_date', params.end_date)
+      if (params?.days) queryParams.append('days', params.days.toString())
+      const queryString = queryParams.toString()
+      return `/api/sales-performance${queryString ? `?${queryString}` : ''}`
+    },
+    export: (params?: { start_date?: string; end_date?: string; days?: number }) => {
+      const queryParams = new URLSearchParams()
+      if (params?.start_date) queryParams.append('start_date', params.start_date)
+      if (params?.end_date) queryParams.append('end_date', params.end_date)
+      if (params?.days) queryParams.append('days', params.days.toString())
+      const queryString = queryParams.toString()
+      return `/api/sales-performance/export${queryString ? `?${queryString}` : ''}`
+    },
+    refresh: '/api/sales-performance/refresh',
+  },
 } as const
 
 export default apiClient

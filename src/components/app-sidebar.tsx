@@ -29,6 +29,8 @@ import {
   Utensils,
   ListOrdered,
   TicketPercent,
+  TrendingDown as TrendingDownIcon,
+  LineChart,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -180,6 +182,11 @@ const navGroups = [
         title: "Relatórios",
         url: "/reports",
         icon: BarChart3,
+      },
+      {
+        title: "Desempenho/Vendas",
+        url: "/sales-performance",
+        icon: LineChart,
       },
       {
         title: "Formas de Pagamento",
