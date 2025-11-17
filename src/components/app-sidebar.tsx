@@ -31,6 +31,7 @@ import {
   TicketPercent,
   TrendingDown as TrendingDownIcon,
   LineChart,
+  MonitorSmartphone,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -72,6 +73,11 @@ const navGroups = [
             url: "/orders/board",
           },
         ],
+      },
+      {
+        title: "PDV",
+        url: "/pos",
+        icon: MonitorSmartphone,
       },
       {
         title: "Clientes",

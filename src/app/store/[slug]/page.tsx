@@ -160,6 +160,7 @@ export default function PublicStorePage() {
     whatsapp_message: string
     whatsapp_link?: string | null
   } | null>(null)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [mobileSummaryOpen, setMobileSummaryOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -700,6 +701,7 @@ export default function PublicStorePage() {
         setCompletedOrderId(result.data?.order_id ?? null)
         setCheckoutStep("success")
         setCart([])
+        setShowSuccessModal(true)
         toast.success(result.message)
       } else {
         // Handle validation errors from backend
@@ -2200,6 +2202,45 @@ export default function PublicStorePage() {
           </DialogFooter>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showSuccessModal && !!orderResult}
+        onOpenChange={(open) => setShowSuccessModal(open)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="text-center space-y-2">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+              <Check className="h-7 w-7" />
+            </div>
+            <DialogTitle className="text-2xl">Pedido realizado com sucesso!</DialogTitle>
+            <DialogDescription className="text-base">
+              Número do pedido <span className="font-semibold text-foreground">#{orderResult?.order_id}</span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 text-sm text-muted-foreground text-center">
+            <p>Você receberá atualizações assim que o restaurante começar a preparar seu pedido.</p>
+            <p>Guarde o número acima para acompanhar pelo WhatsApp ou diretamente na loja.</p>
+          </div>
+
+          <DialogFooter className="flex-col gap-3 sm:flex-row">
+            {orderResult?.whatsapp_link && (
+              <Button asChild className="w-full">
+                <a href={orderResult.whatsapp_link} target="_blank" rel="noopener noreferrer">
+                  Acompanhar no WhatsApp
+                </a>
+              </Button>
+            )}
+            <Button
+              variant={orderResult?.whatsapp_link ? "outline" : "default"}
+              className="w-full"
+              onClick={() => setShowSuccessModal(false)}
+            >
+              Fechar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
