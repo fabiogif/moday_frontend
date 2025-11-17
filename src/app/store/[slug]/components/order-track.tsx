@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
-import { maskCPF, maskPhone } from '@/lib/masks'
+import { maskPhone } from '@/lib/masks'
 import { apiClient, endpoints } from '@/lib/api-client'
 import { ReviewModal, type ReviewData } from './review-modal'
 
@@ -82,7 +82,6 @@ const getStatusColor = (status: string) => {
 }
 
 export function OrderTrack({ slug }: OrderTrackProps) {
-  const [cpf, setCpf] = useState('')
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [orderData, setOrderData] = useState<OrderTrackingResult | null>(null)
@@ -149,19 +148,14 @@ export function OrderTrack({ slug }: OrderTrackProps) {
     }
   }
 
-  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const masked = maskCPF(e.target.value)
-    setCpf(masked)
-  }
-
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const masked = maskPhone(e.target.value)
     setPhone(masked)
   }
 
   const handleSearch = async () => {
-    if (!cpf && !phone) {
-      toast.error('Informe o CPF ou telefone para consultar')
+    if (!phone) {
+      toast.error('Informe o telefone para consultar')
       return
     }
 
@@ -171,7 +165,7 @@ export function OrderTrack({ slug }: OrderTrackProps) {
     try {
       const response = await apiClient.get(
         endpoints.store.trackOrder(slug),
-        { cpf, phone }
+        { phone }
       )
 
       if (response.success && response.data) {
@@ -182,7 +176,7 @@ export function OrderTrack({ slug }: OrderTrackProps) {
       }
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 
-                          'Nenhum pedido em andamento foi encontrado para este CPF/telefone.'
+                          'Nenhum pedido em andamento foi encontrado para este telefone.'
       toast.error(errorMessage)
     } finally {
       setLoading(false)
@@ -198,40 +192,27 @@ export function OrderTrack({ slug }: OrderTrackProps) {
             Acompanhar Pedido
           </CardTitle>
           <CardDescription>
-            Informe seu CPF ou telefone para consultar o status do seu pedido
+            Informe seu telefone para consultar o status do seu pedido
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="cpf">CPF</Label>
-              <Input
-                id="cpf"
-                type="text"
-                placeholder="000.000.000-00"
-                value={cpf}
-                onChange={handleCpfChange}
-                maxLength={14}
-                disabled={loading}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
-              <Input
-                id="phone"
-                type="text"
-                placeholder="(00) 00000-0000"
-                value={phone}
-                onChange={handlePhoneChange}
-                maxLength={15}
-                disabled={loading}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Telefone *</Label>
+            <Input
+              id="phone"
+              type="text"
+              placeholder="(00) 00000-0000"
+              value={phone}
+              onChange={handlePhoneChange}
+              maxLength={15}
+              disabled={loading}
+              required
+            />
           </div>
 
           <Button 
             onClick={handleSearch} 
-            disabled={loading || (!cpf && !phone)}
+            disabled={loading || !phone}
             className="w-full"
           >
             {loading ? (

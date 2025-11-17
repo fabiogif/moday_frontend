@@ -6,6 +6,7 @@ import { HeroSection } from './components/hero-section'
 import { LogoCarousel } from './components/logo-carousel'
 import { StatsSection } from './components/stats-section'
 import { FeaturesSection } from './components/features-section'
+import { DemoMenuCTA } from './components/demo-menu-cta'
 import { TestimonialsSection } from './components/testimonials-section'
 import { PricingSection } from './components/pricing-section'
 import { CTASection } from './components/cta-section'
@@ -27,6 +28,7 @@ export function LandingPageContent() {
         <HeroSection />
         {/* <LogoCarousel /> */}
         <FeaturesSection />
+        <DemoMenuCTA />
         <PricingSection />
         <TestimonialsSection />
         <FaqSection />

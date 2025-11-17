@@ -934,7 +934,18 @@ export default function PublicStorePage() {
               <div key={`${item.uuid}-${index}`} className="rounded-xl border bg-card/90 p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0 space-y-2">
-                    <p className="font-semibold text-sm sm:text-base text-foreground line-clamp-2">{item.name}</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-semibold text-sm sm:text-base text-foreground line-clamp-2 flex-1">{item.name}</p>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                        onClick={() => removeFromCart(`${item.uuid}-${index}`)}
+                        title="Remover item"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
                         {item.quantity}
