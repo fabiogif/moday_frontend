@@ -227,7 +227,15 @@ function getCartItemUnitPrice(item: CartItem): number {
 }
 
 // Componente de Dashboard Rápido do PDV
-function PDVQuickDashboard({ todayOrders }: { todayOrders: any[] }) {
+function PDVQuickDashboard({ 
+  todayOrders, 
+  showDashboard, 
+  onToggle 
+}: { 
+  todayOrders: any[]
+  showDashboard: boolean
+  onToggle: () => void
+}) {
   const stats = useMemo(() => {
     const totalSales = todayOrders.reduce((sum, order: any) => sum + parsePrice(order.total || 0), 0)
     const totalOrders = todayOrders.length
@@ -250,33 +258,43 @@ function PDVQuickDashboard({ todayOrders }: { todayOrders: any[] }) {
   }, [todayOrders])
   
   return (
-    <Card className="border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
-          <BarChart className="h-5 w-5" />
-          Dashboard - Hoje
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground mb-1">Vendas</p>
-            <p className="text-xl font-bold text-primary">{formatCurrency(stats.totalSales)}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground mb-1">Pedidos</p>
-            <p className="text-xl font-bold text-primary">{stats.totalOrders}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground mb-1">Ticket Médio</p>
-            <p className="text-xl font-bold text-primary">{formatCurrency(stats.averageTicket)}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground mb-1">Mesas Ocupadas</p>
-            <p className="text-xl font-bold text-primary">{stats.occupiedTables}</p>
+    <Card className="border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20 py-2 mx-2">
+      <div className="rounded-xl border px-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 flex-1">
+          <BarChart className="h-5 w-5 text-indigo-600" />
+          <div className="flex items-center gap-4 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Vendas:</span>
+              <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{formatCurrency(stats.totalSales)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Pedidos:</span>
+              <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{stats.totalOrders}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Ticket Médio:</span>
+              <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{formatCurrency(stats.averageTicket)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Mesas Ocupadas:</span>
+              <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{stats.occupiedTables}</span>
+            </div>
           </div>
         </div>
-      </CardContent>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggle}
+          className="h-8 w-8 text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100"
+          title={showDashboard ? "Ocultar dashboard" : "Exibir dashboard"}
+        >
+          {showDashboard ? (
+            <EyeOff className="h-4 w-4" />
+          ) : (
+            <Eye className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
     </Card>
   )
 }
@@ -485,6 +503,7 @@ export default function POSPage() {
   const [showCategories, setShowCategories] = useState(true)
   const [showProducts, setShowProducts] = useState(true)
   const [showCart, setShowCart] = useState(true)
+  const [showDashboard, setShowDashboard] = useState(true)
   const orderSearchRef = useRef<HTMLDivElement>(null)
   
   // Hook que depende de estado (deve ser chamado DEPOIS de todos os useState)
@@ -1415,7 +1434,7 @@ const handleClientChange = (value: string) => {
   if (!isAuthenticated && !authLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <Card className="max-w-md">
+        <Card className="max-w-md mx-2">
           <CardHeader>
             <CardTitle>Autenticação necessária</CardTitle>
             <CardDescription>Faça login para acessar o PDV.</CardDescription>
@@ -1455,57 +1474,115 @@ const handleClientChange = (value: string) => {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Alertas contextuais */}
-      {contextualAlerts.length > 0 && (
-        <div className="space-y-2">
-          {contextualAlerts.map((alert, index) => (
-            <div
-              key={index}
-              className={cn(
-                "rounded-xl border p-4 flex items-center justify-between gap-3",
-                alert.type === 'error' && "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/20",
-                alert.type === 'warning' && "border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/20",
-                alert.type === 'info' && "border-blue-300 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20"
-              )}
-            >
-              <div className="flex items-center gap-2 flex-1">
-                {alert.type === 'error' && <AlertTriangle className="h-5 w-5 text-red-600" />}
-                {alert.type === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-600" />}
-                {alert.type === 'info' && <Bell className="h-5 w-5 text-blue-600" />}
-                <p className={cn(
-                  "text-sm font-medium",
-                  alert.type === 'error' && "text-red-900 dark:text-red-100",
-                  alert.type === 'warning' && "text-yellow-900 dark:text-yellow-100",
-                  alert.type === 'info' && "text-blue-900 dark:text-blue-100"
-                )}>
-                  {alert.message}
-                </p>
+      {/* Alertas contextuais (exceto alertas de mesa ocupada que estão no header) */}
+      {contextualAlerts.length > 0 && contextualAlerts.some(alert => !alert.message.includes('pedido(s) em aberto')) && (
+        <div className="space-y-2 mx-2">
+          {contextualAlerts
+            .filter(alert => !alert.message.includes('pedido(s) em aberto'))
+            .map((alert, index) => (
+              <div
+                key={index}
+                className={cn(
+                  "rounded-xl border p-4 flex items-center justify-between gap-3",
+                  alert.type === 'error' && "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/20",
+                  alert.type === 'warning' && "border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/20",
+                  alert.type === 'info' && "border-blue-300 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20"
+                )}
+              >
+                <div className="flex items-center gap-2 flex-1">
+                  {alert.type === 'error' && <AlertTriangle className="h-5 w-5 text-red-600" />}
+                  {alert.type === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-600" />}
+                  {alert.type === 'info' && <Bell className="h-5 w-5 text-blue-600" />}
+                  <p className={cn(
+                    "text-sm font-medium",
+                    alert.type === 'error' && "text-red-900 dark:text-red-100",
+                    alert.type === 'warning' && "text-yellow-900 dark:text-yellow-100",
+                    alert.type === 'info' && "text-blue-900 dark:text-blue-100"
+                  )}>
+                    {alert.message}
+                  </p>
+                </div>
+                {alert.action && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={alert.action.onClick}
+                    className="h-8"
+                  >
+                    {alert.action.label}
+                  </Button>
+                )}
               </div>
-              {alert.action && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={alert.action.onClick}
-                  className="h-8"
-                >
-                  {alert.action.label}
-                </Button>
-              )}
-            </div>
-          ))}
+            ))}
         </div>
       )}
       
       {/* Dashboard Rápido - Fase 3 */}
-      {pdvPermissions.canViewReports && (
-        <PDVQuickDashboard todayOrders={todayOrders} />
+      {pdvPermissions.canViewReports && showDashboard && (
+        <PDVQuickDashboard 
+          todayOrders={todayOrders} 
+          showDashboard={showDashboard}
+          onToggle={() => setShowDashboard(!showDashboard)}
+        />
+      )}
+      {pdvPermissions.canViewReports && !showDashboard && (
+        <Card className="border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20 py-2 mx-2">
+          <div className="rounded-xl border px-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-1">
+              <BarChart className="h-5 w-5 text-indigo-600" />
+              <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">Dashboard - Hoje</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowDashboard(!showDashboard)}
+              className="h-8 w-8 text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100"
+              title="Exibir dashboard"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          </div>
+        </Card>
       )}
       
-      <header className="rounded-3xl border bg-card p-4 shadow-sm lg:p-6">
+      <header className="rounded-3xl border bg-card p-4 shadow-sm lg:p-6 mx-2">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">Ponto de Venda</p>
-            <h1 className="text-2xl font-semibold tracking-tight lg:text-3xl">PDV - Tahan</h1>
+          <div className="flex items-center gap-4 flex-1">
+            <div>
+              <p className="text-sm text-muted-foreground">Ponto de Venda</p>
+              <h1 className="text-2xl font-semibold tracking-tight lg:text-3xl">PDV</h1>
+            </div>
+            {/* Alerta de mesa ocupada na mesma linha */}
+            {contextualAlerts.length > 0 && contextualAlerts.some(alert => alert.message.includes('pedido(s) em aberto')) && (
+              <div className="flex items-center gap-2">
+                {contextualAlerts
+                  .filter(alert => alert.message.includes('pedido(s) em aberto'))
+                  .map((alert, index) => (
+                    <div
+                      key={index}
+                      className={cn(
+                        "rounded-xl border px-4 flex items-center gap-2",
+                        alert.type === 'warning' && "border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/20"
+                      )}
+                    >
+                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                      <p className="text-sm font-medium text-yellow-900 py-6 dark:text-yellow-100">
+                        {alert.message}
+                      </p>
+                      {alert.action && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={alert.action.onClick}
+                          className="h-7 text-xs ml-2"
+                        >
+                          {alert.action.label}
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             {/* Campo de pesquisa de pedido */}
@@ -1597,7 +1674,7 @@ const handleClientChange = (value: string) => {
 
       <div className={cn("grid gap-6", "lg:grid-cols-[2fr,1fr,320px]")}>
         <section className="space-y-6">
-          <Card id="categories-section" className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20">
+          <Card id="categories-section" className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20 mx-2">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -1649,7 +1726,7 @@ const handleClientChange = (value: string) => {
             )}
           </Card>
 
-          <Card id="products-section" className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20">
+          <Card id="products-section" className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20 mx-2">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -1738,7 +1815,7 @@ const handleClientChange = (value: string) => {
         </section>
 
         <aside id="order-summary">
-          <Card className="sticky top-4 space-y-0 border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20">
+          <Card className="sticky top-4 space-y-0 border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20 mx-2">
             <CardHeader className="space-y-1">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -1774,7 +1851,7 @@ const handleClientChange = (value: string) => {
                   }}
                   variant={!isDelivery ? "default" : "outline"}
                   className={cn(
-                    "w-full rounded-2xl py-6 text-lg",
+                    "w-full rounded-2xl text-lg",
                     !isDelivery && "bg-primary text-primary-foreground shadow-lg"
                   )}
                 >
@@ -1787,7 +1864,7 @@ const handleClientChange = (value: string) => {
                   }}
                   variant={isDelivery ? "default" : "outline"}
                   className={cn(
-                    "w-full rounded-2xl py-6 text-lg",
+                    "w-full rounded-2xl text-lg",
                     isDelivery && "bg-primary text-primary-foreground shadow-lg"
                   )}
                 >
@@ -2418,7 +2495,7 @@ const handleClientChange = (value: string) => {
 
         {/* Sidebar de Pedidos do Dia */}
         <aside className="hidden lg:block">
-          <Card className="sticky top-6 border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20 h-[calc(100vh-8rem)] flex flex-col">
+          <Card className="sticky top-6 border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20 h-[calc(100vh-8rem)] flex flex-col mx-2">
             <CardHeader className="pb-4 border-b">
               <CardTitle className="text-xl text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
                 <Clock className="h-5 w-5" />
