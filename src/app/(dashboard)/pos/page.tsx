@@ -13,6 +13,7 @@ import {
   useMutation,
 } from "@/hooks/use-authenticated-api"
 import { useAuth } from "@/contexts/auth-context"
+import { usePermissions } from "@/hooks/usePermissions"
 import { endpoints, apiClient } from "@/lib/api-client"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -27,7 +28,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Combobox, ComboboxOption } from "@/components/ui/combobox"
 import {
   Sheet,
@@ -63,16 +64,30 @@ import {
   Clock,
   User,
   Package,
+  CreditCard,
+  Smartphone,
+  Banknote,
+  Radio,
+  Building2,
   CheckCircle2,
-  Flame,
+  Copy,
+  HelpCircle,
+  MessageSquare,
   Star,
-  Tag,
-  Gift,
+  Mail,
+  MessageCircle,
+  Truck,
+  Bell,
+  AlertTriangle,
+  DollarSign,
+  TrendingUp,
+  BarChart,
 } from "lucide-react"
 import { maskPhone, maskZipCode } from "@/lib/masks"
-import { ProductBadges, type BadgeType } from "@/components/pdv/product-badges"
-import { PaymentMethodCard } from "@/components/pdv/payment-method-card"
-import { OrderConfirmationModal } from "@/components/pdv/order-confirmation-modal"
+import { PixQrCodeDialog } from "./components/pix-qr-code-dialog"
+import { ProductRecommendations } from "./components/product-recommendations"
+import { PDVTutorial } from "./components/pdv-tutorial"
+import { PDVFeedback } from "./components/pdv-feedback"
 
 type Category = {
   uuid?: string
@@ -209,8 +224,153 @@ function getCartItemUnitPrice(item: CartItem): number {
   return basePrice + optionalsTotal
 }
 
+// Componente de Dashboard Rápido do PDV
+function PDVQuickDashboard({ todayOrders }: { todayOrders: any[] }) {
+  const stats = useMemo(() => {
+    const totalSales = todayOrders.reduce((sum, order: any) => sum + parsePrice(order.total || 0), 0)
+    const totalOrders = todayOrders.length
+    const averageTicket = totalOrders > 0 ? totalSales / totalOrders : 0
+    
+    // Contar mesas ocupadas
+    const occupiedTables = new Set()
+    todayOrders.forEach((order: any) => {
+      if (order.table?.uuid && !['Entregue', 'Concluído', 'Cancelado'].includes(order.status)) {
+        occupiedTables.add(order.table.uuid)
+      }
+    })
+    
+    return {
+      totalSales,
+      totalOrders,
+      averageTicket,
+      occupiedTables: occupiedTables.size,
+    }
+  }, [todayOrders])
+  
+  return (
+    <Card className="border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
+          <BarChart className="h-5 w-5" />
+          Dashboard - Hoje
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-1">Vendas</p>
+            <p className="text-xl font-bold text-primary">{formatCurrency(stats.totalSales)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-1">Pedidos</p>
+            <p className="text-xl font-bold text-primary">{stats.totalOrders}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-1">Ticket Médio</p>
+            <p className="text-xl font-bold text-primary">{formatCurrency(stats.averageTicket)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-1">Mesas Ocupadas</p>
+            <p className="text-xl font-bold text-primary">{stats.occupiedTables}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Componente de histórico de pedidos do cliente
+function ClientOrderHistory({ clientId, onLoadOrder }: { clientId: string; onLoadOrder: (orderId: string) => void }) {
+  const [history, setHistory] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!clientId) return
+      setLoading(true)
+      try {
+        // Buscar pedidos do cliente (últimos 5)
+        const response = await apiClient.get(`/orders?client_id=${clientId}&per_page=5`)
+        if (response.success && response.data) {
+          const orders = Array.isArray(response.data) 
+            ? response.data 
+            : (Array.isArray((response.data as any)?.data) ? (response.data as any).data : [])
+          setHistory(orders.slice(0, 5))
+        }
+      } catch (error) {
+        console.error("Erro ao buscar histórico:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchHistory()
+  }, [clientId])
+  
+  if (loading) {
+    return (
+      <div className="rounded-xl border bg-muted/30 p-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Carregando histórico...</span>
+        </div>
+      </div>
+    )
+  }
+  
+  if (history.length === 0) {
+    return null
+  }
+  
+  return (
+    <div className="rounded-xl border bg-muted/30 p-3 space-y-2">
+      <p className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+        <Clock className="h-3 w-3" />
+        Últimos Pedidos
+      </p>
+      <div className="space-y-1">
+        {history.map((order: any) => {
+          const orderId = order.identify || order.uuid || order.id
+          const orderTotal = parsePrice(order.total || 0)
+          const orderDate = order.created_at 
+            ? new Date(order.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+            : '--'
+          return (
+            <button
+              key={orderId}
+              onClick={() => onLoadOrder(orderId)}
+              className="w-full flex items-center justify-between gap-2 rounded-lg border bg-card p-2 text-left hover:bg-primary/5 transition-colors"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold truncate">#{order.identify || order.id}</p>
+                <p className="text-xs text-muted-foreground">{orderDate} • {formatCurrency(orderTotal)}</p>
+              </div>
+              <Edit className="h-3 w-3 text-primary flex-shrink-0" />
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function POSPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
+  const { hasPermission } = usePermissions()
+  
+  // Verificar permissões do PDV
+  const pdvPermissions = useMemo(() => {
+    return {
+      canCreateOrder: hasPermission('pdv.create_order'),
+      canEditOrder: hasPermission('pdv.edit_order'),
+      canCancelOrder: hasPermission('pdv.cancel_order'),
+      canViewReports: hasPermission('pdv.view_reports'),
+      canManageProducts: hasPermission('pdv.manage_products'),
+      canApplyDiscount: hasPermission('pdv.apply_discount'),
+      canRefund: hasPermission('pdv.refund'),
+      canViewAllOrders: hasPermission('pdv.view_all_orders'),
+    }
+  }, [hasPermission])
   const {
     data: categoriesData,
     loading: categoriesLoading,
@@ -281,6 +441,14 @@ export default function POSPage() {
   }, [todayOrders])
   
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null)
+  const [showPixDialog, setShowPixDialog] = useState(false)
+  const [pixOrderData, setPixOrderData] = useState<{
+    orderId: string
+    total: number
+    qrCode?: string
+    qrCodeText?: string
+  } | null>(null)
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false)
   const [selectedClientId, setSelectedClientId] = useState<string>("")
   const [customerName, setCustomerName] = useState("")
   const [customerPhone, setCustomerPhone] = useState("")
@@ -301,11 +469,9 @@ const [orderSearchQuery, setOrderSearchQuery] = useState("")
 const [orderSearchResults, setOrderSearchResults] = useState<any[]>([])
 const [orderSearchLoading, setOrderSearchLoading] = useState(false)
 const [editingOrder, setEditingOrder] = useState<any | null>(null)
-  const [editOrderSheetOpen, setEditOrderSheetOpen] = useState(false)
-  const [cartSheetOpen, setCartSheetOpen] = useState(false)
+const [editOrderSheetOpen, setEditOrderSheetOpen] = useState(false)
 const [editOrderCart, setEditOrderCart] = useState<CartItem[]>([])
 const [editOrderNotes, setEditOrderNotes] = useState("")
-const [showConfirmationModal, setShowConfirmationModal] = useState(false)
 const orderSearchRef = useRef<HTMLDivElement>(null)
 
 // Verificar se a mesa selecionada está ocupada por outro pedido (não o que está sendo editado)
@@ -354,6 +520,10 @@ const selectionTotal = useMemo(() => {
 
   return total
 }, [selectionProduct, selectionVariationId, selectionOptionals])
+
+// Estado para feedback visual
+const [addingItem, setAddingItem] = useState<string | null>(null)
+const [removingItem, setRemovingItem] = useState<string | null>(null)
 
   useEffect(() => {
     if (!selectedCategory && categories.length > 0) {
@@ -455,46 +625,27 @@ const handleClientChange = (value: string) => {
     return map
   }, [products])
 
-  // Categorias especiais
-  const specialCategories = useMemo(() => {
-    const popular = products.filter(p => {
-      // Por enquanto, considerar produtos com mais de 0 vendas (pode ser melhorado com dados reais)
-      // Ou produtos sem preço promocional (mais vendidos geralmente não têm desconto)
-      return !p.promotional_price
-    }).slice(0, 10) // Top 10
-    
-    const newProducts = products
-      .filter(p => {
-        // Produtos criados nos últimos 30 dias (se tiver created_at)
-        // Por enquanto, usar todos os produtos como "novos"
-        return true
-      })
-      .slice(0, 10)
-    
-    const promotions = products.filter(p => {
-      const promoPrice = p.promotional_price ? parsePrice(p.promotional_price) : null
-      const regularPrice = parsePrice(p.price)
-      return promoPrice && promoPrice < regularPrice
-    })
-    
-    return {
-      popular,
-      new: newProducts,
-      promotions,
-    }
-  }, [products])
-
   const visibleProducts = useMemo(() => {
     if (!selectedCategory) return []
+    const categoryProducts = groupedProducts[selectedCategory] || []
     
-    // Categorias especiais
-    if (selectedCategory === "popular") return specialCategories.popular
-    if (selectedCategory === "new") return specialCategories.new
-    if (selectedCategory === "promotions") return specialCategories.promotions
-    
-    // Categorias normais
-    return groupedProducts[selectedCategory] || []
-  }, [groupedProducts, selectedCategory, specialCategories])
+    // Ordenar produtos por relevância:
+    // 1. Produtos com promoção primeiro
+    // 2. Depois produtos sem promoção
+    // 3. Ordenar alfabeticamente dentro de cada grupo
+    return categoryProducts.sort((a, b) => {
+      const aHasPromo = !!a.promotional_price && parsePrice(a.promotional_price) < parsePrice(a.price)
+      const bHasPromo = !!b.promotional_price && parsePrice(b.promotional_price) < parsePrice(b.price)
+      
+      // Promoções primeiro
+      if (aHasPromo !== bHasPromo) {
+        return bHasPromo ? 1 : -1
+      }
+      
+      // Depois alfabético
+      return a.name.localeCompare(b.name)
+    })
+  }, [groupedProducts, selectedCategory])
 
   const orderTotal = useMemo(
     () => cart.reduce((sum, item) => sum + getCartItemUnitPrice(item) * item.quantity, 0),
@@ -634,6 +785,10 @@ const handleClientChange = (value: string) => {
   }
 
   const updateItemQuantity = (signature: string, delta: number) => {
+    // Feedback visual
+    setAddingItem(signature)
+    setTimeout(() => setAddingItem(null), 300)
+    
     setCart((prev) =>
       prev
         .map((item) => {
@@ -654,7 +809,13 @@ const handleClientChange = (value: string) => {
   }
 
   const removeItem = (signature: string) => {
-    setCart((prev) => prev.filter((item) => item.signature !== signature))
+    // Feedback visual
+    setRemovingItem(signature)
+    setTimeout(() => {
+      setCart((prev) => prev.filter((item) => item.signature !== signature))
+      setRemovingItem(null)
+      toast.info("Item removido do pedido")
+    }, 300)
   }
 
   const clearCart = () => {
@@ -967,13 +1128,6 @@ const handleClientChange = (value: string) => {
       return handleSaveOrderEdit()
     }
 
-    // Mostrar modal de confirmação antes de finalizar
-    setShowConfirmationModal(true)
-  }
-
-  const handleConfirmOrder = async () => {
-    setShowConfirmationModal(false)
-
     const tenantToken = user?.tenant?.uuid || user?.tenant_id
     if (!tenantToken) {
       toast.error("Não foi possível identificar a empresa. Faça login novamente.")
@@ -1029,10 +1183,63 @@ const handleClientChange = (value: string) => {
     }
 
     try {
-      const result = await mutateOrder(endpoints.orders.create, "POST", payload)
+      const result: any = await mutateOrder(endpoints.orders.create, "POST", payload)
       if (result) {
-        toast.success("Pedido enviado com sucesso!")
+        const orderId = result?.identify || result?.uuid || result?.id || ""
+        
+        // Verificar se o método de pagamento é PIX
+        const paymentMethod = paymentMethods.find(m => m.uuid === selectedPaymentMethod)
+        const isPixPayment = paymentMethod?.name?.toLowerCase().includes('pix') || false
+        
+        if (isPixPayment) {
+          // Abrir dialog de QR Code PIX
+          // TODO: Buscar QR Code real da API quando disponível
+          // Por enquanto, usar dados mockados
+          setPixOrderData({
+            orderId,
+            total: orderTotal,
+            qrCode: undefined, // Será preenchido quando a API retornar
+            qrCodeText: undefined, // Será preenchido quando a API retornar
+          })
+          setShowPixDialog(true)
+        } else {
+          toast.success("Pedido enviado com sucesso!")
+        }
+        
         clearCart()
+        setCustomerName("")
+        setCustomerPhone("")
+        setDeliveryAddress({
+          zip: "",
+          address: "",
+          number: "",
+          neighborhood: "",
+          city: "",
+          state: "",
+          complement: "",
+        })
+        
+        // Recarregar pedidos da mesa se houver uma mesa selecionada
+        if (selectedTable && !isDelivery) {
+          refetchTableOrders()
+        }
+        
+        // Recarregar lista de pedidos do dia
+        refetchTodayOrders()
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao finalizar pedido")
+    }
+  }
+
+  // Atalhos de teclado
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + N: Novo pedido
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault()
+        clearCart()
+        setEditingOrder(null)
         setCustomerName("")
         setCustomerPhone("")
         setDeliveryAddress({
@@ -1049,19 +1256,47 @@ const handleClientChange = (value: string) => {
         setSelectedTable(null)
         setIsDelivery(false)
         setOrderNotes("")
-        
-        // Recarregar pedidos da mesa se houver uma mesa selecionada
-        if (selectedTable && !isDelivery) {
-          refetchTableOrders()
-        }
-        
-        // Recarregar lista de pedidos do dia
-        refetchTodayOrders()
+        toast.success("Novo pedido iniciado")
       }
-    } catch (error: any) {
-      toast.error(error?.message || "Erro ao finalizar pedido")
+      
+      // Ctrl/Cmd + F: Focar busca
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault()
+        const searchInput = document.querySelector('[data-search-input]') as HTMLInputElement
+        if (searchInput) {
+          searchInput.focus()
+        }
+      }
+      
+      // Ctrl/Cmd + Enter: Finalizar pedido (se tiver itens)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault()
+        if (cart.length > 0 && !submittingOrder) {
+          handleFinalizeOrder()
+        }
+      }
+      
+      // Escape: Fechar modais
+      if (e.key === 'Escape') {
+        setSelectionDialogOpen(false)
+        setOrderSearchQuery("")
+        setOrderSearchResults([])
+      }
+      
+      // Números 1-9: Selecionar categoria rápida
+      if (e.key >= '1' && e.key <= '9' && !e.ctrlKey && !e.metaKey) {
+        const index = parseInt(e.key) - 1
+        if (categories[index]) {
+          const categoryKey = categories[index].uuid || categories[index].identify || categories[index].name
+          setSelectedCategory(categoryKey)
+          toast.info(`Categoria: ${categories[index].name}`)
+        }
+      }
     }
-  }
+    
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [cart.length, submittingOrder, categories, handleFinalizeOrder, clearCart, setSelectedCategory, setSelectionDialogOpen, setOrderSearchQuery, setOrderSearchResults, setEditingOrder, setCustomerName, setCustomerPhone, setDeliveryAddress, setSelectedClientId, setSelectedPaymentMethod, setSelectedTable, setIsDelivery, setOrderNotes])
 
   if (!isAuthenticated && !authLoading) {
     return (
@@ -1104,8 +1339,106 @@ const handleClientChange = (value: string) => {
     )
   }
 
+  // Alertas contextuais
+  const contextualAlerts = useMemo(() => {
+    const alerts: Array<{ type: 'warning' | 'error' | 'info'; message: string; action?: { label: string; onClick: () => void } }> = []
+    
+    // Alerta: Mesa ocupada
+    if (selectedTable && !isDelivery) {
+      const tableOrders = tableOrdersData || []
+      if (Array.isArray(tableOrders) && tableOrders.length > 0) {
+        alerts.push({
+          type: 'warning',
+          message: `Mesa tem ${tableOrders.length} pedido(s) em aberto`,
+          action: {
+            label: 'Ver pedidos',
+            onClick: () => {
+              // Scroll para seção de pedidos da mesa
+              const orderSection = document.getElementById('table-orders')
+              if (orderSection) {
+                orderSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+              }
+            },
+          },
+        })
+      }
+    }
+    
+    // Alerta: Carrinho vazio ao tentar finalizar
+    if (cart.length === 0 && submittingOrder) {
+      alerts.push({
+        type: 'error',
+        message: 'Adicione itens ao pedido antes de finalizar',
+      })
+    }
+    
+    // Alerta: Mesa não selecionada em retirada
+    if (!isDelivery && !selectedTable && cart.length > 0) {
+      alerts.push({
+        type: 'warning',
+        message: 'Selecione uma mesa para continuar',
+      })
+    }
+    
+    // Alerta: Método de pagamento não selecionado
+    if (cart.length > 0 && !selectedPaymentMethod) {
+      alerts.push({
+        type: 'info',
+        message: 'Selecione uma forma de pagamento',
+      })
+    }
+    
+    return alerts
+  }, [selectedTable, isDelivery, tableOrdersData, cart.length, submittingOrder, selectedPaymentMethod])
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Alertas contextuais */}
+      {contextualAlerts.length > 0 && (
+        <div className="space-y-2">
+          {contextualAlerts.map((alert, index) => (
+            <div
+              key={index}
+              className={cn(
+                "rounded-xl border p-4 flex items-center justify-between gap-3",
+                alert.type === 'error' && "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/20",
+                alert.type === 'warning' && "border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/20",
+                alert.type === 'info' && "border-blue-300 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20"
+              )}
+            >
+              <div className="flex items-center gap-2 flex-1">
+                {alert.type === 'error' && <AlertTriangle className="h-5 w-5 text-red-600" />}
+                {alert.type === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-600" />}
+                {alert.type === 'info' && <Bell className="h-5 w-5 text-blue-600" />}
+                <p className={cn(
+                  "text-sm font-medium",
+                  alert.type === 'error' && "text-red-900 dark:text-red-100",
+                  alert.type === 'warning' && "text-yellow-900 dark:text-yellow-100",
+                  alert.type === 'info' && "text-blue-900 dark:text-blue-100"
+                )}>
+                  {alert.message}
+                </p>
+              </div>
+              {alert.action && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={alert.action.onClick}
+                  className="h-8"
+                >
+                  {alert.action.label}
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {/* Dashboard Rápido - Fase 3 */}
+      {pdvPermissions.canViewReports && (
+        <PDVQuickDashboard todayOrders={todayOrders} />
+      )}
+      
       <header className="rounded-3xl border bg-card p-4 shadow-sm lg:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -1118,7 +1451,7 @@ const handleClientChange = (value: string) => {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Buscar pedido..."
+                placeholder="Buscar pedido... (Ctrl+F)"
                 value={orderSearchQuery}
                 onChange={(e) => {
                   const value = e.target.value
@@ -1126,6 +1459,7 @@ const handleClientChange = (value: string) => {
                   handleOrderSearch(value)
                 }}
                 className="h-12 pl-10 pr-10 text-base"
+                data-search-input
               />
               {orderSearchLoading && (
                 <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
@@ -1176,17 +1510,8 @@ const handleClientChange = (value: string) => {
               )}
             </div>
             
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCartSheetOpen(true)}
-                className="md:hidden flex items-center gap-2"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                <span className="font-semibold">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
-              </Button>
-              <Badge variant="secondary" className="hidden md:flex items-center gap-2 px-4 py-2 text-base">
+            <div className="flex gap-2 flex-wrap items-center">
+              <Badge variant="secondary" className="flex items-center gap-2 px-4 py-2 text-base">
                 <ShoppingCart className="h-4 w-4" />
                 Total de itens: {cart.reduce((sum, item) => sum + item.quantity, 0)}
               </Badge>
@@ -1194,111 +1519,48 @@ const handleClientChange = (value: string) => {
                 <Utensils className="h-4 w-4" />
                 {selectedTableName || (isDelivery ? "Delivery" : "Selecione uma mesa")}
               </Badge>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowFeedbackDialog(true)}
+                className="h-10 w-10"
+                title="Enviar feedback"
+              >
+                <MessageSquare className="h-5 w-5" />
+              </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className={cn(
-        "grid gap-4",
-        "h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)]",
-        "grid-cols-1",
-        "md:grid-cols-[1fr,1fr] md:h-[calc(100vh-10rem)]",
-        "lg:grid-cols-[2fr,1fr,280px] lg:h-[calc(100vh-10rem)]",
-        "xl:grid-cols-[2fr,1fr,320px]"
-      )}>
-        <section className="flex flex-col gap-4 min-h-0 overflow-hidden">
-          <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20 flex-shrink-0">
-            <CardHeader className="pb-2 px-4 pt-4">
-              <CardTitle className="text-base md:text-lg text-blue-900 dark:text-blue-100">Categorias</CardTitle>
-              <CardDescription className="text-xs md:text-sm text-blue-700 dark:text-blue-300 hidden sm:block">Selecione uma categoria para ver os produtos.</CardDescription>
+      <div className={cn("grid gap-6", "lg:grid-cols-[2fr,1fr,320px]")}>
+        <section className="space-y-6">
+          <Card id="categories-section" className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl text-blue-900 dark:text-blue-100">Categorias</CardTitle>
+              <CardDescription className="text-blue-700 dark:text-blue-300">Selecione uma categoria para ver os produtos.</CardDescription>
             </CardHeader>
-            <CardContent className="pb-3 px-4">
-              <div className="grid grid-cols-2 gap-2">
-                {/* Categorias Especiais */}
-                <Button
-                  key="popular"
-                  data-testid="touch-category-popular"
-                  onClick={() => setSelectedCategory("popular")}
-                  className={cn(
-                    "h-16 rounded-2xl px-4 text-sm font-medium transition-all",
-                    selectedCategory === "popular"
-                      ? "bg-primary text-primary-foreground shadow-lg"
-                      : "bg-muted text-foreground hover:bg-primary/10"
-                  )}
-                >
-                  <Flame className="mr-2 h-4 w-4" />
-                  <span className="flex-1 text-left">Mais Vendidos</span>
-                  {specialCategories.popular.length > 0 && (
-                    <Badge variant={selectedCategory === "popular" ? "secondary" : "outline"} className="ml-2">
-                      {specialCategories.popular.length}
-                    </Badge>
-                  )}
-                </Button>
-                
-                <Button
-                  key="new"
-                  data-testid="touch-category-new"
-                  onClick={() => setSelectedCategory("new")}
-                  className={cn(
-                    "h-16 rounded-2xl px-4 text-sm font-medium transition-all",
-                    selectedCategory === "new"
-                      ? "bg-primary text-primary-foreground shadow-lg"
-                      : "bg-muted text-foreground hover:bg-primary/10"
-                  )}
-                >
-                  <Star className="mr-2 h-4 w-4" />
-                  <span className="flex-1 text-left">Novidades</span>
-                  {specialCategories.new.length > 0 && (
-                    <Badge variant={selectedCategory === "new" ? "secondary" : "outline"} className="ml-2">
-                      {specialCategories.new.length}
-                    </Badge>
-                  )}
-                </Button>
-                
-                <Button
-                  key="promotions"
-                  data-testid="touch-category-promotions"
-                  onClick={() => setSelectedCategory("promotions")}
-                  className={cn(
-                    "h-16 rounded-2xl px-4 text-sm font-medium transition-all",
-                    selectedCategory === "promotions"
-                      ? "bg-primary text-primary-foreground shadow-lg"
-                      : "bg-muted text-foreground hover:bg-primary/10"
-                  )}
-                >
-                  <Tag className="mr-2 h-4 w-4" />
-                  <span className="flex-1 text-left">Promoções</span>
-                  {specialCategories.promotions.length > 0 && (
-                    <Badge variant={selectedCategory === "promotions" ? "secondary" : "outline"} className="ml-2">
-                      {specialCategories.promotions.length}
-                    </Badge>
-                  )}
-                </Button>
-                
-                {/* Categorias Normais */}
+            <CardContent>
+              <div
+                className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+                data-testid="touch-grid-categories"
+              >
                 {categories.map((category) => {
                   const key = category.uuid || category.identify || category.name
                   const active = selectedCategory === key
-                  const productCount = groupedProducts[key]?.length || 0
                   return (
                     <Button
                       key={key}
                       data-testid={`touch-category-${key}`}
                       onClick={() => setSelectedCategory(key)}
                       className={cn(
-                        "h-16 rounded-2xl px-4 text-sm font-medium transition-all",
+                        "h-20 rounded-2xl text-lg",
                         active
                           ? "bg-primary text-primary-foreground shadow-lg"
                           : "bg-muted text-foreground hover:bg-primary/10"
                       )}
                     >
-                      <span className="flex-1 text-left truncate">{category.name}</span>
-                      {productCount > 0 && (
-                        <Badge variant={active ? "secondary" : "outline"} className="ml-2 flex-shrink-0">
-                          {productCount}
-                        </Badge>
-                      )}
+                      {category.name}
                     </Button>
                   )
                 })}
@@ -1306,122 +1568,52 @@ const handleClientChange = (value: string) => {
             </CardContent>
           </Card>
 
-          <Card className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20 flex-1 min-h-0 flex flex-col overflow-hidden">
-            <CardHeader className="pb-2 px-4 pt-4 flex-shrink-0">
-              <CardTitle className="text-base md:text-lg text-green-900 dark:text-green-100">Produtos</CardTitle>
-              <CardDescription className="text-xs md:text-sm text-green-700 dark:text-green-300 hidden sm:block">Toque em um item para adicioná-lo ao pedido.</CardDescription>
+          <Card id="products-section" className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl text-green-900 dark:text-green-100">Produtos</CardTitle>
+              <CardDescription className="text-green-700 dark:text-green-300">Toque em um item para adicioná-lo ao pedido.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 min-h-0 pb-3 px-4 overflow-hidden">
+            <CardContent>
               {visibleProducts.length === 0 ? (
                 <div className="rounded-2xl border border-dashed p-8 text-center text-muted-foreground">
                   Nenhum produto nesta categoria.
                 </div>
               ) : (
-                <ScrollArea className="h-full max-h-full" type="always">
+                <ScrollArea className="max-h-[70vh]" type="always">
                   <div
-                    className="grid gap-2 sm:gap-3 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                    className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
                     data-testid="touch-grid-products"
                   >
                     {visibleProducts.map((product) => {
                       const price = getProductPrice(product)
-                      const promotionalPrice = product.promotional_price ? parsePrice(product.promotional_price) : null
-                      const hasDiscount = promotionalPrice && promotionalPrice < price
-                      
-                      // Detectar badges do produto (por enquanto baseado no nome, depois virá do backend)
-                      const productBadges: BadgeType[] = []
-                      const nameLower = product.name.toLowerCase()
-                      if (nameLower.includes("vegetariano") || nameLower.includes("vegetariana")) {
-                        productBadges.push("vegetarian")
-                      }
-                      if (nameLower.includes("vegano") || nameLower.includes("vegana")) {
-                        productBadges.push("vegan")
-                      }
-                      if (nameLower.includes("sem glúten") || nameLower.includes("sem gluten")) {
-                        productBadges.push("gluten-free")
-                      }
-                      if (nameLower.includes("picante") || nameLower.includes("pimenta")) {
-                        productBadges.push("spicy")
-                      }
-                      if (hasDiscount) {
-                        productBadges.push("promotion")
-                      }
-                      
                       return (
                         <button
                           key={getProductId(product)}
                           data-testid={`touch-product-${getProductId(product)}`}
                           onClick={() => startProductSelection(product)}
-                          className="group relative flex h-44 flex-col rounded-2xl border bg-card text-left shadow-sm transition-all hover:scale-[1.02] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          className="flex h-40 flex-col rounded-2xl border bg-card text-left shadow-sm transition hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         >
-                          <div className="relative h-28 w-full overflow-hidden rounded-t-2xl bg-muted">
+                          <div className="relative h-24 w-full overflow-hidden rounded-t-2xl bg-muted">
                             {product.image_url || product.image ? (
                               <Image
                                 src={product.image_url || product.image || ""}
                                 alt={product.name}
                                 fill
-                                className="object-cover transition-transform group-hover:scale-105"
+                                className="object-cover"
                               />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                                <NotebookPen className="h-8 w-8" />
-                              </div>
-                            )}
-                            
-                            {/* Badges no canto superior */}
-                            {productBadges.length > 0 && (
-                              <div className="absolute left-2 top-2 z-10">
-                                <ProductBadges badges={productBadges} />
-                              </div>
-                            )}
-
-                            {/* Badge de desconto */}
-                            {hasDiscount && (
-                              <div className="absolute right-2 top-2 z-10">
-                                <Badge variant="destructive" className="text-xs">
-                                  {Math.round(((price - promotionalPrice!) / price) * 100)}% OFF
-                                </Badge>
+                                <NotebookPen className="h-6 w-6" />
                               </div>
                             )}
                           </div>
-                          <div className="flex flex-1 flex-col justify-between gap-1 p-2.5">
-                            <div>
-                              <p className="text-sm font-semibold leading-tight line-clamp-2">
-                                {product.name}
-                              </p>
-                              {product.description && (
-                                <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-                                  {product.description}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex items-center justify-between mt-1.5">
-                              <div className="flex flex-col">
-                                {hasDiscount ? (
-                                  <>
-                                    <span className="text-base font-bold text-primary">
-                                      {formatCurrency(promotionalPrice!)}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground line-through">
-                                      {formatCurrency(price)}
-                                    </span>
-                                  </>
-                                ) : (
-                                  <span className="text-base font-bold text-primary">
-                                    {formatCurrency(price)}
-                                  </span>
-                                )}
-                              </div>
-                              <Button
-                                size="icon"
-                                className="h-9 w-9 rounded-xl"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  startProductSelection(product)
-                                }}
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
+                          <div className="flex flex-1 flex-col gap-1 p-3">
+                            <p className="text-base font-semibold leading-tight line-clamp-2">
+                              {product.name}
+                            </p>
+                            <p className="text-lg font-bold text-primary">
+                              {formatCurrency(price)}
+                            </p>
                           </div>
                         </button>
                       )
@@ -1431,55 +1623,80 @@ const handleClientChange = (value: string) => {
               )}
             </CardContent>
           </Card>
+
+          {/* Recomendações Inteligentes - Fase 4 */}
+          {cart.length > 0 && (
+            <ProductRecommendations
+              cart={cart}
+              allProducts={products}
+              onAddProduct={(product) => {
+                startProductSelection(product)
+              }}
+              orderHistory={todayOrders}
+            />
+          )}
         </section>
 
-        <aside id="order-summary" className="hidden md:flex flex-col min-h-0 overflow-hidden">
-          <Card className="flex flex-col h-full max-h-full border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20 overflow-hidden">
-            <CardHeader className="space-y-1 flex-shrink-0 pb-2 px-4 pt-4">
-              <CardTitle className="text-base md:text-lg text-orange-900 dark:text-orange-100">Carrinho</CardTitle>
-              <CardDescription className="text-xs md:text-sm text-orange-700 dark:text-orange-300 hidden sm:block">Gerencie os itens e finalize o pedido.</CardDescription>
+        <aside id="order-summary">
+          <Card className="sticky top-4 space-y-0 border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-xl text-orange-900 dark:text-orange-100">Carrinho</CardTitle>
+              <CardDescription className="text-orange-700 dark:text-orange-300">Gerencie os itens e finalize o pedido.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden px-4">
-              <ScrollArea className="flex-1 min-h-0 max-h-full">
-                <div className="space-y-3 pr-3">
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={() => {
-                        setIsDelivery(false)
-                        // Força a seleção da primeira mesa quando retirar no local
-                        if (tables.length > 0 && !selectedTable) {
-                          const firstTable = tables[0]
-                          setSelectedTable(firstTable.uuid || firstTable.identify || firstTable.name)
-                        }
-                      }}
-                      variant={!isDelivery ? "default" : "outline"}
-                      className={cn(
-                        "w-full rounded-2xl py-5 text-base",
-                        !isDelivery && "bg-primary text-primary-foreground shadow-lg"
-                      )}
-                    >
-                      Retirada no local
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setIsDelivery(true)
-                        setSelectedTable(null)
-                      }}
-                      variant={isDelivery ? "default" : "outline"}
-                      className={cn(
-                        "w-full rounded-2xl py-5 text-base",
-                        isDelivery && "bg-primary text-primary-foreground shadow-lg"
-                      )}
-                    >
-                      Delivery
-                    </Button>
-                  </div>
+            <CardContent className="space-y-5">
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    setIsDelivery(false)
+                    // Força a seleção da primeira mesa quando retirar no local
+                    if (tables.length > 0 && !selectedTable) {
+                      const firstTable = tables[0]
+                      setSelectedTable(firstTable.uuid || firstTable.identify || firstTable.name)
+                    }
+                  }}
+                  variant={!isDelivery ? "default" : "outline"}
+                  className={cn(
+                    "w-full rounded-2xl py-6 text-lg",
+                    !isDelivery && "bg-primary text-primary-foreground shadow-lg"
+                  )}
+                >
+                  Retirada no local
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsDelivery(true)
+                    setSelectedTable(null)
+                  }}
+                  variant={isDelivery ? "default" : "outline"}
+                  className={cn(
+                    "w-full rounded-2xl py-6 text-lg",
+                    isDelivery && "bg-primary text-primary-foreground shadow-lg"
+                  )}
+                >
+                  Delivery
+                </Button>
+              </div>
 
-                {!isDelivery && (
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium">Selecione a mesa</p>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                    {tables.map((table) => {
+              {!isDelivery && (
+                <div id="table-section" className="space-y-3">
+                  <p className="text-sm font-medium">Selecione a mesa</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {/* Ordenar mesas: ocupadas primeiro, depois vazias */}
+                    {(() => {
+                      const occupiedTables: Table[] = []
+                      const emptyTables: Table[] = []
+                      
+                      tables.forEach((table) => {
+                        const key = table.uuid || table.identify || table.name
+                        if (tablesWithOpenOrders.has(key)) {
+                          occupiedTables.push(table)
+                        } else {
+                          emptyTables.push(table)
+                        }
+                      })
+                      
+                      return [...occupiedTables, ...emptyTables]
+                    })().map((table) => {
                       const key = table.uuid || table.identify || table.name
                       const active = selectedTable === key
                       const hasOpenOrders = tablesWithOpenOrders.has(key)
@@ -1635,11 +1852,11 @@ const handleClientChange = (value: string) => {
                       )}
                     </div>
                   )}
-                  </div>
-                )}
+                </div>
+              )}
 
-                {isDelivery && (
-                  <div className="space-y-3 rounded-2xl border p-4">
+              {isDelivery && (
+                <div className="space-y-3 rounded-2xl border p-4">
                   <p className="text-sm font-medium">Endereço de entrega</p>
                   <div className="grid gap-3">
                     <Input
@@ -1709,23 +1926,23 @@ const handleClientChange = (value: string) => {
                     />
                   </div>
                 </div>
-                )}
+              )}
 
-                <div className="space-y-3">
-                  <p className="text-sm font-medium">Cliente (opcional)</p>
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Cliente (opcional)</p>
                 {clients.length > 0 && (
                   <Combobox
                     options={clientOptions}
                     value={selectedClientId}
                     onValueChange={handleClientChange}
-                    placeholder="Selecione um cliente..."
+                    placeholder="Selecione um cliente... (digite para buscar)"
                     searchPlaceholder="Buscar cliente..."
                     emptyText="Nenhum cliente encontrado"
                     allowClear
                     className="h-12 rounded-2xl text-lg"
                   />
                 )}
-                <div className="space-y-2">
+                <div id="client-section" className="space-y-2">
                   <p className="text-xs text-muted-foreground">Ou preencha manualmente:</p>
                   <Input
                     placeholder="Nome do cliente"
@@ -1737,7 +1954,14 @@ const handleClientChange = (value: string) => {
                       setCustomerName(event.target.value)
                     }}
                     className="h-12 text-lg"
+                    list="client-names"
                   />
+                  {/* Auto-complete para nomes de clientes */}
+                  <datalist id="client-names">
+                    {clients.slice(0, 10).map((client) => (
+                      <option key={client.uuid || client.identify} value={client.name} />
+                    ))}
+                  </datalist>
                   <Input
                     placeholder="Telefone"
                     value={customerPhone}
@@ -1750,10 +1974,15 @@ const handleClientChange = (value: string) => {
                     className="h-12 text-lg"
                   />
                 </div>
-                </div>
+                
+                {/* Histórico rápido de pedidos do cliente selecionado */}
+                {selectedClientId && (
+                  <ClientOrderHistory clientId={selectedClientId} onLoadOrder={loadOrderInPDV} />
+                )}
+              </div>
 
-                <div className="space-y-3">
-                  <p className="text-sm font-medium">Itens selecionados</p>
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Itens selecionados</p>
                 {cart.length === 0 ? (
                   <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">
                     Nenhum item no pedido.
@@ -1763,11 +1992,17 @@ const handleClientChange = (value: string) => {
                     {cart.map((item) => {
                       const productId = getProductId(item.product)
                       const unitPrice = getCartItemUnitPrice(item)
+                      const isAdding = addingItem === item.signature
+                      const isRemoving = removingItem === item.signature
                       return (
                         <div
                           key={item.signature}
                           data-testid={`cart-item-${item.signature}`}
-                          className="rounded-2xl border p-4"
+                          className={cn(
+                            "rounded-2xl border p-4 transition-all",
+                            isAdding && "border-green-500 bg-green-50/50 scale-105",
+                            isRemoving && "border-red-500 bg-red-50/50 opacity-50 scale-95"
+                          )}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>
@@ -1820,74 +2055,138 @@ const handleClientChange = (value: string) => {
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-12 w-12 rounded-2xl"
+                              className="h-14 w-14 rounded-2xl"
                               aria-label={`Diminuir ${item.product.name}`}
                               onClick={() => updateItemQuantity(item.signature, -1)}
                             >
-                              <Minus className="h-5 w-5" />
+                              <Minus className="h-6 w-6" />
                             </Button>
                             <span
                               data-testid={`cart-item-qty-${item.signature}`}
-                              className="min-w-[56px] rounded-2xl bg-muted px-4 py-2 text-center text-lg font-semibold"
+                              className="min-w-[64px] rounded-2xl bg-muted px-4 py-3 text-center text-xl font-semibold"
                             >
                               {item.quantity}
                             </span>
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-12 w-12 rounded-2xl"
+                              className="h-14 w-14 rounded-2xl"
                               aria-label={`Aumentar ${item.product.name}`}
                               onClick={() => updateItemQuantity(item.signature, 1)}
                             >
-                              <Plus className="h-5 w-5" />
+                              <Plus className="h-6 w-6" />
                             </Button>
-                            <span className="ml-auto text-lg font-semibold">
+                            <span className="ml-auto text-xl font-semibold">
                               {formatCurrency(unitPrice * item.quantity)}
                             </span>
                           </div>
-                          <Input
-                            value={item.observation}
-                            onChange={(event) => updateItemObservation(item.signature, event.target.value)}
-                            placeholder="Observações (ex: sem cebola)"
-                            className="mt-3 h-11 rounded-2xl"
-                          />
+                          <div className="mt-3 space-y-2">
+                            <Input
+                              value={item.observation}
+                              onChange={(event) => updateItemObservation(item.signature, event.target.value)}
+                              placeholder="Observações (ex: sem cebola)"
+                              className="h-12 rounded-2xl"
+                            />
+                            {/* Templates de observações rápidas */}
+                            <div className="flex flex-wrap gap-2">
+                              {['Sem cebola', 'Sem tomate', 'Bem passado', 'Mal passado', 'Sem pimenta', 'Extra molho'].map((template) => (
+                                <Button
+                                  key={template}
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 text-xs"
+                                  onClick={() => {
+                                    const currentObs = item.observation
+                                    const newObs = currentObs 
+                                      ? `${currentObs}, ${template}`
+                                      : template
+                                    updateItemObservation(item.signature, newObs)
+                                  }}
+                                >
+                                  {template}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       )
                     })}
                   </div>
                 )}
-                </div>
+              </div>
 
-                <div className="space-y-3">
-                  <p className="text-sm font-medium">Observações do pedido</p>
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Observações do pedido</p>
                 <Textarea
                   value={orderNotes}
                   onChange={(event) => setOrderNotes(event.target.value)}
                   placeholder="Instruções adicionais"
-                  className="min-h-[60px] rounded-2xl"
+                  className="min-h-[80px] rounded-2xl"
                 />
-                </div>
+              </div>
 
-                <div className="space-y-3">
-                  <p className="text-sm font-medium">Forma de pagamento</p>
+              <div id="payment-section" className="space-y-3">
+                <p className="text-sm font-medium">Forma de pagamento</p>
                 <div className="grid gap-2">
-                  {paymentMethods.map((method) => (
-                    <PaymentMethodCard
-                      key={method.uuid}
-                      method={{
-                        uuid: method.uuid,
-                        name: method.name,
-                        description: method.description || undefined,
-                        recommended: method.name.toLowerCase().includes("pix"),
-                      }}
-                      selected={selectedPaymentMethod === method.uuid}
-                      onSelect={setSelectedPaymentMethod}
-                    />
-                  ))}
+                  {paymentMethods.map((method) => {
+                    const active = selectedPaymentMethod === method.uuid
+                    // Detectar tipo de pagamento pelo nome para mostrar ícone apropriado
+                    const getPaymentIcon = (name: string) => {
+                      const lowerName = name.toLowerCase()
+                      if (lowerName.includes('pix') || lowerName.includes('pix')) {
+                        return <Smartphone className="h-5 w-5" />
+                      }
+                      if (lowerName.includes('cartão') || lowerName.includes('card') || lowerName.includes('credito') || lowerName.includes('debito')) {
+                        return <CreditCard className="h-5 w-5" />
+                      }
+                      if (lowerName.includes('dinheiro') || lowerName.includes('money') || lowerName.includes('cash')) {
+                        return <Banknote className="h-5 w-5" />
+                      }
+                      if (lowerName.includes('contactless') || lowerName.includes('nfc') || lowerName.includes('aproximação')) {
+                        return <Radio className="h-5 w-5" />
+                      }
+                      if (lowerName.includes('transferência') || lowerName.includes('transfer') || lowerName.includes('ted') || lowerName.includes('doc')) {
+                        return <Building2 className="h-5 w-5" />
+                      }
+                      return <CreditCard className="h-5 w-5" />
+                    }
+                    
+                    return (
+                      <Button
+                        key={method.uuid}
+                        data-testid={`payment-button-${method.uuid}`}
+                        onClick={() => setSelectedPaymentMethod(method.uuid)}
+                        className={cn(
+                          "h-16 rounded-2xl justify-start gap-3 px-4 text-left",
+                          active
+                            ? "bg-primary text-primary-foreground shadow-lg"
+                            : "bg-muted text-foreground hover:bg-primary/10"
+                        )}
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          {getPaymentIcon(method.name)}
+                          <div className="flex flex-col items-start flex-1">
+                            <span className="font-semibold text-base">{method.name}</span>
+                            {method.description && (
+                              <span className={cn(
+                                "text-xs",
+                                active ? "text-primary-foreground/80" : "text-muted-foreground"
+                              )}>
+                                {method.description}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {active && (
+                          <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                        )}
+                      </Button>
+                    )
+                  })}
                 </div>
-                </div>
+              </div>
 
-                <div className="rounded-2xl border-2 border-purple-300 bg-purple-50 p-4 dark:border-purple-700 dark:bg-purple-950/30">
+              <div className="rounded-2xl border-2 border-purple-300 bg-purple-50 p-4 dark:border-purple-700 dark:bg-purple-950/30">
                 <div className="flex items-center justify-between text-sm text-purple-700 dark:text-purple-300">
                   <span>Itens</span>
                   <span>{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
@@ -1896,10 +2195,10 @@ const handleClientChange = (value: string) => {
                   <span>Total</span>
                   <span data-testid="order-total">{formatCurrency(orderTotal)}</span>
                 </div>
-                </div>
+              </div>
 
-                {/* Indicador de edição */}
-                {editingOrder && (
+              {/* Indicador de edição */}
+              {editingOrder && (
                 <div className="rounded-2xl border-2 border-primary bg-primary/10 p-4">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 flex-1">
@@ -1943,41 +2242,41 @@ const handleClientChange = (value: string) => {
                     </Button>
                   </div>
                 </div>
-                )}
-                </div>
-              </ScrollArea>
-              
-              <div className="flex flex-col gap-2 flex-shrink-0 pt-3 border-t mt-3">
+              )}
+
+              <div className="flex flex-col gap-3">
                 <Button
+                  id="finalize-button"
                   data-testid="finalize-order-button"
                   onClick={handleFinalizeOrder}
                   disabled={
                     submittingOrder || 
                     !cart.length || 
-                    (!isDelivery && isTableOccupiedByOtherOrder)
+                    (!isDelivery && isTableOccupiedByOtherOrder) ||
+                    !pdvPermissions.canCreateOrder
                   }
-                  className="h-16 rounded-2xl bg-green-600 text-lg font-bold text-white shadow-lg transition-all hover:bg-green-700 hover:shadow-xl disabled:opacity-50"
-                  size="lg"
+                  className="h-24 rounded-2xl text-2xl font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg"
+                  title={!pdvPermissions.canCreateOrder ? "Você não tem permissão para criar pedidos" : undefined}
                 >
                   {submittingOrder ? (
                     <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      <Loader2 className="mr-3 h-6 w-6 animate-spin" />
                       Processando...
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="mr-2 h-5 w-5" />
+                      <CheckCircle2 className="mr-3 h-6 w-6" />
                       <div className="flex flex-col items-start">
                         <span>
                           {editingOrder
                             ? "Salvar Alterações"
                             : !isDelivery && isTableOccupiedByOtherOrder
-                            ? "Mesa ocupada"
+                            ? "Mesa ocupada - Finalize pedidos existentes"
                             : "Finalizar Pedido"}
                         </span>
-                        {!editingOrder && !isTableOccupiedByOtherOrder && (
-                          <span className="text-xs font-normal opacity-90">
-                            {cart.reduce((sum, item) => sum + item.quantity, 0)} {cart.reduce((sum, item) => sum + item.quantity, 0) === 1 ? "item" : "itens"} • {formatCurrency(orderTotal)}
+                        {!editingOrder && cart.length > 0 && (
+                          <span className="text-sm font-normal opacity-90">
+                            {cart.reduce((sum, item) => sum + item.quantity, 0)} {cart.reduce((sum, item) => sum + item.quantity, 0) === 1 ? 'item' : 'itens'} • {formatCurrency(orderTotal)}
                           </span>
                         )}
                       </div>
@@ -1988,8 +2287,9 @@ const handleClientChange = (value: string) => {
                   variant="outline"
                   onClick={clearCart}
                   disabled={!cart.length}
-                  className="h-12 rounded-2xl text-base"
+                  className="h-16 rounded-2xl text-lg"
                 >
+                  <Trash2 className="mr-2 h-5 w-5" />
                   Limpar carrinho
                 </Button>
               </div>
@@ -1998,45 +2298,45 @@ const handleClientChange = (value: string) => {
         </aside>
 
         {/* Sidebar de Pedidos do Dia */}
-        <aside className="hidden lg:flex flex-col min-h-0 overflow-hidden">
-          <Card className="h-full max-h-full border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20 flex flex-col overflow-hidden">
-            <CardHeader className="pb-2 px-4 pt-4 border-b flex-shrink-0">
-              <CardTitle className="text-base md:text-lg text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
-                <Clock className="h-4 w-4" />
+        <aside className="hidden lg:block">
+          <Card className="sticky top-6 border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20 h-[calc(100vh-8rem)] flex flex-col">
+            <CardHeader className="pb-4 border-b">
+              <CardTitle className="text-xl text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
+                <Clock className="h-5 w-5" />
                 Pedidos de Hoje
               </CardTitle>
-              <CardDescription className="text-xs md:text-sm text-indigo-700 dark:text-indigo-300">
+              <CardDescription className="text-indigo-700 dark:text-indigo-300">
                 {todayOrdersLoading ? (
                   <span className="flex items-center gap-2">
-                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Carregando...
                   </span>
                 ) : (
-                  `${Math.min(todayOrders.length, 30)} de ${todayOrders.length} ${todayOrders.length === 1 ? 'pedido' : 'pedidos'}`
+                  `${todayOrders.length} ${todayOrders.length === 1 ? 'pedido' : 'pedidos'}`
                 )}
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 min-h-0 overflow-hidden p-0">
+            <CardContent className="flex-1 overflow-hidden p-0">
               {todayOrdersError ? (
-                <div className="p-4 text-center text-xs text-destructive">
+                <div className="p-4 text-center text-sm text-destructive">
                   Erro ao carregar pedidos
                 </div>
               ) : todayOrdersLoading ? (
                 <div className="flex h-full items-center justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : todayOrders.length === 0 ? (
-                <div className="flex h-full flex-col items-center justify-center p-4 text-center">
-                  <Package className="h-8 w-8 text-muted-foreground mb-2" />
-                  <p className="text-xs text-muted-foreground">
+                <div className="flex h-full flex-col items-center justify-center p-6 text-center">
+                  <Package className="h-12 w-12 text-muted-foreground mb-3" />
+                  <p className="text-sm text-muted-foreground">
                     Nenhum pedido hoje
                   </p>
                 </div>
               ) : (
-                <ScrollArea className="h-full max-h-full">
-                  <div className="p-2">
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {todayOrders.slice(0, 30).map((order: any) => {
+                <ScrollArea className="h-full">
+                  <div className="p-4">
+                    <div className="grid grid-cols-2 gap-2">
+                      {todayOrders.map((order: any) => {
                         const orderId = order.identify || order.uuid || order.id
                         const orderTotal = parsePrice(order.total || 0)
                         const orderStatus = order.status || 'Pendente'
@@ -2050,61 +2350,61 @@ const handleClientChange = (value: string) => {
                             key={orderId}
                             onClick={() => loadOrderInPDV(orderId)}
                             className={cn(
-                              "w-full rounded-lg border p-2 text-left transition-all hover:shadow-sm",
+                              "w-full rounded-xl border p-3 text-left transition-all hover:shadow-md",
                               isActive
-                                ? "border-primary bg-primary/10 shadow-sm"
+                                ? "border-primary bg-primary/10 shadow-md"
                                 : "border-border bg-card hover:border-primary/50"
                             )}
                           >
                             <div className="flex items-start justify-between gap-1 mb-1">
                               <div className="flex-1 min-w-0">
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="font-bold text-xs text-foreground truncate">
+                                <div className="flex flex-col gap-1">
+                                  <span className="font-bold text-sm text-foreground truncate">
                                     #{order.identify || order.id}
                                   </span>
                                   <Badge 
                                     variant={orderStatus === 'Entregue' || orderStatus === 'Concluído' ? 'default' : 'secondary'}
-                                    className="text-[9px] px-1 py-0 h-4 w-fit"
+                                    className="text-[10px] px-1 py-0 w-fit"
                                   >
                                     {orderStatus}
                                   </Badge>
                                 </div>
                               </div>
                               <Edit className={cn(
-                                "h-2.5 w-2.5 flex-shrink-0 mt-0.5",
+                                "h-3 w-3 flex-shrink-0 mt-0.5",
                                 isActive ? "text-primary" : "text-muted-foreground"
                               )} />
                             </div>
                             
-                            <div className="flex items-center gap-1 text-[9px] text-muted-foreground mb-0.5">
-                              <Clock className="h-2 w-2" />
+                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
+                              <Clock className="h-2.5 w-2.5" />
                               {orderDate}
                             </div>
                             
                             {order.client && (
-                              <div className="flex items-center gap-1 text-[9px] text-muted-foreground mb-0.5 truncate">
-                                <User className="h-2 w-2 flex-shrink-0" />
+                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1 truncate">
+                                <User className="h-2.5 w-2.5 flex-shrink-0" />
                                 <span className="truncate">{order.client.name}</span>
                               </div>
                             )}
                             
                             {order.table && (
-                              <div className="flex items-center gap-1 text-[9px] text-muted-foreground mb-0.5 truncate">
-                                <Utensils className="h-2 w-2 flex-shrink-0" />
+                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1 truncate">
+                                <Utensils className="h-2.5 w-2.5 flex-shrink-0" />
                                 <span className="truncate">Mesa: {order.table.name}</span>
                               </div>
                             )}
                             
                             {order.products && Array.isArray(order.products) && (
-                              <div className="flex items-center gap-1 text-[9px] text-muted-foreground mb-0.5">
-                                <Package className="h-2 w-2 flex-shrink-0" />
+                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
+                                <Package className="h-2.5 w-2.5 flex-shrink-0" />
                                 <span>{order.products.length} {order.products.length === 1 ? 'item' : 'itens'}</span>
                               </div>
                             )}
                             
-                            <div className="flex items-center justify-between pt-1 border-t mt-0.5">
-                              <span className="text-[9px] font-medium text-muted-foreground">Total</span>
-                              <span className="text-xs font-bold text-primary">
+                            <div className="flex items-center justify-between pt-1.5 border-t mt-1">
+                              <span className="text-[10px] font-medium text-muted-foreground">Total</span>
+                              <span className="text-sm font-bold text-primary">
                                 {formatCurrency(orderTotal)}
                               </span>
                             </div>
@@ -2520,371 +2820,37 @@ const handleClientChange = (value: string) => {
         </DialogContent>
       </Dialog>
 
-      {/* Sheet do Carrinho para Mobile */}
-      <Sheet open={cartSheetOpen} onOpenChange={setCartSheetOpen}>
-        <SheetContent className="w-full sm:max-w-lg flex flex-col p-0 overflow-hidden">
-          <SheetHeader className="px-4 pt-4 pb-3 border-b flex-shrink-0">
-            <SheetTitle className="text-xl font-bold text-orange-900 dark:text-orange-100">Carrinho</SheetTitle>
-            <SheetDescription className="text-sm text-orange-700 dark:text-orange-300">
-              Gerencie os itens e finalize o pedido.
-            </SheetDescription>
-          </SheetHeader>
-          
-          <ScrollArea className="flex-1 min-h-0 px-4">
-            <div className="space-y-3 py-4">
-              {/* Conteúdo do carrinho - mesma estrutura do aside */}
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => {
-                    setIsDelivery(false)
-                    if (tables.length > 0 && !selectedTable) {
-                      const firstTable = tables[0]
-                      setSelectedTable(firstTable.uuid || firstTable.identify || firstTable.name)
-                    }
-                  }}
-                  variant={!isDelivery ? "default" : "outline"}
-                  className={cn(
-                    "w-full rounded-xl py-4 text-sm",
-                    !isDelivery && "bg-primary text-primary-foreground shadow-lg"
-                  )}
-                >
-                  Retirada no local
-                </Button>
-                <Button
-                  onClick={() => {
-                    setIsDelivery(true)
-                    setSelectedTable(null)
-                  }}
-                  variant={isDelivery ? "default" : "outline"}
-                  className={cn(
-                    "w-full rounded-xl py-4 text-sm",
-                    isDelivery && "bg-primary text-primary-foreground shadow-lg"
-                  )}
-                >
-                  Delivery
-                </Button>
-              </div>
+      {/* Dialog de QR Code PIX */}
+      {pixOrderData && (
+        <PixQrCodeDialog
+          open={showPixDialog}
+          onOpenChange={setShowPixDialog}
+          orderId={pixOrderData.orderId}
+          orderTotal={pixOrderData.total}
+          qrCode={pixOrderData.qrCode}
+          qrCodeText={pixOrderData.qrCodeText}
+          onPaymentConfirmed={() => {
+            toast.success("Pagamento confirmado! Pedido finalizado com sucesso.")
+            setShowPixDialog(false)
+            setPixOrderData(null)
+          }}
+        />
+      )}
 
-              {!isDelivery && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium">Selecione a mesa</p>
-                  <div className="grid gap-2 grid-cols-2">
-                    {tables.map((table) => {
-                      const key = table.uuid || table.identify || table.name
-                      const active = selectedTable === key
-                      const hasOpenOrders = tablesWithOpenOrders.has(key)
-                      const isOccupiedByOther = hasOpenOrders && (
-                        !editingOrder || 
-                        (editingOrder.table?.uuid !== key && editingOrder.table?.identify !== key && editingOrder.table?.name !== key)
-                      )
-                      
-                      return (
-                        <Button
-                          key={key}
-                          onClick={() => {
-                            if (isOccupiedByOther && !editingOrder) {
-                              toast.error("Esta mesa possui pedidos em aberto.")
-                              return
-                            }
-                            setSelectedTable(key)
-                          }}
-                          className={cn(
-                            "h-12 rounded-xl text-sm transition-all",
-                            active
-                              ? isOccupiedByOther
-                                ? "bg-red-600 text-white border-2 border-red-700"
-                                : "bg-primary text-primary-foreground shadow-lg"
-                              : isOccupiedByOther
-                              ? "bg-red-100 text-red-900 border-2 border-red-300"
-                              : "bg-muted text-foreground hover:bg-primary/10"
-                          )}
-                        >
-                          {table.name}
-                          {isOccupiedByOther && (
-                            <Badge variant={active ? "secondary" : "destructive"} className="ml-1 text-[10px]">
-                              Ocupada
-                            </Badge>
-                          )}
-                        </Button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {isDelivery && (
-                <div className="space-y-2 rounded-xl border p-3">
-                  <p className="text-xs font-medium">Endereço de entrega</p>
-                  <div className="grid gap-2">
-                    <Input
-                      placeholder="CEP"
-                      value={deliveryAddress.zip}
-                      onChange={(event) => handleZipChange(event.target.value)}
-                      className="h-10 text-sm"
-                    />
-                    <Input
-                      placeholder="Endereço"
-                      value={deliveryAddress.address}
-                      onChange={(event) =>
-                        setDeliveryAddress((prev) => ({ ...prev, address: event.target.value }))
-                      }
-                      className="h-10 text-sm"
-                    />
-                    <div className="grid gap-2 grid-cols-2">
-                      <Input
-                        placeholder="Número"
-                        value={deliveryAddress.number}
-                        onChange={(event) =>
-                          setDeliveryAddress((prev) => ({ ...prev, number: event.target.value }))
-                        }
-                        className="h-10 text-sm"
-                      />
-                      <Input
-                        placeholder="Bairro"
-                        value={deliveryAddress.neighborhood}
-                        onChange={(event) =>
-                          setDeliveryAddress((prev) => ({
-                            ...prev,
-                            neighborhood: event.target.value,
-                          }))
-                        }
-                        className="h-10 text-sm"
-                      />
-                    </div>
-                    <div className="grid gap-2 grid-cols-2">
-                      <Input
-                        placeholder="Cidade"
-                        value={deliveryAddress.city}
-                        onChange={(event) =>
-                          setDeliveryAddress((prev) => ({ ...prev, city: event.target.value }))
-                        }
-                        className="h-10 text-sm"
-                      />
-                      <Input
-                        placeholder="UF"
-                        value={deliveryAddress.state}
-                        maxLength={2}
-                        onChange={(event) =>
-                          setDeliveryAddress((prev) => ({
-                            ...prev,
-                            state: event.target.value.toUpperCase(),
-                          }))
-                        }
-                        className="h-10 text-sm"
-                      />
-                    </div>
-                    <Input
-                      placeholder="Complemento"
-                      value={deliveryAddress.complement}
-                      onChange={(event) =>
-                        setDeliveryAddress((prev) => ({ ...prev, complement: event.target.value }))
-                      }
-                      className="h-10 text-sm"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <p className="text-xs font-medium">Cliente (opcional)</p>
-                {clients.length > 0 && (
-                  <Combobox
-                    options={clientOptions}
-                    value={selectedClientId}
-                    onValueChange={handleClientChange}
-                    placeholder="Selecione um cliente..."
-                    searchPlaceholder="Buscar cliente..."
-                    emptyText="Nenhum cliente encontrado"
-                    allowClear
-                    className="h-10 rounded-xl text-sm"
-                  />
-                )}
-                <div className="space-y-2">
-                  <Input
-                    placeholder="Nome do cliente"
-                    value={customerName}
-                    onChange={(event) => {
-                      if (selectedClientId) setSelectedClientId("")
-                      setCustomerName(event.target.value)
-                    }}
-                    className="h-10 text-sm"
-                  />
-                  <Input
-                    placeholder="Telefone"
-                    value={customerPhone}
-                    onChange={(event) => {
-                      if (selectedClientId) setSelectedClientId("")
-                      setCustomerPhone(maskPhone(event.target.value))
-                    }}
-                    className="h-10 text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-xs font-medium">Itens selecionados</p>
-                {cart.length === 0 ? (
-                  <div className="rounded-xl border border-dashed p-4 text-center text-xs text-muted-foreground">
-                    Nenhum item no pedido.
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {cart.map((item) => {
-                      const unitPrice = getCartItemUnitPrice(item)
-                      return (
-                        <div
-                          key={item.signature}
-                          className="rounded-xl border p-3"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold truncate">{item.product.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatCurrency(unitPrice)} cada
-                              </p>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => removeItem(item.signature)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="mt-2 flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-10 w-10 rounded-xl"
-                              onClick={() => updateItemQuantity(item.signature, -1)}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="min-w-[40px] rounded-xl bg-muted px-3 py-1.5 text-center text-sm font-semibold">
-                              {item.quantity}
-                            </span>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-10 w-10 rounded-xl"
-                              onClick={() => updateItemQuantity(item.signature, 1)}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                            <span className="ml-auto text-sm font-semibold">
-                              {formatCurrency(unitPrice * item.quantity)}
-                            </span>
-                          </div>
-                          <Input
-                            value={item.observation}
-                            onChange={(event) => updateItemObservation(item.signature, event.target.value)}
-                            placeholder="Observações"
-                            className="mt-2 h-9 rounded-xl text-xs"
-                          />
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-xs font-medium">Observações do pedido</p>
-                <Textarea
-                  value={orderNotes}
-                  onChange={(event) => setOrderNotes(event.target.value)}
-                  placeholder="Instruções adicionais"
-                  className="min-h-[50px] rounded-xl text-sm"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-xs font-medium">Forma de pagamento</p>
-                <div className="grid gap-2">
-                  {paymentMethods.map((method) => (
-                    <PaymentMethodCard
-                      key={method.uuid}
-                      method={{
-                        uuid: method.uuid,
-                        name: method.name,
-                        description: method.description || undefined,
-                        recommended: method.name.toLowerCase().includes("pix"),
-                      }}
-                      selected={selectedPaymentMethod === method.uuid}
-                      onSelect={setSelectedPaymentMethod}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-xl border-2 border-purple-300 bg-purple-50 p-3 dark:border-purple-700 dark:bg-purple-950/30">
-                <div className="flex items-center justify-between text-xs text-purple-700 dark:text-purple-300">
-                  <span>Itens</span>
-                  <span>{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
-                </div>
-                <div className="mt-2 flex items-center justify-between text-lg font-bold text-purple-900 dark:text-purple-100">
-                  <span>Total</span>
-                  <span>{formatCurrency(orderTotal)}</span>
-                </div>
-              </div>
-            </div>
-          </ScrollArea>
-          
-          <div className="flex flex-col gap-2 flex-shrink-0 p-4 border-t">
-            <Button
-              onClick={() => {
-                setCartSheetOpen(false)
-                handleFinalizeOrder()
-              }}
-              disabled={submittingOrder || !cart.length || (!isDelivery && isTableOccupiedByOtherOrder)}
-              className="h-12 rounded-xl bg-green-600 text-base font-bold text-white shadow-lg hover:bg-green-700 disabled:opacity-50"
-            >
-              {submittingOrder ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processando...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Finalizar Pedido
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={clearCart}
-              disabled={!cart.length}
-              className="h-10 rounded-xl text-sm"
-            >
-              Limpar carrinho
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* Modal de Confirmação de Pedido */}
-      <OrderConfirmationModal
-        open={showConfirmationModal}
-        onClose={() => setShowConfirmationModal(false)}
-        onConfirm={handleConfirmOrder}
-        orderData={{
-          table: !isDelivery && selectedTable
-            ? tables.find(t => (t.uuid || t.identify || t.name) === selectedTable)?.name
-            : undefined,
-          client: selectedClientId
-            ? clients.find(c => (c.uuid || c.identify) === selectedClientId)?.name
-            : customerName || undefined,
-          items: cart.map((item) => ({
-            name: item.product.name,
-            quantity: item.quantity,
-            price: getCartItemUnitPrice(item) * item.quantity,
-          })),
-          total: orderTotal,
-          paymentMethod: paymentMethods.find(m => m.uuid === selectedPaymentMethod)?.name || "Não selecionado",
-          isDelivery,
+      {/* Tutorial Interativo - Fase 4 */}
+      <PDVTutorial
+        onComplete={() => {
+          toast.success("Tutorial concluído! Você está pronto para usar o PDV.")
         }}
+        onSkip={() => {
+          toast.info("Tutorial pulado. Você pode reativá-lo a qualquer momento.")
+        }}
+      />
+
+      {/* Sistema de Feedback - Fase 4 */}
+      <PDVFeedback
+        open={showFeedbackDialog}
+        onOpenChange={setShowFeedbackDialog}
       />
     </div>
   )

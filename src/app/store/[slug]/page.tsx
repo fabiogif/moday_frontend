@@ -27,6 +27,7 @@ import { SiteFooter } from '@/components/site-footer'
 import { ReviewModal } from './components/review-modal'
 import { ReviewsSection } from './components/reviews-section'
 import { apiClient, endpoints } from '@/lib/api-client'
+import { ProductRecommendations } from './components/product-recommendations'
 
 interface ProductVariation {
   id: string
@@ -1447,6 +1448,38 @@ export default function PublicStorePage() {
                       </div>
                     )}
                   </TabsContent>
+
+                  {/* Recomendações de Produtos */}
+                  {cart.length > 0 && (
+                    <div className="mt-8">
+                      <ProductRecommendations
+                        cart={cart.map(item => ({
+                          uuid: item.uuid,
+                          name: item.name,
+                          price: item.price,
+                          promotional_price: item.promotional_price,
+                          categories: item.categories,
+                        }))}
+                        allProducts={products.map(p => ({
+                          uuid: p.uuid,
+                          name: p.name,
+                          price: p.price,
+                          promotional_price: p.promotional_price,
+                          image: p.image,
+                          image_url: p.image,
+                          description: p.description,
+                          categories: p.categories,
+                        }))}
+                        onAddProduct={(product) => {
+                          // Encontrar o produto completo na lista de produtos
+                          const fullProduct = products.find(p => p.uuid === product.uuid)
+                          if (fullProduct) {
+                            handleProductClick(fullProduct)
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <aside className="hidden w-full max-w-sm lg:block" id="order-summary">

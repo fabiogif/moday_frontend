@@ -273,6 +273,12 @@ export const endpoints = {
     searchByNumber: '/api/order/search-by-number',
     getByTable: (tableUuid: string) => `/api/order/by-table?table_uuid=${tableUuid}`,
     getToday: '/api/order/today',
+    getRecommendations: (productIds?: string[]) => {
+      const params = productIds && productIds.length > 0 
+        ? `?product_ids=${productIds.join(',')}` 
+        : ''
+      return `/api/order/recommendations${params}`
+    },
     getDetails: (orderId: number) => `/api/order/${orderId}/details`,
     create: '/api/order',
     show: (id: string) => `/api/order/${id}`,
@@ -604,6 +610,22 @@ export const endpoints = {
       return `/api/sales-performance/export${queryString ? `?${queryString}` : ''}`
     },
     refresh: '/api/sales-performance/refresh',
+  },
+
+  // PDV Feedback
+  pdvFeedback: {
+    create: '/api/pdv/feedback',
+    list: (params?: { type?: string; status?: string; page?: number; per_page?: number }) => {
+      const queryParams = new URLSearchParams()
+      if (params?.type) queryParams.append('type', params.type)
+      if (params?.status) queryParams.append('status', params.status)
+      if (params?.page) queryParams.append('page', params.page.toString())
+      if (params?.per_page) queryParams.append('per_page', params.per_page.toString())
+      const queryString = queryParams.toString()
+      return `/api/pdv/feedback${queryString ? `?${queryString}` : ''}`
+    },
+    show: (uuid: string) => `/api/pdv/feedback/${uuid}`,
+    updateStatus: (uuid: string) => `/api/pdv/feedback/${uuid}/status`,
   },
 } as const
 
