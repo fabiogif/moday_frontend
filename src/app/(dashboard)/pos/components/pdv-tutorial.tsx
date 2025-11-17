@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -48,7 +48,6 @@ export function PDVTutorial({ onComplete, onSkip }: PDVTutorialProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [highlightedElement, setHighlightedElement] = useState<string | null>(null)
-  const overlayRef = useRef<HTMLDivElement>(null)
 
   const steps: TutorialStep[] = [
     {
@@ -124,7 +123,11 @@ export function PDVTutorial({ onComplete, onSkip }: PDVTutorialProps) {
     // Verificar se o usuário já completou o tutorial
     const hasCompletedTutorial = localStorage.getItem('pdv_tutorial_completed')
     if (!hasCompletedTutorial) {
-      setIsOpen(true)
+      // Pequeno delay para garantir que a página carregou completamente
+      const timer = setTimeout(() => {
+        setIsOpen(true)
+      }, 500)
+      return () => clearTimeout(timer)
     }
   }, [])
 
@@ -197,9 +200,22 @@ export function PDVTutorial({ onComplete, onSkip }: PDVTutorialProps) {
   const isFirstStep = currentStep === 0
   const isLastStep = currentStep === steps.length - 1
 
+  // Limpar highlight quando o tutorial for fechado
+  useEffect(() => {
+    if (!isOpen && highlightedElement) {
+      const element = document.getElementById(highlightedElement)
+      if (element) {
+        element.style.zIndex = ''
+        element.style.position = ''
+        element.classList.remove('ring-4', 'ring-primary', 'ring-offset-2', 'rounded-lg')
+      }
+      setHighlightedElement(null)
+    }
+  }, [isOpen, highlightedElement])
+
   // Efeito de highlight no elemento alvo
   useEffect(() => {
-    if (highlightedElement) {
+    if (highlightedElement && isOpen) {
       const element = document.getElementById(highlightedElement)
       if (element) {
         element.style.transition = 'all 0.3s ease'
@@ -214,23 +230,18 @@ export function PDVTutorial({ onComplete, onSkip }: PDVTutorialProps) {
         }
       }
     }
-  }, [highlightedElement])
+  }, [highlightedElement, isOpen])
 
-  if (!isOpen) return null
+  if (!isOpen) {
+    return null
+  }
 
   return (
-    <>
-      {/* Overlay escuro */}
-      {highlightedElement && (
-        <div
-          ref={overlayRef}
-          className="fixed inset-0 bg-black/50 z-[999] pointer-events-none"
-          style={{ zIndex: 999 }}
-        />
-      )}
-
-      {/* Dialog do tutorial */}
-      <Dialog open={isOpen} onOpenChange={() => {}}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        handleSkip()
+      }
+    }}>
         <DialogContent 
           className={cn(
             "sm:max-w-[500px] z-[1001]",
@@ -331,7 +342,6 @@ export function PDVTutorial({ onComplete, onSkip }: PDVTutorialProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
   )
 }
 

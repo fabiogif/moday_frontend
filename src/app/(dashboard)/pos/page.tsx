@@ -82,6 +82,8 @@ import {
   DollarSign,
   TrendingUp,
   BarChart,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 import { maskPhone, maskZipCode } from "@/lib/masks"
 import { PixQrCodeDialog } from "./components/pix-qr-code-dialog"
@@ -286,19 +288,60 @@ function ClientOrderHistory({ clientId, onLoadOrder }: { clientId: string; onLoa
   
   useEffect(() => {
     const fetchHistory = async () => {
-      if (!clientId) return
+      if (!clientId) {
+        setHistory([])
+        return
+      }
+      
       setLoading(true)
       try {
-        // Buscar pedidos do cliente (últimos 5)
-        const response = await apiClient.get(`/orders?client_id=${clientId}&per_page=5`)
+        // Buscar pedidos do cliente usando o endpoint de listagem
+        // Nota: O endpoint pode não suportar filtro por client_id diretamente
+        // Por enquanto, buscamos todos os pedidos e filtramos no frontend
+        const response = await apiClient.get(endpoints.orders.list, {
+          per_page: 50, // Buscar mais para ter chance de encontrar pedidos do cliente
+          order_by: 'created_at',
+          order_direction: 'desc'
+        })
+        
         if (response.success && response.data) {
-          const orders = Array.isArray(response.data) 
-            ? response.data 
-            : (Array.isArray((response.data as any)?.data) ? (response.data as any).data : [])
-          setHistory(orders.slice(0, 5))
+          // Tratar diferentes formatos de resposta
+          let orders: any[] = []
+          
+          if (Array.isArray(response.data)) {
+            orders = response.data
+          } else if (response.data && typeof response.data === 'object') {
+            // Se for um objeto com propriedade data (Laravel Resource Collection)
+            if (Array.isArray((response.data as any).data)) {
+              orders = (response.data as any).data
+            } else if (Array.isArray((response.data as any).items)) {
+              orders = (response.data as any).items
+            }
+          }
+          
+          // Filtrar pedidos do cliente específico
+          const clientOrders = orders.filter((order: any) => {
+            const orderClientId = order.client_id || order.client?.uuid || order.client?.identify || order.client?.id
+            return orderClientId === clientId
+          })
+          
+          // Limitar a 5 pedidos mais recentes
+          setHistory(clientOrders.slice(0, 5))
+        } else {
+          setHistory([])
         }
-      } catch (error) {
-        console.error("Erro ao buscar histórico:", error)
+      } catch (error: any) {
+        // Log mais detalhado do erro apenas em desenvolvimento
+        if (process.env.NODE_ENV === 'development') {
+          console.error("Erro ao buscar histórico do cliente:", {
+            message: error?.message || 'Erro desconhecido',
+            status: error?.status,
+            clientId,
+            error: error instanceof Error ? error.message : String(error)
+          })
+        }
+        // Não mostrar erro ao usuário, apenas não exibir histórico
+        setHistory([])
       } finally {
         setLoading(false)
       }
@@ -355,22 +398,15 @@ function ClientOrderHistory({ clientId, onLoadOrder }: { clientId: string; onLoa
 }
 
 export default function POSPage() {
+  // ============================================
+  // TODOS OS HOOKS DEVEM SER CHAMADOS PRIMEIRO
+  // ============================================
+  
+  // Hooks de autenticação e permissões
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const { hasPermission } = usePermissions()
   
-  // Verificar permissões do PDV
-  const pdvPermissions = useMemo(() => {
-    return {
-      canCreateOrder: hasPermission('pdv.create_order'),
-      canEditOrder: hasPermission('pdv.edit_order'),
-      canCancelOrder: hasPermission('pdv.cancel_order'),
-      canViewReports: hasPermission('pdv.view_reports'),
-      canManageProducts: hasPermission('pdv.manage_products'),
-      canApplyDiscount: hasPermission('pdv.apply_discount'),
-      canRefund: hasPermission('pdv.refund'),
-      canViewAllOrders: hasPermission('pdv.view_all_orders'),
-    }
-  }, [hasPermission])
+  // Hooks de dados autenticados (chamados sempre, na mesma ordem)
   const {
     data: categoriesData,
     loading: categoriesLoading,
@@ -396,50 +432,22 @@ export default function POSPage() {
     loading: clientsLoading,
     error: clientsError,
   } = useAuthenticatedClients()
-  const { mutate: mutateOrder, loading: submittingOrder } = useMutation()
-
-  const categories = useMemo<Category[]>(() => extractCollection(categoriesData), [categoriesData])
-  const products = useMemo<Product[]>(() => extractCollection(productsData), [productsData])
-  const tables = useMemo<Table[]>(() => extractCollection(tablesData), [tablesData])
-  const paymentMethods = useMemo<PaymentMethod[]>(() => extractCollection(paymentData), [paymentData])
-  const clients = useMemo<Client[]>(() => extractCollection(clientsData), [clientsData])
-
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [cart, setCart] = useState<CartItem[]>([])
-  const [orderNotes, setOrderNotes] = useState("")
-  const [isDelivery, setIsDelivery] = useState(false)
-  const [selectedTable, setSelectedTable] = useState<string | null>(null)
-  
-  const {
-    data: tableOrdersData,
-    loading: tableOrdersLoading,
-    error: tableOrdersError,
-    refetch: refetchTableOrders,
-  } = useAuthenticatedOrdersByTable(selectedTable)
   const {
     data: todayOrdersData,
     loading: todayOrdersLoading,
     error: todayOrdersError,
     refetch: refetchTodayOrders,
   } = useAuthenticatedTodayOrders()
-  const todayOrders = useMemo<any[]>(() => extractCollection(todayOrdersData), [todayOrdersData])
-  
-  // Identificar mesas com pedidos em aberto
-  const tablesWithOpenOrders = useMemo(() => {
-    const occupiedTables = new Set<string>()
-    todayOrders.forEach((order: any) => {
-      // Verificar se o pedido está em aberto (não entregue, não concluído, não cancelado)
-      const status = order.status || ''
-      if (!['Entregue', 'Concluído', 'Cancelado', 'Arquivado'].includes(status)) {
-        if (order.table?.uuid || order.table?.identify || order.table?.name) {
-          const tableKey = order.table.uuid || order.table.identify || order.table.name
-          occupiedTables.add(tableKey)
-        }
-      }
-    })
-    return occupiedTables
-  }, [todayOrders])
-  
+  const { mutate: mutateOrder, loading: submittingOrder } = useMutation()
+
+  // ============================================
+  // ESTADOS LOCAIS (todos os useState juntos)
+  // ============================================
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [cart, setCart] = useState<CartItem[]>([])
+  const [orderNotes, setOrderNotes] = useState("")
+  const [isDelivery, setIsDelivery] = useState(false)
+  const [selectedTable, setSelectedTable] = useState<string | null>(null)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null)
   const [showPixDialog, setShowPixDialog] = useState(false)
   const [pixOrderData, setPixOrderData] = useState<{
@@ -461,70 +469,124 @@ export default function POSPage() {
     state: "",
     complement: "",
   })
-const [selectionDialogOpen, setSelectionDialogOpen] = useState(false)
-const [selectionProduct, setSelectionProduct] = useState<Product | null>(null)
-const [selectionVariationId, setSelectionVariationId] = useState<string>("")
-const [selectionOptionals, setSelectionOptionals] = useState<Record<string, number>>({})
-const [orderSearchQuery, setOrderSearchQuery] = useState("")
-const [orderSearchResults, setOrderSearchResults] = useState<any[]>([])
-const [orderSearchLoading, setOrderSearchLoading] = useState(false)
-const [editingOrder, setEditingOrder] = useState<any | null>(null)
-const [editOrderSheetOpen, setEditOrderSheetOpen] = useState(false)
-const [editOrderCart, setEditOrderCart] = useState<CartItem[]>([])
-const [editOrderNotes, setEditOrderNotes] = useState("")
-const orderSearchRef = useRef<HTMLDivElement>(null)
-
-// Verificar se a mesa selecionada está ocupada por outro pedido (não o que está sendo editado)
-const isTableOccupiedByOtherOrder = useMemo(() => {
-  if (!selectedTable || !tablesWithOpenOrders.has(selectedTable)) {
-    return false
-  }
+  const [selectionDialogOpen, setSelectionDialogOpen] = useState(false)
+  const [selectionProduct, setSelectionProduct] = useState<Product | null>(null)
+  const [selectionVariationId, setSelectionVariationId] = useState<string>("")
+  const [selectionOptionals, setSelectionOptionals] = useState<Record<string, number>>({})
+  const [orderSearchQuery, setOrderSearchQuery] = useState("")
+  const [orderSearchResults, setOrderSearchResults] = useState<any[]>([])
+  const [orderSearchLoading, setOrderSearchLoading] = useState(false)
+  const [editingOrder, setEditingOrder] = useState<any | null>(null)
+  const [editOrderSheetOpen, setEditOrderSheetOpen] = useState(false)
+  const [editOrderCart, setEditOrderCart] = useState<CartItem[]>([])
+  const [editOrderNotes, setEditOrderNotes] = useState("")
+  const [addingItem, setAddingItem] = useState<string | null>(null)
+  const [removingItem, setRemovingItem] = useState<string | null>(null)
+  const [showCategories, setShowCategories] = useState(true)
+  const [showProducts, setShowProducts] = useState(true)
+  const [showCart, setShowCart] = useState(true)
+  const orderSearchRef = useRef<HTMLDivElement>(null)
   
-  // Se não estiver editando, a mesa está ocupada
-  if (!editingOrder) {
-    return true
-  }
-  
-  // Se estiver editando, verificar se o pedido sendo editado pertence a esta mesa
-  const editingOrderTableKey = editingOrder.table?.uuid || editingOrder.table?.identify || editingOrder.table?.name
-  const currentTableKey = selectedTable
-  
-  // Se o pedido sendo editado pertence a esta mesa, não está ocupada por outro pedido
-  return editingOrderTableKey !== currentTableKey
-}, [selectedTable, tablesWithOpenOrders, editingOrder])
+  // Hook que depende de estado (deve ser chamado DEPOIS de todos os useState)
+  const {
+    data: tableOrdersData,
+    loading: tableOrdersLoading,
+    error: tableOrdersError,
+    refetch: refetchTableOrders,
+  } = useAuthenticatedOrdersByTable(selectedTable)
 
-const selectionTotal = useMemo(() => {
-  if (!selectionProduct) return 0
-  let total = getProductPrice(selectionProduct)
-
-  if (selectionProduct.variations?.length) {
-    const variation = selectionProduct.variations.find(
-      (variation) =>
-        (variation.id || variation.identify || variation.name) === selectionVariationId
-    )
-    if (variation) {
-      total = parsePrice(variation.price ?? null) || total
+  // ============================================
+  // USEMEMO E OUTROS HOOKS DERIVADOS
+  // ============================================
+  
+  // Verificar permissões do PDV
+  const pdvPermissions = useMemo(() => {
+    return {
+      canCreateOrder: hasPermission('pdv.create_order'),
+      canEditOrder: hasPermission('pdv.edit_order'),
+      canCancelOrder: hasPermission('pdv.cancel_order'),
+      canViewReports: hasPermission('pdv.view_reports'),
+      canManageProducts: hasPermission('pdv.manage_products'),
+      canApplyDiscount: hasPermission('pdv.apply_discount'),
+      canRefund: hasPermission('pdv.refund'),
+      canViewAllOrders: hasPermission('pdv.view_all_orders'),
     }
-  }
+  }, [hasPermission])
 
-  if (selectionProduct.optionals?.length) {
-    selectionProduct.optionals.forEach((optional, index) => {
-      const optionalKey =
-        optional.id || optional.identify || optional.name || `optional-${index}`
-      const quantity = selectionOptionals[optionalKey] || 0
-      if (quantity > 0) {
-        total += parsePrice(optional.price) * quantity
+  const categories = useMemo<Category[]>(() => extractCollection(categoriesData), [categoriesData])
+  const products = useMemo<Product[]>(() => extractCollection(productsData), [productsData])
+  const tables = useMemo<Table[]>(() => extractCollection(tablesData), [tablesData])
+  const paymentMethods = useMemo<PaymentMethod[]>(() => extractCollection(paymentData), [paymentData])
+  const clients = useMemo<Client[]>(() => extractCollection(clientsData), [clientsData])
+  const todayOrders = useMemo<any[]>(() => extractCollection(todayOrdersData), [todayOrdersData])
+  
+  // Identificar mesas com pedidos em aberto
+  const tablesWithOpenOrders = useMemo(() => {
+    const occupiedTables = new Set<string>()
+    todayOrders.forEach((order: any) => {
+      // Verificar se o pedido está em aberto (não entregue, não concluído, não cancelado)
+      const status = order.status || ''
+      if (!['Entregue', 'Concluído', 'Cancelado', 'Arquivado'].includes(status)) {
+        if (order.table?.uuid || order.table?.identify || order.table?.name) {
+          const tableKey = order.table.uuid || order.table.identify || order.table.name
+          occupiedTables.add(tableKey)
+        }
       }
     })
-  }
+    return occupiedTables
+  }, [todayOrders])
+  
+  // Verificar se a mesa selecionada está ocupada por outro pedido (não o que está sendo editado)
+  const isTableOccupiedByOtherOrder = useMemo(() => {
+    if (!selectedTable || !tablesWithOpenOrders.has(selectedTable)) {
+      return false
+    }
+    
+    // Se não estiver editando, a mesa está ocupada
+    if (!editingOrder) {
+      return true
+    }
+    
+    // Se estiver editando, verificar se o pedido sendo editado pertence a esta mesa
+    const editingOrderTableKey = editingOrder.table?.uuid || editingOrder.table?.identify || editingOrder.table?.name
+    const currentTableKey = selectedTable
+    
+    // Se o pedido sendo editado pertence a esta mesa, não está ocupada por outro pedido
+    return editingOrderTableKey !== currentTableKey
+  }, [selectedTable, tablesWithOpenOrders, editingOrder])
 
-  return total
-}, [selectionProduct, selectionVariationId, selectionOptionals])
+  const selectionTotal = useMemo(() => {
+    if (!selectionProduct) return 0
+    let total = getProductPrice(selectionProduct)
 
-// Estado para feedback visual
-const [addingItem, setAddingItem] = useState<string | null>(null)
-const [removingItem, setRemovingItem] = useState<string | null>(null)
+    if (selectionProduct.variations?.length) {
+      const variation = selectionProduct.variations.find(
+        (variation) =>
+          (variation.id || variation.identify || variation.name) === selectionVariationId
+      )
+      if (variation) {
+        total = parsePrice(variation.price ?? null) || total
+      }
+    }
 
+    if (selectionProduct.optionals?.length) {
+      selectionProduct.optionals.forEach((optional, index) => {
+        const optionalKey =
+          optional.id || optional.identify || optional.name || `optional-${index}`
+        const quantity = selectionOptionals[optionalKey] || 0
+        if (quantity > 0) {
+          total += parsePrice(optional.price) * quantity
+        }
+      })
+    }
+
+    return total
+  }, [selectionProduct, selectionVariationId, selectionOptionals])
+
+  // ============================================
+  // USEEFFECT HOOKS
+  // ============================================
+  
   useEffect(() => {
     if (!selectedCategory && categories.length > 0) {
       const first = categories[0]
@@ -659,6 +721,58 @@ const handleClientChange = (value: string) => {
     )
     return table?.name || null
   }, [selectedTable, tables])
+
+  // Alertas contextuais (deve ser chamado antes de qualquer early return)
+  const contextualAlerts = useMemo(() => {
+    const alerts: Array<{ type: 'warning' | 'error' | 'info'; message: string; action?: { label: string; onClick: () => void } }> = []
+    
+    // Alerta: Mesa ocupada
+    if (selectedTable && !isDelivery) {
+      const tableOrders = tableOrdersData || []
+      if (Array.isArray(tableOrders) && tableOrders.length > 0) {
+        alerts.push({
+          type: 'warning',
+          message: `Mesa tem ${tableOrders.length} pedido(s) em aberto`,
+          action: {
+            label: 'Ver pedidos',
+            onClick: () => {
+              // Scroll para seção de pedidos da mesa
+              const orderSection = document.getElementById('table-orders')
+              if (orderSection) {
+                orderSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+              }
+            },
+          },
+        })
+      }
+    }
+    
+    // Alerta: Carrinho vazio ao tentar finalizar
+    if (cart.length === 0 && submittingOrder) {
+      alerts.push({
+        type: 'error',
+        message: 'Adicione itens ao pedido antes de finalizar',
+      })
+    }
+    
+    // Alerta: Mesa não selecionada em retirada
+    if (!isDelivery && !selectedTable && cart.length > 0) {
+      alerts.push({
+        type: 'warning',
+        message: 'Selecione uma mesa para continuar',
+      })
+    }
+    
+    // Alerta: Método de pagamento não selecionado
+    if (cart.length > 0 && !selectedPaymentMethod) {
+      alerts.push({
+        type: 'info',
+        message: 'Selecione uma forma de pagamento',
+      })
+    }
+    
+    return alerts
+  }, [selectedTable, isDelivery, tableOrdersData, cart.length, submittingOrder, selectedPaymentMethod])
 
   const addItemToCart = (
     product: Product,
@@ -1339,58 +1453,6 @@ const handleClientChange = (value: string) => {
     )
   }
 
-  // Alertas contextuais
-  const contextualAlerts = useMemo(() => {
-    const alerts: Array<{ type: 'warning' | 'error' | 'info'; message: string; action?: { label: string; onClick: () => void } }> = []
-    
-    // Alerta: Mesa ocupada
-    if (selectedTable && !isDelivery) {
-      const tableOrders = tableOrdersData || []
-      if (Array.isArray(tableOrders) && tableOrders.length > 0) {
-        alerts.push({
-          type: 'warning',
-          message: `Mesa tem ${tableOrders.length} pedido(s) em aberto`,
-          action: {
-            label: 'Ver pedidos',
-            onClick: () => {
-              // Scroll para seção de pedidos da mesa
-              const orderSection = document.getElementById('table-orders')
-              if (orderSection) {
-                orderSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-              }
-            },
-          },
-        })
-      }
-    }
-    
-    // Alerta: Carrinho vazio ao tentar finalizar
-    if (cart.length === 0 && submittingOrder) {
-      alerts.push({
-        type: 'error',
-        message: 'Adicione itens ao pedido antes de finalizar',
-      })
-    }
-    
-    // Alerta: Mesa não selecionada em retirada
-    if (!isDelivery && !selectedTable && cart.length > 0) {
-      alerts.push({
-        type: 'warning',
-        message: 'Selecione uma mesa para continuar',
-      })
-    }
-    
-    // Alerta: Método de pagamento não selecionado
-    if (cart.length > 0 && !selectedPaymentMethod) {
-      alerts.push({
-        type: 'info',
-        message: 'Selecione uma forma de pagamento',
-      })
-    }
-    
-    return alerts
-  }, [selectedTable, isDelivery, tableOrdersData, cart.length, submittingOrder, selectedPaymentMethod])
-
   return (
     <div className="flex flex-col gap-6">
       {/* Alertas contextuais */}
@@ -1537,10 +1599,28 @@ const handleClientChange = (value: string) => {
         <section className="space-y-6">
           <Card id="categories-section" className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20">
             <CardHeader className="pb-4">
-              <CardTitle className="text-xl text-blue-900 dark:text-blue-100">Categorias</CardTitle>
-              <CardDescription className="text-blue-700 dark:text-blue-300">Selecione uma categoria para ver os produtos.</CardDescription>
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-xl text-blue-900 dark:text-blue-100">Categorias</CardTitle>
+                  <CardDescription className="text-blue-700 dark:text-blue-300">Selecione uma categoria para ver os produtos.</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowCategories(!showCategories)}
+                  className="h-8 w-8 text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100"
+                  title={showCategories ? "Ocultar categorias" : "Exibir categorias"}
+                >
+                  {showCategories ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent>
+            {showCategories && (
+              <CardContent>
               <div
                 className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
                 data-testid="touch-grid-categories"
@@ -1565,15 +1645,34 @@ const handleClientChange = (value: string) => {
                   )
                 })}
               </div>
-            </CardContent>
+              </CardContent>
+            )}
           </Card>
 
           <Card id="products-section" className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20">
             <CardHeader className="pb-4">
-              <CardTitle className="text-xl text-green-900 dark:text-green-100">Produtos</CardTitle>
-              <CardDescription className="text-green-700 dark:text-green-300">Toque em um item para adicioná-lo ao pedido.</CardDescription>
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-xl text-green-900 dark:text-green-100">Produtos</CardTitle>
+                  <CardDescription className="text-green-700 dark:text-green-300">Toque em um item para adicioná-lo ao pedido.</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowProducts(!showProducts)}
+                  className="h-8 w-8 text-green-700 dark:text-green-300 hover:text-green-900 dark:hover:text-green-100"
+                  title={showProducts ? "Ocultar produtos" : "Exibir produtos"}
+                >
+                  {showProducts ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent>
+            {showProducts && (
+              <CardContent>
               {visibleProducts.length === 0 ? (
                 <div className="rounded-2xl border border-dashed p-8 text-center text-muted-foreground">
                   Nenhum produto nesta categoria.
@@ -1621,7 +1720,8 @@ const handleClientChange = (value: string) => {
                   </div>
                 </ScrollArea>
               )}
-            </CardContent>
+              </CardContent>
+            )}
           </Card>
 
           {/* Recomendações Inteligentes - Fase 4 */}
@@ -1640,10 +1740,28 @@ const handleClientChange = (value: string) => {
         <aside id="order-summary">
           <Card className="sticky top-4 space-y-0 border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-xl text-orange-900 dark:text-orange-100">Carrinho</CardTitle>
-              <CardDescription className="text-orange-700 dark:text-orange-300">Gerencie os itens e finalize o pedido.</CardDescription>
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-xl text-orange-900 dark:text-orange-100">Carrinho</CardTitle>
+                  <CardDescription className="text-orange-700 dark:text-orange-300">Gerencie os itens e finalize o pedido.</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowCart(!showCart)}
+                  className="h-8 w-8 text-orange-700 dark:text-orange-300 hover:text-orange-900 dark:hover:text-orange-100"
+                  title={showCart ? "Ocultar carrinho" : "Exibir carrinho"}
+                >
+                  {showCart ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-5">
+            {showCart && (
+              <CardContent className="space-y-5">
               <div className="flex gap-3">
                 <Button
                   onClick={() => {
@@ -2293,7 +2411,8 @@ const handleClientChange = (value: string) => {
                   Limpar carrinho
                 </Button>
               </div>
-            </CardContent>
+              </CardContent>
+            )}
           </Card>
         </aside>
 
