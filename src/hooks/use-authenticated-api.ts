@@ -240,6 +240,17 @@ export function useAuthenticatedClients() {
   return useAuthenticatedApi(endpoints.clients.list, { immediate: true })
 }
 
+export function useAuthenticatedOrdersByTable(tableUuid: string | null) {
+  return useAuthenticatedApi(
+    tableUuid ? endpoints.orders.getByTable(tableUuid) : '',
+    { immediate: !!tableUuid }
+  )
+}
+
+export function useAuthenticatedTodayOrders() {
+  return useAuthenticatedApi(endpoints.orders.getToday, { immediate: true })
+}
+
 export function useAuthenticatedClientStats() {
   return useAuthenticatedApi(endpoints.clients.stats, { immediate: true })
 }

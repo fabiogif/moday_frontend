@@ -271,6 +271,8 @@ export const endpoints = {
     list: '/api/order',
     stats: '/api/order/stats',
     searchByNumber: '/api/order/search-by-number',
+    getByTable: (tableUuid: string) => `/api/order/by-table?table_uuid=${tableUuid}`,
+    getToday: '/api/order/today',
     getDetails: (orderId: number) => `/api/order/${orderId}/details`,
     create: '/api/order',
     show: (id: string) => `/api/order/${id}`,
