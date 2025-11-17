@@ -6,6 +6,7 @@ import {
   useAuthenticatedCategories,
   useAuthenticatedTables,
   useAuthenticatedActivePaymentMethods,
+  useAuthenticatedClients,
   useMutation,
 } from "@/hooks/use-authenticated-api"
 import { useAuth } from "@/contexts/auth-context"
@@ -16,6 +17,7 @@ jest.mock("@/hooks/use-authenticated-api", () => ({
   useAuthenticatedCategories: jest.fn(),
   useAuthenticatedTables: jest.fn(),
   useAuthenticatedActivePaymentMethods: jest.fn(),
+  useAuthenticatedClients: jest.fn(),
   useMutation: jest.fn(),
 }))
 
@@ -28,6 +30,8 @@ const mockUseAuthenticatedCategories = useAuthenticatedCategories as jest.Mocked
 const mockUseAuthenticatedTables = useAuthenticatedTables as jest.MockedFunction<typeof useAuthenticatedTables>
 const mockUseAuthenticatedActivePaymentMethods =
   useAuthenticatedActivePaymentMethods as jest.MockedFunction<typeof useAuthenticatedActivePaymentMethods>
+const mockUseAuthenticatedClients =
+  useAuthenticatedClients as jest.MockedFunction<typeof useAuthenticatedClients>
 const mockUseMutation = useMutation as jest.MockedFunction<typeof useMutation>
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>
 
@@ -53,6 +57,7 @@ const productsMock = [
 
 const tablesMock = [{ uuid: "table-1", name: "Mesa 01" }]
 const paymentMock = [{ uuid: "pay-1", name: "PIX" }]
+const clientsMock = []
 
 const successMutation = jest.fn().mockResolvedValue({ identify: "order-123" })
 
@@ -76,6 +81,10 @@ function setupSuccessMocks() {
   } as any)
   mockUseAuthenticatedActivePaymentMethods.mockReturnValue({
     data: paymentMock,
+    ...defaultHookReturn,
+  } as any)
+  mockUseAuthenticatedClients.mockReturnValue({
+    data: clientsMock,
     ...defaultHookReturn,
   } as any)
   mockUseMutation.mockReturnValue({
@@ -109,16 +118,17 @@ describe("POSPage", () => {
     render(<POSPage />)
 
     await user.click(screen.getByTestId("touch-product-prod-1"))
-    expect(screen.getByTestId("cart-item-qty-prod-1")).toHaveTextContent("1")
+    const defaultSignature = "prod-1__base__none"
+    expect(screen.getByTestId(`cart-item-qty-${defaultSignature}`)).toHaveTextContent("1")
 
     await user.click(screen.getByLabelText("Aumentar Pizza Margherita"))
-    expect(screen.getByTestId("cart-item-qty-prod-1")).toHaveTextContent("2")
+    expect(screen.getByTestId(`cart-item-qty-${defaultSignature}`)).toHaveTextContent("2")
 
     await user.click(screen.getByLabelText("Diminuir Pizza Margherita"))
-    expect(screen.getByTestId("cart-item-qty-prod-1")).toHaveTextContent("1")
+    expect(screen.getByTestId(`cart-item-qty-${defaultSignature}`)).toHaveTextContent("1")
 
     await user.click(screen.getByLabelText("Remover Pizza Margherita"))
-    expect(screen.queryByTestId("cart-item-qty-prod-1")).not.toBeInTheDocument()
+    expect(screen.queryByTestId(`cart-item-qty-${defaultSignature}`)).not.toBeInTheDocument()
   })
 
   it("finaliza o pedido com o payload correto", async () => {
