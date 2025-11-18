@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { PlanCard, type Plan } from "@/components/plan-card"
 import { PlanMigrationModal } from "@/components/plan-migration-modal"
 import { useAuthenticatedPlans } from "@/hooks/use-authenticated-api"
@@ -17,12 +17,21 @@ import { Progress } from "@/components/ui/progress"
 
 export function PlansSection() {
   const { user } = useAuth()
-  const { data: plans, loading: plansLoading, error: plansError, refetch: refetchPlans } = useAuthenticatedPlans()
+  const { data: plansData, loading: plansLoading, error: plansError, refetch: refetchPlans } = useAuthenticatedPlans()
   const { migratePlan, isMigrating, error: migrationError } = usePlanMigration()
   const { currentUsage, planLimits, planName, hasLimitReached } = usePlanLimits()
   const [migrationModalOpen, setMigrationModalOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<{ id: number; name: string } | null>(null)
   const [currentPlanId, setCurrentPlanId] = useState<number | null>(null)
+
+  // Garantir que plans seja um array tipado corretamente
+  const plans = useMemo<Plan[]>(() => {
+    if (!plansData) return []
+    if (Array.isArray(plansData)) {
+      return plansData as Plan[]
+    }
+    return []
+  }, [plansData])
 
   // Buscar plan_id do tenant
   useEffect(() => {
@@ -46,7 +55,7 @@ export function PlansSection() {
   }, [user])
 
   const handleMigrate = (planId: number) => {
-    const plan = plans?.find((p: Plan) => p.id === planId)
+    const plan = plans.find((p) => p.id === planId)
     if (plan) {
       setSelectedPlan({ id: plan.id, name: plan.name })
       setMigrationModalOpen(true)
