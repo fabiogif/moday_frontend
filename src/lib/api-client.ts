@@ -376,6 +376,16 @@ export const endpoints = {
     delete: (id: string | number) => `/api/plan/${id}`,
     details: (id: string | number) => `/api/plan/${id}/details`,
   },
+  
+  // Limites e Migração de Planos
+  planLimits: {
+    check: '/api/plan/limits/check',
+    currentUsage: '/api/plan/current-usage',
+  },
+  planMigration: {
+    migrate: '/api/plan/migrate',
+    history: '/api/plan/migrations/history',
+  },
 
   // Avaliações
   reviews: {

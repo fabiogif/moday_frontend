@@ -565,6 +565,7 @@ export default function POSPage() {
   const [showChangeDialog, setShowChangeDialog] = useState(false)
   const [needsChange, setNeedsChange] = useState(false)
   const [receivedAmount, setReceivedAmount] = useState<number | null>(null)
+  const [changeDialogAnswered, setChangeDialogAnswered] = useState(false)
   const orderSearchRef = useRef<HTMLDivElement>(null)
   
   // Hook que depende de estado (deve ser chamado DEPOIS de todos os useState)
@@ -864,15 +865,15 @@ const handleClientChange = (value: string) => {
                    selectedMethod.name.toLowerCase().includes('money') || 
                    selectedMethod.name.toLowerCase().includes('cash')
     
-    // Se for dinheiro e ainda não tiver definido se precisa de troco, abrir modal
-    if (isCash && !showChangeDialog && needsChange === false && receivedAmount === null) {
+    // Se for dinheiro e ainda não tiver respondido ao modal, abrir modal
+    if (isCash && !showChangeDialog && !changeDialogAnswered) {
       // Pequeno delay para evitar abertura imediata ao selecionar
       const timer = setTimeout(() => {
         setShowChangeDialog(true)
       }, 300)
       return () => clearTimeout(timer)
     }
-  }, [selectedPaymentMethod, cart.length, orderTotal, paymentMethods, showChangeDialog, needsChange, receivedAmount])
+  }, [selectedPaymentMethod, cart.length, orderTotal, paymentMethods, showChangeDialog, changeDialogAnswered])
 
   const selectedTableName = useMemo(() => {
     if (!selectedTable) return null
@@ -1101,6 +1102,7 @@ const handleClientChange = (value: string) => {
     // Limpar dados de troco
     setNeedsChange(false)
     setReceivedAmount(null)
+    setChangeDialogAnswered(false) // Resetar flag ao limpar carrinho
   }
 
   // Função para iniciar um novo pedido
@@ -2813,10 +2815,16 @@ const handleClientChange = (value: string) => {
                     
                     const handlePaymentClick = () => {
                       setSelectedPaymentMethod(method.uuid)
-                      // Se for dinheiro e houver itens no carrinho, abrir modal de troco
-                      if (isCash && cart.length > 0 && orderTotal > 0) {
+                      // Se mudar para um método que não é dinheiro, resetar flag
+                      if (!isCash) {
+                        setChangeDialogAnswered(false)
+                        setNeedsChange(false)
+                        setReceivedAmount(null)
+                      }
+                      // Se for dinheiro e houver itens no carrinho e ainda não respondeu, abrir modal de troco
+                      if (isCash && cart.length > 0 && orderTotal > 0 && !changeDialogAnswered) {
                         setShowChangeDialog(true)
-                      } else if (isCash) {
+                      } else if (isCash && !changeDialogAnswered) {
                         // Se não houver itens, apenas limpar dados de troco
                         setNeedsChange(false)
                         setReceivedAmount(null)
@@ -3768,11 +3776,18 @@ const handleClientChange = (value: string) => {
       {/* Modal de Troco */}
       <ChangeDialog
         open={showChangeDialog}
-        onOpenChange={setShowChangeDialog}
+        onOpenChange={(open) => {
+          setShowChangeDialog(open)
+          // Se fechar sem confirmar, marcar como respondido para evitar loop
+          if (!open && !changeDialogAnswered) {
+            setChangeDialogAnswered(true)
+          }
+        }}
         orderTotal={orderTotal}
         onConfirm={(needsChange, receivedAmount) => {
           setNeedsChange(needsChange)
           setReceivedAmount(receivedAmount || null)
+          setChangeDialogAnswered(true) // Marcar como respondido
           if (needsChange && receivedAmount) {
             const change = receivedAmount - orderTotal
             toast.success(

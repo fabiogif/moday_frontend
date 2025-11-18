@@ -29,6 +29,7 @@ import { useViaCEP } from "@/hooks/use-viacep"
 import { useReceitaWS } from "@/hooks/use-receitaws"
 import { AlertCircle, CheckCircle2 } from "lucide-react"
 import { StateCityFormFields } from "@/components/location/state-city-form-fields"
+import { PlansSection } from "./components/plans-section"
 
 const companyFormSchema = z.object({
   name: z.string().min(1, "Nome da empresa é obrigatório"),
@@ -803,6 +804,19 @@ export default function CompanySettings() {
                   </FormItem>
                 )}
               />
+            </CardContent>
+          </Card>
+
+          {/* Seção de Planos */}
+          <Card id="planos" className="scroll-mt-20">
+            <CardHeader>
+              <CardTitle>Planos e Limites</CardTitle>
+              <CardDescription>
+                Gerencie seu plano atual e migre para planos superiores quando necessário.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PlansSection />
             </CardContent>
           </Card>
 

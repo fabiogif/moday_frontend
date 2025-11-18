@@ -13,6 +13,7 @@ import { ForceLogoutButton } from "@/components/force-logout-button";
 import { OrderNotificationsProvider } from "@/contexts/order-notifications-context";
 import { NotificationsSidebar } from "@/components/notifications/notifications-sidebar";
 import { POSHeaderProvider } from "@/contexts/pos-header-context";
+import { PlanLimitNotification } from "@/components/plan-limit-notification";
 
 export default function DashboardLayout({
   children,
@@ -49,6 +50,9 @@ export default function DashboardLayout({
             <div className="flex flex-1 flex-col">
               <div className="@container/main flex flex-1 flex-col gap-2">
                 <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                  <div className="px-4 lg:px-6">
+                    <PlanLimitNotification />
+                  </div>
                   {children}
                 </div>
               </div>
@@ -63,6 +67,9 @@ export default function DashboardLayout({
             <div className="flex flex-1 flex-col">
               <div className="@container/main flex flex-1 flex-col gap-2">
                 <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                  <div className="px-4 lg:px-6">
+                    <PlanLimitNotification />
+                  </div>
                   {children}
                 </div>
               </div>
