@@ -212,7 +212,8 @@ function OrderCard({
         "hover:shadow-lg hover:scale-[1.02] active:scale-100",
         isDragging && "shadow-2xl border-primary ring-2 ring-primary/50 ring-offset-2 scale-105",
         isDragOverlay && "shadow-2xl rotate-2",
-        "cursor-grab active:cursor-grabbing"
+        "cursor-grab active:cursor-grabbing",
+        "w-full max-w-full"
       )}
       {...attributes}
       {...listeners}
@@ -229,42 +230,42 @@ function OrderCard({
         order.status === "Cancelado" && "bg-gradient-to-r from-rose-400 to-rose-600"
       )} />
       
-      <div className="p-4 space-y-3">
+      <div className="p-3 space-y-2.5">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {columnInfo?.icon}
-            <span className="font-semibold text-base tracking-tight">#{order.identify}</span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+            {columnInfo?.icon && <span className="shrink-0">{columnInfo.icon}</span>}
+            <span className="font-semibold text-sm tracking-tight truncate">#{order.identify}</span>
           </div>
-        <div className="flex items-center gap-1.5">
-          <Badge 
-            variant="outline" 
-            className={cn("text-xs font-medium border", columnInfo?.badgeColor)}
-          >
-            {order.status}
-          </Badge>
-          <Button
-            variant="ghost"
-            size="icon"
-            title="Arquivar pedido"
-            aria-label={`Arquivar pedido ${order.identify}`}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-            disabled={isDragOverlay}
-            onClick={(event) => {
-              event.stopPropagation()
-              onArchive(order)
-            }}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            <Archive className="h-4 w-4" />
-          </Button>
-        </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Badge 
+              variant="outline" 
+              className={cn("text-[10px] font-medium border px-1.5 py-0.5", columnInfo?.badgeColor)}
+            >
+              <span className="truncate max-w-[80px] block">{order.status}</span>
+            </Badge>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="Arquivar pedido"
+              aria-label={`Arquivar pedido ${order.identify}`}
+              className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
+              disabled={isDragOverlay}
+              onClick={(event) => {
+                event.stopPropagation()
+                onArchive(order)
+              }}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <Archive className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </div>
         
         {/* Botões de navegação para touch - Mover entre colunas */}
         {!isDragOverlay && (canMoveLeft || canMoveRight) && (
-          <div className="flex items-center justify-center gap-2 py-2 border-y">
+          <div className="flex items-center justify-center gap-1.5 py-1.5 border-y">
             {canMoveLeft && onMoveLeft && (
               <Button
                 variant="outline"
@@ -275,11 +276,11 @@ function OrderCard({
                 }}
                 onMouseDown={(event) => event.stopPropagation()}
                 onPointerDown={(event) => event.stopPropagation()}
-                className="h-8 px-3 flex-1"
+                className="h-7 px-2 flex-1 text-xs"
                 title="Mover para coluna anterior"
               >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                <span className="text-xs">Anterior</span>
+                <ChevronLeft className="h-3.5 w-3.5 mr-0.5" />
+                <span className="text-[10px]">Anterior</span>
               </Button>
             )}
             {canMoveRight && onMoveRight && (
@@ -292,40 +293,40 @@ function OrderCard({
                 }}
                 onMouseDown={(event) => event.stopPropagation()}
                 onPointerDown={(event) => event.stopPropagation()}
-                className="h-8 px-3 flex-1"
+                className="h-7 px-2 flex-1 text-xs"
                 title="Mover para próxima coluna"
               >
-                <span className="text-xs">Próxima</span>
-                <ChevronRight className="h-4 w-4 ml-1" />
+                <span className="text-[10px]">Próxima</span>
+                <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
               </Button>
             )}
           </div>
         )}
         
         {/* Info Section */}
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {customerName && (
-            <div className="flex items-center gap-2 text-sm">
-              <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <div className="flex items-center gap-1.5 text-xs min-w-0">
+              <User className="h-3 w-3 text-muted-foreground shrink-0" />
               <span className="truncate font-medium">{customerName}</span>
             </div>
           )}
 
           {order.table && (
-            <div className="flex items-center gap-2 text-sm">
-              <UtensilsCrossed className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <div className="flex items-center gap-1.5 text-xs min-w-0">
+              <UtensilsCrossed className="h-3 w-3 text-muted-foreground shrink-0" />
               <span className="truncate">{order.table.name}</span>
             </div>
           )}
           
           {deliveryAddress && (
-            <div className="space-y-1.5">
-              <div className="flex items-start gap-2 text-sm">
-                <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                <span className="text-xs leading-relaxed line-clamp-2 break-words">{deliveryAddress}</span>
+            <div className="space-y-1">
+              <div className="flex items-start gap-1.5 text-xs min-w-0">
+                <MapPin className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+                <span className="text-[10px] leading-relaxed line-clamp-2 break-words">{deliveryAddress}</span>
               </div>
               {order.delivery_notes && (
-                <div className="text-xs text-muted-foreground italic pl-5 line-clamp-1">
+                <div className="text-[10px] text-muted-foreground italic pl-4 line-clamp-1">
                   "{order.delivery_notes}"
                 </div>
               )}
@@ -333,22 +334,22 @@ function OrderCard({
           )}
           
           {order.products && order.products.length > 0 && (
-            <div className="space-y-1.5 pt-1">
-              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                <Package className="h-3 w-3" />
+            <div className="space-y-1 pt-0.5">
+              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                <Package className="h-2.5 w-2.5" />
                 Produtos ({order.products.length})
               </div>
-              <div className="space-y-1 pl-5">
+              <div className="space-y-0.5 pl-4">
                 {order.products.slice(0, 2).map((product, idx) => (
-                  <div key={product.identify || idx} className="flex items-start gap-2 text-xs">
-                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-medium">
+                  <div key={product.identify || idx} className="flex items-start gap-1.5 text-[10px] min-w-0">
+                    <Badge variant="secondary" className="h-4 px-1 text-[9px] font-medium shrink-0">
                       {product.quantity || 1}x
                     </Badge>
-                    <span className="truncate leading-5">{product.name}</span>
+                    <span className="truncate leading-4">{product.name}</span>
                   </div>
                 ))}
                 {order.products.length > 2 && (
-                  <div className="text-xs text-muted-foreground font-medium">
+                  <div className="text-[10px] text-muted-foreground font-medium">
                     +{order.products.length - 2} item(s)
                   </div>
                 )}
@@ -358,9 +359,9 @@ function OrderCard({
         </div>
         
         {/* Footer - Total */}
-        <div className="flex items-center justify-between pt-3 border-t">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total</span>
-          <span className="text-lg font-bold bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent">
+        <div className="flex items-center justify-between pt-2 border-t">
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Total</span>
+          <span className="text-base font-bold bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent">
             R$ {total.toFixed(2)}
           </span>
         </div>
@@ -387,7 +388,7 @@ function DroppableColumnArea({ columnId, children }: DroppableColumnAreaProps) {
     <div 
       ref={setNodeRef} 
       className={cn(
-        "flex flex-col gap-3 min-h-[400px] p-3 rounded-lg transition-all duration-200",
+        "flex flex-col gap-2 min-h-[400px] p-2 rounded-lg transition-all duration-200",
         isOver && "bg-primary/5 border-2 border-dashed border-primary ring-2 ring-primary/20"
       )}
     >
