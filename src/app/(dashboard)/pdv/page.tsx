@@ -95,6 +95,7 @@ import { PixQrCodeDialog } from "./components/pix-qr-code-dialog"
 import { ProductRecommendations } from "./components/product-recommendations"
 import { PDVTutorial } from "./components/pdv-tutorial"
 import { PDVFeedback } from "./components/pdv-feedback"
+import { ChangeDialog } from "./components/change-dialog"
 import { usePOSHeader } from "@/contexts/pos-header-context"
 
 type Category = {
@@ -561,6 +562,9 @@ export default function POSPage() {
   const [showTodayOrdersSheet, setShowTodayOrdersSheet] = useState(false)
   const [showClientSection, setShowClientSection] = useState(false)
   const [showPaymentMethods, setShowPaymentMethods] = useState(true)
+  const [showChangeDialog, setShowChangeDialog] = useState(false)
+  const [needsChange, setNeedsChange] = useState(false)
+  const [receivedAmount, setReceivedAmount] = useState<number | null>(null)
   const orderSearchRef = useRef<HTMLDivElement>(null)
   
   // Hook que depende de estado (deve ser chamado DEPOIS de todos os useState)
@@ -848,6 +852,28 @@ const handleClientChange = (value: string) => {
     [cart]
   )
 
+  // Detectar quando método de pagamento muda para Dinheiro e abrir modal se necessário
+  // Deve estar depois da declaração de orderTotal
+  useEffect(() => {
+    if (!selectedPaymentMethod || cart.length === 0 || orderTotal === 0) return
+    
+    const selectedMethod = paymentMethods.find(m => m.uuid === selectedPaymentMethod)
+    if (!selectedMethod) return
+    
+    const isCash = selectedMethod.name.toLowerCase().includes('dinheiro') || 
+                   selectedMethod.name.toLowerCase().includes('money') || 
+                   selectedMethod.name.toLowerCase().includes('cash')
+    
+    // Se for dinheiro e ainda não tiver definido se precisa de troco, abrir modal
+    if (isCash && !showChangeDialog && needsChange === false && receivedAmount === null) {
+      // Pequeno delay para evitar abertura imediata ao selecionar
+      const timer = setTimeout(() => {
+        setShowChangeDialog(true)
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [selectedPaymentMethod, cart.length, orderTotal, paymentMethods, showChangeDialog, needsChange, receivedAmount])
+
   const selectedTableName = useMemo(() => {
     if (!selectedTable) return null
     const table = tables.find(
@@ -1072,6 +1098,9 @@ const handleClientChange = (value: string) => {
   const clearCart = () => {
     setCart([])
     setOrderNotes("")
+    // Limpar dados de troco
+    setNeedsChange(false)
+    setReceivedAmount(null)
   }
 
   // Função para iniciar um novo pedido
@@ -1459,6 +1488,14 @@ const handleClientChange = (value: string) => {
       if (selectedPaymentMethod) {
         payload.payment_method_id = selectedPaymentMethod
       }
+      
+      // Adicionar dados de troco se necessário
+      payload.precisa_troco = needsChange
+      if (needsChange && receivedAmount) {
+        payload.valor_recebido = receivedAmount
+      } else {
+        payload.valor_recebido = null
+      }
 
       const result = await mutateOrder(endpoints.orders.update(orderIdentify), "PUT", payload)
       if (result) {
@@ -1585,6 +1622,8 @@ const handleClientChange = (value: string) => {
             })) ?? [],
         })),
         payment_method_id: selectedPaymentMethod,
+        precisa_troco: needsChange,
+        valor_recebido: needsChange && receivedAmount ? receivedAmount : null,
         is_delivery: isDelivery,
         use_client_address: false,
         delivery_address: isDelivery ? deliveryAddress.address : null,
@@ -1734,6 +1773,14 @@ const handleClientChange = (value: string) => {
       // Incluir payment_method_id se estiver selecionado
       if (selectedPaymentMethod) {
         payload.payment_method_id = selectedPaymentMethod
+      }
+      
+      // Adicionar dados de troco se necessário
+      payload.precisa_troco = needsChange
+      if (needsChange && receivedAmount) {
+        payload.valor_recebido = receivedAmount
+      } else {
+        payload.valor_recebido = null
       }
 
       const result = await mutateOrder(endpoints.orders.update(orderIdentify), "PUT", payload)
@@ -2255,17 +2302,17 @@ const handleClientChange = (value: string) => {
 
         <aside id="order-summary">
           <Card className="sticky top-4 space-y-0 border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20 mx-2">
-            <CardHeader className="space-y-1">
+            <CardHeader className="space-y-0 pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <CardTitle className="text-xl text-orange-900 dark:text-orange-100">Carrinho</CardTitle>
-                  <CardDescription className="text-orange-700 dark:text-orange-300">Gerencie os itens e finalize o pedido.</CardDescription>
+                  <CardTitle className="text-lg text-orange-900 dark:text-orange-100">Carrinho</CardTitle>
+                  <CardDescription className="text-xs text-orange-700 dark:text-orange-300">Gerencie os itens e finalize o pedido.</CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-5">
+            <CardContent className="space-y-3">
               {/* Toggle unificado Retirada/Delivery */}
-              <div className="flex items-center justify-center gap-2 p-2 rounded-xl bg-muted/50">
+              <div className="flex items-center justify-center gap-1.5 p-1.5 rounded-lg bg-muted/50">
                 <Button
                   onClick={() => {
                     setIsDelivery(false)
@@ -2277,14 +2324,14 @@ const handleClientChange = (value: string) => {
                   variant={!isDelivery ? "default" : "ghost"}
                   size="sm"
                   className={cn(
-                    "flex-1 gap-2",
+                    "flex-1 gap-1.5 h-9 text-xs",
                     !isDelivery && "bg-primary text-primary-foreground"
                   )}
                 >
-                  <Utensils className="h-4 w-4" />
+                  <Utensils className="h-3.5 w-3.5" />
                   Retirada
                 </Button>
-                <div className="h-6 w-px bg-border" />
+                <div className="h-5 w-px bg-border" />
                 <Button
                   onClick={() => {
                     setIsDelivery(true)
@@ -2293,18 +2340,18 @@ const handleClientChange = (value: string) => {
                   variant={isDelivery ? "default" : "ghost"}
                   size="sm"
                   className={cn(
-                    "flex-1 gap-2",
+                    "flex-1 gap-1.5 h-9 text-xs",
                     isDelivery && "bg-primary text-primary-foreground"
                   )}
                 >
-                  <Truck className="h-4 w-4" />
+                  <Truck className="h-3.5 w-3.5" />
                   Delivery
                 </Button>
               </div>
 
               {!isDelivery && (
-                <div id="table-section" className="space-y-3">
-                  <p className="text-sm font-medium">Selecione a mesa</p>
+                <div id="table-section" className="space-y-2">
+                  <p className="text-xs font-medium">Selecione a mesa</p>
                   <Select
                     value={selectedTable || ""}
                     onValueChange={(value) => {
@@ -2325,7 +2372,7 @@ const handleClientChange = (value: string) => {
                       setSelectedTable(key)
                     }}
                   >
-                    <SelectTrigger className="h-12 w-full text-base">
+                    <SelectTrigger className="h-10 w-full text-sm">
                       <SelectValue placeholder="Selecione uma mesa..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -2378,16 +2425,16 @@ const handleClientChange = (value: string) => {
 
                   {/* Aviso se mesa tem pedidos em aberto (apenas se não estiver editando o pedido desta mesa) */}
                   {selectedTable && isTableOccupiedByOtherOrder && (
-                    <div className="mt-4 rounded-2xl border-2 border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/30">
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-full bg-red-100 p-2 dark:bg-red-900/50">
-                          <X className="h-5 w-5 text-red-600 dark:text-red-400" />
+                    <div className="mt-2 rounded-lg border border-red-300 bg-red-50 p-2.5 dark:border-red-800 dark:bg-red-950/30">
+                      <div className="flex items-start gap-2">
+                        <div className="rounded-full bg-red-100 p-1.5 dark:bg-red-900/50">
+                          <X className="h-4 w-4 text-red-600 dark:text-red-400" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-semibold text-red-900 dark:text-red-100">
+                          <p className="text-xs font-semibold text-red-900 dark:text-red-100">
                             Mesa Ocupada
                           </p>
-                          <p className="mt-1 text-xs text-red-700 dark:text-red-300">
+                          <p className="mt-0.5 text-[10px] text-red-700 dark:text-red-300">
                             Esta mesa possui pedidos em aberto. Finalize os pedidos existentes antes de criar novos.
                           </p>
                         </div>
@@ -2398,8 +2445,8 @@ const handleClientChange = (value: string) => {
               )}
 
               {isDelivery && (
-                <div className="space-y-3 rounded-2xl border p-4">
-                  <p className="text-sm font-medium">Endereço de entrega</p>
+                <div className="space-y-2 rounded-lg border p-3">
+                  <p className="text-xs font-medium">Endereço de entrega</p>
                   <div className="grid gap-3">
                     <Input
                       placeholder="CEP"
@@ -2539,14 +2586,14 @@ const handleClientChange = (value: string) => {
                 )}
               </div>
 
-              <div className="space-y-3">
-                <p className="text-sm font-medium">Itens selecionados</p>
+              <div className="space-y-2">
+                <p className="text-xs font-medium">Itens selecionados</p>
                 {cart.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">
+                  <div className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
                     Nenhum item no pedido.
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {cart.map((item) => {
                       const productId = getProductId(item.product)
                       const unitPrice = getCartItemUnitPrice(item)
@@ -2557,28 +2604,28 @@ const handleClientChange = (value: string) => {
                           key={item.signature}
                           data-testid={`cart-item-${item.signature}`}
                           className={cn(
-                            "rounded-2xl border-2 p-4 transition-all bg-card shadow-sm relative",
+                            "rounded-lg border-2 p-2.5 transition-all bg-card shadow-sm relative",
                             isAdding && "border-green-500 bg-green-50/50 scale-105 shadow-md",
                             isRemoving && "border-red-500 bg-red-50/50 opacity-50 scale-95",
                             !isAdding && !isRemoving && "border-primary/20 hover:border-primary/40 hover:shadow-md"
                           )}
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Package className="h-5 w-5 text-primary" />
-                                <p className="text-lg font-bold">{item.product.name}</p>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <Package className="h-4 w-4 text-primary shrink-0" />
+                                <p className="text-sm font-bold truncate">{item.product.name}</p>
                               </div>
-                              <p className="text-sm text-muted-foreground mb-2">
+                              <p className="text-xs text-muted-foreground mb-1">
                                 {formatCurrency(unitPrice)} cada
                               </p>
                               {item.selectedVariation && (
-                                <Badge variant="outline" className="mt-1 text-xs">
+                                <Badge variant="outline" className="mt-0.5 text-[10px] px-1.5 py-0.5">
                                   {item.selectedVariation.name}
                                 </Badge>
                               )}
                               {item.selectedOptionals && item.selectedOptionals.length > 0 && (
-                                <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                                <div className="mt-1 space-y-0.5 text-[10px] text-muted-foreground">
                                   {item.selectedOptionals.map((optional, optionalIndex) => {
                                     const optionalKey =
                                       optional.id ||
@@ -2609,57 +2656,62 @@ const handleClientChange = (value: string) => {
                               size="icon"
                               aria-label={`Remover ${item.product.name}`}
                               onClick={() => removeItem(item.signature)}
-                              className="h-10 w-10 shrink-0"
+                              className="h-8 w-8 shrink-0"
                               title="Remover item"
                             >
-                              <Trash2 className="h-5 w-5" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
-                          <div className="mt-3 flex items-center gap-3">
+                          <div className="mt-2 flex items-center gap-2">
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-14 w-14 rounded-2xl"
+                              className="h-10 w-10 rounded-lg"
                               aria-label={`Diminuir ${item.product.name}`}
                               onClick={() => updateItemQuantity(item.signature, -1)}
                             >
-                              <Minus className="h-6 w-6" />
+                              <Minus className="h-4 w-4" />
                             </Button>
                             <span
                               data-testid={`cart-item-qty-${item.signature}`}
-                              className="min-w-[64px] rounded-2xl bg-muted px-4 py-3 text-center text-xl font-semibold"
+                              className="min-w-[48px] rounded-lg bg-muted px-2 py-1.5 text-center text-base font-semibold"
                             >
                               {item.quantity}
                             </span>
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-14 w-14 rounded-2xl"
+                              className="h-10 w-10 rounded-lg"
                               aria-label={`Aumentar ${item.product.name}`}
                               onClick={() => updateItemQuantity(item.signature, 1)}
                             >
-                              <Plus className="h-6 w-6" />
+                              <Plus className="h-4 w-4" />
                             </Button>
-                            <span className="ml-auto text-xl font-semibold">
-                              {formatCurrency(unitPrice * item.quantity)}
-                            </span>
+                            <div className="ml-auto text-right">
+                              <div className="text-[10px] text-muted-foreground">
+                                Subtotal:
+                              </div>
+                              <span className="text-base font-semibold">
+                                {formatCurrency(unitPrice * item.quantity)}
+                              </span>
+                            </div>
                           </div>
-                          <div className="mt-3 space-y-2">
+                          <div className="mt-2 space-y-1.5">
                             <Input
                               value={item.observation}
                               onChange={(event) => updateItemObservation(item.signature, event.target.value)}
                               placeholder="Observações (ex: sem cebola)"
-                              className="h-12 rounded-2xl"
+                              className="h-9 rounded-lg text-sm"
                             />
                             {/* Templates de observações do produto */}
                             {item.product.observation_templates && item.product.observation_templates.length > 0 && (
-                              <div className="flex flex-wrap gap-2">
+                              <div className="flex flex-wrap gap-1.5">
                                 {item.product.observation_templates.map((template: string) => (
                                   <Button
                                     key={template}
                                     variant="outline"
                                     size="sm"
-                                    className="h-8 text-xs"
+                                    className="h-7 text-[10px] px-2"
                                     onClick={() => {
                                       const currentObs = item.observation
                                       const newObs = currentObs 
@@ -2677,13 +2729,13 @@ const handleClientChange = (value: string) => {
                             {(!item.product.observation_templates || item.product.observation_templates.length === 0) && 
                              item.product.observation_suggestions && 
                              item.product.observation_suggestions.length > 0 && (
-                              <div className="flex flex-wrap gap-2">
+                              <div className="flex flex-wrap gap-1.5">
                                 {item.product.observation_suggestions.map((template: string) => (
                                   <Button
                                     key={template}
                                     variant="outline"
                                     size="sm"
-                                    className="h-8 text-xs"
+                                    className="h-7 text-[10px] px-2"
                                     onClick={() => {
                                       const currentObs = item.observation
                                       const newObs = currentObs 
@@ -2705,32 +2757,32 @@ const handleClientChange = (value: string) => {
                 )}
               </div>
 
-              <div className="space-y-3">
-                <p className="text-sm font-medium">Observações do pedido</p>
+              <div className="space-y-2">
+                <p className="text-xs font-medium">Observações do pedido</p>
                 <Textarea
                   value={orderNotes}
                   onChange={(event) => setOrderNotes(event.target.value)}
                   placeholder="Instruções adicionais"
-                  className="min-h-[80px] rounded-2xl"
+                  className="min-h-[60px] rounded-lg text-sm"
                 />
               </div>
 
-              <div id="payment-section" className="space-y-3">
+              <div id="payment-section" className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">Forma de pagamento</p>
+                  <p className="text-xs font-medium">Forma de pagamento</p>
                   {paymentMethods.length > 4 && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowPaymentMethods(!showPaymentMethods)}
-                      className="h-8 text-xs"
+                      className="h-7 text-[10px] px-2"
                     >
                       {showPaymentMethods ? "Ocultar" : "Mostrar todas"}
                     </Button>
                   )}
                 </div>
                 <div className={cn(
-                  "grid gap-3",
+                  "grid gap-2",
                   paymentMethods.length <= 4 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"
                 )}>
                   {paymentMethods.slice(0, showPaymentMethods ? paymentMethods.length : 4).map((method) => {
@@ -2738,30 +2790,46 @@ const handleClientChange = (value: string) => {
                     const getPaymentIcon = (name: string) => {
                       const lowerName = name.toLowerCase()
                       if (lowerName.includes('pix')) {
-                        return <Smartphone className="h-8 w-8" />
+                        return <Smartphone className="h-6 w-6" />
                       }
                       if (lowerName.includes('cartão') || lowerName.includes('card') || lowerName.includes('credito') || lowerName.includes('debito')) {
-                        return <CreditCard className="h-8 w-8" />
+                        return <CreditCard className="h-6 w-6" />
                       }
                       if (lowerName.includes('dinheiro') || lowerName.includes('money') || lowerName.includes('cash')) {
-                        return <Banknote className="h-8 w-8" />
+                        return <Banknote className="h-6 w-6" />
                       }
                       if (lowerName.includes('contactless') || lowerName.includes('nfc') || lowerName.includes('aproximação')) {
-                        return <Radio className="h-8 w-8" />
+                        return <Radio className="h-6 w-6" />
                       }
                       if (lowerName.includes('transferência') || lowerName.includes('transfer') || lowerName.includes('ted') || lowerName.includes('doc')) {
-                        return <Building2 className="h-8 w-8" />
+                        return <Building2 className="h-6 w-6" />
                       }
-                      return <CreditCard className="h-8 w-8" />
+                      return <CreditCard className="h-6 w-6" />
+                    }
+                    
+                    const isCash = method.name.toLowerCase().includes('dinheiro') || 
+                                   method.name.toLowerCase().includes('money') || 
+                                   method.name.toLowerCase().includes('cash')
+                    
+                    const handlePaymentClick = () => {
+                      setSelectedPaymentMethod(method.uuid)
+                      // Se for dinheiro e houver itens no carrinho, abrir modal de troco
+                      if (isCash && cart.length > 0 && orderTotal > 0) {
+                        setShowChangeDialog(true)
+                      } else if (isCash) {
+                        // Se não houver itens, apenas limpar dados de troco
+                        setNeedsChange(false)
+                        setReceivedAmount(null)
+                      }
                     }
                     
                     return (
                       <Button
                         key={method.uuid}
                         data-testid={`payment-button-${method.uuid}`}
-                        onClick={() => setSelectedPaymentMethod(method.uuid)}
+                        onClick={handlePaymentClick}
                         className={cn(
-                          "h-20 rounded-2xl flex-col gap-2",
+                          "h-16 rounded-lg flex-col gap-1",
                           active
                             ? "bg-primary text-primary-foreground shadow-lg border-2 border-primary"
                             : "bg-muted text-foreground hover:bg-primary/10 border-2 border-transparent"
@@ -2773,9 +2841,9 @@ const handleClientChange = (value: string) => {
                         )}>
                           {getPaymentIcon(method.name)}
                         </div>
-                        <span className="font-semibold text-sm">{method.name}</span>
+                        <span className="font-semibold text-xs">{method.name}</span>
                         {active && (
-                          <CheckCircle2 className="h-4 w-4 absolute top-2 right-2" />
+                          <CheckCircle2 className="h-3.5 w-3.5 absolute top-1.5 right-1.5" />
                         )}
                       </Button>
                     )
@@ -2783,15 +2851,54 @@ const handleClientChange = (value: string) => {
                 </div>
               </div>
 
-              <div className="rounded-2xl border-2 border-purple-300 bg-purple-50 p-4 dark:border-purple-700 dark:bg-purple-950/30">
-                <div className="flex items-center justify-between text-sm text-purple-700 dark:text-purple-300">
+              {/* Resumo Financeiro */}
+              <div className="rounded-lg border-2 border-purple-300 bg-purple-50 p-3 dark:border-purple-700 dark:bg-purple-950/30 space-y-2">
+                {/* Quantidade de itens */}
+                <div className="flex items-center justify-between text-xs text-purple-700 dark:text-purple-300 pb-1.5 border-b border-purple-200 dark:border-purple-800">
                   <span>Itens</span>
-                  <span>{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
+                  <span className="font-medium">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
                 </div>
-                <div className="mt-2 flex items-center justify-between text-xl font-bold text-purple-900 dark:text-purple-100">
-                  <span>Total</span>
-                  <span data-testid="order-total">{formatCurrency(orderTotal)}</span>
+                
+                {/* Subtotal */}
+                <div className="flex items-center justify-between text-xs text-purple-700 dark:text-purple-300">
+                  <span>Subtotal</span>
+                  <span className="font-medium">{formatCurrency(orderTotal)}</span>
                 </div>
+                
+                {/* Total Geral */}
+                <div className="flex items-center justify-between text-sm font-semibold text-purple-900 dark:text-purple-100 pt-1 border-t border-purple-200 dark:border-purple-800">
+                  <span>Total Geral</span>
+                  <span data-testid="order-total" className="text-base">{formatCurrency(orderTotal)}</span>
+                </div>
+                
+                {/* Informações de troco (apenas se for pagamento em dinheiro) */}
+                {(() => {
+                  const selectedMethod = paymentMethods.find(m => m.uuid === selectedPaymentMethod)
+                  const isCash = selectedMethod && (
+                    selectedMethod.name.toLowerCase().includes('dinheiro') || 
+                    selectedMethod.name.toLowerCase().includes('money') || 
+                    selectedMethod.name.toLowerCase().includes('cash')
+                  )
+                  
+                  if (isCash && needsChange && receivedAmount) {
+                    const changeAmount = receivedAmount - orderTotal
+                    return (
+                      <>
+                        <div className="pt-1.5 border-t border-purple-200 dark:border-purple-800 space-y-1.5">
+                          <div className="flex items-center justify-between text-xs text-purple-700 dark:text-purple-300">
+                            <span>Valor Entregue</span>
+                            <span className="font-medium">{formatCurrency(receivedAmount)}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm font-semibold text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/30 rounded px-2 py-1.5">
+                            <span>Troco</span>
+                            <span className="font-bold text-base">{formatCurrency(changeAmount)}</span>
+                          </div>
+                        </div>
+                      </>
+                    )
+                  }
+                  return null
+                })()}
               </div>
 
               {/* Indicador de edição */}
@@ -3656,6 +3763,26 @@ const handleClientChange = (value: string) => {
       <PDVFeedback
         open={showFeedbackDialog}
         onOpenChange={setShowFeedbackDialog}
+      />
+
+      {/* Modal de Troco */}
+      <ChangeDialog
+        open={showChangeDialog}
+        onOpenChange={setShowChangeDialog}
+        orderTotal={orderTotal}
+        onConfirm={(needsChange, receivedAmount) => {
+          setNeedsChange(needsChange)
+          setReceivedAmount(receivedAmount || null)
+          if (needsChange && receivedAmount) {
+            const change = receivedAmount - orderTotal
+            toast.success(
+              `Troco calculado: ${change.toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              })}`
+            )
+          }
+        }}
       />
     </div>
   )

@@ -126,7 +126,7 @@ export function PDVTutorial({ onComplete, onSkip }: PDVTutorialProps) {
       // Pequeno delay para garantir que a página carregou completamente
       const timer = setTimeout(() => {
         setIsOpen(true)
-      }, 500)
+      }, 1000)
       return () => clearTimeout(timer)
     }
   }, [])
@@ -232,33 +232,24 @@ export function PDVTutorial({ onComplete, onSkip }: PDVTutorialProps) {
     }
   }, [highlightedElement, isOpen])
 
-  if (!isOpen) {
-    return null
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) {
         handleSkip()
+      } else {
+        setIsOpen(open)
       }
     }}>
         <DialogContent 
           className={cn(
-            "sm:max-w-[500px] z-[1001]",
+            "sm:max-w-[500px] max-h-[90vh] overflow-y-auto z-[9999]",
             currentStepData.position === 'center' && "mx-auto",
             currentStepData.position === 'left' && "ml-4",
             currentStepData.position === 'right' && "mr-4",
             currentStepData.position === 'top' && "mt-4",
             currentStepData.position === 'bottom' && "mb-4"
           )}
-          style={{ 
-            position: highlightedElement ? 'fixed' : 'relative',
-            ...(highlightedElement && {
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-            })
-          }}
+          showCloseButton={false}
         >
           <DialogHeader>
             <div className="flex items-center justify-between">
