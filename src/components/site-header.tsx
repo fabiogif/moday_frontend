@@ -1,12 +1,15 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { CommandSearch, SearchTrigger } from "@/components/command-search"
 import { ModeToggle } from "@/components/mode-toggle"
 import { NotificationsButton } from "@/components/notifications/notifications-button"
+import { Clock } from "lucide-react"
+import { usePOSHeader } from "@/contexts/pos-header-context"
 
 interface SiteHeaderProps {
   onNotificationsClick?: () => void
@@ -14,6 +17,11 @@ interface SiteHeaderProps {
 
 export function SiteHeader({ onNotificationsClick }: SiteHeaderProps = {}) {
   const [searchOpen, setSearchOpen] = React.useState(false)
+  const pathname = usePathname()
+  const isPOSPage = pathname?.includes('/pdv')
+  
+  // Usar o contexto do PDV (sempre disponível pois o Provider está no layout)
+  const { onTodayOrdersClick, todayOrdersCount } = usePOSHeader()
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -42,6 +50,23 @@ export function SiteHeader({ onNotificationsClick }: SiteHeaderProps = {}) {
           <div className="ml-auto flex items-center gap-2">
             {onNotificationsClick && (
               <NotificationsButton onClick={onNotificationsClick} />
+            )}
+            {/* Botão de Pedidos de Hoje - apenas na página do PDV */}
+            {isPOSPage && onTodayOrdersClick && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                onClick={onTodayOrdersClick}
+                aria-label="Pedidos de Hoje"
+              >
+                <Clock className="h-5 w-5" />
+                {todayOrdersCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">
+                    {todayOrdersCount > 99 ? '99+' : todayOrdersCount}
+                  </span>
+                )}
+              </Button>
             )}
             <ModeToggle />
           </div>

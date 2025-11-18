@@ -12,6 +12,7 @@ import { AuthDebug } from "@/components/auth-debug";
 import { ForceLogoutButton } from "@/components/force-logout-button";
 import { OrderNotificationsProvider } from "@/contexts/order-notifications-context";
 import { NotificationsSidebar } from "@/components/notifications/notifications-sidebar";
+import { POSHeaderProvider } from "@/contexts/pos-header-context";
 
 export default function DashboardLayout({
   children,
@@ -27,6 +28,7 @@ export default function DashboardLayout({
 
   return (
     <OrderNotificationsProvider>
+      <POSHeaderProvider>
       <SidebarProvider
       style={{
         "--sidebar-width": "16rem",
@@ -94,6 +96,7 @@ export default function DashboardLayout({
       {/* Botão para forçar logout em caso de token inválido */}
     {/* <ForceLogoutButton /> */}
       </SidebarProvider>
+      </POSHeaderProvider>
     </OrderNotificationsProvider>
   );
 }

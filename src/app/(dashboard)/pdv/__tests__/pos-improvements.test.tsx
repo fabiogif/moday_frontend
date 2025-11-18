@@ -7,7 +7,7 @@
 
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import POSPage from "@/app/(dashboard)/pos/page"
+import POSPage from "@/app/(dashboard)/pdv/page"
 import {
   useAuthenticatedProducts,
   useAuthenticatedCategories,

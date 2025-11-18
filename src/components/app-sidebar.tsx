@@ -76,7 +76,7 @@ const navGroups = [
       },
       {
         title: "PDV",
-        url: "/pos",
+        url: "/pdv",
         icon: MonitorSmartphone,
       },
       {

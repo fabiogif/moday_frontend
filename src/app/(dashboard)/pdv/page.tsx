@@ -30,6 +30,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Combobox, ComboboxOption } from "@/components/ui/combobox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Sheet,
   SheetContent,
@@ -84,12 +85,16 @@ import {
   BarChart,
   Eye,
   EyeOff,
+  RefreshCw,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react"
 import { maskPhone, maskZipCode } from "@/lib/masks"
 import { PixQrCodeDialog } from "./components/pix-qr-code-dialog"
 import { ProductRecommendations } from "./components/product-recommendations"
 import { PDVTutorial } from "./components/pdv-tutorial"
 import { PDVFeedback } from "./components/pdv-feedback"
+import { usePOSHeader } from "@/contexts/pos-header-context"
 
 type Category = {
   uuid?: string
@@ -130,6 +135,8 @@ type Product = {
   categories?: ProductCategory[]
   variations?: ProductVariation[]
   optionals?: ProductOptional[]
+  observation_templates?: string[]
+  observation_suggestions?: string[]
 }
 
 type Table = {
@@ -166,6 +173,14 @@ function extractCollection<T>(raw: any): T[] {
   if (!raw) return []
   if (Array.isArray(raw)) return raw
   if (Array.isArray(raw?.data)) return raw.data
+  // Se for um objeto com propriedades que parecem uma coleção
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    // Verificar se tem uma propriedade que é um array
+    const arrayProps = Object.values(raw).filter(Array.isArray)
+    if (arrayProps.length > 0) {
+      return arrayProps[0] as T[]
+    }
+  }
   return []
 }
 
@@ -258,44 +273,42 @@ function PDVQuickDashboard({
   }, [todayOrders])
   
   return (
-    <Card className="border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20 py-2 mx-2">
-      <div className="rounded-xl border px-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-1">
-          <BarChart className="h-5 w-5 text-indigo-600" />
-          <div className="flex items-center gap-4 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Vendas:</span>
-              <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{formatCurrency(stats.totalSales)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Pedidos:</span>
-              <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{stats.totalOrders}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Ticket Médio:</span>
-              <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{formatCurrency(stats.averageTicket)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Mesas Ocupadas:</span>
-              <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{stats.occupiedTables}</span>
-            </div>
+    <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20 px-4 flex items-center justify-between gap-3 flex-1">
+      <div className="flex items-center gap-2 flex-1">
+        <BarChart className="h-5 w-5 text-indigo-600" />
+        <div className="flex items-center gap-4 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Vendas:</span>
+            <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{formatCurrency(stats.totalSales)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Pedidos:</span>
+            <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{stats.totalOrders}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Ticket Médio:</span>
+            <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{formatCurrency(stats.averageTicket)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Mesas Ocupadas:</span>
+            <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{stats.occupiedTables}</span>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggle}
-          className="h-8 w-8 text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100"
-          title={showDashboard ? "Ocultar dashboard" : "Exibir dashboard"}
-        >
-          {showDashboard ? (
-            <EyeOff className="h-4 w-4" />
-          ) : (
-            <Eye className="h-4 w-4" />
-          )}
-        </Button>
       </div>
-    </Card>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onToggle}
+        className="h-8 w-8 text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100"
+        title={showDashboard ? "Ocultar dashboard" : "Exibir dashboard"}
+      >
+        {showDashboard ? (
+          <EyeOff className="h-4 w-4" />
+        ) : (
+          <Eye className="h-4 w-4" />
+        )}
+      </Button>
+    </div>
   )
 }
 
@@ -498,12 +511,17 @@ export default function POSPage() {
   const [editOrderSheetOpen, setEditOrderSheetOpen] = useState(false)
   const [editOrderCart, setEditOrderCart] = useState<CartItem[]>([])
   const [editOrderNotes, setEditOrderNotes] = useState("")
+  const [orderStarted, setOrderStarted] = useState(false)
+  const [currentOrder, setCurrentOrder] = useState<any>(null)
   const [addingItem, setAddingItem] = useState<string | null>(null)
   const [removingItem, setRemovingItem] = useState<string | null>(null)
   const [showCategories, setShowCategories] = useState(true)
   const [showProducts, setShowProducts] = useState(true)
   const [showCart, setShowCart] = useState(true)
   const [showDashboard, setShowDashboard] = useState(true)
+  const [showTodayOrdersSheet, setShowTodayOrdersSheet] = useState(false)
+  const [showClientSection, setShowClientSection] = useState(false)
+  const [showPaymentMethods, setShowPaymentMethods] = useState(true)
   const orderSearchRef = useRef<HTMLDivElement>(null)
   
   // Hook que depende de estado (deve ser chamado DEPOIS de todos os useState)
@@ -537,7 +555,39 @@ export default function POSPage() {
   const tables = useMemo<Table[]>(() => extractCollection(tablesData), [tablesData])
   const paymentMethods = useMemo<PaymentMethod[]>(() => extractCollection(paymentData), [paymentData])
   const clients = useMemo<Client[]>(() => extractCollection(clientsData), [clientsData])
-  const todayOrders = useMemo<any[]>(() => extractCollection(todayOrdersData), [todayOrdersData])
+  const todayOrders = useMemo<any[]>(() => {
+    const extracted = extractCollection(todayOrdersData)
+    // Debug: verificar se os dados estão sendo extraídos corretamente
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Today Orders Data:', todayOrdersData)
+      console.log('Extracted Orders:', extracted)
+    }
+    return extracted
+  }, [todayOrdersData])
+
+  // Extrair pedidos da mesa
+  const tableOrders = useMemo<any[]>(() => {
+    return extractCollection(tableOrdersData)
+  }, [tableOrdersData])
+
+  // Pedidos para exibir na sidebar: se houver mesa selecionada e pedidos dessa mesa, usar esses; senão, usar pedidos de hoje
+  const sidebarOrders = useMemo<any[]>(() => {
+    // Se houver mesa selecionada e pedidos em aberto dessa mesa, usar esses pedidos
+    if (selectedTable && !isDelivery && tableOrders && Array.isArray(tableOrders) && tableOrders.length > 0) {
+      return tableOrders
+    }
+    // Caso contrário, usar pedidos de hoje
+    return todayOrders
+  }, [selectedTable, isDelivery, tableOrders, todayOrders])
+  
+  // Contexto para comunicar com o SiteHeader
+  const { setTodayOrdersClick, setTodayOrdersCount } = usePOSHeader()
+  
+  // Registrar callback e contador no header quando mudar
+  useEffect(() => {
+    setTodayOrdersClick(() => () => setShowTodayOrdersSheet(true))
+    setTodayOrdersCount(todayOrders.length)
+  }, [todayOrders.length, setTodayOrdersClick, setTodayOrdersCount])
   
   // Identificar mesas com pedidos em aberto
   const tablesWithOpenOrders = useMemo(() => {
@@ -755,11 +805,8 @@ const handleClientChange = (value: string) => {
           action: {
             label: 'Ver pedidos',
             onClick: () => {
-              // Scroll para seção de pedidos da mesa
-              const orderSection = document.getElementById('table-orders')
-              if (orderSection) {
-                orderSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-              }
+              // Abrir o Sheet de Pedidos de Hoje para exibir os pedidos da mesa
+              setShowTodayOrdersSheet(true)
             },
           },
         })
@@ -851,9 +898,10 @@ const handleClientChange = (value: string) => {
 
     setSelectionProduct(product)
     if (hasVariations) {
+      // Usar o mesmo método de cálculo do variationKey usado no RadioGroup
       const firstVariation = product.variations?.[0]
       const variationId = firstVariation
-        ? firstVariation.id || firstVariation.identify || firstVariation.name
+        ? firstVariation.id || firstVariation.identify || firstVariation.name || `variation-0`
         : ""
       setSelectionVariationId(variationId)
     } else {
@@ -884,10 +932,15 @@ const handleClientChange = (value: string) => {
 
     let variationData: ProductVariation | undefined
     if (selectionProduct.variations?.length) {
-      variationData = selectionProduct.variations.find(
-        (variation) =>
-          (variation.id || variation.identify || variation.name) === selectionVariationId
-      )
+      // Usar o mesmo método de cálculo do variationKey usado no RadioGroup
+      variationData = selectionProduct.variations.find((variation, index) => {
+        const variationKey =
+          variation.id ||
+          variation.identify ||
+          variation.name ||
+          `variation-${index}`
+        return variationKey === selectionVariationId
+      })
       if (!variationData) {
         toast.error("Selecione uma variação para continuar.")
         return
@@ -954,6 +1007,36 @@ const handleClientChange = (value: string) => {
   const clearCart = () => {
     setCart([])
     setOrderNotes("")
+  }
+
+  // Função para iniciar um novo pedido
+  const handleNewOrder = () => {
+    clearCart()
+    setEditingOrder(null)
+    setOrderStarted(false)
+    setCurrentOrder(null)
+    setCustomerName("")
+    setCustomerPhone("")
+    setDeliveryAddress({
+      zip: "",
+      address: "",
+      number: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+      complement: "",
+    })
+    setSelectedClientId("")
+    setSelectedPaymentMethod(null)
+    setSelectedTable(null)
+    setIsDelivery(false)
+    setOrderNotes("")
+    setEditOrderSheetOpen(false)
+    setSelectionDialogOpen(false)
+    setSelectionProduct(null)
+    setSelectionVariationId("")
+    setSelectionOptionals({})
+    toast.success("Novo pedido iniciado")
   }
 
   // Buscar pedidos por número
@@ -1234,7 +1317,130 @@ const handleClientChange = (value: string) => {
     setDeliveryAddress((prev) => ({ ...prev, zip: masked }))
   }
 
-  const handleFinalizeOrder = async () => {
+  const handleUpdateOrder = async () => {
+    // Só pode atualizar se estiver editando um pedido existente
+    if (!editingOrder) {
+      toast.error("Apenas pedidos existentes podem ser atualizados.")
+      return
+    }
+
+    // Validar que há itens no carrinho
+    if (!cart.length) {
+      toast.error("Adicione pelo menos um item ao pedido.")
+      return
+    }
+
+    try {
+      const orderIdentify = editingOrder.identify || editingOrder.uuid || editingOrder.id
+      if (!orderIdentify) {
+        toast.error("Não foi possível identificar o pedido.")
+        return
+      }
+
+      // Preparar comentário com observações
+      const commentParts = []
+      if (orderNotes) commentParts.push(orderNotes)
+      if (customerName || customerPhone) {
+        commentParts.push(`Cliente: ${customerName || "N/A"} ${customerPhone || ""}`.trim())
+      }
+      cart.forEach((item) => {
+        if (item.observation) {
+          commentParts.push(`${item.product.name}: ${item.observation}`)
+        }
+      })
+
+      const payload: Record<string, any> = {
+        // NÃO incluir status - mantém o status atual
+        comment: commentParts.join(" | ") || null,
+        products: cart.map((item) => ({
+          identify: item.product.uuid || item.product.identify,
+          qty: item.quantity,
+          price: getCartItemUnitPrice(item),
+          variation: item.selectedVariation
+            ? {
+                id: item.selectedVariation.id || item.selectedVariation.identify || item.selectedVariation.name,
+                name: item.selectedVariation.name,
+                price: parsePrice(item.selectedVariation.price),
+              }
+            : null,
+          optionals:
+            item.selectedOptionals?.map((optional) => ({
+              id: optional.id || optional.identify || optional.name,
+              name: optional.name,
+              price: parsePrice(optional.price),
+              quantity: optional.quantity,
+            })) ?? [],
+        })),
+        is_delivery: isDelivery,
+        delivery_address: isDelivery ? deliveryAddress.address : null,
+        delivery_city: isDelivery ? deliveryAddress.city : null,
+        delivery_state: isDelivery ? deliveryAddress.state : null,
+        delivery_zip_code: isDelivery ? deliveryAddress.zip : null,
+        delivery_neighborhood: isDelivery ? deliveryAddress.neighborhood : null,
+        delivery_number: isDelivery ? deliveryAddress.number : null,
+        delivery_complement: isDelivery ? deliveryAddress.complement : null,
+        delivery_notes: isDelivery ? orderNotes : null,
+      }
+
+      // Adicionar payment_method_id se estiver selecionado
+      if (selectedPaymentMethod) {
+        payload.payment_method_id = selectedPaymentMethod
+      }
+
+      const result = await mutateOrder(endpoints.orders.update(orderIdentify), "PUT", payload)
+      if (result) {
+        toast.success("Pedido atualizado com sucesso!")
+        
+        // Recarregar pedidos para refletir as mudanças
+        if (selectedTable && !isDelivery) {
+          refetchTableOrders()
+        }
+        refetchTodayOrders()
+        
+        // NÃO limpar o estado - permite continuar editando
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao atualizar pedido")
+    }
+  }
+
+  // Buscar status por position
+  const getStatusByPosition = async (position: number): Promise<string | null> => {
+    try {
+      const response = await apiClient.get(endpoints.orderStatuses.list(true))
+      if (response.success && response.data && Array.isArray(response.data)) {
+        const status = response.data.find((s: any) => s.order_position === position)
+        return status ? status.name : null
+      }
+      return null
+    } catch (error) {
+      console.error("Erro ao buscar status:", error)
+      return null
+    }
+  }
+
+  // Buscar primeiro status (is_initial = true ou order_position = 1)
+  const getInitialStatus = async (): Promise<string | null> => {
+    try {
+      const response = await apiClient.get(endpoints.orderStatuses.list(true))
+      if (response.success && response.data && Array.isArray(response.data)) {
+        // Primeiro tentar buscar por is_initial
+        let status = response.data.find((s: any) => s.is_initial === true)
+        // Se não encontrar, buscar por order_position = 1
+        if (!status) {
+          status = response.data.find((s: any) => s.order_position === 1)
+        }
+        return status ? status.name : null
+      }
+      return null
+    } catch (error) {
+      console.error("Erro ao buscar status inicial:", error)
+      return null
+    }
+  }
+
+  // Iniciar pedido - cria pedido com primeiro status
+  const handleStartOrder = async () => {
     if (!cart.length) {
       toast.error("Adicione pelo menos um item ao pedido.")
       return
@@ -1255,11 +1461,6 @@ const handleClientChange = (value: string) => {
       toast.error("Esta mesa possui pedidos em aberto. Finalize os pedidos antes de adicionar novos.")
       return
     }
-    
-    // Se estiver editando um pedido existente, atualizar ao invés de criar
-    if (editingOrder) {
-      return handleSaveOrderEdit()
-    }
 
     const tenantToken = user?.tenant?.uuid || user?.tenant_id
     if (!tenantToken) {
@@ -1267,90 +1468,61 @@ const handleClientChange = (value: string) => {
       return
     }
 
-    const commentParts = []
-    if (orderNotes) commentParts.push(orderNotes)
-    if (customerName || customerPhone) {
-      commentParts.push(`Cliente: ${customerName || "N/A"} ${customerPhone || ""}`.trim())
-    }
-    cart.forEach((item) => {
-      if (item.observation) {
-        commentParts.push(`${item.product.name}: ${item.observation}`)
-      }
-    })
-
-    const payload: Record<string, any> = {
-      token_company: tenantToken,
-      client_id: selectedClientId || null,
-      table: !isDelivery ? selectedTable : null,
-      comment: commentParts.join(" | ") || null,
-      products: cart.map((item) => ({
-        identify: item.product.uuid || item.product.identify,
-        qty: item.quantity,
-        price: getCartItemUnitPrice(item),
-        variation: item.selectedVariation
-          ? {
-              id: item.selectedVariation.id || item.selectedVariation.identify || item.selectedVariation.name,
-              name: item.selectedVariation.name,
-              price: parsePrice(item.selectedVariation.price),
-            }
-          : null,
-        optionals:
-          item.selectedOptionals?.map((optional) => ({
-            id: optional.id || optional.identify || optional.name,
-            name: optional.name,
-            price: parsePrice(optional.price),
-            quantity: optional.quantity,
-          })) ?? [],
-      })),
-      payment_method_id: selectedPaymentMethod,
-      is_delivery: isDelivery,
-      use_client_address: false,
-      delivery_address: isDelivery ? deliveryAddress.address : null,
-      delivery_city: isDelivery ? deliveryAddress.city : null,
-      delivery_state: isDelivery ? deliveryAddress.state : null,
-      delivery_zip_code: isDelivery ? deliveryAddress.zip : null,
-      delivery_neighborhood: isDelivery ? deliveryAddress.neighborhood : null,
-      delivery_number: isDelivery ? deliveryAddress.number : null,
-      delivery_complement: isDelivery ? deliveryAddress.complement : null,
-      delivery_notes: isDelivery ? orderNotes : null,
-    }
-
     try {
+      const commentParts = []
+      if (orderNotes) commentParts.push(orderNotes)
+      if (customerName || customerPhone) {
+        commentParts.push(`Cliente: ${customerName || "N/A"} ${customerPhone || ""}`.trim())
+      }
+      cart.forEach((item) => {
+        if (item.observation) {
+          commentParts.push(`${item.product.name}: ${item.observation}`)
+        }
+      })
+
+      const payload: Record<string, any> = {
+        token_company: tenantToken,
+        client_id: selectedClientId || null,
+        table: !isDelivery ? selectedTable : null,
+        comment: commentParts.join(" | ") || null,
+        products: cart.map((item) => ({
+          identify: item.product.uuid || item.product.identify,
+          qty: item.quantity,
+          price: getCartItemUnitPrice(item),
+          variation: item.selectedVariation
+            ? {
+                id: item.selectedVariation.id || item.selectedVariation.identify || item.selectedVariation.name,
+                name: item.selectedVariation.name,
+                price: parsePrice(item.selectedVariation.price),
+              }
+            : null,
+          optionals:
+            item.selectedOptionals?.map((optional) => ({
+              id: optional.id || optional.identify || optional.name,
+              name: optional.name,
+              price: parsePrice(optional.price),
+              quantity: optional.quantity,
+            })) ?? [],
+        })),
+        payment_method_id: selectedPaymentMethod,
+        is_delivery: isDelivery,
+        use_client_address: false,
+        delivery_address: isDelivery ? deliveryAddress.address : null,
+        delivery_city: isDelivery ? deliveryAddress.city : null,
+        delivery_state: isDelivery ? deliveryAddress.state : null,
+        delivery_zip_code: isDelivery ? deliveryAddress.zip : null,
+        delivery_neighborhood: isDelivery ? deliveryAddress.neighborhood : null,
+        delivery_number: isDelivery ? deliveryAddress.number : null,
+        delivery_complement: isDelivery ? deliveryAddress.complement : null,
+        delivery_notes: isDelivery ? orderNotes : null,
+        // O backend já define o status inicial automaticamente
+      }
+
       const result: any = await mutateOrder(endpoints.orders.create, "POST", payload)
       if (result) {
-        const orderId = result?.identify || result?.uuid || result?.id || ""
-        
-        // Verificar se o método de pagamento é PIX
-        const paymentMethod = paymentMethods.find(m => m.uuid === selectedPaymentMethod)
-        const isPixPayment = paymentMethod?.name?.toLowerCase().includes('pix') || false
-        
-        if (isPixPayment) {
-          // Abrir dialog de QR Code PIX
-          // TODO: Buscar QR Code real da API quando disponível
-          // Por enquanto, usar dados mockados
-          setPixOrderData({
-            orderId,
-            total: orderTotal,
-            qrCode: undefined, // Será preenchido quando a API retornar
-            qrCodeText: undefined, // Será preenchido quando a API retornar
-          })
-          setShowPixDialog(true)
-        } else {
-          toast.success("Pedido enviado com sucesso!")
-        }
-        
-        clearCart()
-        setCustomerName("")
-        setCustomerPhone("")
-        setDeliveryAddress({
-          zip: "",
-          address: "",
-          number: "",
-          neighborhood: "",
-          city: "",
-          state: "",
-          complement: "",
-        })
+        setCurrentOrder(result)
+        setOrderStarted(true)
+        toast.success("Pedido iniciado com sucesso!")
         
         // Recarregar pedidos da mesa se houver uma mesa selecionada
         if (selectedTable && !isDelivery) {
@@ -1361,8 +1533,171 @@ const handleClientChange = (value: string) => {
         refetchTodayOrders()
       }
     } catch (error: any) {
+      toast.error(error?.message || "Erro ao iniciar pedido")
+    }
+  }
+
+  // Finalizar pedido - atualiza para status "Concluído" (ordem 4)
+  const handleFinalizeOrder = async () => {
+    if (!currentOrder && !editingOrder) {
+      toast.error("Nenhum pedido encontrado para finalizar.")
+      return
+    }
+
+    const orderIdentify = (currentOrder || editingOrder)?.identify || (currentOrder || editingOrder)?.uuid || (currentOrder || editingOrder)?.id
+    if (!orderIdentify) {
+      toast.error("Não foi possível identificar o pedido.")
+      return
+    }
+
+    try {
+      // Buscar status "Concluído" primeiro por nome, depois por position
+      let completedStatus = null
+      try {
+        const response = await apiClient.get(endpoints.orderStatuses.list(true))
+        if (response.success && response.data && Array.isArray(response.data)) {
+          // Primeiro tentar buscar por nome
+          completedStatus = response.data.find((s: any) => s.name === 'Concluído')
+          // Se não encontrar, buscar por order_position = 4
+          if (!completedStatus) {
+            completedStatus = response.data.find((s: any) => s.order_position === 4)
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao buscar status:", error)
+      }
+
+      if (!completedStatus) {
+        toast.error("Não foi possível encontrar o status 'Concluído'.")
+        return
+      }
+
+      // Usar o nome do status diretamente, que é mais confiável
+      const payload: Record<string, any> = {
+        status: 'Concluído', // Usar nome diretamente
+      }
+
+      // Se houver alterações no carrinho, incluir produtos
+      if (cart.length > 0) {
+        const commentParts = []
+        if (orderNotes) commentParts.push(orderNotes)
+        if (customerName || customerPhone) {
+          commentParts.push(`Cliente: ${customerName || "N/A"} ${customerPhone || ""}`.trim())
+        }
+        cart.forEach((item) => {
+          if (item.observation) {
+            commentParts.push(`${item.product.name}: ${item.observation}`)
+          }
+        })
+
+        payload.comment = commentParts.join(" | ") || null
+        payload.products = cart.map((item) => ({
+          identify: item.product.uuid || item.product.identify,
+          qty: item.quantity,
+          price: getCartItemUnitPrice(item),
+        }))
+      }
+
+      // Incluir payment_method_id se estiver selecionado
+      if (selectedPaymentMethod) {
+        payload.payment_method_id = selectedPaymentMethod
+      }
+
+      const result = await mutateOrder(endpoints.orders.update(orderIdentify), "PUT", payload)
+      if (result) {
+        toast.success("Pedido finalizado com sucesso!")
+        
+        // Recarregar pedidos
+        if (selectedTable && !isDelivery) {
+          refetchTableOrders()
+        }
+        refetchTodayOrders()
+        
+        // Limpar estado
+        setOrderStarted(false)
+        setCurrentOrder(null)
+        setEditingOrder(null)
+        clearCart()
+        setCustomerName("")
+        setCustomerPhone("")
+        setSelectedClientId("")
+        setSelectedPaymentMethod(null)
+        setOrderNotes("")
+      }
+    } catch (error: any) {
       toast.error(error?.message || "Erro ao finalizar pedido")
     }
+  }
+
+  // Cancelar pedido - atualiza para status "Cancelado" (ordem 5)
+  const handleCancelOrder = async () => {
+    if (!currentOrder && !editingOrder) {
+      toast.error("Nenhum pedido encontrado para cancelar.")
+      return
+    }
+
+    const orderIdentify = (currentOrder || editingOrder)?.identify || (currentOrder || editingOrder)?.uuid || (currentOrder || editingOrder)?.id
+    if (!orderIdentify) {
+      toast.error("Não foi possível identificar o pedido.")
+      return
+    }
+
+    try {
+      // Buscar status "Cancelado" primeiro por nome, depois por position
+      let cancelledStatus = null
+      try {
+        const response = await apiClient.get(endpoints.orderStatuses.list(true))
+        if (response.success && response.data && Array.isArray(response.data)) {
+          // Primeiro tentar buscar por nome
+          cancelledStatus = response.data.find((s: any) => s.name === 'Cancelado')
+          // Se não encontrar, buscar por order_position = 5
+          if (!cancelledStatus) {
+            cancelledStatus = response.data.find((s: any) => s.order_position === 5)
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao buscar status:", error)
+      }
+
+      if (!cancelledStatus) {
+        toast.error("Não foi possível encontrar o status 'Cancelado'.")
+        return
+      }
+
+      // Usar o nome do status diretamente, que é mais confiável
+      const payload: Record<string, any> = {
+        status: 'Cancelado', // Usar nome diretamente
+      }
+
+      const result = await mutateOrder(endpoints.orders.update(orderIdentify), "PUT", payload)
+      if (result) {
+        toast.success("Pedido cancelado com sucesso!")
+        
+        // Recarregar pedidos
+        if (selectedTable && !isDelivery) {
+          refetchTableOrders()
+        }
+        refetchTodayOrders()
+        
+        // Limpar estado
+        setOrderStarted(false)
+        setCurrentOrder(null)
+        setEditingOrder(null)
+        clearCart()
+        setCustomerName("")
+        setCustomerPhone("")
+        setSelectedClientId("")
+        setSelectedPaymentMethod(null)
+        setOrderNotes("")
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao cancelar pedido")
+    }
+  }
+
+  const handleCompleteOrder = async () => {
+    // Esta função agora redireciona para handleFinalizeOrder
+    return handleFinalizeOrder()
   }
 
   // Atalhos de teclado
@@ -1371,25 +1706,7 @@ const handleClientChange = (value: string) => {
       // Ctrl/Cmd + N: Novo pedido
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault()
-        clearCart()
-        setEditingOrder(null)
-        setCustomerName("")
-        setCustomerPhone("")
-        setDeliveryAddress({
-          zip: "",
-          address: "",
-          number: "",
-          neighborhood: "",
-          city: "",
-          state: "",
-          complement: "",
-        })
-        setSelectedClientId("")
-        setSelectedPaymentMethod(null)
-        setSelectedTable(null)
-        setIsDelivery(false)
-        setOrderNotes("")
-        toast.success("Novo pedido iniciado")
+        handleNewOrder()
       }
       
       // Ctrl/Cmd + F: Focar busca
@@ -1401,11 +1718,15 @@ const handleClientChange = (value: string) => {
         }
       }
       
-      // Ctrl/Cmd + Enter: Finalizar pedido (se tiver itens)
+      // Ctrl/Cmd + Enter: Iniciar pedido (se não tiver iniciado) ou Finalizar pedido (se já iniciado)
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault()
         if (cart.length > 0 && !submittingOrder) {
-          handleFinalizeOrder()
+          if (!orderStarted && !editingOrder) {
+            handleStartOrder()
+          } else if (orderStarted || editingOrder) {
+            handleFinalizeOrder()
+          }
         }
       }
       
@@ -1517,74 +1838,56 @@ const handleClientChange = (value: string) => {
         </div>
       )}
       
-      {/* Dashboard Rápido - Fase 3 */}
-      {pdvPermissions.canViewReports && showDashboard && (
-        <PDVQuickDashboard 
-          todayOrders={todayOrders} 
-          showDashboard={showDashboard}
-          onToggle={() => setShowDashboard(!showDashboard)}
-        />
-      )}
-      {pdvPermissions.canViewReports && !showDashboard && (
-        <Card className="border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20 py-2 mx-2">
-          <div className="rounded-xl border px-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 flex-1">
-              <BarChart className="h-5 w-5 text-indigo-600" />
-              <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">Dashboard - Hoje</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowDashboard(!showDashboard)}
-              className="h-8 w-8 text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100"
-              title="Exibir dashboard"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-          </div>
-        </Card>
-      )}
-      
       <header className="rounded-3xl border bg-card p-4 shadow-sm lg:p-6 mx-2">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-4 flex-1">
+          <div className="flex items-center gap-4 flex-1 flex-wrap">
             <div>
-              <p className="text-sm text-muted-foreground">Ponto de Venda</p>
-              <h1 className="text-2xl font-semibold tracking-tight lg:text-3xl">PDV</h1>
+                <p className="text-sm text-muted-foreground">Ponto de Venda</p>
+              <h2 className="text-2xl font-semibold tracking-tight lg:text-3xl">PDV</h2>
             </div>
-            {/* Alerta de mesa ocupada na mesma linha */}
-            {contextualAlerts.length > 0 && contextualAlerts.some(alert => alert.message.includes('pedido(s) em aberto')) && (
-              <div className="flex items-center gap-2">
-                {contextualAlerts
-                  .filter(alert => alert.message.includes('pedido(s) em aberto'))
-                  .map((alert, index) => (
-                    <div
-                      key={index}
-                      className={cn(
-                        "rounded-xl border px-4 flex items-center gap-2",
-                        alert.type === 'warning' && "border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/20"
-                      )}
-                    >
-                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                      <p className="text-sm font-medium text-yellow-900 py-6 dark:text-yellow-100">
-                        {alert.message}
-                      </p>
-                      {alert.action && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={alert.action.onClick}
-                          className="h-7 text-xs ml-2"
-                        >
-                          {alert.action.label}
-                        </Button>
-                      )}
-                    </div>
-                  ))}
+            
+            {/* Dashboard Rápido - Fase 3 - na mesma linha */}  
+            {pdvPermissions.canViewReports && showDashboard && (
+              <div className="flex-1 min-w-0">
+                <PDVQuickDashboard 
+                  todayOrders={todayOrders} 
+                  showDashboard={showDashboard}
+                  onToggle={() => setShowDashboard(!showDashboard)}
+                />
+              </div>
+            )}
+            {pdvPermissions.canViewReports && !showDashboard && (
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20 px-4 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <BarChart className="h-5 w-5 text-indigo-600" />
+                  <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">Dashboard - Hoje</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowDashboard(!showDashboard)}
+                  className="h-8 w-8 text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100"
+                  title="Exibir dashboard"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
               </div>
             )}
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            {/* Botão Novo Pedido */}
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleNewOrder}
+              className="gap-2 h-12"
+              title="Iniciar novo pedido (Ctrl+N)"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Novo Pedido</span>
+              <span className="sm:hidden">Novo</span>
+            </Button>
+            
             {/* Campo de pesquisa de pedido */}
             <div ref={orderSearchRef} className="relative flex-1 sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1658,6 +1961,7 @@ const handleClientChange = (value: string) => {
                 <Utensils className="h-4 w-4" />
                 {selectedTableName || (isDelivery ? "Delivery" : "Selecione uma mesa")}
               </Badge>
+              {/* Botão de Feedback */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -1672,7 +1976,39 @@ const handleClientChange = (value: string) => {
         </div>
       </header>
 
-      <div className={cn("grid gap-6", "lg:grid-cols-[2fr,1fr,320px]")}>
+      {/* Alerta de mesa ocupada - linha separada abaixo do header */}
+      {contextualAlerts.length > 0 && contextualAlerts.some(alert => alert.message.includes('pedido(s) em aberto')) && (
+        <div className="mx-2">
+          {contextualAlerts
+            .filter(alert => alert.message.includes('pedido(s) em aberto'))
+            .map((alert, index) => (
+              <div
+                key={index}
+                className={cn(
+                  "rounded-xl border px-4 py-3 flex items-center gap-2",
+                  alert.type === 'warning' && "border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/20"
+                )}
+              >
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                  {alert.message}
+                </p>
+                {alert.action && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={alert.action.onClick}
+                    className="h-7 text-xs ml-auto"
+                  >
+                    {alert.action.label}
+                  </Button>
+                )}
+              </div>
+            ))}
+        </div>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
         <section className="space-y-6">
           <Card id="categories-section" className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20 mx-2">
             <CardHeader className="pb-4">
@@ -1681,23 +2017,9 @@ const handleClientChange = (value: string) => {
                   <CardTitle className="text-xl text-blue-900 dark:text-blue-100">Categorias</CardTitle>
                   <CardDescription className="text-blue-700 dark:text-blue-300">Selecione uma categoria para ver os produtos.</CardDescription>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowCategories(!showCategories)}
-                  className="h-8 w-8 text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100"
-                  title={showCategories ? "Ocultar categorias" : "Exibir categorias"}
-                >
-                  {showCategories ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </Button>
               </div>
             </CardHeader>
-            {showCategories && (
-              <CardContent>
+            <CardContent>
               <div
                 className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
                 data-testid="touch-grid-categories"
@@ -1723,7 +2045,6 @@ const handleClientChange = (value: string) => {
                 })}
               </div>
               </CardContent>
-            )}
           </Card>
 
           <Card id="products-section" className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20 mx-2">
@@ -1733,23 +2054,9 @@ const handleClientChange = (value: string) => {
                   <CardTitle className="text-xl text-green-900 dark:text-green-100">Produtos</CardTitle>
                   <CardDescription className="text-green-700 dark:text-green-300">Toque em um item para adicioná-lo ao pedido.</CardDescription>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowProducts(!showProducts)}
-                  className="h-8 w-8 text-green-700 dark:text-green-300 hover:text-green-900 dark:hover:text-green-100"
-                  title={showProducts ? "Ocultar produtos" : "Exibir produtos"}
-                >
-                  {showProducts ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </Button>
               </div>
             </CardHeader>
-            {showProducts && (
-              <CardContent>
+            <CardContent>
               {visibleProducts.length === 0 ? (
                 <div className="rounded-2xl border border-dashed p-8 text-center text-muted-foreground">
                   Nenhum produto nesta categoria.
@@ -1797,8 +2104,7 @@ const handleClientChange = (value: string) => {
                   </div>
                 </ScrollArea>
               )}
-              </CardContent>
-            )}
+            </CardContent>
           </Card>
 
           {/* Recomendações Inteligentes - Fase 4 */}
@@ -1822,52 +2128,43 @@ const handleClientChange = (value: string) => {
                   <CardTitle className="text-xl text-orange-900 dark:text-orange-100">Carrinho</CardTitle>
                   <CardDescription className="text-orange-700 dark:text-orange-300">Gerencie os itens e finalize o pedido.</CardDescription>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowCart(!showCart)}
-                  className="h-8 w-8 text-orange-700 dark:text-orange-300 hover:text-orange-900 dark:hover:text-orange-100"
-                  title={showCart ? "Ocultar carrinho" : "Exibir carrinho"}
-                >
-                  {showCart ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </Button>
               </div>
             </CardHeader>
-            {showCart && (
-              <CardContent className="space-y-5">
-              <div className="flex gap-3">
+            <CardContent className="space-y-5">
+              {/* Toggle unificado Retirada/Delivery */}
+              <div className="flex items-center justify-center gap-2 p-2 rounded-xl bg-muted/50">
                 <Button
                   onClick={() => {
                     setIsDelivery(false)
-                    // Força a seleção da primeira mesa quando retirar no local
                     if (tables.length > 0 && !selectedTable) {
                       const firstTable = tables[0]
                       setSelectedTable(firstTable.uuid || firstTable.identify || firstTable.name)
                     }
                   }}
-                  variant={!isDelivery ? "default" : "outline"}
+                  variant={!isDelivery ? "default" : "ghost"}
+                  size="sm"
                   className={cn(
-                    "w-full rounded-2xl text-lg",
-                    !isDelivery && "bg-primary text-primary-foreground shadow-lg"
+                    "flex-1 gap-2",
+                    !isDelivery && "bg-primary text-primary-foreground"
                   )}
                 >
-                  Retirada no local
+                  <Utensils className="h-4 w-4" />
+                  Retirada
                 </Button>
+                <div className="h-6 w-px bg-border" />
                 <Button
                   onClick={() => {
                     setIsDelivery(true)
                     setSelectedTable(null)
                   }}
-                  variant={isDelivery ? "default" : "outline"}
+                  variant={isDelivery ? "default" : "ghost"}
+                  size="sm"
                   className={cn(
-                    "w-full rounded-2xl text-lg",
-                    isDelivery && "bg-primary text-primary-foreground shadow-lg"
+                    "flex-1 gap-2",
+                    isDelivery && "bg-primary text-primary-foreground"
                   )}
                 >
+                  <Truck className="h-4 w-4" />
                   Delivery
                 </Button>
               </div>
@@ -1875,74 +2172,76 @@ const handleClientChange = (value: string) => {
               {!isDelivery && (
                 <div id="table-section" className="space-y-3">
                   <p className="text-sm font-medium">Selecione a mesa</p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {/* Ordenar mesas: ocupadas primeiro, depois vazias */}
-                    {(() => {
-                      const occupiedTables: Table[] = []
-                      const emptyTables: Table[] = []
+                  <Select
+                    value={selectedTable || ""}
+                    onValueChange={(value) => {
+                      const table = tables.find(t => (t.uuid || t.identify || t.name) === value)
+                      if (!table) return
                       
-                      tables.forEach((table) => {
-                        const key = table.uuid || table.identify || table.name
-                        if (tablesWithOpenOrders.has(key)) {
-                          occupiedTables.push(table)
-                        } else {
-                          emptyTables.push(table)
-                        }
-                      })
-                      
-                      return [...occupiedTables, ...emptyTables]
-                    })().map((table) => {
                       const key = table.uuid || table.identify || table.name
-                      const active = selectedTable === key
                       const hasOpenOrders = tablesWithOpenOrders.has(key)
-                      
-                      // Verificar se esta mesa está ocupada por outro pedido (não o que está sendo editado)
                       const isOccupiedByOther = hasOpenOrders && (
                         !editingOrder || 
                         (editingOrder.table?.uuid !== key && editingOrder.table?.identify !== key && editingOrder.table?.name !== key)
                       )
                       
-                      return (
-                        <Button
-                          key={key}
-                          data-testid={`table-button-${key}`}
-                          onClick={() => {
-                            // Permitir seleção mesmo se ocupada quando estiver editando o pedido desta mesa
-                            if (isOccupiedByOther && !editingOrder) {
-                              toast.error("Esta mesa possui pedidos em aberto. Finalize os pedidos antes de criar novos.")
-                              return
-                            }
-                            setSelectedTable(key)
-                          }}
-                          className={cn(
-                            "h-16 rounded-2xl text-lg transition-all",
-                            active
-                              ? isOccupiedByOther
-                                ? "bg-red-600 text-white border-2 border-red-700 shadow-lg dark:bg-red-700 dark:border-red-800"
-                                : "bg-primary text-primary-foreground shadow-lg"
-                              : isOccupiedByOther
-                              ? "bg-red-100 text-red-900 border-2 border-red-300 dark:bg-red-950/50 dark:text-red-100 dark:border-red-800 hover:bg-red-200 dark:hover:bg-red-950/70"
-                              : "bg-muted text-foreground hover:bg-primary/10"
-                          )}
-                        >
-                          <div className="flex items-center gap-2">
-                            {table.name}
-                            {isOccupiedByOther && (
-                              <Badge 
-                                variant={active ? "secondary" : "destructive"} 
-                                className={cn(
-                                  "text-xs",
-                                  active && "bg-white/20 text-white border-white/30"
-                                )}
-                              >
-                                Ocupada
-                              </Badge>
+                      if (isOccupiedByOther && !editingOrder) {
+                        toast.error("Esta mesa possui pedidos em aberto. Finalize os pedidos antes de criar novos.")
+                        return
+                      }
+                      setSelectedTable(key)
+                    }}
+                  >
+                    <SelectTrigger className="h-12 w-full text-base">
+                      <SelectValue placeholder="Selecione uma mesa..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {/* Ordenar mesas: ocupadas primeiro, depois vazias */}
+                      {(() => {
+                        const occupiedTables: Table[] = []
+                        const emptyTables: Table[] = []
+                        
+                        tables.forEach((table) => {
+                          const key = table.uuid || table.identify || table.name
+                          if (tablesWithOpenOrders.has(key)) {
+                            occupiedTables.push(table)
+                          } else {
+                            emptyTables.push(table)
+                          }
+                        })
+                        
+                        return [...occupiedTables, ...emptyTables]
+                      })().map((table) => {
+                        const key = table.uuid || table.identify || table.name
+                        const hasOpenOrders = tablesWithOpenOrders.has(key)
+                        const isOccupiedByOther = hasOpenOrders && (
+                          !editingOrder || 
+                          (editingOrder.table?.uuid !== key && editingOrder.table?.identify !== key && editingOrder.table?.name !== key)
+                        )
+                        
+                        return (
+                          <SelectItem 
+                            key={key} 
+                            value={key}
+                            disabled={isOccupiedByOther && !editingOrder}
+                            className={cn(
+                              isOccupiedByOther && "text-red-600 dark:text-red-400"
                             )}
-                          </div>
-                        </Button>
-                      )
-                    })}
-                  </div>
+                          >
+                            <div className="flex items-center gap-2">
+                              <Utensils className="h-4 w-4" />
+                              <span>{table.name}</span>
+                              {isOccupiedByOther && (
+                                <Badge variant="destructive" className="text-xs ml-auto">
+                                  Ocupada
+                                </Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
 
                   {/* Aviso se mesa tem pedidos em aberto (apenas se não estiver editando o pedido desta mesa) */}
                   {selectedTable && isTableOccupiedByOtherOrder && (
@@ -1960,91 +2259,6 @@ const handleClientChange = (value: string) => {
                           </p>
                         </div>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Pedidos em aberto da mesa */}
-                  {selectedTable && (
-                    <div className="mt-4 space-y-3 rounded-2xl border border-blue-200 bg-blue-50/30 p-4 dark:border-blue-800 dark:bg-blue-950/10">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                          Pedidos em aberto
-                        </p>
-                        {tableOrdersLoading && (
-                          <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                        )}
-                      </div>
-                      {tableOrdersError ? (
-                        <p className="text-xs text-destructive">{tableOrdersError}</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {tableOrdersData && Array.isArray(tableOrdersData) && tableOrdersData.length > 0 ? (
-                            tableOrdersData.map((order: any, index: number) => {
-                              const orderId = order.identify || order.uuid || order.id
-                              const orderTotal = parsePrice(order.total)
-                              const orderStatus = order.status || order.order_status?.name || 'Pendente'
-                              const orderProducts = order.products || []
-                              const totalItems = orderProducts.reduce((sum: number, p: any) => sum + (p.pivot?.qty || p.quantity || 0), 0)
-                              
-                              return (
-                                <div
-                                  key={orderId || `order-${index}`}
-                                  className="rounded-xl border border-blue-200 bg-white p-3 dark:border-blue-800 dark:bg-gray-900"
-                                >
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2">
-                                        <p className="text-sm font-semibold">Pedido #{order.identify || order.id}</p>
-                                        <Badge variant="outline" className="text-xs">
-                                          {orderStatus}
-                                        </Badge>
-                                      </div>
-                                      <p className="mt-1 text-xs text-muted-foreground">
-                                        {totalItems} {totalItems === 1 ? 'item' : 'itens'}
-                                      </p>
-                                      {order.client && (
-                                        <p className="mt-1 text-xs text-muted-foreground">
-                                          Cliente: {order.client.name}
-                                        </p>
-                                      )}
-                                      <p className="mt-1 text-sm font-bold text-primary">
-                                        {formatCurrency(orderTotal)}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  {orderProducts.length > 0 && (
-                                    <div className="mt-2 space-y-1 border-t pt-2">
-                                      {orderProducts.slice(0, 3).map((product: any, idx: number) => {
-                                        const qty = product.pivot?.qty || product.quantity || 0
-                                        const price = parsePrice(product.pivot?.price || product.price)
-                                        return (
-                                          <div key={idx} className="flex items-center justify-between text-xs">
-                                            <span className="text-muted-foreground">
-                                              {qty}x {product.name}
-                                            </span>
-                                            <span className="font-medium">
-                                              {formatCurrency(price * qty)}
-                                            </span>
-                                          </div>
-                                        )
-                                      })}
-                                      {orderProducts.length > 3 && (
-                                        <p className="text-xs text-muted-foreground">
-                                          +{orderProducts.length - 3} {orderProducts.length - 3 === 1 ? 'item' : 'itens'}
-                                        </p>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              )
-                            })
-                          ) : (
-                            <p className="text-xs text-muted-foreground text-center py-2">
-                              Nenhum pedido em aberto para esta mesa
-                            </p>
-                          )}
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -2123,56 +2337,72 @@ const handleClientChange = (value: string) => {
                 </div>
               )}
 
+              {/* Cliente opcional - recolhido por padrão */}
               <div className="space-y-3">
-                <p className="text-sm font-medium">Cliente (opcional)</p>
-                {clients.length > 0 && (
-                  <Combobox
-                    options={clientOptions}
-                    value={selectedClientId}
-                    onValueChange={handleClientChange}
-                    placeholder="Selecione um cliente... (digite para buscar)"
-                    searchPlaceholder="Buscar cliente..."
-                    emptyText="Nenhum cliente encontrado"
-                    allowClear
-                    className="h-12 rounded-2xl text-lg"
-                  />
-                )}
-                <div id="client-section" className="space-y-2">
-                  <p className="text-xs text-muted-foreground">Ou preencha manualmente:</p>
-                  <Input
-                    placeholder="Nome do cliente"
-                    value={customerName}
-                    onChange={(event) => {
-                      if (selectedClientId) {
-                        setSelectedClientId("")
-                      }
-                      setCustomerName(event.target.value)
-                    }}
-                    className="h-12 text-lg"
-                    list="client-names"
-                  />
-                  {/* Auto-complete para nomes de clientes */}
-                  <datalist id="client-names">
-                    {clients.slice(0, 10).map((client) => (
-                      <option key={client.uuid || client.identify} value={client.name} />
-                    ))}
-                  </datalist>
-                  <Input
-                    placeholder="Telefone"
-                    value={customerPhone}
-                    onChange={(event) => {
-                      if (selectedClientId) {
-                        setSelectedClientId("")
-                      }
-                      setCustomerPhone(maskPhone(event.target.value))
-                    }}
-                    className="h-12 text-lg"
-                  />
-                </div>
-                
-                {/* Histórico rápido de pedidos do cliente selecionado */}
-                {selectedClientId && (
-                  <ClientOrderHistory clientId={selectedClientId} onLoadOrder={loadOrderInPDV} />
+                <Button
+                  variant="outline"
+                  onClick={() => setShowClientSection(!showClientSection)}
+                  className="w-full h-12 justify-between"
+                >
+                  <span className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Cliente (opcional)
+                  </span>
+                  {showClientSection ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+                {showClientSection && (
+                  <div className="space-y-3 rounded-xl border p-4 bg-muted/30">
+                    {clients.length > 0 && (
+                      <Combobox
+                        options={clientOptions}
+                        value={selectedClientId}
+                        onValueChange={handleClientChange}
+                        placeholder="Selecione um cliente... (digite para buscar)"
+                        searchPlaceholder="Buscar cliente..."
+                        emptyText="Nenhum cliente encontrado"
+                        allowClear
+                        className="h-12 rounded-2xl text-lg"
+                      />
+                    )}
+                    <div id="client-section" className="space-y-2">
+                      <p className="text-xs text-muted-foreground">Ou preencha manualmente:</p>
+                      <Input
+                        placeholder="Nome do cliente"
+                        value={customerName}
+                        onChange={(event) => {
+                          if (selectedClientId) {
+                            setSelectedClientId("")
+                          }
+                          setCustomerName(event.target.value)
+                        }}
+                        className="h-12 text-lg"
+                        list="client-names"
+                      />
+                      <datalist id="client-names">
+                        {clients.slice(0, 10).map((client) => (
+                          <option key={client.uuid || client.identify} value={client.name} />
+                        ))}
+                      </datalist>
+                      <Input
+                        placeholder="Telefone"
+                        value={customerPhone}
+                        onChange={(event) => {
+                          if (selectedClientId) {
+                            setSelectedClientId("")
+                          }
+                          setCustomerPhone(maskPhone(event.target.value))
+                        }}
+                        className="h-12 text-lg"
+                      />
+                    </div>
+                    {selectedClientId && (
+                      <ClientOrderHistory clientId={selectedClientId} onLoadOrder={loadOrderInPDV} />
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -2194,19 +2424,23 @@ const handleClientChange = (value: string) => {
                           key={item.signature}
                           data-testid={`cart-item-${item.signature}`}
                           className={cn(
-                            "rounded-2xl border p-4 transition-all",
-                            isAdding && "border-green-500 bg-green-50/50 scale-105",
-                            isRemoving && "border-red-500 bg-red-50/50 opacity-50 scale-95"
+                            "rounded-2xl border-2 p-4 transition-all bg-card shadow-sm relative",
+                            isAdding && "border-green-500 bg-green-50/50 scale-105 shadow-md",
+                            isRemoving && "border-red-500 bg-red-50/50 opacity-50 scale-95",
+                            !isAdding && !isRemoving && "border-primary/20 hover:border-primary/40 hover:shadow-md"
                           )}
                         >
                           <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-lg font-semibold">{item.product.name}</p>
-                              <p className="text-sm text-muted-foreground">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Package className="h-5 w-5 text-primary" />
+                                <p className="text-lg font-bold">{item.product.name}</p>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-2">
                                 {formatCurrency(unitPrice)} cada
                               </p>
                               {item.selectedVariation && (
-                                <Badge variant="outline" className="mt-2 text-xs">
+                                <Badge variant="outline" className="mt-1 text-xs">
                                   {item.selectedVariation.name}
                                 </Badge>
                               )}
@@ -2238,10 +2472,12 @@ const handleClientChange = (value: string) => {
                               )}
                             </div>
                             <Button
-                              variant="ghost"
+                              variant="destructive"
                               size="icon"
                               aria-label={`Remover ${item.product.name}`}
                               onClick={() => removeItem(item.signature)}
+                              className="h-10 w-10 shrink-0"
+                              title="Remover item"
                             >
                               <Trash2 className="h-5 w-5" />
                             </Button>
@@ -2282,26 +2518,52 @@ const handleClientChange = (value: string) => {
                               placeholder="Observações (ex: sem cebola)"
                               className="h-12 rounded-2xl"
                             />
-                            {/* Templates de observações rápidas */}
-                            <div className="flex flex-wrap gap-2">
-                              {['Sem cebola', 'Sem tomate', 'Bem passado', 'Mal passado', 'Sem pimenta', 'Extra molho'].map((template) => (
-                                <Button
-                                  key={template}
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 text-xs"
-                                  onClick={() => {
-                                    const currentObs = item.observation
-                                    const newObs = currentObs 
-                                      ? `${currentObs}, ${template}`
-                                      : template
-                                    updateItemObservation(item.signature, newObs)
-                                  }}
-                                >
-                                  {template}
-                                </Button>
-                              ))}
-                            </div>
+                            {/* Templates de observações do produto */}
+                            {item.product.observation_templates && item.product.observation_templates.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {item.product.observation_templates.map((template: string) => (
+                                  <Button
+                                    key={template}
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 text-xs"
+                                    onClick={() => {
+                                      const currentObs = item.observation
+                                      const newObs = currentObs 
+                                        ? `${currentObs}, ${template}`
+                                        : template
+                                      updateItemObservation(item.signature, newObs)
+                                    }}
+                                  >
+                                    {template}
+                                  </Button>
+                                ))}
+                              </div>
+                            )}
+                            {/* Fallback para observation_suggestions se observation_templates não existir */}
+                            {(!item.product.observation_templates || item.product.observation_templates.length === 0) && 
+                             item.product.observation_suggestions && 
+                             item.product.observation_suggestions.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {item.product.observation_suggestions.map((template: string) => (
+                                  <Button
+                                    key={template}
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 text-xs"
+                                    onClick={() => {
+                                      const currentObs = item.observation
+                                      const newObs = currentObs 
+                                        ? `${currentObs}, ${template}`
+                                        : template
+                                      updateItemObservation(item.signature, newObs)
+                                    }}
+                                  >
+                                    {template}
+                                  </Button>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                       )
@@ -2321,29 +2583,43 @@ const handleClientChange = (value: string) => {
               </div>
 
               <div id="payment-section" className="space-y-3">
-                <p className="text-sm font-medium">Forma de pagamento</p>
-                <div className="grid gap-2">
-                  {paymentMethods.map((method) => {
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">Forma de pagamento</p>
+                  {paymentMethods.length > 4 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowPaymentMethods(!showPaymentMethods)}
+                      className="h-8 text-xs"
+                    >
+                      {showPaymentMethods ? "Ocultar" : "Mostrar todas"}
+                    </Button>
+                  )}
+                </div>
+                <div className={cn(
+                  "grid gap-3",
+                  paymentMethods.length <= 4 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"
+                )}>
+                  {paymentMethods.slice(0, showPaymentMethods ? paymentMethods.length : 4).map((method) => {
                     const active = selectedPaymentMethod === method.uuid
-                    // Detectar tipo de pagamento pelo nome para mostrar ícone apropriado
                     const getPaymentIcon = (name: string) => {
                       const lowerName = name.toLowerCase()
-                      if (lowerName.includes('pix') || lowerName.includes('pix')) {
-                        return <Smartphone className="h-5 w-5" />
+                      if (lowerName.includes('pix')) {
+                        return <Smartphone className="h-8 w-8" />
                       }
                       if (lowerName.includes('cartão') || lowerName.includes('card') || lowerName.includes('credito') || lowerName.includes('debito')) {
-                        return <CreditCard className="h-5 w-5" />
+                        return <CreditCard className="h-8 w-8" />
                       }
                       if (lowerName.includes('dinheiro') || lowerName.includes('money') || lowerName.includes('cash')) {
-                        return <Banknote className="h-5 w-5" />
+                        return <Banknote className="h-8 w-8" />
                       }
                       if (lowerName.includes('contactless') || lowerName.includes('nfc') || lowerName.includes('aproximação')) {
-                        return <Radio className="h-5 w-5" />
+                        return <Radio className="h-8 w-8" />
                       }
                       if (lowerName.includes('transferência') || lowerName.includes('transfer') || lowerName.includes('ted') || lowerName.includes('doc')) {
-                        return <Building2 className="h-5 w-5" />
+                        return <Building2 className="h-8 w-8" />
                       }
-                      return <CreditCard className="h-5 w-5" />
+                      return <CreditCard className="h-8 w-8" />
                     }
                     
                     return (
@@ -2352,28 +2628,21 @@ const handleClientChange = (value: string) => {
                         data-testid={`payment-button-${method.uuid}`}
                         onClick={() => setSelectedPaymentMethod(method.uuid)}
                         className={cn(
-                          "h-16 rounded-2xl justify-start gap-3 px-4 text-left",
+                          "h-20 rounded-2xl flex-col gap-2",
                           active
-                            ? "bg-primary text-primary-foreground shadow-lg"
-                            : "bg-muted text-foreground hover:bg-primary/10"
+                            ? "bg-primary text-primary-foreground shadow-lg border-2 border-primary"
+                            : "bg-muted text-foreground hover:bg-primary/10 border-2 border-transparent"
                         )}
                       >
-                        <div className="flex items-center gap-3 flex-1">
+                        <div className={cn(
+                          "transition-colors",
+                          active ? "text-primary-foreground" : "text-primary"
+                        )}>
                           {getPaymentIcon(method.name)}
-                          <div className="flex flex-col items-start flex-1">
-                            <span className="font-semibold text-base">{method.name}</span>
-                            {method.description && (
-                              <span className={cn(
-                                "text-xs",
-                                active ? "text-primary-foreground/80" : "text-muted-foreground"
-                              )}>
-                                {method.description}
-                              </span>
-                            )}
-                          </div>
                         </div>
+                        <span className="font-semibold text-sm">{method.name}</span>
                         {active && (
-                          <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                          <CheckCircle2 className="h-4 w-4 absolute top-2 right-2" />
                         )}
                       </Button>
                     )
@@ -2403,7 +2672,7 @@ const handleClientChange = (value: string) => {
                           Editando Pedido #{editingOrder.identify || editingOrder.id}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          As alterações serão salvas ao finalizar
+                          Use "Atualizar Pedido" para salvar sem finalizar ou "Concluir Pedido" para finalizar
                         </p>
                       </div>
                     </div>
@@ -2440,181 +2709,329 @@ const handleClientChange = (value: string) => {
               )}
 
               <div className="flex flex-col gap-3">
-                <Button
-                  id="finalize-button"
-                  data-testid="finalize-order-button"
-                  onClick={handleFinalizeOrder}
-                  disabled={
-                    submittingOrder || 
-                    !cart.length || 
-                    (!isDelivery && isTableOccupiedByOtherOrder) ||
-                    !pdvPermissions.canCreateOrder
-                  }
-                  className="h-24 rounded-2xl text-2xl font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg"
-                  title={!pdvPermissions.canCreateOrder ? "Você não tem permissão para criar pedidos" : undefined}
-                >
-                  {submittingOrder ? (
-                    <>
-                      <Loader2 className="mr-3 h-6 w-6 animate-spin" />
-                      Processando...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="mr-3 h-6 w-6" />
-                      <div className="flex flex-col items-start">
-                        <span>
-                          {editingOrder
-                            ? "Salvar Alterações"
-                            : !isDelivery && isTableOccupiedByOtherOrder
-                            ? "Mesa ocupada - Finalize pedidos existentes"
-                            : "Finalizar Pedido"}
-                        </span>
-                        {!editingOrder && cart.length > 0 && (
-                          <span className="text-sm font-normal opacity-90">
-                            {cart.reduce((sum, item) => sum + item.quantity, 0)} {cart.reduce((sum, item) => sum + item.quantity, 0) === 1 ? 'item' : 'itens'} • {formatCurrency(orderTotal)}
-                          </span>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={clearCart}
-                  disabled={!cart.length}
-                  className="h-16 rounded-2xl text-lg"
-                >
-                  <Trash2 className="mr-2 h-5 w-5" />
-                  Limpar carrinho
-                </Button>
-              </div>
-              </CardContent>
-            )}
-          </Card>
-        </aside>
-
-        {/* Sidebar de Pedidos do Dia */}
-        <aside className="hidden lg:block">
-          <Card className="sticky top-6 border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20 h-[calc(100vh-8rem)] flex flex-col mx-2">
-            <CardHeader className="pb-4 border-b">
-              <CardTitle className="text-xl text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Pedidos de Hoje
-              </CardTitle>
-              <CardDescription className="text-indigo-700 dark:text-indigo-300">
-                {todayOrdersLoading ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Carregando...
-                  </span>
-                ) : (
-                  `${todayOrders.length} ${todayOrders.length === 1 ? 'pedido' : 'pedidos'}`
+                {/* Botão Iniciar Pedido - aparece apenas quando o pedido não foi iniciado */}
+                {!orderStarted && !editingOrder && (
+                  <Button
+                    id="start-order-button"
+                    data-testid="start-order-button"
+                    onClick={handleStartOrder}
+                    disabled={
+                      submittingOrder || 
+                      !cart.length || 
+                      !selectedPaymentMethod ||
+                      (!isDelivery && !selectedTable) ||
+                      (!isDelivery && isTableOccupiedByOtherOrder) ||
+                      !pdvPermissions.canCreateOrder
+                    }
+                    className="h-24 rounded-2xl text-2xl font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg"
+                    title={
+                      !cart.length
+                        ? "Adicione itens ao pedido"
+                        : !selectedPaymentMethod
+                        ? "Selecione uma forma de pagamento"
+                        : !isDelivery && !selectedTable
+                        ? "Selecione uma mesa"
+                        : !isDelivery && isTableOccupiedByOtherOrder
+                        ? "Mesa ocupada - Finalize pedidos existentes"
+                        : !pdvPermissions.canCreateOrder
+                        ? "Você não tem permissão para criar pedidos"
+                        : undefined
+                    }
+                  >
+                    {submittingOrder ? (
+                      <>
+                        <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+                        Processando...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="mr-3 h-6 w-6" />
+                        <div className="flex flex-col items-start">
+                          <span>Iniciar Pedido</span>
+                          {cart.length > 0 && (
+                            <span className="text-sm font-normal opacity-90">
+                              {cart.reduce((sum, item) => sum + item.quantity, 0)} {cart.reduce((sum, item) => sum + item.quantity, 0) === 1 ? 'item' : 'itens'} • {formatCurrency(orderTotal)}
+                            </span>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </Button>
                 )}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-hidden p-0">
-              {todayOrdersError ? (
-                <div className="p-4 text-center text-sm text-destructive">
-                  Erro ao carregar pedidos
+
+                {/* Botões que aparecem após iniciar o pedido ou ao editar um pedido existente */}
+                {(orderStarted || editingOrder) && (
+                  <>
+                    {/* Botão de Atualizar Pedido */}
+                    <Button
+                      id="update-order-button"
+                      data-testid="update-order-button"
+                      onClick={handleUpdateOrder}
+                      disabled={
+                        submittingOrder || 
+                        !cart.length ||
+                        !pdvPermissions.canCreateOrder
+                      }
+                      className="h-20 rounded-2xl text-xl font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-lg"
+                      title={
+                        !cart.length
+                          ? "Adicione itens ao pedido" 
+                          : !pdvPermissions.canCreateOrder 
+                          ? "Você não tem permissão para atualizar pedidos" 
+                          : undefined
+                      }
+                    >
+                      {submittingOrder ? (
+                        <>
+                          <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                          Processando...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="mr-3 h-5 w-5" />
+                          Atualizar Pedido
+                        </>
+                      )}
+                    </Button>
+
+                    {/* Botão de Finalizar Pedido */}
+                    <Button
+                      id="finalize-button"
+                      data-testid="finalize-order-button"
+                      onClick={handleFinalizeOrder}
+                      disabled={
+                        submittingOrder || 
+                        !cart.length ||
+                        !pdvPermissions.canCreateOrder
+                      }
+                      className="h-20 rounded-2xl text-xl font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg"
+                      title={
+                        !cart.length
+                          ? "Adicione itens ao pedido"
+                          : !pdvPermissions.canCreateOrder 
+                          ? "Você não tem permissão para finalizar pedidos" 
+                          : undefined
+                      }
+                    >
+                      {submittingOrder ? (
+                        <>
+                          <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                          Processando...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="mr-3 h-5 w-5" />
+                          Finalizar Pedido
+                        </>
+                      )}
+                    </Button>
+
+                    {/* Botão de Cancelar Pedido */}
+                    <Button
+                      id="cancel-order-button"
+                      data-testid="cancel-order-button"
+                      onClick={handleCancelOrder}
+                      disabled={
+                        submittingOrder ||
+                        !pdvPermissions.canCreateOrder
+                      }
+                      className="h-20 rounded-2xl text-xl font-bold bg-red-600 hover:bg-red-700 text-white shadow-lg"
+                      title={
+                        !pdvPermissions.canCreateOrder 
+                          ? "Você não tem permissão para cancelar pedidos" 
+                          : undefined
+                      }
+                    >
+                      {submittingOrder ? (
+                        <>
+                          <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                          Processando...
+                        </>
+                      ) : (
+                        <>
+                          <X className="mr-3 h-5 w-5" />
+                          Cancelar Pedido
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
+              </div>
+              
+              {/* Limpar carrinho - movido para o final */}
+              {cart.length > 0 && (
+                <div className="pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={clearCart}
+                    className="w-full h-12 rounded-2xl text-base text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="mr-2 h-5 w-5" />
+                    Limpar carrinho
+                  </Button>
                 </div>
-              ) : todayOrdersLoading ? (
-                <div className="flex h-full items-center justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : todayOrders.length === 0 ? (
-                <div className="flex h-full flex-col items-center justify-center p-6 text-center">
-                  <Package className="h-12 w-12 text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    Nenhum pedido hoje
-                  </p>
-                </div>
-              ) : (
-                <ScrollArea className="h-full">
-                  <div className="p-4">
-                    <div className="grid grid-cols-2 gap-2">
-                      {todayOrders.map((order: any) => {
-                        const orderId = order.identify || order.uuid || order.id
-                        const orderTotal = parsePrice(order.total || 0)
-                        const orderStatus = order.status || 'Pendente'
-                        const orderDate = order.created_at 
-                          ? new Date(order.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-                          : '--:--'
-                        const isActive = editingOrder && (editingOrder.identify === orderId || editingOrder.uuid === orderId || editingOrder.id === order.id)
-                        
-                        return (
-                          <button
-                            key={orderId}
-                            onClick={() => loadOrderInPDV(orderId)}
-                            className={cn(
-                              "w-full rounded-xl border p-3 text-left transition-all hover:shadow-md",
-                              isActive
-                                ? "border-primary bg-primary/10 shadow-md"
-                                : "border-border bg-card hover:border-primary/50"
-                            )}
-                          >
-                            <div className="flex items-start justify-between gap-1 mb-1">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex flex-col gap-1">
-                                  <span className="font-bold text-sm text-foreground truncate">
-                                    #{order.identify || order.id}
-                                  </span>
-                                  <Badge 
-                                    variant={orderStatus === 'Entregue' || orderStatus === 'Concluído' ? 'default' : 'secondary'}
-                                    className="text-[10px] px-1 py-0 w-fit"
-                                  >
-                                    {orderStatus}
-                                  </Badge>
-                                </div>
-                              </div>
-                              <Edit className={cn(
-                                "h-3 w-3 flex-shrink-0 mt-0.5",
-                                isActive ? "text-primary" : "text-muted-foreground"
-                              )} />
-                            </div>
-                            
-                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
-                              <Clock className="h-2.5 w-2.5" />
-                              {orderDate}
-                            </div>
-                            
-                            {order.client && (
-                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1 truncate">
-                                <User className="h-2.5 w-2.5 flex-shrink-0" />
-                                <span className="truncate">{order.client.name}</span>
-                              </div>
-                            )}
-                            
-                            {order.table && (
-                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1 truncate">
-                                <Utensils className="h-2.5 w-2.5 flex-shrink-0" />
-                                <span className="truncate">Mesa: {order.table.name}</span>
-                              </div>
-                            )}
-                            
-                            {order.products && Array.isArray(order.products) && (
-                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
-                                <Package className="h-2.5 w-2.5 flex-shrink-0" />
-                                <span>{order.products.length} {order.products.length === 1 ? 'item' : 'itens'}</span>
-                              </div>
-                            )}
-                            
-                            <div className="flex items-center justify-between pt-1.5 border-t mt-1">
-                              <span className="text-[10px] font-medium text-muted-foreground">Total</span>
-                              <span className="text-sm font-bold text-primary">
-                                {formatCurrency(orderTotal)}
-                              </span>
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </ScrollArea>
               )}
-            </CardContent>
+              </CardContent>
           </Card>
         </aside>
       </div>
+
+      {/* Sheet de Pedidos de Hoje */}
+      <Sheet open={showTodayOrdersSheet} onOpenChange={setShowTodayOrdersSheet}>
+        <SheetContent side="right" className="w-full sm:w-[400px] lg:w-[500px]">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Pedidos de Hoje
+            </SheetTitle>
+            <SheetDescription>
+              {(tableOrdersLoading || todayOrdersLoading) ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Carregando...
+                </span>
+              ) : (
+                `${sidebarOrders.length} ${sidebarOrders.length === 1 ? 'pedido' : 'pedidos'}${selectedTable && !isDelivery && tableOrders && Array.isArray(tableOrders) && tableOrders.length > 0 ? ' (desta mesa)' : ' (de hoje)'}`
+              )}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 flex-1 overflow-hidden">
+            {(tableOrdersError || todayOrdersError) ? (
+              <div className="p-4 text-center text-sm text-destructive">
+                Erro ao carregar pedidos: {tableOrdersError || todayOrdersError}
+              </div>
+            ) : (tableOrdersLoading || todayOrdersLoading) ? (
+              <div className="flex h-full items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : sidebarOrders.length === 0 ? (
+              <div className="flex h-full flex-col items-center justify-center p-6 text-center">
+                <Package className="h-12 w-12 text-muted-foreground mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  Nenhum pedido hoje
+                </p>
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="mt-4 text-xs text-muted-foreground space-y-1">
+                    <p>Debug Info:</p>
+                    <p>todayOrdersData type: {String(typeof todayOrdersData)}</p>
+                    <p>todayOrdersData isArray: {String(Array.isArray(todayOrdersData))}</p>
+                    <p>todayOrders length: {String(todayOrders.length)}</p>
+                    <p className="break-all text-xs">
+                      Raw data: {todayOrdersData ? String(JSON.stringify(todayOrdersData).substring(0, 200)) + '...' : 'null'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <ScrollArea className="h-[calc(100vh-12rem)]">
+                <div className="p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {sidebarOrders.map((order: any) => {
+                      const orderId = order.identify || order.uuid || order.id
+                      const orderTotal = parsePrice(order.total || 0)
+                      const orderStatus = order.status || 'Pendente'
+                      // Formatar data com validação
+                      let orderDate = '--:--'
+                      if (order.created_at) {
+                        try {
+                          const date = new Date(order.created_at)
+                          if (!isNaN(date.getTime())) {
+                            orderDate = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                          }
+                        } catch (error) {
+                          console.error('Erro ao formatar data:', error)
+                        }
+                      }
+                      const isActive = editingOrder && (editingOrder.identify === orderId || editingOrder.uuid === orderId || editingOrder.id === order.id)
+                      
+                      // Verificar se o pedido pertence à mesa selecionada
+                      const orderTableKey = order.table?.uuid || order.table?.identify || order.table?.name
+                      const isFromSelectedTable = selectedTable && orderTableKey === selectedTable && !isDelivery
+                      
+                      return (
+                        <button
+                          key={orderId}
+                          onClick={() => {
+                            loadOrderInPDV(orderId)
+                            setShowTodayOrdersSheet(false)
+                          }}
+                          className={cn(
+                            "w-full rounded-xl border p-3 text-left transition-all hover:shadow-md",
+                            isActive
+                              ? "border-primary bg-primary/10 shadow-md"
+                              : isFromSelectedTable
+                              ? "border-yellow-400 bg-yellow-50/50 dark:bg-yellow-950/20 shadow-sm"
+                              : "border-border bg-card hover:border-primary/50"
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-1 mb-1">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-sm text-foreground truncate">
+                                    #{order.identify || order.id}
+                                  </span>
+                                  {isFromSelectedTable && (
+                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-yellow-400 text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30">
+                                      Esta Mesa
+                                    </Badge>
+                                  )}
+                                </div>
+                                <Badge 
+                                  variant={orderStatus === 'Entregue' || orderStatus === 'Concluído' ? 'default' : 'secondary'}
+                                  className="text-[10px] px-1 py-0 w-fit"
+                                >
+                                  {orderStatus}
+                                </Badge>
+                              </div>
+                            </div>
+                            <Edit className={cn(
+                              "h-3 w-3 flex-shrink-0 mt-0.5",
+                              isActive ? "text-primary" : "text-muted-foreground"
+                            )} />
+                          </div>
+                          
+                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
+                            <Clock className="h-2.5 w-2.5" />
+                            {orderDate}
+                          </div>
+                          
+                          {order.client && (
+                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1 truncate">
+                              <User className="h-2.5 w-2.5 flex-shrink-0" />
+                              <span className="truncate">{order.client.name}</span>
+                            </div>
+                          )}
+                          
+                          {order.table && (
+                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1 truncate">
+                              <Utensils className="h-2.5 w-2.5 flex-shrink-0" />
+                              <span className="truncate">Mesa: {order.table.name}</span>
+                            </div>
+                          )}
+                          
+                          {order.products && Array.isArray(order.products) && (
+                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
+                              <Package className="h-2.5 w-2.5 flex-shrink-0" />
+                              <span>{order.products.length} {order.products.length === 1 ? 'item' : 'itens'}</span>
+                            </div>
+                          )}
+                          
+                          <div className="mt-2 pt-2 border-t border-border">
+                            <span className="font-bold text-sm text-foreground">
+                              {formatCurrency(orderTotal)}
+                            </span>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Sheet de Edição de Pedido */}
       <Sheet open={editOrderSheetOpen} onOpenChange={setEditOrderSheetOpen}>
@@ -2737,7 +3154,7 @@ const handleClientChange = (value: string) => {
                                 )
                               )
                             }}
-                            placeholder="Observações (ex: sem cebola)"
+                            placeholder="Observações"
                             className="mt-3 h-11 rounded-2xl"
                           />
                         </div>
@@ -2836,14 +3253,15 @@ const handleClientChange = (value: string) => {
                 </div>
               </div>
               <div className="flex flex-col gap-3">
-                <Button
+                {/* Botão Salvar Alterações - Comentado */}
+                {/* <Button
                   onClick={handleSaveOrderEdit}
                   disabled={submittingOrder || !editOrderCart.length}
                   className="h-16 rounded-2xl text-xl"
                 >
                   {submittingOrder && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                   Salvar Alterações
-                </Button>
+                </Button> */}
                 <Button
                   variant="outline"
                   onClick={() => {

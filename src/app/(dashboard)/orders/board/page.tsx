@@ -32,7 +32,9 @@ import {
   MapPin,
   Truck,
   UtensilsCrossed,
-  Archive
+  Archive,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
@@ -157,9 +159,23 @@ interface OrderCardProps {
   order: Order
   isDragOverlay?: boolean
   onArchive: (order: Order) => void
+  onMoveLeft?: (order: Order) => void
+  onMoveRight?: (order: Order) => void
+  canMoveLeft?: boolean
+  canMoveRight?: boolean
+  columns?: Array<{ id: OrderStatus; title: string }>
 }
 
-function OrderCard({ order, isDragOverlay = false, onArchive }: OrderCardProps) {
+function OrderCard({ 
+  order, 
+  isDragOverlay = false, 
+  onArchive,
+  onMoveLeft,
+  onMoveRight,
+  canMoveLeft = false,
+  canMoveRight = false,
+  columns = []
+}: OrderCardProps) {
   const { 
     setNodeRef, 
     attributes, 
@@ -245,6 +261,46 @@ function OrderCard({ order, isDragOverlay = false, onArchive }: OrderCardProps) 
           </Button>
         </div>
         </div>
+        
+        {/* Botões de navegação para touch - Mover entre colunas */}
+        {!isDragOverlay && (canMoveLeft || canMoveRight) && (
+          <div className="flex items-center justify-center gap-2 py-2 border-y">
+            {canMoveLeft && onMoveLeft && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onMoveLeft(order)
+                }}
+                onMouseDown={(event) => event.stopPropagation()}
+                onPointerDown={(event) => event.stopPropagation()}
+                className="h-8 px-3 flex-1"
+                title="Mover para coluna anterior"
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                <span className="text-xs">Anterior</span>
+              </Button>
+            )}
+            {canMoveRight && onMoveRight && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onMoveRight(order)
+                }}
+                onMouseDown={(event) => event.stopPropagation()}
+                onPointerDown={(event) => event.stopPropagation()}
+                className="h-8 px-3 flex-1"
+                title="Mover para próxima coluna"
+              >
+                <span className="text-xs">Próxima</span>
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            )}
+          </div>
+        )}
         
         {/* Info Section */}
         <div className="space-y-2.5">
@@ -351,9 +407,28 @@ interface BoardColumnProps {
   orders: Order[]
   isUpdating: boolean
   onArchive: (order: Order) => void
+  onMoveOrder?: (order: Order, newStatus: OrderStatus) => void
+  allColumns?: Array<{ id: OrderStatus; title: string }>
 }
 
-function BoardColumn({ column, orders, isUpdating, onArchive }: BoardColumnProps) {
+function BoardColumn({ column, orders, isUpdating, onArchive, onMoveOrder, allColumns = [] }: BoardColumnProps) {
+  // Encontrar índice da coluna atual
+  const currentIndex = allColumns.findIndex((c) => c.id === column.id)
+  const prevColumn = currentIndex > 0 ? allColumns[currentIndex - 1] : null
+  const nextColumn = currentIndex < allColumns.length - 1 ? allColumns[currentIndex + 1] : null
+
+  const handleMoveLeft = (order: Order) => {
+    if (prevColumn && onMoveOrder) {
+      onMoveOrder(order, prevColumn.id)
+    }
+  }
+
+  const handleMoveRight = (order: Order) => {
+    if (nextColumn && onMoveOrder) {
+      onMoveOrder(order, nextColumn.id)
+    }
+  }
+
   return (
     <Card
       className={cn(
@@ -394,7 +469,16 @@ function BoardColumn({ column, orders, isUpdating, onArchive }: BoardColumnProps
             )}
             
             {orders.map((order) => (
-              <OrderCard key={order.identify} order={order} onArchive={onArchive} />
+              <OrderCard 
+                key={order.identify} 
+                order={order} 
+                onArchive={onArchive}
+                onMoveLeft={handleMoveLeft}
+                onMoveRight={handleMoveRight}
+                canMoveLeft={!!prevColumn}
+                canMoveRight={!!nextColumn}
+                columns={allColumns}
+              />
             ))}
             
             {isUpdating && (
@@ -630,8 +714,14 @@ export default function OrdersBoardPage() {
     return map as Record<OrderStatus, Order[]>
   }, [orders, dynamicColumns])
 
-  const updateOrderStatus = async (orderIdentify: string, newStatus: OrderStatus) => {
-    const order = orders.find((o) => o.identify === orderIdentify)
+  const updateOrderStatus = async (orderOrIdentify: Order | string, newStatus: OrderStatus) => {
+    // Aceitar tanto Order quanto string (identify)
+    const orderIdentify = typeof orderOrIdentify === 'string' 
+      ? orderOrIdentify 
+      : orderOrIdentify.identify
+    const order = typeof orderOrIdentify === 'object' 
+      ? orderOrIdentify 
+      : orders.find((o) => o.identify === orderIdentify)
     if (!order) return
     
     const columnInfo = dynamicColumns.find((c) => c.id === newStatus)
@@ -792,6 +882,8 @@ export default function OrdersBoardPage() {
               orders={groupedOrders[column.id] || []}
               isUpdating={groupedOrders[column.id]?.some(o => o.identify === updatingIdentify) || false}
               onArchive={openArchiveDialog}
+              onMoveOrder={updateOrderStatus}
+              allColumns={dynamicColumns}
             />
           ))}
         </div>
