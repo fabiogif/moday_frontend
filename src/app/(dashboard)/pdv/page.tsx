@@ -88,6 +88,7 @@ import {
   RefreshCw,
   ChevronUp,
   ChevronDown,
+  ArrowRight,
 } from "lucide-react"
 import { maskPhone, maskZipCode } from "@/lib/masks"
 import { PixQrCodeDialog } from "./components/pix-qr-code-dialog"
@@ -182,6 +183,44 @@ function extractCollection<T>(raw: any): T[] {
     }
   }
   return []
+}
+
+// Status finais que não podem ser editados
+const FINAL_STATUSES = ['Entregue', 'Cancelado', 'Concluído', 'Arquivado']
+
+// Função helper para verificar se um status é final
+const isFinalStatus = (status: string | null | undefined): boolean => {
+  if (!status) return false
+  return FINAL_STATUSES.includes(status)
+}
+
+// Função helper para normalizar nome do status (remover variações como "/ Cozinha")
+const normalizeStatusName = (statusName: string | null | undefined): string => {
+  if (!statusName) return ''
+  const normalized = statusName.trim()
+  // Remover sufixos comuns após "/"
+  if (normalized.includes('/')) {
+    return normalized.split('/')[0].trim()
+  }
+  return normalized
+}
+
+// Função helper para obter o próximo status do fluxo
+const getNextStatusName = (currentStatus: string | null | undefined, isDelivery: boolean): string | null => {
+  if (!currentStatus) return null
+  
+  // Normalizar o status atual para comparação
+  const normalizedCurrent = normalizeStatusName(currentStatus)
+  
+  // Mapear fluxo de status (usando nomes normalizados)
+  const flow: Record<string, string> = {
+    'Pedido Recebido': 'Em Preparação',
+    'Em Preparação': 'Pronto',
+    'Pronto': isDelivery ? 'Em Entrega' : 'Entregue',
+    'Em Entrega': 'Entregue',
+  }
+  
+  return flow[normalizedCurrent] || null
 }
 
 function parsePrice(value?: number | string | null): number {
@@ -605,24 +644,50 @@ export default function POSPage() {
     return occupiedTables
   }, [todayOrders])
   
-  // Verificar se a mesa selecionada está ocupada por outro pedido (não o que está sendo editado)
+  // Verificar se a mesa selecionada está ocupada por outro pedido (não o que está sendo editado ou iniciado)
   const isTableOccupiedByOtherOrder = useMemo(() => {
     if (!selectedTable || !tablesWithOpenOrders.has(selectedTable)) {
       return false
     }
     
-    // Se não estiver editando, a mesa está ocupada
-    if (!editingOrder) {
-      return true
+    // Obter o pedido atual (pode ser editingOrder ou currentOrder)
+    const currentOrderData = editingOrder || currentOrder
+    
+    // Se não houver pedido atual, verificar se há pedidos abertos na mesa
+    if (!currentOrderData) {
+      // Verificar se há pedidos abertos na mesa que não sejam do pedido atual
+      const hasOtherOrders = todayOrders.some((order: any) => {
+        const orderTableKey = order.table?.uuid || order.table?.identify || order.table?.name
+        const status = order.status || ''
+        const isOpen = !['Entregue', 'Concluído', 'Cancelado', 'Arquivado'].includes(status)
+        return isOpen && orderTableKey === selectedTable
+      })
+      return hasOtherOrders
     }
     
-    // Se estiver editando, verificar se o pedido sendo editado pertence a esta mesa
-    const editingOrderTableKey = editingOrder.table?.uuid || editingOrder.table?.identify || editingOrder.table?.name
-    const currentTableKey = selectedTable
+    // Se houver pedido atual, verificar se ele pertence a esta mesa
+    const currentOrderTableKey = currentOrderData.table?.uuid || currentOrderData.table?.identify || currentOrderData.table?.name
+    const selectedTableKey = selectedTable
     
-    // Se o pedido sendo editado pertence a esta mesa, não está ocupada por outro pedido
-    return editingOrderTableKey !== currentTableKey
-  }, [selectedTable, tablesWithOpenOrders, editingOrder])
+    // Se o pedido atual pertence a esta mesa, não está ocupada por outro pedido
+    if (currentOrderTableKey === selectedTableKey) {
+      return false
+    }
+    
+    // Se o pedido atual não pertence a esta mesa, verificar se há outros pedidos abertos na mesa
+    const hasOtherOrders = todayOrders.some((order: any) => {
+      const orderTableKey = order.table?.uuid || order.table?.identify || order.table?.name
+      const orderId = order.identify || order.uuid || order.id
+      const currentOrderId = currentOrderData.identify || currentOrderData.uuid || currentOrderData.id
+      const status = order.status || ''
+      const isOpen = !['Entregue', 'Concluído', 'Cancelado', 'Arquivado'].includes(status)
+      
+      // Verificar se é outro pedido (diferente do atual) na mesma mesa
+      return isOpen && orderTableKey === selectedTableKey && orderId !== currentOrderId
+    })
+    
+    return hasOtherOrders
+  }, [selectedTable, tablesWithOpenOrders, editingOrder, currentOrder, todayOrders])
 
   const selectionTotal = useMemo(() => {
     if (!selectionProduct) return 0
@@ -1318,9 +1383,17 @@ const handleClientChange = (value: string) => {
   }
 
   const handleUpdateOrder = async () => {
-    // Só pode atualizar se estiver editando um pedido existente
-    if (!editingOrder) {
+    // Pode atualizar se estiver editando um pedido existente OU se tiver um pedido iniciado
+    const orderToUpdate = editingOrder || currentOrder
+    if (!orderToUpdate) {
       toast.error("Apenas pedidos existentes podem ser atualizados.")
+      return
+    }
+
+    // Verificar se o pedido tem status final
+    const orderStatus = orderToUpdate.status || orderToUpdate.order_status?.name
+    if (isFinalStatus(orderStatus)) {
+      toast.error(`Este pedido possui status final (${orderStatus}) e não pode ser editado.`)
       return
     }
 
@@ -1331,7 +1404,7 @@ const handleClientChange = (value: string) => {
     }
 
     try {
-      const orderIdentify = editingOrder.identify || editingOrder.uuid || editingOrder.id
+      const orderIdentify = orderToUpdate.identify || orderToUpdate.uuid || orderToUpdate.id
       if (!orderIdentify) {
         toast.error("Não foi possível identificar o pedido.")
         return
@@ -1390,6 +1463,13 @@ const handleClientChange = (value: string) => {
       const result = await mutateOrder(endpoints.orders.update(orderIdentify), "PUT", payload)
       if (result) {
         toast.success("Pedido atualizado com sucesso!")
+        
+        // Atualizar o pedido atual com os dados retornados
+        if (editingOrder) {
+          setEditingOrder(result)
+        } else if (currentOrder) {
+          setCurrentOrder(result)
+        }
         
         // Recarregar pedidos para refletir as mudanças
         if (selectedTable && !isDelivery) {
@@ -1537,7 +1617,51 @@ const handleClientChange = (value: string) => {
     }
   }
 
-  // Finalizar pedido - atualiza para status "Concluído" (ordem 4)
+  // Avançar status do pedido para o próximo do fluxo
+  const handleAdvanceStatus = async () => {
+    const orderToUpdate = editingOrder || currentOrder
+    if (!orderToUpdate) {
+      toast.error("Nenhum pedido encontrado para avançar status.")
+      return
+    }
+
+    const orderIdentify = orderToUpdate.identify || orderToUpdate.uuid || orderToUpdate.id
+    if (!orderIdentify) {
+      toast.error("Não foi possível identificar o pedido.")
+      return
+    }
+
+    // Verificar se o pedido tem status final
+    const orderStatus = orderToUpdate.status || orderToUpdate.order_status?.name
+    if (isFinalStatus(orderStatus)) {
+      toast.error(`Este pedido possui status final (${orderStatus}) e não pode ter status alterado.`)
+      return
+    }
+
+    try {
+      const result = await mutateOrder(endpoints.orders.advanceStatus(orderIdentify), "POST", {})
+      if (result) {
+        toast.success("Status do pedido atualizado com sucesso!")
+        
+        // Atualizar estado do pedido
+        if (editingOrder) {
+          setEditingOrder(result)
+        } else if (currentOrder) {
+          setCurrentOrder(result)
+        }
+        
+        // Recarregar pedidos
+        if (selectedTable && !isDelivery) {
+          refetchTableOrders()
+        }
+        refetchTodayOrders()
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao avançar status do pedido")
+    }
+  }
+
+  // Finalizar pedido - atualiza para status "Entregue"
   const handleFinalizeOrder = async () => {
     if (!currentOrder && !editingOrder) {
       toast.error("Nenhum pedido encontrado para finalizar.")
@@ -1550,31 +1674,40 @@ const handleClientChange = (value: string) => {
       return
     }
 
+    // Verificar se o pedido tem status final
+    const orderStatus = (currentOrder || editingOrder)?.status || (currentOrder || editingOrder)?.order_status?.name
+    if (isFinalStatus(orderStatus)) {
+      toast.error(`Este pedido possui status final (${orderStatus}) e não pode ser editado.`)
+      return
+    }
+
+    // Verificar se está em status que permite finalizar
+    const allowedStatuses = ['Pronto', 'Em Entrega']
+    if (!allowedStatuses.includes(orderStatus || '')) {
+      toast.error(`Pedido deve estar em "Pronto" ou "Em Entrega" para ser finalizado. Status atual: ${orderStatus}`)
+      return
+    }
+
     try {
-      // Buscar status "Concluído" primeiro por nome, depois por position
-      let completedStatus = null
+      // Buscar status "Entregue" primeiro por nome
+      let deliveredStatus = null
       try {
         const response = await apiClient.get(endpoints.orderStatuses.list(true))
         if (response.success && response.data && Array.isArray(response.data)) {
-          // Primeiro tentar buscar por nome
-          completedStatus = response.data.find((s: any) => s.name === 'Concluído')
-          // Se não encontrar, buscar por order_position = 4
-          if (!completedStatus) {
-            completedStatus = response.data.find((s: any) => s.order_position === 4)
-          }
+          deliveredStatus = response.data.find((s: any) => s.name === 'Entregue')
         }
       } catch (error) {
         console.error("Erro ao buscar status:", error)
       }
 
-      if (!completedStatus) {
-        toast.error("Não foi possível encontrar o status 'Concluído'.")
+      if (!deliveredStatus) {
+        toast.error("Não foi possível encontrar o status 'Entregue'.")
         return
       }
 
-      // Usar o nome do status diretamente, que é mais confiável
+      // Usar o nome do status diretamente
       const payload: Record<string, any> = {
-        status: 'Concluído', // Usar nome diretamente
+        status: 'Entregue',
       }
 
       // Se houver alterações no carrinho, incluir produtos
@@ -2760,102 +2893,160 @@ const handleClientChange = (value: string) => {
                 )}
 
                 {/* Botões que aparecem após iniciar o pedido ou ao editar um pedido existente */}
-                {(orderStarted || editingOrder) && (
-                  <>
-                    {/* Botão de Atualizar Pedido */}
-                    <Button
-                      id="update-order-button"
-                      data-testid="update-order-button"
-                      onClick={handleUpdateOrder}
-                      disabled={
-                        submittingOrder || 
-                        !cart.length ||
-                        !pdvPermissions.canCreateOrder
-                      }
-                      className="h-20 rounded-2xl text-xl font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-lg"
-                      title={
-                        !cart.length
-                          ? "Adicione itens ao pedido" 
-                          : !pdvPermissions.canCreateOrder 
-                          ? "Você não tem permissão para atualizar pedidos" 
-                          : undefined
-                      }
-                    >
-                      {submittingOrder ? (
-                        <>
-                          <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                          Processando...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="mr-3 h-5 w-5" />
-                          Atualizar Pedido
-                        </>
-                      )}
-                    </Button>
+                {(orderStarted || editingOrder) && (() => {
+                  // Verificar se o pedido tem status final
+                  const orderStatus = editingOrder?.status || editingOrder?.order_status?.name || currentOrder?.status || currentOrder?.order_status?.name
+                  const orderIsFinal = isFinalStatus(orderStatus)
+                  const canAdvanceStatus = !orderIsFinal && orderStatus !== 'Entregue'
+                  const canFinalize = !orderIsFinal && ['Pronto', 'Em Entrega'].includes(orderStatus || '')
+                  
+                  return (
+                    <>
+                      {/* Botão de Atualizar Pedido */}
+                      <Button
+                        id="update-order-button"
+                        data-testid="update-order-button"
+                        onClick={handleUpdateOrder}
+                        disabled={
+                          submittingOrder || 
+                          !cart.length ||
+                          !pdvPermissions.canCreateOrder ||
+                          orderIsFinal
+                        }
+                        className="h-20 rounded-2xl text-xl font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={
+                          orderIsFinal
+                            ? `Pedido com status final (${orderStatus}) não pode ser editado`
+                            : !cart.length
+                            ? "Adicione itens ao pedido" 
+                            : !pdvPermissions.canCreateOrder 
+                            ? "Você não tem permissão para atualizar pedidos" 
+                            : undefined
+                        }
+                      >
+                        {submittingOrder ? (
+                          <>
+                            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                            Processando...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="mr-3 h-5 w-5" />
+                            Atualizar Pedido
+                          </>
+                        )}
+                      </Button>
 
-                    {/* Botão de Finalizar Pedido */}
-                    <Button
-                      id="finalize-button"
-                      data-testid="finalize-order-button"
-                      onClick={handleFinalizeOrder}
-                      disabled={
-                        submittingOrder || 
-                        !cart.length ||
-                        !pdvPermissions.canCreateOrder
-                      }
-                      className="h-20 rounded-2xl text-xl font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg"
-                      title={
-                        !cart.length
-                          ? "Adicione itens ao pedido"
-                          : !pdvPermissions.canCreateOrder 
-                          ? "Você não tem permissão para finalizar pedidos" 
-                          : undefined
-                      }
-                    >
-                      {submittingOrder ? (
-                        <>
-                          <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                          Processando...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="mr-3 h-5 w-5" />
-                          Finalizar Pedido
-                        </>
-                      )}
-                    </Button>
+                      {/* Botão de Avançar Status */}
+                      {canAdvanceStatus && (() => {
+                        const nextStatusName = getNextStatusName(orderStatus, isDelivery)
+                        return (
+                          <Button
+                            id="advance-status-button"
+                            data-testid="advance-status-button"
+                            onClick={handleAdvanceStatus}
+                            disabled={
+                              submittingOrder ||
+                              !pdvPermissions.canCreateOrder ||
+                              orderIsFinal
+                            }
+                            className="h-20 rounded-2xl text-xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={
+                              orderIsFinal
+                                ? `Pedido com status final (${orderStatus}) não pode ter status alterado`
+                                : !pdvPermissions.canCreateOrder 
+                                ? "Você não tem permissão para avançar status" 
+                                : nextStatusName
+                                ? `Avançar de "${orderStatus}" para "${nextStatusName}"`
+                                : undefined
+                            }
+                          >
+                            {submittingOrder ? (
+                              <>
+                                <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                                Processando...
+                              </>
+                            ) : (
+                              <>
+                                <ArrowRight className="mr-3 h-5 w-5" />
+                                {nextStatusName ? `Avançar para ${nextStatusName}` : 'Avançar Status'}
+                              </>
+                            )}
+                          </Button>
+                        )
+                      })()}
 
-                    {/* Botão de Cancelar Pedido */}
-                    <Button
-                      id="cancel-order-button"
-                      data-testid="cancel-order-button"
-                      onClick={handleCancelOrder}
-                      disabled={
-                        submittingOrder ||
-                        !pdvPermissions.canCreateOrder
-                      }
-                      className="h-20 rounded-2xl text-xl font-bold bg-red-600 hover:bg-red-700 text-white shadow-lg"
-                      title={
-                        !pdvPermissions.canCreateOrder 
-                          ? "Você não tem permissão para cancelar pedidos" 
-                          : undefined
-                      }
-                    >
-                      {submittingOrder ? (
-                        <>
-                          <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                          Processando...
-                        </>
-                      ) : (
-                        <>
-                          <X className="mr-3 h-5 w-5" />
-                          Cancelar Pedido
-                        </>
+                      {/* Botão de Finalizar Pedido - aparece apenas em "Pronto" ou "Em Entrega" */}
+                      {canFinalize && (
+                        <Button
+                          id="finalize-button"
+                          data-testid="finalize-order-button"
+                          onClick={handleFinalizeOrder}
+                          disabled={
+                            submittingOrder || 
+                            !cart.length ||
+                            !pdvPermissions.canCreateOrder ||
+                            orderIsFinal
+                          }
+                          className="h-20 rounded-2xl text-xl font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={
+                            orderIsFinal
+                              ? `Pedido com status final (${orderStatus}) não pode ser editado`
+                              : !cart.length
+                              ? "Adicione itens ao pedido"
+                              : !pdvPermissions.canCreateOrder 
+                              ? "Você não tem permissão para finalizar pedidos" 
+                              : undefined
+                          }
+                        >
+                          {submittingOrder ? (
+                            <>
+                              <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                              Processando...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="mr-3 h-5 w-5" />
+                              Finalizar Pedido
+                            </>
+                          )}
+                        </Button>
                       )}
-                    </Button>
-                  </>
-                )}
+
+                      {/* Botão de Cancelar Pedido */}
+                      <Button
+                        id="cancel-order-button"
+                        data-testid="cancel-order-button"
+                        onClick={handleCancelOrder}
+                        disabled={
+                          submittingOrder ||
+                          !pdvPermissions.canCreateOrder ||
+                          (orderIsFinal && orderStatus !== 'Cancelado')
+                        }
+                        className="h-20 rounded-2xl text-xl font-bold bg-red-600 hover:bg-red-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={
+                          orderIsFinal && orderStatus !== 'Cancelado'
+                            ? `Pedido com status final (${orderStatus}) não pode ser cancelado`
+                            : !pdvPermissions.canCreateOrder 
+                            ? "Você não tem permissão para cancelar pedidos" 
+                            : undefined
+                        }
+                      >
+                        {submittingOrder ? (
+                          <>
+                            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                            Processando...
+                          </>
+                        ) : (
+                          <>
+                            <X className="mr-3 h-5 w-5" />
+                            Cancelar Pedido
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  )
+                })()}
               </div>
               
               {/* Limpar carrinho - movido para o final */}

@@ -104,6 +104,13 @@ export default function OrdersPage() {
   }
 
   const handleEditOrder = (order: Order) => {
+    // Verificar se o pedido tem status final
+    const finalStatuses = ['Entregue', 'Cancelado', 'Concluído', 'Arquivado']
+    if (finalStatuses.includes(order.status || '')) {
+      toast.error('Este pedido está finalizado e não pode ser editado.')
+      return
+    }
+
     // Usar identify em vez de id que pode ser undefined
     const orderId = order.identify || order.id?.toString()
     if (!orderId) {

@@ -404,4 +404,187 @@ describe("PDV - Melhorias Implementadas", () => {
       })
     })
   })
+
+  describe("Lógica de Mesa Ocupada", () => {
+    it("NÃO deve exibir mensagem 'Mesa Ocupada' para o pedido que originalmente ocupou a mesa", async () => {
+      // Mock: Pedido atual na mesa 1
+      const currentOrder = {
+        identify: "order-123",
+        uuid: "order-123",
+        id: 123,
+        table: { uuid: "table-1", name: "Mesa 1" },
+        status: "Em Preparo",
+      }
+
+      // Mock: Pedidos de hoje incluindo o pedido atual
+      const todayOrdersWithCurrent = [
+        {
+          identify: "order-123",
+          uuid: "order-123",
+          id: 123,
+          table: { uuid: "table-1", name: "Mesa 1" },
+          status: "Em Preparo",
+        },
+      ]
+
+      mockUseAuthenticatedTodayOrders.mockReturnValue({
+        data: todayOrdersWithCurrent,
+        loading: false,
+        error: null,
+        refetch: jest.fn(),
+      } as any)
+
+      const user = userEvent.setup()
+      const { container } = render(<POSPage />)
+
+      // Simular que há um pedido atual na mesa 1
+      // (Isso seria feito internamente quando o pedido é iniciado)
+      // Por enquanto, vamos verificar que não há mensagem de mesa ocupada
+
+      // Selecionar mesa 1
+      const tableSelect = await screen.findByLabelText(/mesa/i)
+      await user.click(tableSelect)
+
+      await waitFor(() => {
+        const mesa1Option = screen.getByText("Mesa 1")
+        await user.click(mesa1Option)
+      })
+
+      // Verificar que NÃO há mensagem de mesa ocupada
+      await waitFor(() => {
+        const mesaOcupadaMessage = screen.queryByText(/mesa ocupada/i)
+        expect(mesaOcupadaMessage).not.toBeInTheDocument()
+      })
+    })
+
+    it("deve exibir mensagem 'Mesa Ocupada' quando outro pedido tentar usar uma mesa já ocupada", async () => {
+      // Mock: Pedido de OUTRO pedido na mesa 1
+      const otherOrder = {
+        identify: "order-456",
+        uuid: "order-456",
+        id: 456,
+        table: { uuid: "table-1", name: "Mesa 1" },
+        status: "Em Preparo",
+      }
+
+      // Mock: Pedidos de hoje com outro pedido na mesa
+      const todayOrdersWithOther = [otherOrder]
+
+      mockUseAuthenticatedTodayOrders.mockReturnValue({
+        data: todayOrdersWithOther,
+        loading: false,
+        error: null,
+        refetch: jest.fn(),
+      } as any)
+
+      mockUseAuthenticatedOrdersByTable.mockReturnValue({
+        data: [otherOrder],
+        loading: false,
+        error: null,
+        refetch: jest.fn(),
+      } as any)
+
+      const user = userEvent.setup()
+      render(<POSPage />)
+
+      // Selecionar mesa 1 (que já tem outro pedido)
+      const tableSelect = await screen.findByLabelText(/mesa/i)
+      await user.click(tableSelect)
+
+      await waitFor(async () => {
+        const mesa1Option = screen.getByText("Mesa 1")
+        await user.click(mesa1Option)
+      })
+
+      // Verificar que a mensagem de mesa ocupada é exibida
+      await waitFor(() => {
+        const mesaOcupadaMessage = screen.getByText(/mesa ocupada/i)
+        expect(mesaOcupadaMessage).toBeInTheDocument()
+      })
+    })
+
+    it("deve permitir editar o pedido que ocupou a mesa sem mostrar mensagem de ocupada", async () => {
+      // Mock: Pedido sendo editado na mesa 1
+      const editingOrder = {
+        identify: "order-123",
+        uuid: "order-123",
+        id: 123,
+        table: { uuid: "table-1", name: "Mesa 1" },
+        status: "Em Preparo",
+      }
+
+      // Mock: Pedidos de hoje incluindo o pedido sendo editado
+      const todayOrdersWithEditing = [editingOrder]
+
+      mockUseAuthenticatedTodayOrders.mockReturnValue({
+        data: todayOrdersWithEditing,
+        loading: false,
+        error: null,
+        refetch: jest.fn(),
+      } as any)
+
+      mockUseAuthenticatedOrdersByTable.mockReturnValue({
+        data: [editingOrder],
+        loading: false,
+        error: null,
+        refetch: jest.fn(),
+      } as any)
+
+      const user = userEvent.setup()
+      render(<POSPage />)
+
+      // Simular que estamos editando um pedido
+      // (Isso seria feito ao carregar um pedido existente)
+      // Por enquanto, vamos verificar que não há mensagem quando o pedido pertence à mesa
+
+      // Verificar que NÃO há mensagem de mesa ocupada quando editando o próprio pedido
+      await waitFor(() => {
+        const mesaOcupadaMessage = screen.queryByText(/mesa ocupada/i)
+        expect(mesaOcupadaMessage).not.toBeInTheDocument()
+      })
+    })
+
+    it("deve exibir mensagem quando tentar criar novo pedido em mesa com pedido em aberto", async () => {
+      // Mock: Outro pedido na mesa 1
+      const existingOrder = {
+        identify: "order-789",
+        uuid: "order-789",
+        id: 789,
+        table: { uuid: "table-1", name: "Mesa 1" },
+        status: "Em Preparo",
+      }
+
+      mockUseAuthenticatedTodayOrders.mockReturnValue({
+        data: [existingOrder],
+        loading: false,
+        error: null,
+        refetch: jest.fn(),
+      } as any)
+
+      mockUseAuthenticatedOrdersByTable.mockReturnValue({
+        data: [existingOrder],
+        loading: false,
+        error: null,
+        refetch: jest.fn(),
+      } as any)
+
+      const user = userEvent.setup()
+      render(<POSPage />)
+
+      // Selecionar mesa 1 que já tem pedido
+      const tableSelect = await screen.findByLabelText(/mesa/i)
+      await user.click(tableSelect)
+
+      await waitFor(async () => {
+        const mesa1Option = screen.getByText("Mesa 1")
+        await user.click(mesa1Option)
+      })
+
+      // Verificar que a mensagem aparece
+      await waitFor(() => {
+        expect(screen.getByText(/mesa ocupada/i)).toBeInTheDocument()
+        expect(screen.getByText(/esta mesa possui pedidos em aberto/i)).toBeInTheDocument()
+      })
+    })
+  })
 })

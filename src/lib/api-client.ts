@@ -283,6 +283,7 @@ export const endpoints = {
     create: '/api/order',
     show: (id: string) => `/api/order/${id}`,
     update: (id: string) => `/api/order/${id}`,
+    advanceStatus: (id: string) => `/api/order/${id}/advance-status`,
     archive: (id: string) => `/api/order/${id}/archive`,
     delete: (id: string) => `/api/order/${id}`,
     invoice: (id: string) => `/api/order/${id}/invoice`,

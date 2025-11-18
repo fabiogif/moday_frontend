@@ -258,7 +258,10 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
                 <Eye className="mr-2 h-4 w-4" />
                 Ver detalhes
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEditOrder(order)}>
+              <DropdownMenuItem 
+                onClick={() => onEditOrder(order)}
+                disabled={['Entregue', 'Cancelado', 'Concluído', 'Arquivado'].includes(order.status || '')}
+              >
                 <Pencil className="mr-2 h-4 w-4" />
                 Editar
               </DropdownMenuItem>
