@@ -279,6 +279,8 @@ export const endpoints = {
         : ''
       return `/api/order/recommendations${params}`
     },
+    bulkDelete: '/api/orders/bulk-delete',
+    bulkUpdateStatus: '/api/orders/bulk-update-status',
     getDetails: (orderId: number) => `/api/order/${orderId}/details`,
     create: '/api/order',
     show: (id: string) => `/api/order/${id}`,

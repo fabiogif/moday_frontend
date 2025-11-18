@@ -33,6 +33,8 @@ export default function OrdersPage() {
   const { mutate: createOrder, loading: creating } = useMutation()
   const { mutate: deleteOrder, loading: deleting } = useMutation()
   const { mutate: invoiceOrder, loading: invoicing } = useMutation()
+  const { mutate: bulkDeleteOrders, loading: bulkDeleting } = useMutation()
+  const { mutate: bulkUpdateOrdersStatus, loading: bulkUpdating } = useMutation()
   
   // Hook para detectar quando precisa atualizar
   const { shouldRefresh, resetRefresh } = useOrderRefresh()
@@ -157,6 +159,59 @@ export default function OrdersPage() {
     setReceiptOpen(true)
   }
 
+  const handleBulkDelete = async (orderIds: string[]) => {
+    if (orderIds.length === 0) {
+      toast.error('Nenhum pedido selecionado')
+      return
+    }
+
+    try {
+      const result = await bulkDeleteOrders(
+        endpoints.orders.bulkDelete,
+        'POST',
+        { order_ids: orderIds }
+      )
+
+      if (result) {
+        // result é o data da resposta, que contém informações sobre a operação
+        const totalDeleted = (result as any)?.total_deleted || 0
+        toast.success(`${totalDeleted} pedido(s) excluído(s) com sucesso!`)
+        await refetch()
+      }
+    } catch (error: any) {
+      console.error('Erro ao excluir pedidos em massa:', error)
+      toast.error(error.message || 'Erro ao excluir pedidos em massa')
+    }
+  }
+
+  const handleBulkUpdateStatus = async (orderIds: string[], status: string) => {
+    if (orderIds.length === 0) {
+      toast.error('Nenhum pedido selecionado')
+      return
+    }
+
+    try {
+      const result = await bulkUpdateOrdersStatus(
+        endpoints.orders.bulkUpdateStatus,
+        'POST',
+        { 
+          order_ids: orderIds,
+          status: status
+        }
+      )
+
+      if (result) {
+        // result é o data da resposta, que contém informações sobre a operação
+        const totalUpdated = (result as any)?.total_updated || 0
+        toast.success(`${totalUpdated} pedido(s) atualizado(s) para "${status}" com sucesso!`)
+        await refetch()
+      }
+    } catch (error: any) {
+      console.error('Erro ao atualizar status dos pedidos em massa:', error)
+      toast.error(error.message || 'Erro ao atualizar status dos pedidos em massa')
+    }
+  }
+
   if (loading) {
     return (
       <PageLoading
@@ -199,6 +254,8 @@ export default function OrdersPage() {
           onViewOrder={handleViewOrder}
           onInvoiceOrder={handleInvoiceOrder}
           onReceiptOrder={handleReceiptOrder}
+          onBulkDelete={handleBulkDelete}
+          onBulkUpdateStatus={handleBulkUpdateStatus}
         />
       </div>
 

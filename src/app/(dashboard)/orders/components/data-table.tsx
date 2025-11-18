@@ -25,6 +25,8 @@ import {
   Receipt,
   FileText,
   Printer,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -74,11 +76,22 @@ interface DataTableProps {
   onDeleteOrder: (order: Order) => void
   onEditOrder: (order: Order) => void
   onViewOrder: (order: Order) => void
-  onInvoiceOrder: (order: Order) => void
+  onInvoiceOrder?: (order: Order) => void
   onReceiptOrder: (order: Order) => void
+  onBulkDelete?: (orderIds: string[]) => Promise<void>
+  onBulkUpdateStatus?: (orderIds: string[], status: string) => Promise<void>
 }
 
-export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onInvoiceOrder, onReceiptOrder }: DataTableProps) {
+export function DataTable({ 
+  orders, 
+  onDeleteOrder, 
+  onEditOrder, 
+  onViewOrder, 
+  onInvoiceOrder, 
+  onReceiptOrder,
+  onBulkDelete,
+  onBulkUpdateStatus
+}: DataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -86,6 +99,9 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
   const [globalFilter, setGlobalFilter] = useState("")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null)
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
+  const [bulkUpdateStatusDialogOpen, setBulkUpdateStatusDialogOpen] = useState(false)
+  const [bulkActionLoading, setBulkActionLoading] = useState(false)
 
   const handleDialogOpenChange = (open: boolean) => {
     setDeleteDialogOpen(open)
@@ -112,6 +128,55 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
     } finally {
       setDeleteDialogOpen(false)
       setOrderToDelete(null)
+    }
+  }
+
+  // Obter IDs dos pedidos selecionados
+  const getSelectedOrderIds = (): string[] => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows
+    return selectedRows
+      .map((row) => {
+        const order = row.original
+        return order.identify || order.id?.toString() || ''
+      })
+      .filter((id) => id !== '')
+  }
+
+  // Handler para exclusão em massa
+  const handleBulkDelete = async () => {
+    if (!onBulkDelete) return
+
+    const selectedIds = getSelectedOrderIds()
+    if (selectedIds.length === 0) {
+      return
+    }
+
+    setBulkActionLoading(true)
+    try {
+      await onBulkDelete(selectedIds)
+      setRowSelection({}) // Limpar seleção após exclusão
+    } finally {
+      setBulkActionLoading(false)
+      setBulkDeleteDialogOpen(false)
+    }
+  }
+
+  // Handler para atualização de status em massa
+  const handleBulkUpdateStatus = async () => {
+    if (!onBulkUpdateStatus) return
+
+    const selectedIds = getSelectedOrderIds()
+    if (selectedIds.length === 0) {
+      return
+    }
+
+    setBulkActionLoading(true)
+    try {
+      await onBulkUpdateStatus(selectedIds, 'Entregue')
+      setRowSelection({}) // Limpar seleção após atualização
+    } finally {
+      setBulkActionLoading(false)
+      setBulkUpdateStatusDialogOpen(false)
     }
   }
 
@@ -265,10 +330,12 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
                 <Pencil className="mr-2 h-4 w-4" />
                 Editar
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onInvoiceOrder(order)}>
-                <Receipt className="mr-2 h-4 w-4" />
-                Faturar
-              </DropdownMenuItem>
+              {onInvoiceOrder && (
+                <DropdownMenuItem onClick={() => onInvoiceOrder(order)}>
+                  <Receipt className="mr-2 h-4 w-4" />
+                  Faturar
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => onReceiptOrder(order)}>
                 <Printer className="mr-2 h-4 w-4" />
                 Recibo
@@ -310,6 +377,9 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
       globalFilter,
     },
   })
+
+  const selectedCount = table.getFilteredSelectedRowModel().rows.length
+  const hasSelection = selectedCount > 0
 
   return (
     <div className="w-full">
@@ -379,6 +449,51 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
           </Button>
         </div>
       </div>
+      
+      {/* Barra de ações em massa */}
+      {hasSelection && (
+        <div className="flex items-center justify-between gap-4 py-3 px-4 bg-muted/50 rounded-lg border mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">
+              {selectedCount} pedido(s) selecionado(s)
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {onBulkUpdateStatus && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => setBulkUpdateStatusDialogOpen(true)}
+                disabled={bulkActionLoading}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Mover para Entregue
+              </Button>
+            )}
+            {onBulkDelete && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setBulkDeleteDialogOpen(true)}
+                disabled={bulkActionLoading}
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                Excluir Selecionados
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRowSelection({})}
+              disabled={bulkActionLoading}
+            >
+              Limpar Seleção
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -477,6 +592,60 @@ export function DataTable({ orders, onDeleteOrder, onEditOrder, onViewOrder, onI
               className="bg-red-600 hover:bg-red-700"
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal de confirmação para exclusão em massa */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão em massa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja realmente realizar esta operação?<br />
+              <span className="font-semibold">
+                {selectedCount} pedido(s) serão excluído(s).
+              </span>
+              <br />
+              <span className="text-red-600 font-medium">
+                Esta ação não poderá ser desfeita.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkActionLoading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={bulkActionLoading}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {bulkActionLoading ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal de confirmação para atualização de status em massa */}
+      <AlertDialog open={bulkUpdateStatusDialogOpen} onOpenChange={setBulkUpdateStatusDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar atualização de status</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja realmente realizar esta operação?<br />
+              <span className="font-semibold">
+                {selectedCount} pedido(s) serão movido(s) para o status "Entregue".
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkActionLoading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkUpdateStatus}
+              disabled={bulkActionLoading}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {bulkActionLoading ? 'Atualizando...' : 'Confirmar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
