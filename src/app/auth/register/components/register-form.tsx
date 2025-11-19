@@ -171,7 +171,7 @@ export function RegisterForm({
 
           toast({
             title: "Cadastro realizado!",
-            description: "Bem-vindo ao Tahan. Redirecionando...",
+            description: "Bem-vindo ao Alba Tech. Redirecionando...",
           })
 
           // Redirecionar para o dashboard
@@ -211,7 +211,7 @@ export function RegisterForm({
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Criar sua conta</CardTitle>
           <CardDescription>
-            Preencha os dados abaixo para começar a usar o Tahan
+            Preencha os dados abaixo para começar a usar o Alba Tech
           </CardDescription>
         </CardHeader>
         <CardContent>

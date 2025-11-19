@@ -295,8 +295,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                  
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">
-                    {/* {tenantData?.name || "Tahan"} */}
-                    Tahan
+                    {/* {tenantData?.name || "Alba Tech"} */}
+                    Alba Tech
                   </span>
                   <span className="truncate text-xs">Gestão de Restaurante</span>
                 </div>

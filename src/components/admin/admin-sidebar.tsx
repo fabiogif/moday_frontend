@@ -57,7 +57,7 @@ export function AdminSidebar() {
       {/* Header */}
       <div className="flex h-16 items-center border-b px-6">
         <Shield className="h-6 w-6 text-primary mr-2" />
-        <span className="font-semibold text-lg">Admin Tahan</span>
+        <span className="font-semibold text-lg">Admin Alba Tech</span>
       </div>
 
       {/* Admin Info */}

@@ -16,7 +16,7 @@ export default function Dashboard() {
           <div className="flex flex-col gap-2">
             <h1 className="text-2xl font-bold tracking-tight">Painel de Controle</h1>
             <p className="text-muted-foreground">
-            Tahan - Sistema de Gestão de Restaurante 
+            Alba Tech - Sistema de Gestão de Restaurante 
             </p>
           </div>
           <QuickActions />

@@ -67,7 +67,7 @@ const emailTemplates = {
 
 Seu período de teste gratuito de 7 dias está chegando ao fim.
 
-Não perca o acesso a todas as funcionalidades do Tahan! Continue aproveitando nosso sistema completo de gestão para seu negócio.
+Não perca o acesso a todas as funcionalidades do Alba Tech! Continue aproveitando nosso sistema completo de gestão para seu negócio.
 
 🎯 Benefícios de continuar:
 • Gestão completa de pedidos
@@ -81,7 +81,7 @@ Escolha o plano ideal para você e continue crescendo!
 [Ver Planos e Preços]
 
 Atenciosamente,
-Equipe Tahan`,
+Equipe Alba Tech`,
   },
   payment_reminder: {
     subject: '💳 Lembrete: Renovação do seu plano',
@@ -89,7 +89,7 @@ Equipe Tahan`,
 
 Seu plano {plan} está próximo do vencimento.
 
-Para continuar aproveitando todos os recursos do Tahan sem interrupções, renove seu plano agora!
+Para continuar aproveitando todos os recursos do Alba Tech sem interrupções, renove seu plano agora!
 
 📊 Seu plano atual:
 • Plano: {plan}
@@ -102,13 +102,13 @@ Clique no link abaixo para renovar:
 Dúvidas? Nossa equipe está pronta para ajudar!
 
 Atenciosamente,
-Equipe Tahan`,
+Equipe Alba Tech`,
   },
   welcome: {
-    subject: '🎉 Bem-vindo ao Tahan!',
+    subject: '🎉 Bem-vindo ao Alba Tech!',
     message: `Olá {name},
 
-Seja bem-vindo(a) ao Tahan!
+Seja bem-vindo(a) ao Alba Tech!
 
 Estamos muito felizes em ter você conosco. Preparamos seu ambiente e está tudo pronto para você começar a gerenciar seu negócio de forma profissional.
 
@@ -123,7 +123,7 @@ Precisa de ajuda? Acesse nossa central de ajuda ou entre em contato com nosso su
 Vamos crescer juntos!
 
 Atenciosamente,
-Equipe Tahan`,
+Equipe Alba Tech`,
   },
   custom: {
     subject: '',
@@ -408,7 +408,7 @@ export default function MensagensPage() {
                           {index + 1}. {tenant.name}
                         </span>
                         <span className="text-muted-foreground text-xs">
-                          {tenant.subdomain}@Tahan.app
+                          {tenant.subdomain}@Alba Tech.app
                         </span>
                       </div>
                     ))}
@@ -569,7 +569,7 @@ export default function MensagensPage() {
                           <div>
                             <div className="font-medium">{tenant.name}</div>
                             <div className="text-sm text-muted-foreground">
-                              {tenant.subdomain}.Tahan.app
+                              {tenant.subdomain}.Alba Tech.app
                             </div>
                           </div>
                         </TableCell>

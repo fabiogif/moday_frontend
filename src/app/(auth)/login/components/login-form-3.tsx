@@ -81,13 +81,13 @@ export function LoginForm3({
                     {/* <Logo size={24} /> */}
                     <Utensils className="h-4 w-4 text-primary" />
                   </div>
-                  <span className="text-xl">Tahan</span>
+                  <span className="text-xl">Alba Tech</span>
                 </Link>
               </div>
               <div className="flex flex-col items-center text-center">
                 <h1 className="text-2xl font-bold">Bem-vindo de volta</h1>
                 <p className="text-muted-foreground text-balance">
-                  Faça login na sua conta Tahan
+                  Faça login na sua conta Alba Tech
                 </p>
               </div>
               <div className="grid gap-3">

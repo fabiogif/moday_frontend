@@ -9,7 +9,7 @@ import { ToasterProvider } from "@/components/toaster-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
-  title: "Tahan - Gestão",
+  title: "Alba Tech - Gestão",
   description: "Sistema de gestão para restaurantes",
   icons: {
     icon: "/favicon.ico",

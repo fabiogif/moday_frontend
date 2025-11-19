@@ -61,7 +61,7 @@ export default function PlansPage() {
       <header className="border-b">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Tahan</h1>
+            <h1 className="text-2xl font-bold">Alba Tech</h1>
             <div className="flex gap-4">
               <Button variant="outline" asChild>
                 <Link href="/login">Entrar</Link>
@@ -164,7 +164,7 @@ export default function PlansPage() {
       <footer className="border-t py-8">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-center text-muted-foreground text-sm">
-            © {new Date().getFullYear()} Tahan. Todos os direitos reservados.
+            © {new Date().getFullYear()} Alba Tech. Todos os direitos reservados.
           </p>
         </div>
       </footer>
