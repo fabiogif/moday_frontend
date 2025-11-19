@@ -1946,7 +1946,7 @@ const handleClientChange = (value: string) => {
       }
       
       // Números 1-9: Selecionar categoria rápida (apenas se não estiver digitando em um input)
-      const activeElement = document.activeElement
+      const activeElement = document.activeElement as HTMLElement | null
       const isInputFocused = activeElement && (
         activeElement.tagName === 'INPUT' ||
         activeElement.tagName === 'TEXTAREA' ||

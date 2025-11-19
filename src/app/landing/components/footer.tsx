@@ -13,7 +13,6 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form"
-import { Logo } from '@/components/logo'
 
 const newsletterSchema = z.object({
   email: z.string().email({
@@ -86,10 +85,7 @@ export function LandingFooter() {
           {/* Brand Column */}
           <div className="col-span-2 max-w-2xl">
             <div className="flex items-center space-x-2 mb-4 max-lg:justify-center">
-              <div className="flex items-center space-x-2">
-                <Logo size={32} />
-                <span className="font-bold text-xl">Tahan</span>
-              </div>
+              <span className="font-bold text-xl">Alba Tech</span>
             </div>
             <p className="text-muted-foreground mb-6 max-lg:text-center max-lg:flex max-lg:justify-center">
               Sistema completo de gestão para restaurantes. Simplifique seus processos e aumente suas vendas.
@@ -135,7 +131,7 @@ export function LandingFooter() {
         {/* Bottom Footer */}
         <div className="flex flex-col lg:flex-row justify-between items-center gap-2">
           <div className="text-muted-foreground text-sm text-center lg:text-left">
-            © {new Date().getFullYear()} Tahan. Todos os direitos reservados.
+            © {new Date().getFullYear()} Alba Tech. Todos os direitos reservados.
           </div>
         </div>
       </div>

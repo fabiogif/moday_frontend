@@ -17,7 +17,6 @@ import {
   SheetHeader,
   SheetTitle
 } from '@/components/ui/sheet'
-import { Logo } from '@/components/logo'
 import { ModeToggle } from '@/components/mode-toggle'
 import { useTheme } from '@/hooks/use-theme'
 
@@ -51,10 +50,9 @@ export function LandingNavbar() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
         {/* Logo */}
         <div className="flex items-center space-x-2">
-          <Link href="/landing" className="flex items-center space-x-2 cursor-pointer">
-            <Logo size={32} />
-            <span className="font-bold">
-              Tahan
+          <Link href="/landing" className="flex items-center cursor-pointer">
+            <span className="font-bold text-xl">
+              Alba Tech
             </span>
           </Link>
         </div>
@@ -106,10 +104,7 @@ export function LandingNavbar() {
               {/* Header */}
               <SheetHeader className="space-y-0 p-4 pb-2 border-b">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Logo size={16} />
-                  </div>
-                  <SheetTitle className="text-lg font-semibold">Tahan</SheetTitle>
+                  <SheetTitle className="text-lg font-semibold">Alba Tech</SheetTitle>
                   <div className="ml-auto flex items-center gap-2">
                     <Button
                       variant="ghost"
