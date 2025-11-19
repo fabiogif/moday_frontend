@@ -116,6 +116,9 @@ export function ChangeDialog({
                 setNeedsChange(false)
                 setReceivedAmount("")
                 setError("")
+                // Confirmar que não precisa de troco e fechar o modal
+                onConfirm(false)
+                onOpenChange(false)
               }}
             >
               Não
