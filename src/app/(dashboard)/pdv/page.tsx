@@ -1945,8 +1945,16 @@ const handleClientChange = (value: string) => {
         setOrderSearchResults([])
       }
       
-      // Números 1-9: Selecionar categoria rápida
-      if (e.key >= '1' && e.key <= '9' && !e.ctrlKey && !e.metaKey) {
+      // Números 1-9: Selecionar categoria rápida (apenas se não estiver digitando em um input)
+      const activeElement = document.activeElement
+      const isInputFocused = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.tagName === 'SELECT' ||
+        activeElement.isContentEditable
+      )
+      
+      if (e.key >= '1' && e.key <= '9' && !e.ctrlKey && !e.metaKey && !isInputFocused) {
         const index = parseInt(e.key) - 1
         if (categories[index]) {
           const categoryKey = categories[index].uuid || categories[index].identify || categories[index].name
