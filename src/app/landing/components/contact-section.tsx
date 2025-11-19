@@ -116,7 +116,7 @@ export function ContactSection() {
               <CardContent>
                 <p className="text-muted-foreground mb-2">Entre em contato por e-mail</p>
                 <a href="mailto:fabiosantanagif@gmail.com" className="text-primary hover:underline">
-                  atendimento@tahansolucoes.com.br
+                  atendimento@albatech.tec.br
                 </a>
               </CardContent>
             </Card>
@@ -162,7 +162,7 @@ export function ContactSection() {
                           <FormItem>
                             <FormLabel>Nome</FormLabel>
                             <FormControl>
-                              <Input placeholder="João" {...field} />
+                              <Input placeholder="Seu nome" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -175,7 +175,7 @@ export function ContactSection() {
                           <FormItem>
                             <FormLabel>Sobrenome</FormLabel>
                             <FormControl>
-                              <Input placeholder="Silva" {...field} />
+                              <Input placeholder="Seu sobrenome" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -189,7 +189,7 @@ export function ContactSection() {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="joao@exemplo.com" {...field} />
+                            <Input type="email" placeholder="seuemail@exemplo.com" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
