@@ -559,7 +559,7 @@ export default function POSPage() {
   const [showCategories, setShowCategories] = useState(true)
   const [showProducts, setShowProducts] = useState(true)
   const [showCart, setShowCart] = useState(true)
-  const [showDashboard, setShowDashboard] = useState(true)
+  const [showDashboard, setShowDashboard] = useState(false)
   const [showTodayOrdersSheet, setShowTodayOrdersSheet] = useState(false)
   const [showClientSection, setShowClientSection] = useState(false)
   const [showPaymentMethods, setShowPaymentMethods] = useState(true)
