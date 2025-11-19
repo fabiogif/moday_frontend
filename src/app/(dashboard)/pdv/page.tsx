@@ -91,6 +91,7 @@ import {
   ArrowRight,
 } from "lucide-react"
 import { maskPhone, maskZipCode } from "@/lib/masks"
+import { useViaCEP } from "@/hooks/use-viacep"
 import { PixQrCodeDialog } from "./components/pix-qr-code-dialog"
 import { ProductRecommendations } from "./components/product-recommendations"
 import { PDVTutorial } from "./components/pdv-tutorial"
@@ -575,6 +576,9 @@ export default function POSPage() {
     error: tableOrdersError,
     refetch: refetchTableOrders,
   } = useAuthenticatedOrdersByTable(selectedTable)
+
+  // Hook para busca de CEP via ViaCEP
+  const { loading: loadingCEP, searchCEP } = useViaCEP()
 
   // ============================================
   // USEMEMO E OUTROS HOOKS DERIVADOS
@@ -1408,9 +1412,31 @@ const handleClientChange = (value: string) => {
     }
   }
 
-  const handleZipChange = (value: string) => {
+  const handleZipChange = async (value: string) => {
     const masked = maskZipCode(value)
     setDeliveryAddress((prev) => ({ ...prev, zip: masked }))
+
+    // Buscar endereço automaticamente quando CEP estiver completo (8 dígitos)
+    const cleanCEP = masked.replace(/\D/g, "")
+    if (cleanCEP.length === 8) {
+      try {
+        const address = await searchCEP(masked)
+        if (address) {
+          setDeliveryAddress((prev) => ({
+            ...prev,
+            address: address.address || address.logradouro || prev.address,
+            neighborhood: address.neighborhood || address.bairro || prev.neighborhood,
+            city: address.city || address.localidade || prev.city,
+            state: address.state || address.uf || prev.state,
+          }))
+        }
+      } catch (error) {
+        // Erro já é tratado pelo useViaCEP com toast
+        if (process.env.NODE_ENV === "development") {
+          console.error("Erro ao buscar CEP:", error)
+        }
+      }
+    }
   }
 
   const handleUpdateOrder = async () => {
@@ -2450,12 +2476,25 @@ const handleClientChange = (value: string) => {
                 <div className="space-y-2 rounded-lg border p-3">
                   <p className="text-xs font-medium">Endereço de entrega</p>
                   <div className="grid gap-3">
-                    <Input
-                      placeholder="CEP"
-                      value={deliveryAddress.zip}
-                      onChange={(event) => handleZipChange(event.target.value)}
-                      className="h-12 text-lg"
-                    />
+                    <div className="space-y-1">
+                      <div className="relative">
+                        <Input
+                          placeholder="CEP"
+                          value={deliveryAddress.zip}
+                          onChange={(event) => handleZipChange(event.target.value)}
+                          className="h-12 text-lg pr-10"
+                          disabled={loadingCEP}
+                        />
+                        {loadingCEP && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        {loadingCEP ? "Buscando endereço..." : "Digite o CEP para preencher automaticamente"}
+                      </p>
+                    </div>
                     <Input
                       placeholder="Endereço"
                       value={deliveryAddress.address}
