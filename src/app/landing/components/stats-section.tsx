@@ -102,12 +102,12 @@ export function StatsSection() {
                   </div>
                   
                   {/* Value */}
-                  <div className="space-y-1">
+                <div className="space-y-1">
                     <h3 className={`text-3xl sm:text-4xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
-                      {stat.value}
-                    </h3>
+                    {stat.value}
+                  </h3>
                     <p className="font-semibold text-foreground text-base">{stat.label}</p>
-                    <p className="text-sm text-muted-foreground">{stat.description}</p>
+                  <p className="text-sm text-muted-foreground">{stat.description}</p>
                   </div>
                 </div>
               </CardContent>

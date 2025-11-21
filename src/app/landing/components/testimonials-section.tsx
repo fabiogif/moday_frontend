@@ -180,8 +180,8 @@ export function TestimonialsSection() {
                           {testimonial.name}
                         </h3>
                         <span className="text-muted-foreground block text-xs mt-0.5">
-                          {testimonial.role}
-                        </span>
+                      {testimonial.role}
+                    </span>
                       </div>
                     </div>
                     

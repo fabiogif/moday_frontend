@@ -2486,10 +2486,10 @@ const handleClientChange = (value: string) => {
                   <div className="grid gap-3">
                     <div className="space-y-1">
                       <div className="relative">
-                        <Input
-                          placeholder="CEP"
-                          value={deliveryAddress.zip}
-                          onChange={(event) => handleZipChange(event.target.value)}
+                    <Input
+                      placeholder="CEP"
+                      value={deliveryAddress.zip}
+                      onChange={(event) => handleZipChange(event.target.value)}
                           className="h-12 text-lg pr-10"
                           disabled={loadingCEP}
                         />

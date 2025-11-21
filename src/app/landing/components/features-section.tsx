@@ -204,13 +204,13 @@ export function FeaturesSection() {
           {/* Left Image */}
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-3xl blur-3xl -z-10" />
-            <Image3D
-              lightSrc="/feature-1-light.png"
-              darkSrc="/feature-1-dark.png"
-              alt="Painel de controle de pedidos"
-              direction="left"
+          <Image3D
+            lightSrc="/feature-1-light.png"
+            darkSrc="/feature-1-dark.png"
+            alt="Painel de controle de pedidos"
+            direction="left"
               className="relative rounded-2xl shadow-2xl"
-            />
+          />
           </div>
           
           {/* Right Content */}
@@ -239,16 +239,16 @@ export function FeaturesSection() {
                     <div className="flex items-start gap-4 mb-3">
                       <div className={`p-3 rounded-xl bg-gradient-to-br ${feature.color} shadow-lg group-hover:scale-110 transition-transform`}>
                         <feature.icon className="h-5 w-5 text-white" aria-hidden="true" />
-                      </div>
+                  </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1.5">
                           <h3 className="text-base font-semibold text-foreground">{feature.title}</h3>
-                          {feature.badge && (
+                      {feature.badge && (
                             <Badge variant="secondary" className="text-xs bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
                               <Sparkles className="h-2.5 w-2.5 mr-1" />
-                              {feature.badge}
-                            </Badge>
-                          )}
+                          {feature.badge}
+                        </Badge>
+                      )}
                         </div>
                         <p className="text-sm text-muted-foreground leading-relaxed mb-2">{feature.description}</p>
                         {feature.benefit && (
@@ -354,7 +354,7 @@ export function FeaturesSection() {
                       </div>
                     </div>
                   </div>
-                </div>
+                  </div>
               ))}
             </div>
 
@@ -376,11 +376,11 @@ export function FeaturesSection() {
           {/* Right Image */}
           <div className="relative order-1 lg:order-2">
             <div className="absolute inset-0 bg-gradient-to-l from-blue-500/20 to-cyan-500/20 rounded-3xl blur-3xl -z-10" />
-            <Image3D
-              lightSrc="/feature-2-light.png"
-              darkSrc="/feature-2-dark.png"
-              alt="Painel de relatórios"
-              direction="right"
+          <Image3D
+            lightSrc="/feature-2-light.png"
+            darkSrc="/feature-2-dark.png"
+            alt="Painel de relatórios"
+            direction="right"
               className="relative rounded-2xl shadow-2xl"
             />
           </div>
@@ -566,90 +566,90 @@ export function FeaturesSection() {
                 Cardápio Inteligente com Variações e Opcionais
               </h3>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                Ofereça mais opções aos seus clientes com um sistema avançado de customização de produtos. 
-                Tamanhos, sabores, complementos e muito mais, tudo com cálculo automático de preços.
-              </p>
-            </div>
+              Ofereça mais opções aos seus clientes com um sistema avançado de customização de produtos. 
+              Tamanhos, sabores, complementos e muito mais, tudo com cálculo automático de preços.
+            </p>
+          </div>
 
             <div className="grid md:grid-cols-3 gap-8 mb-12">
-              {/* Feature 1: Variações */}
+            {/* Feature 1: Variações */}
               <div className="bg-background/90 backdrop-blur-md p-8 rounded-2xl border border-border/60 shadow-xl hover:shadow-2xl hover:border-primary/40 transition-all duration-300">
                 <div className="bg-gradient-to-br from-purple-500 to-pink-500 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
                   <Layers className="h-7 w-7 text-white" />
-                </div>
+              </div>
                 <h4 className="font-bold text-xl mb-3 text-foreground">Variações de Produto</h4>
                 <p className="text-muted-foreground mb-6 leading-relaxed">
-                  Configure diferentes opções para o mesmo produto: tamanhos (P/M/G), tipos de massa, 
-                  sabores e mais.
-                </p>
+                Configure diferentes opções para o mesmo produto: tamanhos (P/M/G), tipos de massa, 
+                sabores e mais.
+              </p>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-3">
                     <div className="mt-1.5 h-2 w-2 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 shrink-0" />
                     <span className="text-sm text-muted-foreground">Escolha única (radio button)</span>
-                  </li>
+                </li>
                   <li className="flex items-start gap-3">
                     <div className="mt-1.5 h-2 w-2 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 shrink-0" />
                     <span className="text-sm text-muted-foreground">Preços positivos ou negativos</span>
-                  </li>
+                </li>
                   <li className="flex items-start gap-3">
                     <div className="mt-1.5 h-2 w-2 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 shrink-0" />
                     <span className="text-sm text-muted-foreground">Exemplo: Pizza P (-R$ 5), M (incluso), G (+R$ 10)</span>
-                  </li>
-                </ul>
-              </div>
+                </li>
+              </ul>
+            </div>
 
-              {/* Feature 2: Opcionais */}
+            {/* Feature 2: Opcionais */}
               <div className="bg-background/90 backdrop-blur-md p-8 rounded-2xl border border-border/60 shadow-xl hover:shadow-2xl hover:border-primary/40 transition-all duration-300">
                 <div className="bg-gradient-to-br from-amber-500 to-orange-500 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
                   <PlusCircle className="h-7 w-7 text-white" />
-                </div>
+              </div>
                 <h4 className="font-bold text-xl mb-3 text-foreground">Opcionais Personalizáveis</h4>
                 <p className="text-muted-foreground mb-6 leading-relaxed">
-                  Adicione complementos, bordas recheadas, molhos extras e outros itens adicionais 
-                  aos produtos.
-                </p>
+                Adicione complementos, bordas recheadas, molhos extras e outros itens adicionais 
+                aos produtos.
+              </p>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-3">
                     <div className="mt-1.5 h-2 w-2 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 shrink-0" />
                     <span className="text-sm text-muted-foreground">Escolha múltipla com quantidade</span>
-                  </li>
+                </li>
                   <li className="flex items-start gap-3">
                     <div className="mt-1.5 h-2 w-2 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 shrink-0" />
                     <span className="text-sm text-muted-foreground">Cliente pode repetir o mesmo item</span>
-                  </li>
+                </li>
                   <li className="flex items-start gap-3">
                     <div className="mt-1.5 h-2 w-2 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 shrink-0" />
                     <span className="text-sm text-muted-foreground">Exemplo: 2× Bacon, 1× Borda Catupiry</span>
-                  </li>
-                </ul>
-              </div>
+                </li>
+              </ul>
+            </div>
 
-              {/* Feature 3: Cálculo Automático */}
+            {/* Feature 3: Cálculo Automático */}
               <div className="bg-background/90 backdrop-blur-md p-8 rounded-2xl border border-border/60 shadow-xl hover:shadow-2xl hover:border-primary/40 transition-all duration-300">
                 <div className="bg-gradient-to-br from-emerald-500 to-teal-500 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
                   <Sparkles className="h-7 w-7 text-white" />
-                </div>
+              </div>
                 <h4 className="font-bold text-xl mb-3 text-foreground">Cálculo em Tempo Real</h4>
                 <p className="text-muted-foreground mb-6 leading-relaxed">
-                  Preço total atualiza instantaneamente conforme o cliente seleciona variações 
-                  e adiciona opcionais.
-                </p>
+                Preço total atualiza instantaneamente conforme o cliente seleciona variações 
+                e adiciona opcionais.
+              </p>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-3">
                     <div className="mt-1.5 h-2 w-2 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 shrink-0" />
                     <span className="text-sm text-muted-foreground">Atualização instantânea (0ms)</span>
-                  </li>
+                </li>
                   <li className="flex items-start gap-3">
                     <div className="mt-1.5 h-2 w-2 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 shrink-0" />
                     <span className="text-sm text-muted-foreground">Fórmula: Base + Variação + Opcionais</span>
-                  </li>
+                </li>
                   <li className="flex items-start gap-3">
                     <div className="mt-1.5 h-2 w-2 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 shrink-0" />
                     <span className="text-sm text-muted-foreground">Sem reload, sem espera</span>
-                  </li>
-                </ul>
-              </div>
+                </li>
+              </ul>
             </div>
+          </div>
 
             {/* Exemplo Visual Enhanced */}
             <div className="bg-background/80 backdrop-blur-md rounded-2xl p-8 md:p-10 border border-border/60 shadow-xl">
@@ -662,34 +662,34 @@ export function FeaturesSection() {
                   </div>
                   <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-6 border border-primary/20">
                     <p className="text-3xl font-bold text-primary">R$ 35,00</p>
-                  </div>
+                </div>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-muted-foreground mb-4">
                     <Layers className="h-5 w-5 text-purple-500" />
                     <span className="font-semibold">Variação: Grande</span>
-                  </div>
+              </div>
                   <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-xl p-6 border border-purple-500/20">
                     <p className="text-sm text-muted-foreground mb-1">Adicional</p>
                     <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">+R$ 10,00</p>
-                  </div>
                 </div>
+              </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-muted-foreground mb-4">
                     <PlusCircle className="h-5 w-5 text-amber-500" />
                     <span className="font-semibold">Opcionais</span>
-                  </div>
+                </div>
                   <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 rounded-xl p-6 border border-amber-500/20 space-y-2">
-                    <p className="text-xs text-muted-foreground">2× Bacon: R$ 10,00</p>
-                    <p className="text-xs text-muted-foreground">1× Borda: R$ 12,00</p>
+                  <p className="text-xs text-muted-foreground">2× Bacon: R$ 10,00</p>
+                  <p className="text-xs text-muted-foreground">1× Borda: R$ 12,00</p>
                     <div className="border-t border-border/60 pt-3 mt-3">
                       <p className="text-base font-bold text-foreground">+R$ 22,00</p>
-                    </div>
                   </div>
                 </div>
               </div>
+            </div>
 
               <div className="pt-8 border-t-2 border-dashed border-border/60 text-center">
                 <p className="text-sm text-muted-foreground mb-3 font-medium">Total do Pedido</p>
@@ -697,8 +697,8 @@ export function FeaturesSection() {
                   R$ 67,00
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  (Base R$ 35,00 + Variação R$ 10,00 + Opcionais R$ 22,00)
-                </p>
+                (Base R$ 35,00 + Variação R$ 10,00 + Opcionais R$ 22,00)
+              </p>
               </div>
             </div>
           </div>
