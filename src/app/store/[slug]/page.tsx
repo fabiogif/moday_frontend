@@ -2258,7 +2258,7 @@ export default function PublicStorePage() {
             <p>Guarde o número acima para acompanhar pelo WhatsApp ou diretamente na loja.</p>
           </div>
 
-          <DialogFooter className="flex-col gap-3 sm:flex-row">
+          <DialogFooter className="flex-col gap-3">
             {orderResult?.whatsapp_link && (
               <Button asChild className="w-full">
                 <a href={orderResult.whatsapp_link} target="_blank" rel="noopener noreferrer">

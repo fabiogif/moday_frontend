@@ -149,6 +149,9 @@ export function StoreHourFormDialog({
           // Pular o próprio horário quando estiver editando
           if (hour && existing.uuid === hour.uuid) continue
 
+          // Garantir que só compare horários do mesmo dia da semana
+          if (existing.day_of_week !== dayOfWeek) continue
+
           const existingStart = existing.start_time || ''
           const existingEnd = existing.end_time || ''
 
