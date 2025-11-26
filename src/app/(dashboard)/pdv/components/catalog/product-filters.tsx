@@ -64,10 +64,10 @@ export function ProductFilters({
               data-testid={`touch-category-${key}`}
               onClick={() => onCategorySelect(active ? null : key)}
               className={cn(
-                "flex flex-col items-center gap-2 p-3 rounded-full transition-all min-w-[80px] h-[80px] flex-shrink-0",
+                "flex flex-col items-center gap-1 p-1 rounded-full transition-all min-w-[80px] h-[80px] flex-shrink-0",
                 active
-                  ? "border-4 border-primary bg-primary/10 shadow-lg scale-105"
-                  : "border-2 border-gray-200 hover:border-gray-300 hover:scale-102"
+                  ? "border-2 border-primary bg-primary/10 shadow-lg scale-105"
+                  : "border-1 border-gray-200 hover:border-gray-300 hover:scale-102"
               )}
               title={category.name}
             >
@@ -81,7 +81,7 @@ export function ProductFilters({
                   unoptimized
                 />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                   <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
                     {category.name.charAt(0).toUpperCase()}
                   </span>
