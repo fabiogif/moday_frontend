@@ -49,8 +49,7 @@ export async function POST(request: NextRequest) {
     if (contentType?.includes('multipart/form-data')) {
       // Para FormData (com arquivos), repassar diretamente
       const formData = await request.formData()
-      
-      
+
       response = await fetch(`${backendUrl}/api/product`, {
         method: 'POST',
         headers: {
@@ -86,7 +85,7 @@ export async function POST(request: NextRequest) {
     const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {
-    console.error('Erro na API route:', error)
+
     return NextResponse.json(
       { message: 'Erro interno do servidor' },
       { status: 500 }

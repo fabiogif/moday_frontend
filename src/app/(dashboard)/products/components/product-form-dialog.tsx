@@ -145,16 +145,9 @@ export function ProductFormDialog({ onAddProduct, renderAsPage = false }: Produc
         data.price_cost < 0 ||
         data.qtd_stock < 0
       ) {
-        console.error("Dados inválidos:", {
-          name: data.name,
-          description: data.description,
-          categories: data.categories,
-          price: data.price,
-          price_cost: data.price_cost,
-          qtd_stock: data.qtd_stock,
-        });
+
         // TODO: Implementar toast ou alert dialog para validação
-        console.warn("Por favor, preencha todos os campos obrigatórios.");
+
         return;
       }
 
@@ -162,7 +155,6 @@ export function ProductFormDialog({ onAddProduct, renderAsPage = false }: Produc
       form.reset();
       setOpen(false);
     } catch (error: any) {
-      console.error("Erro ao criar produto:", error);
 
       // Tratar erros de validação do backend
       const handled = handleBackendErrors(error, commonFieldMappings as any);
@@ -387,7 +379,7 @@ export function ProductFormDialog({ onAddProduct, renderAsPage = false }: Produc
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        // console.log("Arquivo selecionado:", file);
+
                         onChange(file || undefined);
                       }}
                       {...field}

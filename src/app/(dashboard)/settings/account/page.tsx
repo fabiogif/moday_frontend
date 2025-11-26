@@ -114,7 +114,7 @@ export default function AccountSettings() {
           })
         }
       } catch (error) {
-        console.error('Erro ao carregar dados do usuário:', error)
+
         toast.error('Erro ao carregar informações da conta')
       } finally {
         setLoading(false)
@@ -152,7 +152,7 @@ export default function AccountSettings() {
         }
       }
     } catch (error: any) {
-      console.error('Erro ao atualizar conta:', error)
+
       toast.error(error.message || 'Erro ao atualizar informações da conta')
     } finally {
       setSaving(false)
@@ -175,7 +175,7 @@ export default function AccountSettings() {
       await logout()
       
     } catch (error: any) {
-      console.error('Erro ao remover conta:', error)
+
       toast.error(error.message || 'Erro ao remover conta')
     } finally {
       setDeleting(false)

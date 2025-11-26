@@ -1,0 +1,28 @@
+{
+  "name": "Alba Tech - Gestão de Restaurante",
+  "short_name": "Alba Tech",
+  "description": "Sistema de gestão para restaurantes",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-dark.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["business", "food"],
+  "lang": "pt-BR",
+  "dir": "ltr"
+}
+

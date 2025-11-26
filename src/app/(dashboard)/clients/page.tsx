@@ -12,6 +12,7 @@ import {
 import { endpoints } from "@/lib/api-client";
 import { PageLoading } from "@/components/ui/loading-progress";
 import { showErrorToast, showSuccessToast } from "@/components/ui/error-toast";
+import { useAuth } from "@/contexts/auth-context";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,6 +71,7 @@ export default function ClientsPage() {
     refetch,
     isAuthenticated,
   } = useAuthenticatedClients();
+  const { isLoading: authLoading } = useAuth();
   const { mutate: createClient, loading: creating } = useMutation();
   const { mutate: updateClient, loading: updating } = useMutation();
   const { mutate: deleteClient, loading: deleting } = useMutation();
@@ -136,12 +138,7 @@ export default function ClientsPage() {
     } catch (error: any) {
       // Log organizado em desenvolvimento
       if (process.env.NODE_ENV === 'development') {
-        console.group('🔴 Erro ao Criar Cliente')
-        // console.log('Error:', error)
-        // console.log('Message:', error?.message)
-        // console.log('Data:', error?.data)
-        // console.log('Errors:', error?.errors)
-        console.groupEnd()
+
       }
       
       // Mostrar erro formatado
@@ -186,9 +183,7 @@ export default function ClientsPage() {
       }
 
       if (process.env.NODE_ENV === 'development') {
-        console.group('🔴 Erro ao Excluir Cliente')
-        // console.log('Error:', error)
-        console.groupEnd()
+
       }
       
       showErrorToast(error, "Erro ao Excluir Cliente");
@@ -240,12 +235,7 @@ export default function ClientsPage() {
       }
     } catch (error: any) {
       if (process.env.NODE_ENV === 'development') {
-        console.group('🔴 Erro ao Atualizar Cliente')
-        // console.log('Error:', error)
-        // console.log('Message:', error?.message)
-        // console.log('Data:', error?.data)
-        // console.log('Errors:', error?.errors)
-        console.groupEnd()
+
       }
       
       showErrorToast(error, "Erro ao Atualizar Cliente");
@@ -260,7 +250,8 @@ export default function ClientsPage() {
     setIsDialogOpen(true);
   };
 
-  if (!isAuthenticated) {
+  // Só mostrar mensagem de não autenticado se não estiver carregando E não estiver autenticado
+  if (!authLoading && !isAuthenticated) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-destructive">

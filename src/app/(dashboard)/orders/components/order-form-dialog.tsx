@@ -182,7 +182,7 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
       setLocalClients(clientsFromApi)
       
       if (process.env.NODE_ENV === 'development') {
-        // console.log('🔄 [Dialog] Clientes sincronizados:', clientsFromApi.length)
+
       }
     }
   }, [clientsData])
@@ -294,11 +294,7 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
         const newClient = (result.data as any)
         
         if (process.env.NODE_ENV === 'development') {
-          console.group('✅ [Dialog] Cliente Criado')
-          // console.log('Novo cliente:', newClient)
-          // console.log('ID:', newClient.id)
-          // console.log('Nome:', newClient.name)
-          console.groupEnd()
+
         }
         
         // Adicionar cliente à lista local imediatamente
@@ -306,7 +302,7 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
           const updated = [newClient, ...prev]
           
           if (process.env.NODE_ENV === 'development') {
-            // console.log('📝 [Dialog] Lista de clientes atualizada:', updated.length, 'clientes')
+
           }
           
           return updated
@@ -322,7 +318,7 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
         form.setValue('clientId', clientId)
         
         if (process.env.NODE_ENV === 'development') {
-          // console.log('🎯 [Dialog] Cliente selecionado:', clientId)
+
         }
         
         // Fechar o modal de adicionar cliente
@@ -341,7 +337,7 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
     } catch (error) {
       // Erro já é tratado pelo ClientFormDialog
       if (process.env.NODE_ENV === 'development') {
-        console.error('🔴 [Dialog] Erro ao adicionar cliente:', error)
+
       }
       throw error
     }
@@ -895,7 +891,6 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
       </div>
     </>
   )
-
 
   // Se renderAsPage for true, renderizar como página
   if (renderAsPage) {

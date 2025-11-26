@@ -97,7 +97,7 @@ export function OrderTrack({ slug }: OrderTrackProps) {
           setStoreInfo(response.data)
         }
       } catch (error) {
-        console.warn('Erro ao carregar dados da loja para avaliação', error)
+
       }
     }
 

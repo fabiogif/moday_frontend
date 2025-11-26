@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAuth } from "@/contexts/auth-context"
 import { useAuthenticatedApi } from "@/hooks/use-authenticated-api"
+import { apiClient } from "@/lib/api-client"
 
 interface MonthlyData {
   month: string
@@ -30,7 +31,7 @@ const chartConfig = {
 }
 
 export function SalesChart() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const { isAuthenticated, isLoading: authLoading, token } = useAuth()
   const [timeRange, setTimeRange] = useState("12m")
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([])
   const [currentMonth, setCurrentMonth] = useState<MonthlyData | null>(null)
@@ -43,6 +44,14 @@ export function SalesChart() {
     '/api/dashboard/sales-performance',
     { immediate: false }
   )
+  
+  // Garantir que o token está no apiClient antes de fazer refetch
+  useEffect(() => {
+    if (token) {
+      apiClient.setToken(token)
+      apiClient.reloadToken()
+    }
+  }, [token])
 
   useEffect(() => {
     // Aguardar autenticação completa antes de carregar

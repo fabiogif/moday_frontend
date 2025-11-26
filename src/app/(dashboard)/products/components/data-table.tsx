@@ -262,11 +262,6 @@ export function DataTable({ products, onDeleteProduct, onEditProduct, onAddProdu
         const product = row.original
         
         // Debug: Log do produto para verificar estrutura
-        // console.log('Product data in actions:', {
-        //   id: product.id,
-        //   name: product.name,
-        //   fullProduct: product
-        // });
 
         return (
           <DropdownMenu>
@@ -359,7 +354,7 @@ export function DataTable({ products, onDeleteProduct, onEditProduct, onAddProdu
           )}
         </div>
         <div className="flex items-center space-x-2">
-          <Button onClick={() => window.location.href = '/products/new'}>
+          <Button onClick={() => router.push('/products/new')}>
             <Plus className="mr-2 h-4 w-4" />
             Novo Produto
           </Button>

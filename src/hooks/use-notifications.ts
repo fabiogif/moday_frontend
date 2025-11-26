@@ -61,7 +61,7 @@ export function useNotifications() {
         setUnreadCount((response.data as { count: number }).count)
       }
     } catch (err) {
-      console.error('Erro ao carregar contagem de não lidas:', err)
+
     }
   }, [])
 

@@ -60,7 +60,7 @@ export default function UsoPage() {
       const response = await adminApi.getUsageMetrics()
       setData(response.data)
     } catch (error) {
-      console.error('Erro ao carregar métricas de uso:', error)
+
     } finally {
       setIsLoading(false)
     }

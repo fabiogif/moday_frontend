@@ -44,7 +44,7 @@ export function OrdersVolumeChart() {
         }
       })
       
-     // // console.log('Orders data:', orders)
+     // // 
       
       const groupedData = last7Days.map(({ dateString, label }) => {
         const dateOrders = Array.isArray(orders) ? orders.filter((order: any) => {
@@ -68,10 +68,10 @@ export function OrdersVolumeChart() {
               orderDateString = new Date(dateValue).toISOString().split('T')[0]
             }
             
-           // // console.log('Comparing:', orderDateString, '===', dateString, '=', orderDateString === dateString)
+           // // 
             return orderDateString === dateString
           } catch (error) {
-            console.error('Error parsing date:', dateValue, error)
+
             return false
           }
         }) : []
@@ -80,7 +80,7 @@ export function OrdersVolumeChart() {
           order.status === 'Entregue' || order.status === 'completed'
         ).length
         
-        //// console.log(`Date ${dateString} (${label}):`, dateOrders.length, 'orders,', completed, 'completed')
+        //// :`, dateOrders.length, 'orders,', completed, 'completed')
         
         return {
           date: label,

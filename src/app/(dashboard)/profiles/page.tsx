@@ -41,7 +41,7 @@ export default function ProfilesPage() {
         await refetch()
       }
     } catch (error: any) {
-      console.error('Erro ao criar perfil:', error)
+
       toast.error(error.message || 'Erro ao criar perfil')
     }
   }
@@ -58,7 +58,7 @@ export default function ProfilesPage() {
         await refetch()
       }
     } catch (error: any) {
-      console.error('Erro ao excluir perfil:', error)
+
       toast.error(error.message || 'Erro ao excluir perfil')
     }
   }
@@ -76,7 +76,7 @@ export default function ProfilesPage() {
         await refetch()
       }
     } catch (error: any) {
-      console.error('Erro ao editar perfil:', error)
+
       toast.error(error.message || 'Erro ao editar perfil')
     }
   }

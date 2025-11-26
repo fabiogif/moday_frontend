@@ -28,6 +28,7 @@ export default function ForgotPassword2Page() {
           src="https://ui.shadcn.com/placeholder.svg"
           alt="Image"
           fill
+          sizes="(max-width: 768px) 0vw, 50vw"
           className="object-cover dark:brightness-[0.95] dark:invert"
         />
       </div>

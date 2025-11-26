@@ -68,7 +68,7 @@ function OrderSuccessContent() {
           throw new Error('Pedido não encontrado')
         }
       } catch (error) {
-        console.error('Erro ao buscar pedido:', error)
+
         toast.error('Não foi possível carregar os detalhes do pedido')
         router.push('/orders')
       } finally {

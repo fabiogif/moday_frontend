@@ -57,6 +57,15 @@ export function useApi<T>(
       }
     }
 
+    // Garantir que o token está no apiClient antes de fazer a requisição
+    if (typeof window !== 'undefined') {
+      const tokenFromStorage = localStorage.getItem('auth-token')
+      if (tokenFromStorage) {
+        apiClient.setToken(tokenFromStorage)
+        apiClient.reloadToken()
+      }
+    }
+
     setLoading(true)
     setError(null)
 
@@ -211,7 +220,7 @@ export function useAuth() {
       }
         }
       } catch (error) {
-        console.error('Erro ao verificar autenticação:', error)
+
         apiClient.clearToken()
       } finally {
         setLoading(false)

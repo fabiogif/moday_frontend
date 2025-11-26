@@ -133,7 +133,7 @@ export function ClientFormDialog({
         setPendingCity(null);
         
         if (process.env.NODE_ENV === 'development') {
-          // console.log('✅ Cidade setada após carregamento:', pendingCity);
+
         }
       }, 1000); // 1 segundo para garantir que as cidades carregaram
       
@@ -155,10 +155,7 @@ export function ClientFormDialog({
       
       if (address) {
         if (process.env.NODE_ENV === 'development') {
-          console.group('🔍 CEP Encontrado')
-          // console.log('CEP:', cep)
-          // console.log('Endereço:', address)
-          console.groupEnd()
+
         }
         
         // Preenche os campos automaticamente
@@ -176,13 +173,13 @@ export function ClientFormDialog({
           setPendingCity(cityToSet);
           
           if (process.env.NODE_ENV === 'development') {
-            // console.log('📌 Cidade pendente:', cityToSet);
+
           }
         }
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        console.error('🔴 Erro ao buscar CEP:', error);
+
       }
       // Erro já é tratado pelo useViaCEP com toast
     }
@@ -243,13 +240,7 @@ export function ClientFormDialog({
     } catch (error: any) {
       // Log organizado apenas em desenvolvimento
       if (process.env.NODE_ENV === 'development') {
-        console.group('🔴 ClientFormDialog: Erro ao Salvar')
-        // console.log('Tipo:', error?.constructor?.name || typeof error)
-        // console.log('Mensagem:', error?.message || 'Sem mensagem')
-        // console.log('Data:', error?.data)
-        // console.log('Errors:', error?.errors)
-        // console.log('Erro completo:', error)
-        console.groupEnd()
+
       }
       
       // Tentar tratar erros do backend automaticamente

@@ -59,11 +59,7 @@ export function StateCityFormFields<T extends FieldValues>({
 
   // Debug
   useEffect(() => {
-    // console.log('StateCityFormFields - Debug:', {
-    //   stateField,
-    //   citiesCount: cities?.length || 0,
-    //   loadingCities,
-    //   cities: cities?.slice(0, 3).map(c => c.name)
+    // .map(c => c.name)
     // })
   }, [stateField, cities, loadingCities])
 

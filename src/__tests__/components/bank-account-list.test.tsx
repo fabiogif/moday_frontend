@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { BankAccountList } from '@/app/dashboard/contas-bancarias/components/bank-account-list'
+import { BankAccountList } from '@/app/(dashboard)/contas-bancarias/components/bank-account-list'
 import { BankAccount } from '@/types/bank-account'
 
 const mockAccounts: BankAccount[] = [

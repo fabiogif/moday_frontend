@@ -100,9 +100,6 @@ export function ContactSection() {
           </p>
         </div>
 
-      
-
-
         <div className="grid gap-8 lg:grid-cols-4">
           {/* Contact Options */}
           <div className="lg:col-span-2 order-2 lg:order-1 space-y-6">

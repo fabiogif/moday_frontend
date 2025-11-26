@@ -51,7 +51,7 @@ export default function PaymentMethodsPage() {
         await refetch()
       }
     } catch (error: any) {
-      console.error('Erro ao criar forma de pagamento:', error)
+
       toast.error(error.message || 'Erro ao criar forma de pagamento')
     }
   }
@@ -69,7 +69,7 @@ export default function PaymentMethodsPage() {
         await refetch()
       }
     } catch (error: any) {
-      console.error('Erro ao atualizar forma de pagamento:', error)
+
       toast.error(error.message || 'Erro ao atualizar forma de pagamento')
     }
   }
@@ -88,7 +88,7 @@ export default function PaymentMethodsPage() {
         await refetch()
       }
     } catch (error: any) {
-      console.error('Erro ao excluir forma de pagamento:', error)
+
       if (error?.status === 409) {
         toast.error(error?.message || 'Forma de pagamento não pode ser excluída, existe um pedido ativo ou não arquivado vinculado.')
         return

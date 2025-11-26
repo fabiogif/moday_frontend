@@ -66,7 +66,7 @@ export function ReviewsSection({ tenantSlug }: ReviewsSectionProps) {
     } catch (error: any) {
       // Erro silencioso - seção não aparece se houver erro
       if (process.env.NODE_ENV === 'development') {
-        console.error('Erro ao carregar avaliações:', error)
+
       }
     } finally {
       setLoading(false)

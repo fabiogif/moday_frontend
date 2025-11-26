@@ -5,7 +5,7 @@ import { StatCards } from "./components/stat-cards"
 import { DataTable } from "./components/data-table"
 import { OrderDetailsDialog } from "./components/order-details-dialog"
 import { ReceiptDialog } from "./components/receipt-dialog"
-import { useOrders, useMutation } from "@/hooks/use-api"
+import { useAuthenticatedOrders, useMutation } from "@/hooks/use-authenticated-api"
 import { useOrderRefresh } from "@/hooks/use-order-refresh"
 import { endpoints } from "@/lib/api-client"
 import { PageLoading } from "@/components/ui/loading-progress"
@@ -14,21 +14,14 @@ import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function OrdersPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { data: orders, loading, error, refetch } = useOrders()
+  const { data: orders, loading, error, refetch, isAuthenticated } = useAuthenticatedOrders()
+  const { isLoading: authLoading } = useAuth()
   
-  // Debug: Log dos pedidos recebidos
-  useEffect(() => {
-    if (orders) {
-      console.log('📊 OrdersPage - Total de pedidos:', Array.isArray(orders) ? orders.length : 'não é array')
-      if (Array.isArray(orders) && orders.length > 0) {
-        console.log('📝 Primeiro pedido:', orders[0].identify)
-      }
-    }
-  }, [orders])
   
   const { mutate: createOrder, loading: creating } = useMutation()
   const { mutate: deleteOrder, loading: deleting } = useMutation()
@@ -41,7 +34,7 @@ export default function OrdersPage() {
   
   // Forçar atualização quando a página é montada
   useEffect(() => {
-    console.log('🚀 Página de pedidos montada, forçando atualização...')
+
     refetch()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -53,7 +46,7 @@ export default function OrdersPage() {
   // Atualizar lista quando shouldRefresh for true
   useEffect(() => {
     if (shouldRefresh) {
-      console.log('🔄 Atualizando lista de pedidos...')
+
       refetch()
       resetRefresh()
     }
@@ -62,7 +55,7 @@ export default function OrdersPage() {
   // Atualizar automaticamente quando a página for montada/focada
   useEffect(() => {
     const handleFocus = () => {
-      console.log('👁️ Página de pedidos focada, atualizando...')
+
       refetch()
     }
     
@@ -100,7 +93,7 @@ export default function OrdersPage() {
       toast.success('Pedido excluído com sucesso!')
       await refetch()
     } catch (error: any) {
-      console.error('Erro ao excluir pedido:', error)
+
       toast.error(error.message || 'Erro ao excluir pedido')
     }
   }
@@ -116,7 +109,7 @@ export default function OrdersPage() {
     // Usar identify em vez de id que pode ser undefined
     const orderId = order.identify || order.id?.toString()
     if (!orderId) {
-      console.error('ID do pedido não encontrado')
+
       return
     }
 
@@ -134,7 +127,7 @@ export default function OrdersPage() {
       // Usar identify em vez de id que pode ser undefined
       const orderId = order.identify || order.id?.toString()
       if (!orderId) {
-        console.error('ID do pedido não encontrado')
+
         return
       }
 
@@ -149,7 +142,7 @@ export default function OrdersPage() {
         await refetch()
       }
     } catch (error) {
-      console.error('Erro ao faturar pedido:', error)
+
       toast.error('Erro ao faturar pedido')
     }
   }
@@ -179,7 +172,7 @@ export default function OrdersPage() {
         await refetch()
       }
     } catch (error: any) {
-      console.error('Erro ao excluir pedidos em massa:', error)
+
       toast.error(error.message || 'Erro ao excluir pedidos em massa')
     }
   }
@@ -207,9 +200,18 @@ export default function OrdersPage() {
         await refetch()
       }
     } catch (error: any) {
-      console.error('Erro ao atualizar status dos pedidos em massa:', error)
+
       toast.error(error.message || 'Erro ao atualizar status dos pedidos em massa')
     }
+  }
+
+  // Só mostrar mensagem de não autenticado se não estiver carregando E não estiver autenticado
+  if (!authLoading && !isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-destructive">Usuário não autenticado. Faça login para continuar.</div>
+      </div>
+    )
   }
 
   if (loading) {
@@ -224,7 +226,7 @@ export default function OrdersPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-destructive">Erro ao carregar pedidos: Não autenticado.</div>
+        <div className="text-destructive">Erro ao carregar pedidos: {error}</div>
       </div>
     )
   }

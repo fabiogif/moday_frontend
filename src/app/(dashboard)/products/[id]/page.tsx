@@ -71,8 +71,7 @@ export default function ProductDetailPage() {
   )
   
   const { mutate: deleteProduct, loading: deleting } = useMutation()
-  
-  
+
   const handleDelete = async () => {
     try {
       const response = await deleteProduct(endpoints.products.delete(productId), 'DELETE')

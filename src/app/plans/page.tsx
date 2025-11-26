@@ -23,7 +23,7 @@ export default function PlansPage() {
           setPlans(Array.isArray(response.data) ? response.data : [])
         }
       } catch (err: any) {
-        console.error('Erro ao carregar planos:', err)
+
         setError(err.message || 'Erro ao carregar planos')
       } finally {
         setLoading(false)

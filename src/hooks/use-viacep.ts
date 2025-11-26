@@ -71,7 +71,7 @@ export function useViaCEPQuiet(): {
     try {
       return await searchAddressByCEP(cep);
     } catch (err) {
-      console.error('Erro ao buscar CEP:', err);
+
       return null;
     }
   }, []);

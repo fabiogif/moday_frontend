@@ -59,7 +59,7 @@ export default function UsersPage() {
         await refetch()
       }
     } catch (error) {
-      console.error('Erro ao criar usuário:', error)
+
     }
   }
 
@@ -74,7 +74,7 @@ export default function UsersPage() {
         await refetch()
       }
     } catch (error) {
-      console.error('Erro ao excluir usuário:', error)
+
     }
   }
 
@@ -90,7 +90,7 @@ export default function UsersPage() {
         await refetch()
       }
     } catch (error) {
-      console.error('Erro ao editar usuário:', error)
+
     }
   }
 

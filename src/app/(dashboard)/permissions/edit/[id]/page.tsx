@@ -118,7 +118,7 @@ export default function EditPermissionPage() {
         setPermission(prev => prev ? { ...prev, ...data } : null)
       }
     } catch (error: any) {
-      console.error('Erro ao atualizar permissão:', error)
+
       toast.error(error.message || 'Erro ao atualizar permissão')
     }
   }
@@ -135,7 +135,7 @@ export default function EditPermissionPage() {
         router.push('/permissions')
       }
     } catch (error: any) {
-      console.error('Erro ao excluir permissão:', error)
+
       toast.error(error.message || 'Erro ao excluir permissão')
     }
   }

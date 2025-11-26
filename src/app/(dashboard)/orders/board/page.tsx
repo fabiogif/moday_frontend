@@ -583,7 +583,7 @@ export default function OrdersBoardPage() {
     tenantId,
     enabled: !!user?.tenant_id,
     onOrderCreated: useCallback((newOrder: any) => {
-      // console.log('Real-time: New order created', newOrder)
+
       const normalized = normalizeOrder(newOrder)
 
       if (normalized.status === 'Arquivado') {
@@ -601,7 +601,7 @@ export default function OrdersBoardPage() {
     }, [normalizeOrder]),
     
     onOrderStatusUpdated: useCallback(({ order: updatedOrder, oldStatus, newStatus }: any) => {
-      // console.log('Real-time: Order status updated', { updatedOrder, oldStatus, newStatus })
+
       const normalized = normalizeOrder(updatedOrder)
 
       if (newStatus === 'Arquivado' || normalized.status === 'Arquivado') {
@@ -622,8 +622,7 @@ export default function OrdersBoardPage() {
     }, [normalizeOrder]),
     
     onOrderUpdated: useCallback((updatedOrder: any) => {
-      // console.log('Real-time: Order updated', updatedOrder)
-      
+
       setOrders((prev) => {
         const normalized = normalizeOrder(updatedOrder)
 
@@ -666,7 +665,7 @@ export default function OrdersBoardPage() {
         setDynamicColumns(columns)
       }
     } catch (e: any) {
-      console.warn("Erro ao carregar status, usando padrões:", e)
+
       // Manter colunas padrão em caso de erro
     }
   }, [])
@@ -925,5 +924,4 @@ export default function OrdersBoardPage() {
     </div>
   )
 }
-
 

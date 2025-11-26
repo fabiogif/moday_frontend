@@ -32,6 +32,7 @@ import {
   TrendingDown as TrendingDownIcon,
   LineChart,
   MonitorSmartphone,
+  Handshake,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -108,6 +109,11 @@ const navGroups = [
         title: "Mesas",
         url: "/tables",
         icon: Table,
+      },
+      {
+        title: "Tipos de Atendimento",
+        url: "/service-types",
+        icon: Handshake,
       },
     ],
   },

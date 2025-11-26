@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Menu, X, Moon, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -44,6 +45,7 @@ const smoothScrollTo = (targetId: string) => {
 export function LandingNavbar() {
   const [isOpen, setIsOpen] = useState(false)
   const { setTheme, theme } = useTheme()
+  const router = useRouter()
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
@@ -69,7 +71,7 @@ export function LandingNavbar() {
                     if (item.href.startsWith('#')) {
                       smoothScrollTo(item.href)
                     } else {
-                      window.location.href = item.href
+                      router.push(item.href)
                     }
                   }}
                 >

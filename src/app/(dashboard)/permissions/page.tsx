@@ -54,8 +54,7 @@ export default function PermissionsPage() {
         await refetch()
       }
     } catch (error: any) {
-      console.error('Erro ao criar permissão:', error)
-      
+
       // Extrair mensagens de erro de validação
       const errorMessage = error.message || 'Erro ao criar permissão'
       
@@ -85,7 +84,7 @@ export default function PermissionsPage() {
         await refetch()
       }
     } catch (error: any) {
-      console.error('Erro ao excluir permissão:', error)
+
       const errorMessage = error.message || 'Erro ao excluir permissão'
       toast.error(errorMessage)
     }
@@ -104,8 +103,7 @@ export default function PermissionsPage() {
         await refetch()
       }
     } catch (error: any) {
-      console.error('Erro ao atualizar permissão:', error)
-      
+
       // Extrair mensagens de erro de validação
       const errorMessage = error.message || 'Erro ao atualizar permissão'
       

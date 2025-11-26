@@ -53,18 +53,12 @@ export function ReceiptDialog({ order, open, onOpenChange }: ReceiptDialogProps)
   const orderItems = isOrderReceipt(order) ? order.items : order.products || []
 
   // Debug: Log completo do pedido recebido
-  // console.log('ReceiptDialog - Pedido completo:', order)
-  // console.log('ReceiptDialog - Cliente:', order.client)
-  // console.log('ReceiptDialog - Cliente JSON:', JSON.stringify(order.client, null, 2))
-  // console.log('ReceiptDialog - Todas as keys do pedido:', Object.keys(order))
-  // console.log('ReceiptDialog - Tentando acessar:', {
-  //   'order.client?.name': order.client?.name,
-  //   'order.client?.email': order.client?.email,
-  //   'order.client?.phone': order.client?.phone,
-  //   'order.customerName': (order as any).customerName,
+
+  // )
+  // )
+  // .customerName,
   //   'order.customer?.name': (order as any).customer?.name
   // })
-  // console.log('ReceiptDialog - Produtos:', orderItems)
 
   // Get order number from either type
   const orderNumber = (order as OrderReceipt).orderNumber || (order as Order).identify || 'N/A'
@@ -73,14 +67,13 @@ export function ReceiptDialog({ order, open, onOpenChange }: ReceiptDialogProps)
 
   const formatCurrency = (value: number | string | undefined) => {
     // Debug: Log do valor recebido
-    // console.log('formatCurrency recebeu:', value, 'tipo:', typeof value)
-    
+
     // Converter para número se for string
     const numValue = typeof value === 'string' ? parseFloat(value) : value
     
     // Verificar se é um número válido
     if (numValue === undefined || numValue === null || isNaN(numValue)) {
-      console.warn('formatCurrency: valor inválido:', value)
+
       return 'R$ 0,00'
     }
     
@@ -102,7 +95,7 @@ export function ReceiptDialog({ order, open, onOpenChange }: ReceiptDialogProps)
       }
       return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
     } catch (error) {
-      console.error('Erro ao formatar data:', error)
+
       return 'Data inválida'
     }
   }
@@ -518,16 +511,4 @@ Obrigado pela preferência! 🍽️`
     </Dialog>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -126,7 +126,7 @@ export function BankAccountForm({ open, account, onClose, onSuccess }: BankAccou
         setBanks(response.data)
       }
     } catch (error) {
-      console.error('Erro ao carregar bancos:', error)
+
       toast.error('Erro ao carregar lista de bancos')
     } finally {
       setIsLoadingBanks(false)
@@ -156,7 +156,7 @@ export function BankAccountForm({ open, account, onClose, onSuccess }: BankAccou
         })
       }
     } catch (error) {
-      console.error('Erro ao carregar detalhes:', error)
+
       toast.error('Erro ao carregar detalhes da conta')
     }
   }
@@ -221,7 +221,7 @@ export function BankAccountForm({ open, account, onClose, onSuccess }: BankAccou
       
       onSuccess()
     } catch (error: any) {
-      console.error('Erro ao salvar:', error)
+
       toast.error(error.message || 'Erro ao salvar conta bancária')
     } finally {
       setIsLoading(false)

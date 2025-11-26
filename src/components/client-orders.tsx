@@ -78,7 +78,7 @@ export function ClientOrders({ slug }: ClientOrdersProps) {
         toast.error(data.message || 'Erro ao carregar pedidos')
       }
     } catch (error) {
-      console.error('Error loading orders:', error)
+
       toast.error('Erro ao carregar pedidos')
     } finally {
       setLoading(false)

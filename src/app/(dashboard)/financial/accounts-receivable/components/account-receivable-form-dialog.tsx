@@ -93,7 +93,7 @@ export function AccountReceivableFormDialog({
         setOrderFound(null)
       }
     } catch (error) {
-      console.error('Erro ao buscar pedido:', error)
+
       toast.error('Erro ao buscar pedido')
       setOrderFound(null)
     } finally {

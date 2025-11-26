@@ -10,6 +10,7 @@ import {
   useAuthenticatedClients,
   useAuthenticatedOrdersByTable,
   useAuthenticatedTodayOrders,
+  useAuthenticatedActiveServiceTypes,
   useMutation,
 } from "@/hooks/use-authenticated-api"
 import { useAuth } from "@/contexts/auth-context"
@@ -49,6 +50,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PageLoading } from "@/components/ui/loading-progress"
 import {
   Plus,
@@ -89,6 +91,9 @@ import {
   ChevronUp,
   ChevronDown,
   ArrowRight,
+  Handshake,
+  CreditCard as CreditCardIcon,
+  ShoppingCart as ShoppingCartIcon,
 } from "lucide-react"
 import { maskPhone, maskZipCode } from "@/lib/masks"
 import { useViaCEP } from "@/hooks/use-viacep"
@@ -98,6 +103,60 @@ import { PDVTutorial } from "./components/pdv-tutorial"
 import { PDVFeedback } from "./components/pdv-feedback"
 import { ChangeDialog } from "./components/change-dialog"
 import { usePOSHeader } from "@/contexts/pos-header-context"
+import { OrderSearch } from "./components/search/order-search"
+import { TableSearch } from "./components/search/table-search"
+import { CombinedSearch } from "./components/search/combined-search"
+import { PDVHeader } from "./components/layout/pdv-header"
+import { PDVMainLayout, PDVTwoColumnLayout } from "./components/layout/pdv-main-layout"
+import { OrderItemsList } from "./components/order/order-items-list"
+import { OrderTotals } from "./components/order/order-totals"
+import { OrderNotes } from "./components/order/order-notes"
+import { OrderActions } from "./components/order/order-actions"
+import { OrderTypeSelector, type OrderType } from "./components/order/order-type-selector"
+import { TableSelector } from "./components/tables/table-selector"
+import { DeliveryAddressForm } from "./components/delivery/delivery-address-form"
+import { OrderStatusGuard } from "./components/order/order-status-guard"
+import { OrderStatusBadge } from "./components/order/order-status-badge"
+import { PaymentMethodsSelector } from "./components/payment/payment-methods-selector"
+import { PaymentButtonsGrid } from "./components/payment/payment-buttons-grid"
+import { FiscalDocument } from "./components/fiscal/fiscal-document"
+import { PaymentAmountInput } from "./components/payment/payment-amount-input"
+import { PaymentSummary } from "./components/payment/payment-summary"
+import { PaymentConfirmationDialog, type PaymentConfirmationItem } from "./components/payment/payment-confirmation-dialog"
+import { SplitPaymentForm, type SplitPaymentItem } from "./components/payment/split-payment-form"
+import type { PaymentMethod as PaymentMethodType } from "./components/payment/payment-method-card"
+import { ProductGrid } from "./components/catalog/product-grid"
+import { ProductFilters } from "./components/catalog/product-filters"
+import { ProductSearch } from "./components/catalog/product-search"
+import { 
+  isFinalStatus, 
+  canEditOrder, 
+  canAdvanceStatus, 
+  canFinalizeOrder,
+  getNextStatusName as getNextStatusNameUtil,
+  FINAL_STATUSES 
+} from "./utils/order-status"
+import {
+  parsePrice as parsePriceUtil,
+  getProductPrice as getProductPriceUtil,
+  getCartItemUnitPrice as getCartItemUnitPriceUtil,
+  getCartItemTotal,
+  calculateOrderTotal,
+  formatCurrency as formatCurrencyUtil,
+  calculateChange,
+} from "./services/order-calculator"
+import {
+  validateOrderBeforeStart,
+  validateOrderBeforeUpdate,
+  validateOrderBeforeFinalize,
+  type ValidationError,
+} from "./services/order-validator"
+import {
+  preparePaymentData,
+  preparePaymentPayload,
+  isPaymentComplete,
+  isCashPayment,
+} from "./services/payment-processor"
 
 type Category = {
   uuid?: string
@@ -148,11 +207,7 @@ type Table = {
   name: string
 }
 
-type PaymentMethod = {
-  uuid: string
-  name: string
-  description?: string | null
-}
+// PaymentMethod type agora importado de payment-method-card.tsx como PaymentMethodType
 
 type Client = {
   uuid?: string
@@ -172,29 +227,73 @@ interface CartItem {
   selectedOptionals?: Array<(ProductOptional & { quantity: number })>
 }
 
-function extractCollection<T>(raw: any): T[] {
-  if (!raw) return []
-  if (Array.isArray(raw)) return raw
-  if (Array.isArray(raw?.data)) return raw.data
-  // Se for um objeto com propriedades que parecem uma coleção
-  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
-    // Verificar se tem uma propriedade que é um array
-    const arrayProps = Object.values(raw).filter(Array.isArray)
-    if (arrayProps.length > 0) {
-      return arrayProps[0] as T[]
-    }
+type OrderStatus = 'Pendente' | 'Preparando' | 'Pronto' | 'Em Entrega' | 'Entregue' | 'Concluído' | 'Cancelado' | 'Arquivado'
+
+interface Order {
+  id?: string | number
+  uuid?: string
+  identify?: string
+  status: OrderStatus | string
+  order_status?: {
+    name: OrderStatus | string
   }
-  return []
+  total: number | string
+  client?: Client & { id?: string | number }
+  client_id?: string
+  table?: Table
+  table_id?: string
+  products?: Array<{
+    product: Product
+    quantity: number
+    observation?: string
+  }>
+  created_at?: string
+  updated_at?: string
+  comment?: string
+  is_delivery?: boolean
+  delivery_address?: string
+  delivery_zip_code?: string
+  delivery_number?: string
+  delivery_neighborhood?: string
+  delivery_city?: string
+  delivery_state?: string
+  delivery_complement?: string
+  payment_method_id?: string | number
+  paymentMethod?: {
+    id?: string | number
+    uuid?: string
+    name?: string
+  }
 }
 
-// Status finais que não podem ser editados
-const FINAL_STATUSES = ['Entregue', 'Cancelado', 'Concluído', 'Arquivado']
-
-// Função helper para verificar se um status é final
-const isFinalStatus = (status: string | null | undefined): boolean => {
-  if (!status) return false
-  return FINAL_STATUSES.includes(status)
+interface TableOrder extends Order {
+  table: Table
 }
+
+// Função helper para extrair coleções de dados da API
+// Moved outside component to avoid minification issues
+const extractCollection = <T,>(raw: unknown): T[] => {
+  try {
+    if (!raw) return []
+    if (Array.isArray(raw)) return raw as T[]
+    if (raw && typeof raw === 'object' && 'data' in raw && Array.isArray((raw as { data?: unknown }).data)) {
+      return (raw as { data: T[] }).data
+    }
+    // Se for um objeto com propriedades que parecem uma coleção
+    if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+      // Verificar se tem uma propriedade que é um array
+      const arrayProps = Object.values(raw).filter(Array.isArray)
+      if (arrayProps.length > 0) {
+        return arrayProps[0] as T[]
+      }
+    }
+    return []
+  } catch (error) {
+    console.error('Error extracting collection:', error)
+    return []
+  }
+}
+
 
 // Função helper para normalizar nome do status (remover variações como "/ Cozinha")
 const normalizeStatusName = (statusName: string | null | undefined): string => {
@@ -225,33 +324,22 @@ const getNextStatusName = (currentStatus: string | null | undefined, isDelivery:
   return flow[normalizedCurrent] || null
 }
 
-function parsePrice(value?: number | string | null): number {
-  if (typeof value === "number") {
-    return value
-  }
-  if (typeof value === "string") {
-    const parsed = parseFloat(value)
-    return Number.isNaN(parsed) ? 0 : parsed
-  }
-  return 0
+// Funções utilitárias - usando serviços com wrappers locais quando necessário
+function getProductId(product: Product): string {
+  return product.uuid || product.identify || product.name
 }
 
+// Wrapper para parsePrice que mantém compatibilidade
+const parsePrice = parsePriceUtil
+
+// Wrapper para getProductPrice que considera promotional_price
 function getProductPrice(product: Product): number {
   const base = product.promotional_price ?? product.price
   return parsePrice(base)
 }
 
-function getProductId(product: Product): string {
-  return product.uuid || product.identify || product.name
-}
-
-function formatCurrency(value: number): string {
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-  })
-}
+// formatCurrency agora importado de order-calculator.ts
+const formatCurrency = formatCurrencyUtil
 
 function getCartItemSignature(
   productId: string,
@@ -269,6 +357,7 @@ function getCartItemSignature(
   return `${productId}__${variationKey}__${optionalsKey}`
 }
 
+// getCartItemUnitPrice - wrapper local que considera promotional_price
 function getCartItemUnitPrice(item: CartItem): number {
   const basePrice = item.selectedVariation
     ? parsePrice(item.selectedVariation.price ?? null) || getProductPrice(item.product)
@@ -288,18 +377,18 @@ function PDVQuickDashboard({
   showDashboard, 
   onToggle 
 }: { 
-  todayOrders: any[]
+  todayOrders: Order[]
   showDashboard: boolean
   onToggle: () => void
 }) {
   const stats = useMemo(() => {
-    const totalSales = todayOrders.reduce((sum, order: any) => sum + parsePrice(order.total || 0), 0)
+    const totalSales = todayOrders.reduce((sum, order: Order) => sum + parsePrice(order.total || 0), 0)
     const totalOrders = todayOrders.length
     const averageTicket = totalOrders > 0 ? totalSales / totalOrders : 0
     
     // Contar mesas ocupadas
     const occupiedTables = new Set()
-    todayOrders.forEach((order: any) => {
+    todayOrders.forEach((order: Order) => {
       if (order.table?.uuid && !['Entregue', 'Concluído', 'Cancelado'].includes(order.status)) {
         occupiedTables.add(order.table.uuid)
       }
@@ -355,7 +444,7 @@ function PDVQuickDashboard({
 
 // Componente de histórico de pedidos do cliente
 function ClientOrderHistory({ clientId, onLoadOrder }: { clientId: string; onLoadOrder: (orderId: string) => void }) {
-  const [history, setHistory] = useState<any[]>([])
+  const [history, setHistory] = useState<Order[]>([])
   const [loading, setLoading] = useState(false)
   
   useEffect(() => {
@@ -378,21 +467,21 @@ function ClientOrderHistory({ clientId, onLoadOrder }: { clientId: string; onLoa
         
         if (response.success && response.data) {
           // Tratar diferentes formatos de resposta
-          let orders: any[] = []
+          let orders: Order[] = []
           
           if (Array.isArray(response.data)) {
             orders = response.data
           } else if (response.data && typeof response.data === 'object') {
             // Se for um objeto com propriedade data (Laravel Resource Collection)
-            if (Array.isArray((response.data as any).data)) {
-              orders = (response.data as any).data
+            if (Array.isArray((response.data as { data?: Order[] }).data)) {
+              orders = (response.data as { data: Order[] }).data
             } else if (Array.isArray((response.data as any).items)) {
               orders = (response.data as any).items
             }
           }
           
           // Filtrar pedidos do cliente específico
-          const clientOrders = orders.filter((order: any) => {
+          const clientOrders = orders.filter((order: Order) => {
             const orderClientId = order.client_id || order.client?.uuid || order.client?.identify || order.client?.id
             return orderClientId === clientId
           })
@@ -402,15 +491,10 @@ function ClientOrderHistory({ clientId, onLoadOrder }: { clientId: string; onLoa
         } else {
           setHistory([])
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Log mais detalhado do erro apenas em desenvolvimento
         if (process.env.NODE_ENV === 'development') {
-          console.error("Erro ao buscar histórico do cliente:", {
-            message: error?.message || 'Erro desconhecido',
-            status: error?.status,
-            clientId,
-            error: error instanceof Error ? error.message : String(error)
-          })
+          console.error('Erro ao carregar histórico do cliente:', error)
         }
         // Não mostrar erro ao usuário, apenas não exibir histórico
         setHistory([])
@@ -444,7 +528,7 @@ function ClientOrderHistory({ clientId, onLoadOrder }: { clientId: string; onLoa
         Últimos Pedidos
       </p>
       <div className="space-y-1">
-        {history.map((order: any) => {
+        {history.map((order: Order) => {
           const orderId = order.identify || order.uuid || order.id
           const orderTotal = parsePrice(order.total || 0)
           const orderDate = order.created_at 
@@ -453,7 +537,7 @@ function ClientOrderHistory({ clientId, onLoadOrder }: { clientId: string; onLoa
           return (
             <button
               key={orderId}
-              onClick={() => onLoadOrder(orderId)}
+              onClick={() => onLoadOrder(String(orderId))}
               className="w-full flex items-center justify-between gap-2 rounded-lg border bg-card p-2 text-left hover:bg-primary/5 transition-colors"
             >
               <div className="flex-1 min-w-0">
@@ -465,6 +549,155 @@ function ClientOrderHistory({ clientId, onLoadOrder }: { clientId: string; onLoa
           )
         })}
       </div>
+    </div>
+  )
+}
+
+// Função helper para renderizar botões de ação do pedido
+function renderOrderActionButtons({
+  orderStarted,
+  editingOrder,
+  currentOrder,
+  isDelivery,
+  submittingOrder,
+  cart,
+  pdvPermissions,
+  handleUpdateOrder,
+  handleAdvanceStatus,
+  handleFinalizeOrder,
+  handleCancelOrder,
+  getNextStatusName,
+  isFinalStatus,
+}: {
+  orderStarted: boolean
+  editingOrder: Order | null
+  currentOrder: Order | null
+  isDelivery: boolean
+  submittingOrder: boolean
+  cart: CartItem[]
+  pdvPermissions: { canCreateOrder: boolean }
+  handleUpdateOrder: () => void
+  handleAdvanceStatus: () => void
+  handleFinalizeOrder: () => void
+  handleCancelOrder: () => void
+  getNextStatusName: (status: string | null | undefined, isDelivery: boolean) => string | null
+  isFinalStatus: (status: string | null | undefined) => boolean
+}) {
+  // Verificar se o pedido tem status final
+  const orderStatus = editingOrder?.status || editingOrder?.order_status?.name || currentOrder?.status || currentOrder?.order_status?.name
+  const orderIsFinal = isFinalStatus(orderStatus)
+  const canAdvanceStatus = !orderIsFinal && orderStatus !== 'Entregue'
+  const finalizeStatuses = ['Pronto', 'Em Entrega']
+  const canFinalize = !orderIsFinal && orderStatus && finalizeStatuses.includes(orderStatus)
+  const nextStatusNameForAdvance = getNextStatusName(orderStatus, isDelivery)
+  const advanceTitle =
+    !canAdvanceStatus
+      ? "Status atual não permite avançar"
+      : orderIsFinal
+      ? `Pedido com status final ${orderStatus} não pode ter status alterado`
+      : !pdvPermissions.canCreateOrder
+      ? "Você não tem permissão para avançar status"
+      : nextStatusNameForAdvance
+      ? `Avançar de ${orderStatus} para ${nextStatusNameForAdvance}`
+      : undefined
+  
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      {/* Atualizar Pedido */}
+      <Button
+        id="update-order-button"
+        data-testid="update-order-button"
+        onClick={handleUpdateOrder}
+        disabled={
+          submittingOrder || 
+          !cart.length ||
+          !pdvPermissions.canCreateOrder ||
+          orderIsFinal
+        }
+        className="h-16 rounded-2xl text-sm sm:text-base font-semibold bg-amber-600 hover:bg-amber-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed w-full"
+        title={
+          orderIsFinal
+            ? `Pedido com status final ${orderStatus} não pode ser editado`
+            : !cart.length
+            ? "Adicione itens ao pedido" 
+            : !pdvPermissions.canCreateOrder 
+            ? "Você não tem permissão para atualizar pedidos" 
+            : undefined
+        }
+      >
+        {submittingOrder ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Processando...
+          </>
+        ) : (
+          <>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            <span className="truncate">Atualizar Pedido</span>
+          </>
+        )}
+      </Button>
+
+      {/* Avançar Pedido */}
+          <Button
+            id="advance-status-button"
+            data-testid="advance-status-button"
+            onClick={handleAdvanceStatus}
+            disabled={
+              submittingOrder ||
+              !pdvPermissions.canCreateOrder ||
+          orderIsFinal ||
+          !canAdvanceStatus
+            }
+        className="h-16 rounded-2xl text-sm sm:text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed w-full"
+        title={advanceTitle}
+          >
+            {submittingOrder ? (
+              <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processando...
+              </>
+            ) : (
+              <>
+            <ArrowRight className="mr-2 h-4 w-4" />
+            <span className="truncate">
+              {nextStatusNameForAdvance ? `Avançar para ${nextStatusNameForAdvance}` : "Avançar Pedido"}
+            </span>
+              </>
+            )}
+          </Button>
+
+      {/* Cancelar Pedido */}
+      <Button
+        id="cancel-order-button"
+        data-testid="cancel-order-button"
+        onClick={handleCancelOrder}
+        disabled={
+          submittingOrder ||
+          !pdvPermissions.canCreateOrder ||
+          (orderIsFinal && orderStatus !== 'Cancelado')
+        }
+        className="h-16 rounded-2xl text-sm sm:text-base font-semibold bg-red-600 hover:bg-red-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed w-full"
+        title={
+          orderIsFinal && orderStatus !== 'Cancelado'
+            ? `Pedido com status final ${orderStatus} não pode ser cancelado`
+            : !pdvPermissions.canCreateOrder 
+            ? "Você não tem permissão para cancelar pedidos" 
+            : undefined
+        }
+      >
+        {submittingOrder ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Processando...
+          </>
+        ) : (
+          <>
+            <X className="mr-2 h-4 w-4" />
+            <span className="truncate">Cancelar Pedido</span>
+          </>
+        )}
+      </Button>
     </div>
   )
 }
@@ -510,6 +743,11 @@ export default function POSPage() {
     error: todayOrdersError,
     refetch: refetchTodayOrders,
   } = useAuthenticatedTodayOrders()
+  const {
+    data: serviceTypesData,
+    loading: serviceTypesLoading,
+    error: serviceTypesError,
+  } = useAuthenticatedActiveServiceTypes()
   const { mutate: mutateOrder, loading: submittingOrder } = useMutation()
 
   // ============================================
@@ -520,6 +758,7 @@ export default function POSPage() {
   const [orderNotes, setOrderNotes] = useState("")
   const [isDelivery, setIsDelivery] = useState(false)
   const [selectedTable, setSelectedTable] = useState<string | null>(null)
+  const [selectedServiceType, setSelectedServiceType] = useState<string | null>(null)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null)
   const [showPixDialog, setShowPixDialog] = useState(false)
   const [pixOrderData, setPixOrderData] = useState<{
@@ -545,10 +784,7 @@ export default function POSPage() {
   const [selectionProduct, setSelectionProduct] = useState<Product | null>(null)
   const [selectionVariationId, setSelectionVariationId] = useState<string>("")
   const [selectionOptionals, setSelectionOptionals] = useState<Record<string, number>>({})
-  const [orderSearchQuery, setOrderSearchQuery] = useState("")
-  const [orderSearchResults, setOrderSearchResults] = useState<any[]>([])
-  const [orderSearchLoading, setOrderSearchLoading] = useState(false)
-  const [editingOrder, setEditingOrder] = useState<any | null>(null)
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null)
   const [editOrderSheetOpen, setEditOrderSheetOpen] = useState(false)
   const [editOrderCart, setEditOrderCart] = useState<CartItem[]>([])
   const [editOrderNotes, setEditOrderNotes] = useState("")
@@ -561,13 +797,24 @@ export default function POSPage() {
   const [showCart, setShowCart] = useState(true)
   const [showDashboard, setShowDashboard] = useState(false)
   const [showTodayOrdersSheet, setShowTodayOrdersSheet] = useState(false)
-  const [showClientSection, setShowClientSection] = useState(false)
+  const [showClientSection, setShowClientSection] = useState(true)
+  const [productSearchQuery, setProductSearchQuery] = useState("")
   const [showPaymentMethods, setShowPaymentMethods] = useState(true)
   const [showChangeDialog, setShowChangeDialog] = useState(false)
   const [needsChange, setNeedsChange] = useState(false)
   const [receivedAmount, setReceivedAmount] = useState<number | null>(null)
   const [changeDialogAnswered, setChangeDialogAnswered] = useState(false)
+  const [useSplitPayment, setUseSplitPayment] = useState(false)
+  const [splitPaymentItems, setSplitPaymentItems] = useState<SplitPaymentItem[]>([])
+  const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false)
+  const [showOrderActions, setShowOrderActions] = useState(true)
+  const [cartTab, setCartTab] = useState<"service" | "payment" | "client" | "items">("service")
+  // Documento Fiscal
+  const [fiscalDocumentType, setFiscalDocumentType] = useState<"nfce" | "nfe" | null>(null)
+  const [fiscalCpfCnpj, setFiscalCpfCnpj] = useState("")
   const orderSearchRef = useRef<HTMLDivElement>(null)
+  const addingItemTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const removingItemTimerRef = useRef<NodeJS.Timeout | null>(null)
   
   // Hook que depende de estado (deve ser chamado DEPOIS de todos os useState)
   const {
@@ -601,25 +848,65 @@ export default function POSPage() {
   const categories = useMemo<Category[]>(() => extractCollection(categoriesData), [categoriesData])
   const products = useMemo<Product[]>(() => extractCollection(productsData), [productsData])
   const tables = useMemo<Table[]>(() => extractCollection(tablesData), [tablesData])
-  const paymentMethods = useMemo<PaymentMethod[]>(() => extractCollection(paymentData), [paymentData])
+  const paymentMethods = useMemo<PaymentMethodType[]>(() => extractCollection(paymentData), [paymentData])
   const clients = useMemo<Client[]>(() => extractCollection(clientsData), [clientsData])
-  const todayOrders = useMemo<any[]>(() => {
-    const extracted = extractCollection(todayOrdersData)
+  
+  // Normalizar tipos de atendimento
+  const serviceTypes = useMemo(() => {
+    if (!serviceTypesData) return []
+    
+    let normalized: any[] = []
+    
+    if (Array.isArray(serviceTypesData)) {
+      normalized = serviceTypesData
+    } else if (serviceTypesData && typeof serviceTypesData === 'object' && 'data' in serviceTypesData) {
+      const dataArray = (serviceTypesData as any).data
+      if (Array.isArray(dataArray)) {
+        normalized = dataArray
+      }
+    }
+    
+    return normalized
+      .filter((st: any) => st.is_active !== false)
+      .sort((a: any, b: any) => (a.order_position || 0) - (b.order_position || 0))
+  }, [serviceTypesData])
+  
+  // Obter tipo de atendimento selecionado
+  const currentServiceType = useMemo(() => {
+    if (!selectedServiceType) {
+      // Determinar tipo baseado no estado atual
+      if (isDelivery) return serviceTypes.find((st: any) => (st.slug || st.identify) === 'delivery')
+      if (selectedTable) return serviceTypes.find((st: any) => (st.slug || st.identify) === 'table')
+      return serviceTypes.find((st: any) => (st.slug || st.identify) === 'counter')
+    }
+    return serviceTypes.find((st: any) => (st.identify || st.slug) === selectedServiceType)
+  }, [selectedServiceType, isDelivery, selectedTable, serviceTypes])
+  
+  // Determinar se precisa de endereço baseado no tipo de atendimento
+  const requiresAddress = useMemo(() => {
+    return currentServiceType?.requires_address || false
+  }, [currentServiceType])
+  
+  // Determinar se precisa de mesa baseado no tipo de atendimento
+  const requiresTable = useMemo(() => {
+    return currentServiceType?.requires_table || false
+  }, [currentServiceType])
+  const todayOrders = useMemo<Order[]>(() => {
+    const extracted = extractCollection<Order>(todayOrdersData)
     // Debug: verificar se os dados estão sendo extraídos corretamente
     if (process.env.NODE_ENV === 'development') {
-      console.log('Today Orders Data:', todayOrdersData)
-      console.log('Extracted Orders:', extracted)
+
     }
     return extracted
   }, [todayOrdersData])
 
   // Extrair pedidos da mesa
-  const tableOrders = useMemo<any[]>(() => {
+  const tableOrders = useMemo<TableOrder[]>(() => {
     return extractCollection(tableOrdersData)
   }, [tableOrdersData])
 
   // Pedidos para exibir na sidebar: se houver mesa selecionada e pedidos dessa mesa, usar esses; senão, usar pedidos de hoje
-  const sidebarOrders = useMemo<any[]>(() => {
+  const sidebarOrders = useMemo<Order[]>(() => {
     // Se houver mesa selecionada e pedidos em aberto dessa mesa, usar esses pedidos
     if (selectedTable && !isDelivery && tableOrders && Array.isArray(tableOrders) && tableOrders.length > 0) {
       return tableOrders
@@ -640,7 +927,7 @@ export default function POSPage() {
   // Identificar mesas com pedidos em aberto
   const tablesWithOpenOrders = useMemo(() => {
     const occupiedTables = new Set<string>()
-    todayOrders.forEach((order: any) => {
+    todayOrders.forEach((order: Order) => {
       // Verificar se o pedido está em aberto (não entregue, não concluído, não cancelado)
       const status = order.status || ''
       if (!['Entregue', 'Concluído', 'Cancelado', 'Arquivado'].includes(status)) {
@@ -665,7 +952,7 @@ export default function POSPage() {
     // Se não houver pedido atual, verificar se há pedidos abertos na mesa
     if (!currentOrderData) {
       // Verificar se há pedidos abertos na mesa que não sejam do pedido atual
-      const hasOtherOrders = todayOrders.some((order: any) => {
+      const hasOtherOrders = todayOrders.some((order: Order) => {
         const orderTableKey = order.table?.uuid || order.table?.identify || order.table?.name
         const status = order.status || ''
         const isOpen = !['Entregue', 'Concluído', 'Cancelado', 'Arquivado'].includes(status)
@@ -684,7 +971,7 @@ export default function POSPage() {
     }
     
     // Se o pedido atual não pertence a esta mesa, verificar se há outros pedidos abertos na mesa
-    const hasOtherOrders = todayOrders.some((order: any) => {
+    const hasOtherOrders = todayOrders.some((order: Order) => {
       const orderTableKey = order.table?.uuid || order.table?.identify || order.table?.name
       const orderId = order.identify || order.uuid || order.id
       const currentOrderId = currentOrderData.identify || currentOrderData.uuid || currentOrderData.id
@@ -738,11 +1025,11 @@ export default function POSPage() {
   }, [categories, selectedCategory])
 
   useEffect(() => {
-    if (!isDelivery && !selectedTable && tables.length > 0) {
+    if (requiresTable && !selectedTable && tables.length > 0) {
       const first = tables[0]
       setSelectedTable(first.uuid || first.identify || first.name)
     }
-  }, [tables, selectedTable, isDelivery])
+  }, [tables, selectedTable, requiresTable])
 
   useEffect(() => {
     if (!selectedPaymentMethod && paymentMethods.length > 0) {
@@ -750,21 +1037,18 @@ export default function POSPage() {
     }
   }, [paymentMethods, selectedPaymentMethod])
 
-  // Fechar dropdown de pesquisa ao clicar fora
+  // Cleanup de timers quando componente desmontar
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (orderSearchRef.current && !orderSearchRef.current.contains(event.target as Node)) {
-        setOrderSearchResults([])
+    return () => {
+      if (addingItemTimerRef.current) {
+        clearTimeout(addingItemTimerRef.current)
+      }
+      if (removingItemTimerRef.current) {
+        clearTimeout(removingItemTimerRef.current)
       }
     }
+  }, [])
 
-    if (orderSearchResults.length > 0) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside)
-      }
-    }
-  }, [orderSearchResults])
 
   // Recarregar pedidos quando o sheet de edição for fechado
   useEffect(() => {
@@ -792,6 +1076,7 @@ const handleClientChange = (value: string) => {
     if (!value) {
       setCustomerName("")
       setCustomerPhone("")
+      setFiscalCpfCnpj("") // Limpar CPF quando cliente é removido
       return
     }
 
@@ -802,6 +1087,15 @@ const handleClientChange = (value: string) => {
     if (client) {
       setCustomerName(client.name || "")
       setCustomerPhone(client.phone || "")
+      // Preencher CPF/CNPJ do cliente no documento fiscal apenas se existir
+      if (client.cpf) {
+        setFiscalCpfCnpj(client.cpf)
+      } else {
+        setFiscalCpfCnpj("") // Limpar CPF se o cliente não tiver CPF
+      }
+    } else {
+      // Se o cliente não for encontrado, limpar CPF
+      setFiscalCpfCnpj("")
     }
   }
 
@@ -820,25 +1114,83 @@ const handleClientChange = (value: string) => {
         : [{ uuid: "sem-categoria", name: "Sem categoria" }]
 
       productCategories.forEach((cat) => {
+        // Usar a mesma lógica de chave que é usada nas categorias principais
+        // Prioridade: uuid > identify > name
         const key = cat.uuid || cat.identify || cat.name
+        
+        // Garantir que a chave existe no mapa
         if (!map[key]) {
           map[key] = []
         }
         map[key].push(product)
       })
     })
+    
+    // Debug em desenvolvimento
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[PDV Debug] groupedProducts keys:', Object.keys(map))
+      console.log('[PDV Debug] groupedProducts counts:', Object.entries(map).map(([key, prods]) => ({ key, count: prods.length })))
+    }
+    
     return map
   }, [products])
 
   const visibleProducts = useMemo(() => {
-    if (!selectedCategory) return []
-    const categoryProducts = groupedProducts[selectedCategory] || []
+    let filteredProducts = products
+
+    // Filtrar por categoria
+    if (selectedCategory) {
+      let categoryProducts = groupedProducts[selectedCategory] || []
+      
+      // Se não encontrou produtos pela chave exata, tentar buscar por correspondência
+      if (categoryProducts.length === 0) {
+        const selectedCategoryObj = categories.find(cat => {
+          const key = cat.uuid || cat.identify || cat.name
+          return key === selectedCategory
+        })
+        
+        if (selectedCategoryObj) {
+          const possibleKeys: string[] = [
+            selectedCategoryObj.uuid,
+            selectedCategoryObj.identify,
+            selectedCategoryObj.name
+          ].filter((key): key is string => !!key)
+          
+          for (const key of possibleKeys) {
+            if (groupedProducts[key] && groupedProducts[key].length > 0) {
+              categoryProducts = groupedProducts[key]
+              break
+            }
+          }
+        }
+      }
+      
+      filteredProducts = categoryProducts
+    }
+
+    // Filtrar por busca de texto
+    if (productSearchQuery && productSearchQuery.trim().length > 0) {
+      const query = productSearchQuery.toLowerCase().trim()
+      filteredProducts = filteredProducts.filter((product) => {
+        const name = product.name?.toLowerCase() || ""
+        const identify = product.identify?.toLowerCase() || ""
+        const uuid = product.uuid?.toLowerCase() || ""
+        const description = product.description?.toLowerCase() || ""
+
+        return (
+          name.includes(query) ||
+          identify.includes(query) ||
+          uuid.includes(query) ||
+          description.includes(query)
+        )
+      })
+    }
     
     // Ordenar produtos por relevância:
     // 1. Produtos com promoção primeiro
     // 2. Depois produtos sem promoção
     // 3. Ordenar alfabeticamente dentro de cada grupo
-    return categoryProducts.sort((a, b) => {
+    return filteredProducts.sort((a, b) => {
       const aHasPromo = !!a.promotional_price && parsePrice(a.promotional_price) < parsePrice(a.price)
       const bHasPromo = !!b.promotional_price && parsePrice(b.promotional_price) < parsePrice(b.price)
       
@@ -850,12 +1202,24 @@ const handleClientChange = (value: string) => {
       // Depois alfabético
       return a.name.localeCompare(b.name)
     })
-  }, [groupedProducts, selectedCategory])
+  }, [groupedProducts, selectedCategory, products, productSearchQuery, categories])
 
+  // Calcular totais - usando cálculo local que considera promotional_price
   const orderTotal = useMemo(
     () => cart.reduce((sum, item) => sum + getCartItemUnitPrice(item) * item.quantity, 0),
     [cart]
   )
+  
+  // Cálculos adicionais usando serviço (para referência, mas usando orderTotal local)
+  const orderCalculations = useMemo(() => {
+    // Converter cart para formato do serviço (sem usar diretamente devido a incompatibilidade de tipos)
+    return {
+      subtotal: orderTotal,
+      taxes: 0,
+      discounts: 0,
+      total: orderTotal,
+    }
+  }, [orderTotal])
 
   // Detectar quando método de pagamento muda para Dinheiro e abrir modal se necessário
   // Deve estar depois da declaração de orderTotal
@@ -917,8 +1281,8 @@ const handleClientChange = (value: string) => {
       })
     }
     
-    // Alerta: Mesa não selecionada em retirada
-    if (!isDelivery && !selectedTable && cart.length > 0) {
+    // Alerta: Mesa não selecionada quando requerida
+    if (requiresTable && !selectedTable && cart.length > 0) {
       alerts.push({
         type: 'warning',
         message: 'Selecione uma mesa para continuar',
@@ -1067,9 +1431,17 @@ const handleClientChange = (value: string) => {
   }
 
   const updateItemQuantity = (signature: string, delta: number) => {
+    // Limpar timer anterior se existir
+    if (addingItemTimerRef.current) {
+      clearTimeout(addingItemTimerRef.current)
+    }
+    
     // Feedback visual
     setAddingItem(signature)
-    setTimeout(() => setAddingItem(null), 300)
+    addingItemTimerRef.current = setTimeout(() => {
+      setAddingItem(null)
+      addingItemTimerRef.current = null
+    }, 300)
     
     setCart((prev) =>
       prev
@@ -1091,12 +1463,18 @@ const handleClientChange = (value: string) => {
   }
 
   const removeItem = (signature: string) => {
+    // Limpar timer anterior se existir
+    if (removingItemTimerRef.current) {
+      clearTimeout(removingItemTimerRef.current)
+    }
+    
     // Feedback visual
     setRemovingItem(signature)
-    setTimeout(() => {
+    removingItemTimerRef.current = setTimeout(() => {
       setCart((prev) => prev.filter((item) => item.signature !== signature))
       setRemovingItem(null)
       toast.info("Item removido do pedido")
+      removingItemTimerRef.current = null
     }, 300)
   }
 
@@ -1139,35 +1517,13 @@ const handleClientChange = (value: string) => {
     toast.success("Novo pedido iniciado")
   }
 
-  // Buscar pedidos por número
-  const handleOrderSearch = async (query: string) => {
-    if (!query || query.length < 2) {
-      setOrderSearchResults([])
-      return
-    }
-
-    setOrderSearchLoading(true)
-    try {
-      const response = await apiClient.get(endpoints.orders.searchByNumber + `?query=${encodeURIComponent(query)}`)
-      if (response.success && response.data) {
-        setOrderSearchResults(Array.isArray(response.data) ? response.data : [])
-      } else {
-        setOrderSearchResults([])
-      }
-    } catch (error) {
-      console.error("Erro ao buscar pedidos:", error)
-      setOrderSearchResults([])
-    } finally {
-      setOrderSearchLoading(false)
-    }
-  }
 
   // Carregar pedido no PDV para edição direta
   const loadOrderInPDV = async (orderIdentify: string) => {
     try {
       const response = await apiClient.get(endpoints.orders.show(orderIdentify))
       if (response.success && response.data) {
-        const order: any = response.data
+        const order = response.data as Order
         
         // Limpar carrinho atual
         setCart([])
@@ -1268,7 +1624,7 @@ const handleClientChange = (value: string) => {
         // Configurar cliente se houver
         if (order.client) {
           const clientId = order.client.uuid || order.client.identify || order.client.id
-          setSelectedClientId(clientId || "")
+          setSelectedClientId(String(clientId || ""))
           setCustomerName(order.client.name || "")
           setCustomerPhone(order.client.phone || "")
         }
@@ -1276,15 +1632,12 @@ const handleClientChange = (value: string) => {
         // Configurar método de pagamento se houver
         if (order.payment_method_id || order.paymentMethod?.uuid) {
           const paymentId = order.payment_method_id || order.paymentMethod?.uuid
-          setSelectedPaymentMethod(paymentId)
+          setSelectedPaymentMethod(paymentId ? String(paymentId) : null)
         }
         
         // Armazenar pedido para edição
         setEditingOrder(order)
         
-        // Limpar busca
-        setOrderSearchQuery("")
-        setOrderSearchResults([])
         
         toast.success("Pedido carregado no PDV para edição")
       }
@@ -1298,7 +1651,7 @@ const handleClientChange = (value: string) => {
     try {
       const response = await apiClient.get(endpoints.orders.show(orderIdentify))
       if (response.success && response.data) {
-        const order: any = response.data
+        const order = response.data as Order
         setEditingOrder(order)
         
         // Converter produtos do pedido para o formato do carrinho
@@ -1333,8 +1686,6 @@ const handleClientChange = (value: string) => {
         setEditOrderCart(cartItems)
         setEditOrderNotes(order?.comment || "")
         setEditOrderSheetOpen(true)
-        setOrderSearchQuery("")
-        setOrderSearchResults([])
       }
     } catch (error: any) {
       toast.error(error?.message || "Erro ao carregar pedido")
@@ -1365,7 +1716,7 @@ const handleClientChange = (value: string) => {
         })),
       }
 
-      const result = await mutateOrder(endpoints.orders.update(orderIdentify), "PUT", payload)
+      const result = await mutateOrder(endpoints.orders.update(String(orderIdentify)), "PUT", payload)
       if (result) {
         toast.success("Pedido atualizado com sucesso!")
         
@@ -1433,7 +1784,7 @@ const handleClientChange = (value: string) => {
       } catch (error) {
         // Erro já é tratado pelo useViaCEP com toast
         if (process.env.NODE_ENV === "development") {
-          console.error("Erro ao buscar CEP:", error)
+
         }
       }
     }
@@ -1447,16 +1798,23 @@ const handleClientChange = (value: string) => {
       return
     }
 
-    // Verificar se o pedido tem status final
+    // Usar validação do serviço order-validator
     const orderStatus = orderToUpdate.status || orderToUpdate.order_status?.name
-    if (isFinalStatus(orderStatus)) {
-      toast.error(`Este pedido possui status final (${orderStatus}) e não pode ser editado.`)
-      return
-    }
+    const validationErrors = validateOrderBeforeUpdate({
+      cart: cart as any, // Type assertion devido a incompatibilidade de tipos (optionals)
+      orderStatus,
+      selectedTable,
+      isDelivery,
+      selectedPaymentMethod,
+      useSplitPayment,
+      splitPaymentItems,
+      orderTotal: orderTotal,
+    })
 
-    // Validar que há itens no carrinho
-    if (!cart.length) {
-      toast.error("Adicione pelo menos um item ao pedido.")
+    if (validationErrors.length > 0) {
+      validationErrors.forEach((error) => {
+        toast.error(error.message)
+      })
       return
     }
 
@@ -1512,28 +1870,42 @@ const handleClientChange = (value: string) => {
         delivery_notes: isDelivery ? orderNotes : null,
       }
 
-      // Adicionar payment_method_id se estiver selecionado
-      if (selectedPaymentMethod) {
+      // Incluir payment_method_id se estiver selecionado (para pagamento único)
+      if (!useSplitPayment && selectedPaymentMethod) {
         payload.payment_method_id = selectedPaymentMethod
       }
       
-      // Adicionar dados de troco se necessário
-      payload.precisa_troco = needsChange
-      if (needsChange && receivedAmount) {
-        payload.valor_recebido = receivedAmount
-      } else {
-        payload.valor_recebido = null
+      // Adicionar dados de troco se necessário (apenas para pagamento único em dinheiro)
+      if (!useSplitPayment) {
+        payload.precisa_troco = needsChange
+        if (needsChange && receivedAmount) {
+          payload.valor_recebido = receivedAmount
+        } else {
+          payload.valor_recebido = null
+        }
+      } else if (useSplitPayment && splitPaymentItems.length > 0) {
+        // Suporte a split payment - enviar array de pagamentos
+        payload.split_payments = splitPaymentItems
+          .filter(item => item.amount !== null && item.amount > 0)
+          .map(item => ({
+            payment_method_id: item.method.uuid,
+            amount: item.amount,
+            // Verificar se é dinheiro e calcular troco se necessário
+            needs_change: item.method.name.toLowerCase().includes('dinheiro') || 
+                         item.method.name.toLowerCase().includes('money') || 
+                         item.method.name.toLowerCase().includes('cash'),
+          }))
       }
 
-      const result = await mutateOrder(endpoints.orders.update(orderIdentify), "PUT", payload)
+      const result = await mutateOrder(endpoints.orders.update(String(orderIdentify)), "PUT", payload)
       if (result) {
         toast.success("Pedido atualizado com sucesso!")
         
         // Atualizar o pedido atual com os dados retornados
         if (editingOrder) {
-          setEditingOrder(result)
+          setEditingOrder(result as Order)
         } else if (currentOrder) {
-          setCurrentOrder(result)
+          setCurrentOrder(result as Order)
         }
         
         // Recarregar pedidos para refletir as mudanças
@@ -1559,7 +1931,7 @@ const handleClientChange = (value: string) => {
       }
       return null
     } catch (error) {
-      console.error("Erro ao buscar status:", error)
+
       return null
     }
   }
@@ -1579,7 +1951,7 @@ const handleClientChange = (value: string) => {
       }
       return null
     } catch (error) {
-      console.error("Erro ao buscar status inicial:", error)
+
       return null
     }
   }
@@ -1596,13 +1968,13 @@ const handleClientChange = (value: string) => {
       return
     }
 
-    if (!isDelivery && !selectedTable) {
+    if (requiresTable && !selectedTable) {
       toast.error("Selecione uma mesa para o pedido.")
       return
     }
 
     // Verificar se a mesa selecionada tem pedidos em aberto de outro pedido
-    if (!isDelivery && isTableOccupiedByOtherOrder) {
+    if (requiresTable && isTableOccupiedByOtherOrder) {
       toast.error("Esta mesa possui pedidos em aberto. Finalize os pedidos antes de adicionar novos.")
       return
     }
@@ -1649,9 +2021,21 @@ const handleClientChange = (value: string) => {
               quantity: optional.quantity,
             })) ?? [],
         })),
-        payment_method_id: selectedPaymentMethod,
-        precisa_troco: needsChange,
-        valor_recebido: needsChange && receivedAmount ? receivedAmount : null,
+        payment_method_id: !useSplitPayment ? selectedPaymentMethod : null,
+        precisa_troco: !useSplitPayment ? needsChange : false,
+        valor_recebido: !useSplitPayment && needsChange && receivedAmount ? receivedAmount : null,
+        // Suporte a split payment ao iniciar pedido
+        split_payments: useSplitPayment && splitPaymentItems.length > 0
+          ? splitPaymentItems
+              .filter(item => item.amount !== null && item.amount > 0)
+              .map(item => ({
+                payment_method_id: item.method.uuid,
+                amount: item.amount,
+                needs_change: item.method.name.toLowerCase().includes('dinheiro') || 
+                             item.method.name.toLowerCase().includes('money') || 
+                             item.method.name.toLowerCase().includes('cash'),
+              }))
+          : undefined,
         is_delivery: isDelivery,
         use_client_address: false,
         delivery_address: isDelivery ? deliveryAddress.address : null,
@@ -1712,9 +2096,9 @@ const handleClientChange = (value: string) => {
         
         // Atualizar estado do pedido
         if (editingOrder) {
-          setEditingOrder(result)
+          setEditingOrder(result as Order)
         } else if (currentOrder) {
-          setCurrentOrder(result)
+          setCurrentOrder(result as Order)
         }
         
         // Recarregar pedidos
@@ -1728,8 +2112,21 @@ const handleClientChange = (value: string) => {
     }
   }
 
-  // Finalizar pedido - atualiza para status "Entregue"
-  const handleFinalizeOrder = async () => {
+  // Preparar dados de pagamento para confirmação usando payment-processor
+  const preparePaymentDataForConfirmation = (): PaymentConfirmationItem[] => {
+    return preparePaymentData(
+      useSplitPayment,
+      selectedPaymentMethod,
+      splitPaymentItems,
+      paymentMethods,
+      orderTotal,
+      receivedAmount,
+      needsChange
+    )
+  }
+
+  // Finalizar pedido - atualiza para status "Entregue" (chamado após confirmação)
+  const confirmFinalizeOrder = async () => {
     if (!currentOrder && !editingOrder) {
       toast.error("Nenhum pedido encontrado para finalizar.")
       return
@@ -1764,7 +2161,7 @@ const handleClientChange = (value: string) => {
           deliveredStatus = response.data.find((s: any) => s.name === 'Entregue')
         }
       } catch (error) {
-        console.error("Erro ao buscar status:", error)
+
       }
 
       if (!deliveredStatus) {
@@ -1798,20 +2195,34 @@ const handleClientChange = (value: string) => {
         }))
       }
 
-      // Incluir payment_method_id se estiver selecionado
-      if (selectedPaymentMethod) {
+      // Incluir payment_method_id se estiver selecionado (para pagamento único)
+      if (!useSplitPayment && selectedPaymentMethod) {
         payload.payment_method_id = selectedPaymentMethod
       }
       
-      // Adicionar dados de troco se necessário
-      payload.precisa_troco = needsChange
-      if (needsChange && receivedAmount) {
-        payload.valor_recebido = receivedAmount
-      } else {
-        payload.valor_recebido = null
+      // Adicionar dados de troco se necessário (apenas para pagamento único em dinheiro)
+      if (!useSplitPayment) {
+        payload.precisa_troco = needsChange
+        if (needsChange && receivedAmount) {
+          payload.valor_recebido = receivedAmount
+        } else {
+          payload.valor_recebido = null
+        }
+      } else if (useSplitPayment && splitPaymentItems.length > 0) {
+        // Suporte a split payment - enviar array de pagamentos
+        payload.split_payments = splitPaymentItems
+          .filter(item => item.amount !== null && item.amount > 0)
+          .map(item => ({
+            payment_method_id: item.method.uuid,
+            amount: item.amount,
+            // Verificar se é dinheiro e calcular troco se necessário
+            needs_change: item.method.name.toLowerCase().includes('dinheiro') || 
+                         item.method.name.toLowerCase().includes('money') || 
+                         item.method.name.toLowerCase().includes('cash'),
+          }))
       }
 
-      const result = await mutateOrder(endpoints.orders.update(orderIdentify), "PUT", payload)
+      const result = await mutateOrder(endpoints.orders.update(String(orderIdentify)), "PUT", payload)
       if (result) {
         toast.success("Pedido finalizado com sucesso!")
         
@@ -1831,10 +2242,40 @@ const handleClientChange = (value: string) => {
         setSelectedClientId("")
         setSelectedPaymentMethod(null)
         setOrderNotes("")
+        setUseSplitPayment(false)
+        setSplitPaymentItems([])
+        setNeedsChange(false)
+        setReceivedAmount(null)
+        setChangeDialogAnswered(false)
+        setShowPaymentConfirmation(false)
       }
     } catch (error: any) {
       toast.error(error?.message || "Erro ao finalizar pedido")
     }
+  }
+
+  // Abrir dialog de confirmação antes de finalizar
+  const handleFinalizeOrder = () => {
+    if (!currentOrder && !editingOrder) {
+      toast.error("Nenhum pedido encontrado para finalizar.")
+      return
+    }
+
+    // Verificar se há método de pagamento selecionado
+    const payments = preparePaymentDataForConfirmation()
+    if (payments.length === 0) {
+      toast.error("Selecione uma forma de pagamento antes de finalizar.")
+      return
+    }
+
+    // Verificar se o pagamento está completo
+    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0)
+    if (totalPaid < orderTotal) {
+      toast.error("O valor pago é menor que o total do pedido.")
+      return
+    }
+
+    setShowPaymentConfirmation(true)
   }
 
   // Cancelar pedido - atualiza para status "Cancelado" (ordem 5)
@@ -1864,7 +2305,7 @@ const handleClientChange = (value: string) => {
           }
         }
       } catch (error) {
-        console.error("Erro ao buscar status:", error)
+
       }
 
       if (!cancelledStatus) {
@@ -1877,7 +2318,7 @@ const handleClientChange = (value: string) => {
         status: 'Cancelado', // Usar nome diretamente
       }
 
-      const result = await mutateOrder(endpoints.orders.update(orderIdentify), "PUT", payload)
+      const result = await mutateOrder(endpoints.orders.update(String(orderIdentify)), "PUT", payload)
       if (result) {
         toast.success("Pedido cancelado com sucesso!")
         
@@ -1917,15 +2358,6 @@ const handleClientChange = (value: string) => {
         handleNewOrder()
       }
       
-      // Ctrl/Cmd + F: Focar busca
-      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-        e.preventDefault()
-        const searchInput = document.querySelector('[data-search-input]') as HTMLInputElement
-        if (searchInput) {
-          searchInput.focus()
-        }
-      }
-      
       // Ctrl/Cmd + Enter: Iniciar pedido (se não tiver iniciado) ou Finalizar pedido (se já iniciado)
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault()
@@ -1941,8 +2373,6 @@ const handleClientChange = (value: string) => {
       // Escape: Fechar modais
       if (e.key === 'Escape') {
         setSelectionDialogOpen(false)
-        setOrderSearchQuery("")
-        setOrderSearchResults([])
       }
       
       // Números 1-9: Selecionar categoria rápida (apenas se não estiver digitando em um input)
@@ -1966,7 +2396,7 @@ const handleClientChange = (value: string) => {
     
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [cart.length, submittingOrder, categories, handleFinalizeOrder, clearCart, setSelectedCategory, setSelectionDialogOpen, setOrderSearchQuery, setOrderSearchResults, setEditingOrder, setCustomerName, setCustomerPhone, setDeliveryAddress, setSelectedClientId, setSelectedPaymentMethod, setSelectedTable, setIsDelivery, setOrderNotes])
+  }, [cart.length, submittingOrder, categories, handleFinalizeOrder, clearCart, setSelectedCategory, setSelectionDialogOpen, setEditingOrder, setCustomerName, setCustomerPhone, setDeliveryAddress, setSelectedClientId, setSelectedPaymentMethod, setSelectedTable, setIsDelivery, setOrderNotes])
 
   if (!isAuthenticated && !authLoading) {
     return (
@@ -1987,7 +2417,8 @@ const handleClientChange = (value: string) => {
     productsLoading ||
     tablesLoading ||
     paymentLoading ||
-    clientsLoading
+    clientsLoading ||
+    serviceTypesLoading
 
   if (isLoadingData) {
     return (
@@ -1998,215 +2429,75 @@ const handleClientChange = (value: string) => {
     )
   }
 
-  if (categoriesError || productsError || tablesError || paymentError || clientsError) {
+  if (categoriesError || productsError || tablesError || paymentError || clientsError || serviceTypesError) {
     return (
       <div className="flex h-96 flex-col items-center justify-center gap-2 text-center">
         <h2 className="text-xl font-semibold text-destructive">Erro ao carregar o PDV</h2>
         <p className="text-muted-foreground">
-          {categoriesError || productsError || tablesError || paymentError || clientsError}
+          {categoriesError || productsError || tablesError || paymentError || clientsError || serviceTypesError}
         </p>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Alertas contextuais (exceto alertas de mesa ocupada que estão no header) */}
-      {contextualAlerts.length > 0 && contextualAlerts.some(alert => !alert.message.includes('pedido(s) em aberto')) && (
-        <div className="space-y-2 mx-2">
-          {contextualAlerts
-            .filter(alert => !alert.message.includes('pedido(s) em aberto'))
-            .map((alert, index) => (
-              <div
-                key={index}
-                className={cn(
-                  "rounded-xl border p-4 flex items-center justify-between gap-3",
-                  alert.type === 'error' && "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/20",
-                  alert.type === 'warning' && "border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/20",
-                  alert.type === 'info' && "border-blue-300 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20"
-                )}
-              >
-                <div className="flex items-center gap-2 flex-1">
-                  {alert.type === 'error' && <AlertTriangle className="h-5 w-5 text-red-600" />}
-                  {alert.type === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-600" />}
-                  {alert.type === 'info' && <Bell className="h-5 w-5 text-blue-600" />}
-                  <p className={cn(
-                    "text-sm font-medium",
-                    alert.type === 'error' && "text-red-900 dark:text-red-100",
-                    alert.type === 'warning' && "text-yellow-900 dark:text-yellow-100",
-                    alert.type === 'info' && "text-blue-900 dark:text-blue-100"
-                  )}>
-                    {alert.message}
-                  </p>
-                </div>
-                {alert.action && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={alert.action.onClick}
-                    className="h-8"
-                  >
-                    {alert.action.label}
-                  </Button>
-                )}
-              </div>
-            ))}
-        </div>
-      )}
-      
-      <header className="rounded-3xl border bg-card p-4 shadow-sm lg:p-6 mx-2">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-4 flex-1 flex-wrap">
-            <div>
-                <p className="text-sm text-muted-foreground">Ponto de Venda</p>
-              <h2 className="text-2xl font-semibold tracking-tight lg:text-3xl">PDV</h2>
-            </div>
-            
-            {/* Dashboard Rápido - Fase 3 - na mesma linha */}  
-            {pdvPermissions.canViewReports && showDashboard && (
-              <div className="flex-1 min-w-0">
-                <PDVQuickDashboard 
-                  todayOrders={todayOrders} 
-                  showDashboard={showDashboard}
-                  onToggle={() => setShowDashboard(!showDashboard)}
-                />
-              </div>
-            )}
-            {pdvPermissions.canViewReports && !showDashboard && (
-              <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20 px-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 flex-1">
-                  <BarChart className="h-5 w-5 text-indigo-600" />
-                  <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">Dashboard - Hoje</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowDashboard(!showDashboard)}
-                  className="h-8 w-8 text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100"
-                  title="Exibir dashboard"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            {/* Botão Novo Pedido */}
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleNewOrder}
-              className="gap-2 h-12"
-              title="Iniciar novo pedido (Ctrl+N)"
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Novo Pedido</span>
-              <span className="sm:hidden">Novo</span>
-            </Button>
-            
-            {/* Campo de pesquisa de pedido */}
-            <div ref={orderSearchRef} className="relative flex-1 sm:max-w-xs">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Buscar pedido... (Ctrl+F)"
-                value={orderSearchQuery}
-                onChange={(e) => {
-                  const value = e.target.value
-                  setOrderSearchQuery(value)
-                  handleOrderSearch(value)
-                }}
-                className="h-12 pl-10 pr-10 text-base"
-                data-search-input
-              />
-              {orderSearchLoading && (
-                <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-              )}
-              {orderSearchQuery && !orderSearchLoading && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
-                  onClick={() => {
-                    setOrderSearchQuery("")
-                    setOrderSearchResults([])
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-              
-              {/* Dropdown de resultados */}
-              {orderSearchResults.length > 0 && (
-                <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-64 overflow-y-auto rounded-lg border bg-card shadow-lg">
-                  {orderSearchResults.map((order: any) => {
-                    const orderId = order.identify || order.uuid || order.id
-                    const orderTotal = parsePrice(order.total)
-                    const orderStatus = order.status || 'Pendente'
-                    return (
-                      <button
-                        key={orderId}
-                        onClick={() => loadOrderInPDV(orderId)}
-                        className="flex w-full items-center justify-between gap-3 border-b p-3 text-left hover:bg-muted/50 last:border-0"
-                      >
-                        <div className="flex-1">
-                          <p className="font-semibold">Pedido #{order.identify || order.id}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {orderStatus} • {formatCurrency(orderTotal)}
-                          </p>
-                          {order.client && (
-                            <p className="text-xs text-muted-foreground">
-                              Cliente: {order.client.name}
-                            </p>
-                          )}
-                        </div>
-                        <Edit className="h-4 w-4 text-primary" />
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-            
-            <div className="flex gap-2 flex-wrap items-center">
-              <Badge variant="secondary" className="flex items-center gap-2 px-4 py-2 text-base">
-                <ShoppingCart className="h-4 w-4" />
-                Total de itens: {cart.reduce((sum, item) => sum + item.quantity, 0)}
-              </Badge>
-              <Badge variant="outline" className="flex items-center gap-2 px-4 py-2 text-base">
-                <Utensils className="h-4 w-4" />
-                {selectedTableName || (isDelivery ? "Delivery" : "Selecione uma mesa")}
-              </Badge>
-              {/* Botão de Feedback */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowFeedbackDialog(true)}
-                className="h-10 w-10"
-                title="Enviar feedback"
-              >
-                <MessageSquare className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <PDVMainLayout>
+      {/* Header com busca, operador e status */}
+      <PDVHeader
+        operatorName={user?.name || user?.email}
+        onOrderSelect={loadOrderInPDV}
+        tables={tables.map((table) => ({
+          uuid: table.uuid,
+          identify: table.identify,
+          name: table.name,
+          isOccupied: tablesWithOpenOrders.has(table.uuid || table.identify || table.name),
+          orderCount: todayOrders.filter((order: Order) => {
+            const orderTableKey = order.table?.uuid || order.table?.identify || order.table?.name
+            const tableKey = table.uuid || table.identify || table.name
+            return orderTableKey === tableKey && !['Entregue', 'Concluído', 'Cancelado', 'Arquivado'].includes(order.status || '')
+          }).length,
+        }))}
+        onTableSelect={(table) => {
+          const tableKey = table.uuid || table.identify || table.name
+          if (tableKey) {
+            setSelectedTable(tableKey)
+          }
+        }}
+        isDelivery={isDelivery}
+        onNewOrder={handleNewOrder}
+        onFeedback={() => setShowFeedbackDialog(true)}
+        cartItemCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
+        selectedTableName={selectedTableName}
+        showDashboard={showDashboard}
+        onToggleDashboard={() => setShowDashboard(!showDashboard)}
+        canViewReports={pdvPermissions.canViewReports}
+        useCombinedSearch={true}
+        dashboardComponent={
+          showDashboard ? (
+            <PDVQuickDashboard 
+              todayOrders={todayOrders} 
+              showDashboard={showDashboard}
+              onToggle={() => setShowDashboard(!showDashboard)}
+            />
+          ) : undefined
+        }
+      />
 
-      {/* Alerta de mesa ocupada - linha separada abaixo do header */}
+      {/* Alerta de mesa ocupada - compacto */}
       {contextualAlerts.length > 0 && contextualAlerts.some(alert => alert.message.includes('pedido(s) em aberto')) && (
-        <div className="mx-2">
+        <div className="flex-shrink-0 mx-1.5 mt-1.5">
           {contextualAlerts
             .filter(alert => alert.message.includes('pedido(s) em aberto'))
             .map((alert, index) => (
               <div
                 key={index}
                 className={cn(
-                  "rounded-xl border px-4 py-3 flex items-center gap-2",
+                  "rounded-lg border px-2 py-1.5 flex items-center gap-1.5",
                   alert.type === 'warning' && "border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/20"
                 )}
               >
-                <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                <AlertTriangle className="h-3.5 w-3.5 text-yellow-600" />
+                <p className="text-xs font-medium text-yellow-900 dark:text-yellow-100 flex-1">
                   {alert.message}
                 </p>
                 {alert.action && (
@@ -2214,7 +2505,7 @@ const handleClientChange = (value: string) => {
                     variant="outline"
                     size="sm"
                     onClick={alert.action.onClick}
-                    className="h-7 text-xs ml-auto"
+                    className="h-6 text-xs px-2"
                   >
                     {alert.action.label}
                   </Button>
@@ -2224,104 +2515,47 @@ const handleClientChange = (value: string) => {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
-        <section className="space-y-6">
-          <Card id="categories-section" className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20 mx-2">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-xl text-blue-900 dark:text-blue-100">Categorias</CardTitle>
-                  <CardDescription className="text-blue-700 dark:text-blue-300">Selecione uma categoria para ver os produtos.</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div
-                className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-                data-testid="touch-grid-categories"
-              >
-                {categories.map((category) => {
-                  const key = category.uuid || category.identify || category.name
-                  const active = selectedCategory === key
-                  return (
-                    <Button
-                      key={key}
-                      data-testid={`touch-category-${key}`}
-                      onClick={() => setSelectedCategory(key)}
-                      className={cn(
-                        "h-20 rounded-2xl text-lg",
-                        active
-                          ? "bg-primary text-primary-foreground shadow-lg"
-                          : "bg-muted text-foreground hover:bg-primary/10"
-                      )}
-                    >
-                      {category.name}
-                    </Button>
-                  )
-                })}
-              </div>
-              </CardContent>
-          </Card>
-
-          <Card id="products-section" className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20 mx-2">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-xl text-green-900 dark:text-green-100">Produtos</CardTitle>
-                  <CardDescription className="text-green-700 dark:text-green-300">Toque em um item para adicioná-lo ao pedido.</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {visibleProducts.length === 0 ? (
-                <div className="rounded-2xl border border-dashed p-8 text-center text-muted-foreground">
-                  Nenhum produto nesta categoria.
-                </div>
-              ) : (
-                <ScrollArea className="max-h-[70vh]" type="always">
-                  <div
-                    className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
-                    data-testid="touch-grid-products"
-                  >
-                    {visibleProducts.map((product) => {
-                      const price = getProductPrice(product)
-                      return (
-                        <button
-                          key={getProductId(product)}
-                          data-testid={`touch-product-${getProductId(product)}`}
-                          onClick={() => startProductSelection(product)}
-                          className="flex h-40 flex-col rounded-2xl border bg-card text-left shadow-sm transition hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                        >
-                          <div className="relative h-24 w-full overflow-hidden rounded-t-2xl bg-muted">
-                            {product.image_url || product.image ? (
-                              <Image
-                                src={product.image_url || product.image || ""}
-                                alt={product.name}
-                                fill
-                                className="object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                                <NotebookPen className="h-6 w-6" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex flex-1 flex-col gap-1 p-3">
-                            <p className="text-base font-semibold leading-tight line-clamp-2">
-                              {product.name}
-                            </p>
-                            <p className="text-lg font-bold text-primary">
-                              {formatCurrency(price)}
-                            </p>
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </ScrollArea>
-              )}
+      {/* Conteúdo principal com scroll otimizado */}
+      <PDVTwoColumnLayout
+        leftColumn={
+          <section className="flex flex-col gap-2 overflow-hidden min-h-0">
+          {/* Busca de Produtos */}
+          <Card id="search-section" className="flex-shrink-0 border-purple-200 bg-purple-50/50 dark:border-purple-800 dark:bg-purple-950/20">
+            <CardContent className="pt-2 pb-2">
+              <ProductSearch
+                products={products as any}
+                onProductSelect={(product: any) => startProductSelection(product)}
+                onSearchChange={(query) => setProductSearchQuery(query)}
+                placeholder="Buscar produtos por nome ou código..."
+                showRecentSearches={true}
+              />
             </CardContent>
           </Card>
+
+          {/* Categorias */}
+          <Card id="categories-section" className="flex-shrink-0 border-blue-200 bg-blue-50/30 dark:border-blue-800 dark:bg-blue-950/10">
+            <CardHeader className="pb-1 pt-2.5">
+              <CardTitle className="text-sm font-semibold text-blue-900 dark:text-blue-100">Categorias</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 pb-1.5">
+              <ProductFilters
+                categories={categories as any}
+                selectedCategory={selectedCategory}
+                onCategorySelect={setSelectedCategory}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Grid de Produtos */}
+          <ProductGrid
+            products={visibleProducts as any}
+            onProductSelect={(product: any) => startProductSelection(product)}
+            getProductPrice={(product: any) => getProductPrice(product)}
+            getProductId={(product: any) => getProductId(product)}
+            formatCurrency={formatCurrency}
+            selectedCategory={selectedCategory}
+            className="border-green-200 bg-green-50/30 dark:border-green-800 dark:bg-green-950/10"
+          />
 
           {/* Recomendações Inteligentes - Fase 4 */}
           {cart.length > 0 && (
@@ -2334,596 +2568,596 @@ const handleClientChange = (value: string) => {
               orderHistory={todayOrders}
             />
           )}
-        </section>
-
-        <aside id="order-summary">
-          <Card className="sticky top-4 space-y-0 border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20 mx-2">
-            <CardHeader className="space-y-0 pb-3">
+          </section>
+        }
+        rightColumn={
+          <aside id="order-summary" className="flex flex-col min-h-0">
+          <Card className="flex flex-col border-orange-200 bg-orange-50/30 dark:border-orange-800 dark:bg-orange-950/10 min-h-[650px] h-full max-h-[calc(100vh-4rem)]">
+            <CardHeader className="flex-shrink-0 space-y-0 pb-1.5 pt-3">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <CardTitle className="text-lg text-orange-900 dark:text-orange-100">Carrinho</CardTitle>
-                  <CardDescription className="text-xs text-orange-700 dark:text-orange-300">Gerencie os itens e finalize o pedido.</CardDescription>
+                  <CardTitle className="text-sm font-semibold text-orange-900 dark:text-orange-100">Carrinho</CardTitle>
                 </div>
+                {/* Badge de Status do Pedido */}
+                {(editingOrder || currentOrder) && (
+                  <OrderStatusBadge
+                    status={editingOrder?.status || editingOrder?.order_status?.name || currentOrder?.status || currentOrder?.order_status?.name}
+                    showIcon={true}
+                  />
+                )}
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {/* Toggle unificado Retirada/Delivery */}
-              <div className="flex items-center justify-center gap-1.5 p-1.5 rounded-lg bg-muted/50">
-                <Button
-                  onClick={() => {
-                    setIsDelivery(false)
-                    if (tables.length > 0 && !selectedTable) {
-                      const firstTable = tables[0]
-                      setSelectedTable(firstTable.uuid || firstTable.identify || firstTable.name)
-                    }
-                  }}
-                  variant={!isDelivery ? "default" : "ghost"}
-                  size="sm"
-                  className={cn(
-                    "flex-1 gap-1.5 h-9 text-xs",
-                    !isDelivery && "bg-primary text-primary-foreground"
-                  )}
-                >
-                  <Utensils className="h-3.5 w-3.5" />
-                  Retirada
-                </Button>
-                <div className="h-5 w-px bg-border" />
-                <Button
-                  onClick={() => {
-                    setIsDelivery(true)
-                    setSelectedTable(null)
-                  }}
-                  variant={isDelivery ? "default" : "ghost"}
-                  size="sm"
-                  className={cn(
-                    "flex-1 gap-1.5 h-9 text-xs",
-                    isDelivery && "bg-primary text-primary-foreground"
-                  )}
-                >
-                  <Truck className="h-3.5 w-3.5" />
-                  Delivery
-                </Button>
-              </div>
-
-              {!isDelivery && (
-                <div id="table-section" className="space-y-2">
-                  <p className="text-xs font-medium">Selecione a mesa</p>
-                  <Select
-                    value={selectedTable || ""}
-                    onValueChange={(value) => {
-                      const table = tables.find(t => (t.uuid || t.identify || t.name) === value)
-                      if (!table) return
-                      
-                      const key = table.uuid || table.identify || table.name
-                      const hasOpenOrders = tablesWithOpenOrders.has(key)
-                      const isOccupiedByOther = hasOpenOrders && (
-                        !editingOrder || 
-                        (editingOrder.table?.uuid !== key && editingOrder.table?.identify !== key && editingOrder.table?.name !== key)
-                      )
-                      
-                      if (isOccupiedByOther && !editingOrder) {
-                        toast.error("Esta mesa possui pedidos em aberto. Finalize os pedidos antes de criar novos.")
-                        return
-                      }
-                      setSelectedTable(key)
-                    }}
+            <CardContent className="flex flex-col flex-1 min-h-0 space-y-2 pt-2 pb-3 overflow-hidden">
+              <Tabs value={cartTab} onValueChange={(value) => setCartTab(value as typeof cartTab)} className="flex flex-col flex-1 min-h-0 h-full">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-muted/50 p-1 rounded-lg h-auto min-h-[2.5rem] flex-shrink-0">
+                  <TabsTrigger
+                    value="service"
+                    className="cursor-pointer flex items-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
                   >
-                    <SelectTrigger className="h-10 w-full text-sm">
-                      <SelectValue placeholder="Selecione uma mesa..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {/* Ordenar mesas: ocupadas primeiro, depois vazias */}
-                      {(() => {
-                        const occupiedTables: Table[] = []
-                        const emptyTables: Table[] = []
-                        
-                        tables.forEach((table) => {
-                          const key = table.uuid || table.identify || table.name
-                          if (tablesWithOpenOrders.has(key)) {
-                            occupiedTables.push(table)
-                          } else {
-                            emptyTables.push(table)
+                    <Handshake className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="hidden xs:inline truncate">Atendimento</span>
+                    <span className="xs:hidden">Atend.</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="client"
+                    className="cursor-pointer flex items-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+                  >
+                    <User className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="hidden xs:inline truncate">Cliente</span>
+                    <span className="xs:hidden">Cliente</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="items"
+                    className="cursor-pointer flex items-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+                  >
+                    <ShoppingCartIcon className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="hidden xs:inline truncate">Carrinho</span>
+                    <span className="xs:hidden">Carr.</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="payment"
+                    className="cursor-pointer flex items-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+                  >
+                    <CreditCardIcon className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="hidden xs:inline truncate">Pagamento</span>
+                    <span className="xs:hidden">Pag.</span>
+                  </TabsTrigger>
+                </TabsList>
+                <div className="flex-1 min-h-0 mt-2 overflow-y-auto pr-3 max-h-full">
+                  {/* Aba: Tipo de Atendimento */}
+                  <TabsContent value="service" className="mt-0 h-full">
+                    <div className="space-y-3 h-full flex flex-col">
+                      <OrderStatusGuard
+                        status={
+                          editingOrder?.status ||
+                          editingOrder?.order_status?.name ||
+                          currentOrder?.status ||
+                          currentOrder?.order_status?.name
+                        }
+                        showAlert={false}
+                        allowViewOnly={true}
+                      >
+                        <div className="flex-1 flex items-center justify-center">
+                          <OrderTypeSelector
+                            selectedType={
+                              selectedServiceType
+                                ? (selectedServiceType as OrderType)
+                                : isDelivery
+                                ? "delivery"
+                                : selectedTable
+                                ? "table"
+                                : "counter"
+                            }
+                            onTypeChange={(type) => {
+                              // Encontrar o tipo de atendimento correspondente
+                              const serviceType = serviceTypes.find(
+                                (st: any) =>
+                                  (st.slug || st.identify || "")
+                                    .toLowerCase()
+                                    .trim() === type.toLowerCase().trim()
+                              )
+
+                              if (serviceType) {
+                                setSelectedServiceType(
+                                  serviceType.identify || serviceType.slug
+                                )
+
+                                // Atualizar estados baseado nas propriedades do tipo
+                                if (serviceType.requires_address) {
+                                  setIsDelivery(true)
+                                  setSelectedTable(null)
+                                } else {
+                                  setIsDelivery(false)
+                                }
+
+                                if (serviceType.requires_table) {
+                                  if (tables.length > 0 && !selectedTable) {
+                                    const firstTable = tables[0]
+                                    setSelectedTable(
+                                      firstTable.uuid ||
+                                        firstTable.identify ||
+                                        firstTable.name
+                                    )
+                                  }
+                                } else {
+                                  setSelectedTable(null)
+                                }
+                              } else {
+                                // Fallback para comportamento antigo
+                                if (type === "delivery") {
+                                  setIsDelivery(true)
+                                  setSelectedTable(null)
+                                  setSelectedServiceType("delivery")
+                                } else if (type === "table") {
+                                  setIsDelivery(false)
+                                  setSelectedServiceType("table")
+                                  if (tables.length > 0 && !selectedTable) {
+                                    const firstTable = tables[0]
+                                    setSelectedTable(
+                                      firstTable.uuid ||
+                                        firstTable.identify ||
+                                        firstTable.name
+                                    )
+                                  }
+                                } else if (type === "counter") {
+                                  setIsDelivery(false)
+                                  setSelectedTable(null)
+                                  setSelectedServiceType("counter")
+                                } else if (type === "pickup") {
+                                  setIsDelivery(false)
+                                  setSelectedTable(null)
+                                  setSelectedServiceType("pickup")
+                                }
+                              }
+                            }}
+                            serviceTypes={serviceTypes}
+                            loading={serviceTypesLoading}
+                          />
+                        </div>
+                      </OrderStatusGuard>
+
+                      {/* Seletor de Mesa (apenas para tipos que requerem mesa) */}
+                      {requiresTable && (
+                        <OrderStatusGuard
+                          status={
+                            editingOrder?.status ||
+                            editingOrder?.order_status?.name ||
+                            currentOrder?.status ||
+                            currentOrder?.order_status?.name
                           }
-                        })
-                        
-                        return [...occupiedTables, ...emptyTables]
-                      })().map((table) => {
-                        const key = table.uuid || table.identify || table.name
-                        const hasOpenOrders = tablesWithOpenOrders.has(key)
-                        const isOccupiedByOther = hasOpenOrders && (
-                          !editingOrder || 
-                          (editingOrder.table?.uuid !== key && editingOrder.table?.identify !== key && editingOrder.table?.name !== key)
-                        )
-                        
-                        return (
-                          <SelectItem 
-                            key={key} 
-                            value={key}
-                            disabled={isOccupiedByOther && !editingOrder}
-                            className={cn(
-                              isOccupiedByOther && "text-red-600 dark:text-red-400"
-                            )}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Utensils className="h-4 w-4" />
-                              <span>{table.name}</span>
-                              {isOccupiedByOther && (
-                                <Badge variant="destructive" className="text-xs ml-auto">
-                                  Ocupada
-                                </Badge>
-                              )}
-                            </div>
-                          </SelectItem>
-                        )
-                      })}
-                    </SelectContent>
-                  </Select>
+                          showAlert={false}
+                          allowViewOnly={true}
+                        >
+                          <TableSelector
+                            tables={tables}
+                            selectedTable={selectedTable}
+                            onTableSelect={setSelectedTable}
+                            tablesWithOpenOrders={tablesWithOpenOrders}
+                            editingOrder={editingOrder}
+                            currentOrder={currentOrder}
+                            showOccupiedWarning={true}
+                          />
+                        </OrderStatusGuard>
+                      )}
 
-                  {/* Aviso se mesa tem pedidos em aberto (apenas se não estiver editando o pedido desta mesa) */}
-                  {selectedTable && isTableOccupiedByOtherOrder && (
-                    <div className="mt-2 rounded-lg border border-red-300 bg-red-50 p-2.5 dark:border-red-800 dark:bg-red-950/30">
-                      <div className="flex items-start gap-2">
-                        <div className="rounded-full bg-red-100 p-1.5 dark:bg-red-900/50">
-                          <X className="h-4 w-4 text-red-600 dark:text-red-400" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-xs font-semibold text-red-900 dark:text-red-100">
-                            Mesa Ocupada
-                          </p>
-                          <p className="mt-0.5 text-[10px] text-red-700 dark:text-red-300">
-                            Esta mesa possui pedidos em aberto. Finalize os pedidos existentes antes de criar novos.
-                          </p>
-                        </div>
-                      </div>
+                      {/* Formulário de Endereço de Entrega (apenas para tipos que requerem endereço) */}
+                      {requiresAddress && (
+                        <OrderStatusGuard
+                          status={
+                            editingOrder?.status ||
+                            editingOrder?.order_status?.name ||
+                            currentOrder?.status ||
+                            currentOrder?.order_status?.name
+                          }
+                          showAlert={false}
+                          allowViewOnly={true}
+                        >
+                          <DeliveryAddressForm
+                            address={deliveryAddress}
+                            onAddressChange={setDeliveryAddress}
+                          />
+                        </OrderStatusGuard>
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
+                  </TabsContent>
 
-              {isDelivery && (
-                <div className="space-y-2 rounded-lg border p-3">
-                  <p className="text-xs font-medium">Endereço de entrega</p>
-                  <div className="grid gap-3">
-                    <div className="space-y-1">
-                      <div className="relative">
-                    <Input
-                      placeholder="CEP"
-                      value={deliveryAddress.zip}
-                      onChange={(event) => handleZipChange(event.target.value)}
-                          className="h-12 text-lg pr-10"
-                          disabled={loadingCEP}
-                        />
-                        {loadingCEP && (
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  {/* Aba: Cliente */}
+                  <TabsContent value="client" className="mt-0 h-full">
+                    <div className="space-y-3 h-full flex flex-col">
+                      <OrderStatusGuard
+                        status={editingOrder?.status || editingOrder?.order_status?.name || currentOrder?.status || currentOrder?.order_status?.name}
+                        showAlert={false}
+                        allowViewOnly={true}
+                      >
+                      <div className="space-y-3">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowClientSection(!showClientSection)}
+                          className="w-full h-12 justify-between"
+                        >
+                          <span className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            Cliente (opcional)
+                          </span>
+                          {showClientSection ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+                        {showClientSection && (
+                          <div className="space-y-3 rounded-xl border p-4 bg-muted/30">
+                            {clients.length > 0 && (
+                              <Combobox
+                                options={clientOptions}
+                                value={selectedClientId}
+                                onValueChange={handleClientChange}
+                                placeholder="Selecione um cliente... (digite para buscar)"
+                                searchPlaceholder="Buscar cliente..."
+                                emptyText="Nenhum cliente encontrado"
+                                allowClear
+                                className="h-12 rounded-2xl text-lg"
+                              />
+                            )}
+                            <div id="client-section" className="space-y-2">
+                              <p className="text-xs text-muted-foreground">Ou preencha manualmente:</p>
+                              <Input
+                                placeholder="Nome do cliente"
+                                value={customerName}
+                                onChange={(event) => {
+                                  if (selectedClientId) {
+                                    setSelectedClientId("")
+                                    setFiscalCpfCnpj("") // Limpar CPF quando cliente selecionado é removido
+                                  }
+                                  setCustomerName(event.target.value)
+                                  // Se o nome for limpo, limpar também o CPF
+                                  if (!event.target.value.trim()) {
+                                    setFiscalCpfCnpj("")
+                                  }
+                                }}
+                                className="h-12 text-lg"
+                                list="client-names"
+                              />
+                              <datalist id="client-names">
+                                {clients.slice(0, 10).map((client) => (
+                                  <option key={client.uuid || client.identify} value={client.name} />
+                                ))}
+                              </datalist>
+                              <Input
+                                placeholder="Telefone"
+                                value={customerPhone}
+                                onChange={(event) => {
+                                  if (selectedClientId) {
+                                    setSelectedClientId("")
+                                    setFiscalCpfCnpj("") // Limpar CPF quando cliente selecionado é removido
+                                  }
+                                  setCustomerPhone(maskPhone(event.target.value))
+                                }}
+                                className="h-12 text-lg"
+                              />
+                            </div>
+                            {selectedClientId && (
+                              <ClientOrderHistory clientId={selectedClientId} onLoadOrder={loadOrderInPDV} />
+                            )}
                           </div>
                         )}
                       </div>
-                      <p className="text-[10px] text-muted-foreground">
-                        {loadingCEP ? "Buscando endereço..." : "Digite o CEP para preencher automaticamente"}
-                      </p>
+                    </OrderStatusGuard>
                     </div>
-                    <Input
-                      placeholder="Endereço"
-                      value={deliveryAddress.address}
-                      onChange={(event) =>
-                        setDeliveryAddress((prev) => ({ ...prev, address: event.target.value }))
-                      }
-                      className="h-12 text-lg"
-                    />
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <Input
-                        placeholder="Número"
-                        value={deliveryAddress.number}
-                        onChange={(event) =>
-                          setDeliveryAddress((prev) => ({ ...prev, number: event.target.value }))
-                        }
-                        className="h-12 text-lg"
-                      />
-                      <Input
-                        placeholder="Bairro"
-                        value={deliveryAddress.neighborhood}
-                        onChange={(event) =>
-                          setDeliveryAddress((prev) => ({
-                            ...prev,
-                            neighborhood: event.target.value,
-                          }))
-                        }
-                        className="h-12 text-lg"
-                      />
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <Input
-                        placeholder="Cidade"
-                        value={deliveryAddress.city}
-                        onChange={(event) =>
-                          setDeliveryAddress((prev) => ({ ...prev, city: event.target.value }))
-                        }
-                        className="h-12 text-lg"
-                      />
-                      <Input
-                        placeholder="UF"
-                        value={deliveryAddress.state}
-                        maxLength={2}
-                        onChange={(event) =>
-                          setDeliveryAddress((prev) => ({
-                            ...prev,
-                            state: event.target.value.toUpperCase(),
-                          }))
-                        }
-                        className="h-12 text-lg"
-                      />
-                    </div>
-                    <Input
-                      placeholder="Complemento"
-                      value={deliveryAddress.complement}
-                      onChange={(event) =>
-                        setDeliveryAddress((prev) => ({ ...prev, complement: event.target.value }))
-                      }
-                      className="h-12 text-lg"
-                    />
-                  </div>
-                </div>
-              )}
+                  </TabsContent>
 
-              {/* Cliente opcional - recolhido por padrão */}
-              <div className="space-y-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowClientSection(!showClientSection)}
-                  className="w-full h-12 justify-between"
-                >
-                  <span className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Cliente (opcional)
-                  </span>
-                  {showClientSection ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-                {showClientSection && (
-                  <div className="space-y-3 rounded-xl border p-4 bg-muted/30">
-                    {clients.length > 0 && (
-                      <Combobox
-                        options={clientOptions}
-                        value={selectedClientId}
-                        onValueChange={handleClientChange}
-                        placeholder="Selecione um cliente... (digite para buscar)"
-                        searchPlaceholder="Buscar cliente..."
-                        emptyText="Nenhum cliente encontrado"
-                        allowClear
-                        className="h-12 rounded-2xl text-lg"
-                      />
-                    )}
-                    <div id="client-section" className="space-y-2">
-                      <p className="text-xs text-muted-foreground">Ou preencha manualmente:</p>
-                      <Input
-                        placeholder="Nome do cliente"
-                        value={customerName}
-                        onChange={(event) => {
-                          if (selectedClientId) {
-                            setSelectedClientId("")
-                          }
-                          setCustomerName(event.target.value)
-                        }}
-                        className="h-12 text-lg"
-                        list="client-names"
-                      />
-                      <datalist id="client-names">
-                        {clients.slice(0, 10).map((client) => (
-                          <option key={client.uuid || client.identify} value={client.name} />
-                        ))}
-                      </datalist>
-                      <Input
-                        placeholder="Telefone"
-                        value={customerPhone}
-                        onChange={(event) => {
-                          if (selectedClientId) {
-                            setSelectedClientId("")
-                          }
-                          setCustomerPhone(maskPhone(event.target.value))
-                        }}
-                        className="h-12 text-lg"
-                      />
-                    </div>
-                    {selectedClientId && (
-                      <ClientOrderHistory clientId={selectedClientId} onLoadOrder={loadOrderInPDV} />
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-xs font-medium">Itens selecionados</p>
-                {cart.length === 0 ? (
-                  <div className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
-                    Nenhum item no pedido.
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {cart.map((item) => {
-                      const productId = getProductId(item.product)
-                      const unitPrice = getCartItemUnitPrice(item)
-                      const isAdding = addingItem === item.signature
-                      const isRemoving = removingItem === item.signature
-                      return (
-                        <div
-                          key={item.signature}
-                          data-testid={`cart-item-${item.signature}`}
-                          className={cn(
-                            "rounded-lg border-2 p-2.5 transition-all bg-card shadow-sm relative",
-                            isAdding && "border-green-500 bg-green-50/50 scale-105 shadow-md",
-                            isRemoving && "border-red-500 bg-red-50/50 opacity-50 scale-95",
-                            !isAdding && !isRemoving && "border-primary/20 hover:border-primary/40 hover:shadow-md"
-                          )}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 mb-1">
-                                <Package className="h-4 w-4 text-primary shrink-0" />
-                                <p className="text-sm font-bold truncate">{item.product.name}</p>
-                              </div>
-                              <p className="text-xs text-muted-foreground mb-1">
-                                {formatCurrency(unitPrice)} cada
-                              </p>
-                              {item.selectedVariation && (
-                                <Badge variant="outline" className="mt-0.5 text-[10px] px-1.5 py-0.5">
-                                  {item.selectedVariation.name}
-                                </Badge>
-                              )}
-                              {item.selectedOptionals && item.selectedOptionals.length > 0 && (
-                                <div className="mt-1 space-y-0.5 text-[10px] text-muted-foreground">
-                                  {item.selectedOptionals.map((optional, optionalIndex) => {
-                                    const optionalKey =
-                                      optional.id ||
-                                      optional.identify ||
-                                      optional.name ||
-                                      `optional-${optionalIndex}`
-                                    return (
-                                      <div
-                                        key={`${item.signature}-${optionalKey}-${optionalIndex}`}
-                                        className="flex items-center justify-between gap-3"
-                                      >
-                                        <span>
-                                          {optional.name} × {optional.quantity}
-                                        </span>
-                                        <span>
-                                          {formatCurrency(
-                                            parsePrice(optional.price) * optional.quantity
-                                          )}
-                                        </span>
-                                      </div>
-                                    )
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                            <Button
-                              variant="destructive"
-                              size="icon"
-                              aria-label={`Remover ${item.product.name}`}
-                              onClick={() => removeItem(item.signature)}
-                              className="h-8 w-8 shrink-0"
-                              title="Remover item"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="mt-2 flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-10 w-10 rounded-lg"
-                              aria-label={`Diminuir ${item.product.name}`}
-                              onClick={() => updateItemQuantity(item.signature, -1)}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <span
-                              data-testid={`cart-item-qty-${item.signature}`}
-                              className="min-w-[48px] rounded-lg bg-muted px-2 py-1.5 text-center text-base font-semibold"
-                            >
-                              {item.quantity}
-                            </span>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-10 w-10 rounded-lg"
-                              aria-label={`Aumentar ${item.product.name}`}
-                              onClick={() => updateItemQuantity(item.signature, 1)}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                            <div className="ml-auto text-right">
-                              <div className="text-[10px] text-muted-foreground">
-                                Subtotal:
-                              </div>
-                              <span className="text-base font-semibold">
-                                {formatCurrency(unitPrice * item.quantity)}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="mt-2 space-y-1.5">
-                            <Input
-                              value={item.observation}
-                              onChange={(event) => updateItemObservation(item.signature, event.target.value)}
-                              placeholder="Observações (ex: sem cebola)"
-                              className="h-9 rounded-lg text-sm"
-                            />
-                            {/* Templates de observações do produto */}
-                            {item.product.observation_templates && item.product.observation_templates.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5">
-                                {item.product.observation_templates.map((template: string) => (
-                                  <Button
-                                    key={template}
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-7 text-[10px] px-2"
-                                    onClick={() => {
-                                      const currentObs = item.observation
-                                      const newObs = currentObs 
-                                        ? `${currentObs}, ${template}`
-                                        : template
-                                      updateItemObservation(item.signature, newObs)
-                                    }}
-                                  >
-                                    {template}
-                                  </Button>
-                                ))}
-                              </div>
-                            )}
-                            {/* Fallback para observation_suggestions se observation_templates não existir */}
-                            {(!item.product.observation_templates || item.product.observation_templates.length === 0) && 
-                             item.product.observation_suggestions && 
-                             item.product.observation_suggestions.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5">
-                                {item.product.observation_suggestions.map((template: string) => (
-                                  <Button
-                                    key={template}
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-7 text-[10px] px-2"
-                                    onClick={() => {
-                                      const currentObs = item.observation
-                                      const newObs = currentObs 
-                                        ? `${currentObs}, ${template}`
-                                        : template
-                                      updateItemObservation(item.signature, newObs)
-                                    }}
-                                  >
-                                    {template}
-                                  </Button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                  {/* Aba: Carrinho (Itens e Notas) */}
+                  <TabsContent value="items" className="mt-0 h-full">
+                    <div className="space-y-3 h-full flex flex-col">
+                      {/* Itens do carrinho */}
+                      <OrderStatusGuard
+                        status={
+                          editingOrder?.status ||
+                          editingOrder?.order_status?.name ||
+                          currentOrder?.status ||
+                          currentOrder?.order_status?.name
+                        }
+                        showAlert={false}
+                        allowViewOnly={true}
+                      >
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium">Itens selecionados</p>
+                          <OrderItemsList
+                            items={cart as any}
+                            getUnitPrice={getCartItemUnitPrice as any}
+                            formatCurrency={formatCurrency}
+                            onIncrease={(signature) => updateItemQuantity(signature, 1)}
+                            onDecrease={(signature) => updateItemQuantity(signature, -1)}
+                            onRemove={removeItem}
+                            onObservationChange={updateItemObservation}
+                            addingItem={addingItem}
+                            removingItem={removingItem}
+                          />
                         </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
+                      </OrderStatusGuard>
 
-              <div className="space-y-2">
-                <p className="text-xs font-medium">Observações do pedido</p>
-                <Textarea
-                  value={orderNotes}
-                  onChange={(event) => setOrderNotes(event.target.value)}
-                  placeholder="Instruções adicionais"
-                  className="min-h-[60px] rounded-lg text-sm"
-                />
-              </div>
+                      {/* Total e Subtotal - dentro da aba Itens */}
+                      <div className="pt-2 border-t">
+                        <OrderTotals
+                          subtotal={orderTotal}
+                          taxes={0}
+                          discounts={0}
+                          formatCurrency={formatCurrency}
+                        />
+                      </div>
 
-              <div id="payment-section" className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium">Forma de pagamento</p>
-                  {paymentMethods.length > 4 && (
+                      {/* Notas do pedido */}
+                      <OrderStatusGuard
+                        status={
+                          editingOrder?.status ||
+                          editingOrder?.order_status?.name ||
+                          currentOrder?.status ||
+                          currentOrder?.order_status?.name
+                        }
+                        showAlert={false}
+                        allowViewOnly={true}
+                      >
+                        <div className="space-y-2 pt-2 border-t">
+                          <OrderNotes
+                            value={orderNotes}
+                            onChange={setOrderNotes}
+                            placeholder="Instruções adicionais"
+                          />
+                        </div>
+                      </OrderStatusGuard>
+                    </div>
+                  </TabsContent>
+
+                  {/* Aba: Forma de Pagamento */}
+                  <TabsContent value="payment" className="mt-0 h-full">
+                    <div className="space-y-3 h-full flex flex-col">
+                      {(() => {
+                        // Determinar o status do pedido atual para proteção de edição
+                        const currentOrderStatus = editingOrder?.status || editingOrder?.order_status?.name || currentOrder?.status || currentOrder?.order_status?.name
+                        
+                        // Converter paymentMethods para o formato esperado
+                        const paymentMethodsFormatted: PaymentMethodType[] = paymentMethods.map(m => ({
+                          uuid: m.uuid,
+                          name: m.name,
+                          description: m.description || null,
+                        }))
+                        
+                        // Métodos selecionados (para split payment ou método único)
+                        const selectedMethods: PaymentMethodType[] = useSplitPayment
+                          ? splitPaymentItems.map(item => item.method)
+                          : selectedPaymentMethod
+                            ? paymentMethodsFormatted.filter(m => m.uuid === selectedPaymentMethod)
+                            : []
+                        
+                        const handlePaymentSelect = (method: PaymentMethodType) => {
+                          if (useSplitPayment) {
+                            // Se já existe um item com este método, não adicionar
+                            if (!splitPaymentItems.some(item => item.method.uuid === method.uuid)) {
+                              setSplitPaymentItems([...splitPaymentItems, { method, amount: null }])
+                            }
+                          } else {
+                            setSelectedPaymentMethod(method.uuid)
+                            // Verificar se é dinheiro e abrir dialog de troco
+                            const isCash = method.name.toLowerCase().includes('dinheiro') || 
+                                           method.name.toLowerCase().includes('money') || 
+                                           method.name.toLowerCase().includes('cash')
+                            if (isCash && cart.length > 0 && orderTotal > 0 && !changeDialogAnswered) {
+                              setShowChangeDialog(true)
+                            } else if (!isCash) {
+                              setChangeDialogAnswered(false)
+                              setNeedsChange(false)
+                              setReceivedAmount(null)
+                            }
+                          }
+                        }
+                        
+                        const handlePaymentRemove = (method: PaymentMethodType) => {
+                          if (useSplitPayment) {
+                            setSplitPaymentItems(splitPaymentItems.filter(item => item.method.uuid !== method.uuid))
+                          } else {
+                            setSelectedPaymentMethod(null)
+                          }
+                        }
+                        
+                        return (
+                          <OrderStatusGuard
+                            status={currentOrderStatus}
+                            showAlert={false}
+                            allowViewOnly={true}
+                          >
+                            <div id="payment-section" className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs font-medium">Forma de pagamento</p>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setUseSplitPayment(!useSplitPayment)
+                                    if (!useSplitPayment) {
+                                      // Inicializar split payment com método atual se houver
+                                      if (selectedPaymentMethod) {
+                                        const method = paymentMethodsFormatted.find(m => m.uuid === selectedPaymentMethod)
+                                        if (method) {
+                                          setSplitPaymentItems([{ method, amount: null }])
+                                        }
+                                      }
+                                    } else {
+                                      // Voltar para método único
+                                      setSplitPaymentItems([])
+                                    }
+                                  }}
+                                  className="h-7 text-[10px] px-2"
+                                >
+                                  {useSplitPayment ? "Pagamento único" : "Dividir pagamento"}
+                                </Button>
+                              </div>
+                              
+                              {paymentLoading ? (
+                                <div className="space-y-2">
+                                  <div className="h-10 rounded-lg border bg-muted animate-pulse" />
+                                  <div className="h-10 rounded-lg border bg-muted animate-pulse" />
+                                </div>
+                              ) : paymentMethodsFormatted.length === 0 ? (
+                                <div className="rounded-lg border border-dashed px-3 py-2 text-xs text-muted-foreground">
+                                  Nenhuma forma de pagamento ativa encontrada. Cadastre ou ative métodos no painel.
+                                </div>
+                              ) : !useSplitPayment ? (
+                                <>
+                                  <PaymentButtonsGrid
+                                    methods={paymentMethodsFormatted}
+                                    selectedMethods={selectedMethods}
+                                    onSelect={handlePaymentSelect}
+                                    onRemove={handlePaymentRemove}
+                                  />
+                                  
+                                  {/* Campo de valor recebido para dinheiro */}
+                                  {selectedPaymentMethod && (() => {
+                                    const selectedMethod = paymentMethods.find(m => m.uuid === selectedPaymentMethod)
+                                    const isCash = selectedMethod && (
+                                      selectedMethod.name.toLowerCase().includes('dinheiro') || 
+                                      selectedMethod.name.toLowerCase().includes('money') || 
+                                      selectedMethod.name.toLowerCase().includes('cash')
+                                    )
+                                    
+                                    if (isCash && needsChange) {
+                                      return (
+                                        <PaymentAmountInput
+                                          value={receivedAmount}
+                                          onChange={setReceivedAmount}
+                                          orderTotal={orderTotal}
+                                          label="Valor recebido"
+                                          placeholder="0,00"
+                                          showChange={true}
+                                        />
+                                      )
+                                    }
+                                    return null
+                                  })()}
+                                  
+                                  {/* Documento Fiscal */}
+                                  <Separator />
+                                  <FiscalDocument
+                                    documentType={fiscalDocumentType}
+                                    cpfCnpj={fiscalCpfCnpj}
+                                    onDocumentTypeChange={setFiscalDocumentType}
+                                    onCpfCnpjChange={setFiscalCpfCnpj}
+                                    onEmitNow={() => {
+                                      // TODO: Implementar emissão de NFC-e
+                                      toast.info("NFC-e emitida com sucesso")
+                                    }}
+                                    onEmitLater={() => {
+                                      toast.info("NFC-e será emitida posteriormente")
+                                    }}
+                                  />
+                                </>
+                              ) : (
+                                <SplitPaymentForm
+                                  methods={paymentMethodsFormatted}
+                                  orderTotal={orderTotal}
+                                  items={splitPaymentItems}
+                                  onChange={setSplitPaymentItems}
+                                  formatCurrency={formatCurrency}
+                                />
+                              )}
+                            </div>
+                          </OrderStatusGuard>
+                        )
+                      })()}
+                    </div>
+                  </TabsContent>
+                </div>
+              </Tabs>
+              
+              {/* Seção fixa - Pagamento, Botões */}
+              <div className="flex-shrink-0 space-y-1.5 pt-1.5 border-t">
+              {/* Ações do Pedido */}
+              {(orderStarted || editingOrder) && (
+                <>
+                  {/* Botão para ocultar/exibir ações */}
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium text-muted-foreground">Ações do Pedido</p>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setShowPaymentMethods(!showPaymentMethods)}
-                      className="h-7 text-[10px] px-2"
+                      onClick={() => setShowOrderActions(!showOrderActions)}
+                      className="h-8 px-2"
+                      title={showOrderActions ? "Ocultar ações" : "Exibir ações"}
                     >
-                      {showPaymentMethods ? "Ocultar" : "Mostrar todas"}
+                      {showOrderActions ? (
+                        <>
+                          <ChevronUp className="h-4 w-4 mr-1" />
+                          <span className="text-xs">Ocultar</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4 mr-1" />
+                          <span className="text-xs">Exibir</span>
+                        </>
+                      )}
                     </Button>
+                  </div>
+                  
+                  {/* Ações do Pedido - Ocultável */}
+                  {showOrderActions && (
+                    <div className="flex-shrink-0">
+                      <OrderActions
+                    orderId={editingOrder?.id || editingOrder?.uuid || currentOrder?.id || currentOrder?.uuid}
+                    orderStatus={editingOrder?.status || editingOrder?.order_status?.name || currentOrder?.status || currentOrder?.order_status?.name}
+                    isFinalStatus={isFinalStatus(editingOrder?.status || editingOrder?.order_status?.name || currentOrder?.status || currentOrder?.order_status?.name)}
+                    tables={tables.map((table) => ({
+                      uuid: table.uuid,
+                      identify: table.identify,
+                      name: table.name,
+                      isOccupied: false, // TODO: Implementar verificação de ocupação
+                    }))}
+                    currentTable={
+                      editingOrder?.table?.uuid || 
+                      editingOrder?.table?.identify || 
+                      editingOrder?.table?.name ||
+                      editingOrder?.table_id ||
+                      currentOrder?.table?.uuid || 
+                      currentOrder?.table?.identify || 
+                      currentOrder?.table?.name ||
+                      currentOrder?.table_id ||
+                      selectedTable ||
+                      null
+                    }
+                    onCustomerNote={(note) => {
+                      // TODO: Implementar API call para salvar observação do cliente
+                      toast.info("Observação do cliente salva")
+                    }}
+                    onInternalNote={(note) => {
+                      // TODO: Implementar API call para salvar observação interna
+                      toast.info("Observação interna salva")
+                    }}
+                    onRefund={(amount, reason) => {
+                      // TODO: Implementar API call para reembolso
+                      toast.info(`Reembolso de ${formatCurrency(amount)} processado`)
+                    }}
+                    onSplit={(items, amounts) => {
+                      // TODO: Implementar divisão de conta
+                      toast.info("Conta dividida")
+                    }}
+                    onTransfer={(targetTable) => {
+                      // TODO: Implementar transferência de mesa
+                      toast.info(`Pedido transferido para mesa ${targetTable}`)
+                    }}
+                    onGuests={(count) => {
+                      // TODO: Implementar atualização de quantidade de clientes
+                      toast.info(`${count} cliente${count !== 1 ? 's' : ''} definido${count !== 1 ? 's' : ''}`)
+                    }}
+                  />
+                    </div>
                   )}
-                </div>
-                <div className={cn(
-                  "grid gap-2",
-                  paymentMethods.length <= 4 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"
-                )}>
-                  {paymentMethods.slice(0, showPaymentMethods ? paymentMethods.length : 4).map((method) => {
-                    const active = selectedPaymentMethod === method.uuid
-                    const getPaymentIcon = (name: string) => {
-                      const lowerName = name.toLowerCase()
-                      if (lowerName.includes('pix')) {
-                        return <Smartphone className="h-6 w-6" />
-                      }
-                      if (lowerName.includes('cartão') || lowerName.includes('card') || lowerName.includes('credito') || lowerName.includes('debito')) {
-                        return <CreditCard className="h-6 w-6" />
-                      }
-                      if (lowerName.includes('dinheiro') || lowerName.includes('money') || lowerName.includes('cash')) {
-                        return <Banknote className="h-6 w-6" />
-                      }
-                      if (lowerName.includes('contactless') || lowerName.includes('nfc') || lowerName.includes('aproximação')) {
-                        return <Radio className="h-6 w-6" />
-                      }
-                      if (lowerName.includes('transferência') || lowerName.includes('transfer') || lowerName.includes('ted') || lowerName.includes('doc')) {
-                        return <Building2 className="h-6 w-6" />
-                      }
-                      return <CreditCard className="h-6 w-6" />
-                    }
-                    
-                    const isCash = method.name.toLowerCase().includes('dinheiro') || 
-                                   method.name.toLowerCase().includes('money') || 
-                                   method.name.toLowerCase().includes('cash')
-                    
-                    const handlePaymentClick = () => {
-                      setSelectedPaymentMethod(method.uuid)
-                      // Se mudar para um método que não é dinheiro, resetar flag
-                      if (!isCash) {
-                        setChangeDialogAnswered(false)
-                        setNeedsChange(false)
-                        setReceivedAmount(null)
-                      }
-                      // Se for dinheiro e houver itens no carrinho e ainda não respondeu, abrir modal de troco
-                      if (isCash && cart.length > 0 && orderTotal > 0 && !changeDialogAnswered) {
-                        setShowChangeDialog(true)
-                      } else if (isCash && !changeDialogAnswered) {
-                        // Se não houver itens, apenas limpar dados de troco
-                        setNeedsChange(false)
-                        setReceivedAmount(null)
-                      }
-                    }
-                    
-                    return (
-                      <Button
-                        key={method.uuid}
-                        data-testid={`payment-button-${method.uuid}`}
-                        onClick={handlePaymentClick}
-                        className={cn(
-                          "h-16 rounded-lg flex-col gap-1",
-                          active
-                            ? "bg-primary text-primary-foreground shadow-lg border-2 border-primary"
-                            : "bg-muted text-foreground hover:bg-primary/10 border-2 border-transparent"
-                        )}
-                      >
-                        <div className={cn(
-                          "transition-colors",
-                          active ? "text-primary-foreground" : "text-primary"
-                        )}>
-                          {getPaymentIcon(method.name)}
-                        </div>
-                        <span className="font-semibold text-xs">{method.name}</span>
-                        {active && (
-                          <CheckCircle2 className="h-3.5 w-3.5 absolute top-1.5 right-1.5" />
-                        )}
-                      </Button>
-                    )
-                  })}
-                </div>
-              </div>
+                </>
+              )}
 
-              {/* Resumo Financeiro */}
+                {/* Resumo Financeiro - Quantidade de itens e troco */}
               <div className="rounded-lg border-2 border-purple-300 bg-purple-50 p-3 dark:border-purple-700 dark:bg-purple-950/30 space-y-2">
                 {/* Quantidade de itens */}
                 <div className="flex items-center justify-between text-xs text-purple-700 dark:text-purple-300 pb-1.5 border-b border-purple-200 dark:border-purple-800">
                   <span>Itens</span>
                   <span className="font-medium">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
-                </div>
-                
-                {/* Subtotal */}
-                <div className="flex items-center justify-between text-xs text-purple-700 dark:text-purple-300">
-                  <span>Subtotal</span>
-                  <span className="font-medium">{formatCurrency(orderTotal)}</span>
-                </div>
-                
-                {/* Total Geral */}
-                <div className="flex items-center justify-between text-sm font-semibold text-purple-900 dark:text-purple-100 pt-1 border-t border-purple-200 dark:border-purple-800">
-                  <span>Total Geral</span>
-                  <span data-testid="order-total" className="text-base">{formatCurrency(orderTotal)}</span>
                 </div>
                 
                 {/* Informações de troco (apenas se for pagamento em dinheiro) */}
@@ -3003,231 +3237,121 @@ const handleClientChange = (value: string) => {
                 </div>
               )}
 
-              <div className="flex flex-col gap-3">
-                {/* Botão Iniciar Pedido - aparece apenas quando o pedido não foi iniciado */}
-                {!orderStarted && !editingOrder && (
-                  <Button
-                    id="start-order-button"
-                    data-testid="start-order-button"
-                    onClick={handleStartOrder}
-                    disabled={
-                      submittingOrder || 
-                      !cart.length || 
-                      !selectedPaymentMethod ||
-                      (!isDelivery && !selectedTable) ||
-                      (!isDelivery && isTableOccupiedByOtherOrder) ||
-                      !pdvPermissions.canCreateOrder
-                    }
-                    className="h-24 rounded-2xl text-2xl font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg"
-                    title={
-                      !cart.length
-                        ? "Adicione itens ao pedido"
-                        : !selectedPaymentMethod
-                        ? "Selecione uma forma de pagamento"
-                        : !isDelivery && !selectedTable
-                        ? "Selecione uma mesa"
-                        : !isDelivery && isTableOccupiedByOtherOrder
-                        ? "Mesa ocupada - Finalize pedidos existentes"
-                        : !pdvPermissions.canCreateOrder
-                        ? "Você não tem permissão para criar pedidos"
-                        : undefined
-                    }
-                  >
-                    {submittingOrder ? (
-                      <>
-                        <Loader2 className="mr-3 h-6 w-6 animate-spin" />
-                        Processando...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="mr-3 h-6 w-6" />
-                        <div className="flex flex-col items-start">
-                          <span>Iniciar Pedido</span>
-                          {cart.length > 0 && (
-                            <span className="text-sm font-normal opacity-90">
-                              {cart.reduce((sum, item) => sum + item.quantity, 0)} {cart.reduce((sum, item) => sum + item.quantity, 0) === 1 ? 'item' : 'itens'} • {formatCurrency(orderTotal)}
-                            </span>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </Button>
-                )}
-
-                {/* Botões que aparecem após iniciar o pedido ou ao editar um pedido existente */}
-                {(orderStarted || editingOrder) && (() => {
-                  // Verificar se o pedido tem status final
-                  const orderStatus = editingOrder?.status || editingOrder?.order_status?.name || currentOrder?.status || currentOrder?.order_status?.name
-                  const orderIsFinal = isFinalStatus(orderStatus)
-                  const canAdvanceStatus = !orderIsFinal && orderStatus !== 'Entregue'
-                  const canFinalize = !orderIsFinal && ['Pronto', 'Em Entrega'].includes(orderStatus || '')
-                  
-                  return (
-                    <>
-                      {/* Botão de Atualizar Pedido */}
-                      <Button
-                        id="update-order-button"
-                        data-testid="update-order-button"
-                        onClick={handleUpdateOrder}
-                        disabled={
-                          submittingOrder || 
-                          !cart.length ||
-                          !pdvPermissions.canCreateOrder ||
-                          orderIsFinal
-                        }
-                        className="h-20 rounded-2xl text-xl font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={
-                          orderIsFinal
-                            ? `Pedido com status final (${orderStatus}) não pode ser editado`
-                            : !cart.length
-                            ? "Adicione itens ao pedido" 
-                            : !pdvPermissions.canCreateOrder 
-                            ? "Você não tem permissão para atualizar pedidos" 
-                            : undefined
-                        }
-                      >
-                        {submittingOrder ? (
-                          <>
-                            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                            Processando...
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="mr-3 h-5 w-5" />
-                            Atualizar Pedido
-                          </>
-                        )}
-                      </Button>
-
-                      {/* Botão de Avançar Status */}
-                      {canAdvanceStatus && (() => {
-                        const nextStatusName = getNextStatusName(orderStatus, isDelivery)
-                        return (
+              {(() => {
+                // Determinar o status do pedido atual para proteção de edição
+                const currentOrderStatus = editingOrder?.status || editingOrder?.order_status?.name || currentOrder?.status || currentOrder?.order_status?.name
+                
+                return (
+                  <>
+                    <OrderStatusGuard
+                      status={currentOrderStatus}
+                      showAlert={false}
+                      allowViewOnly={true}
+                    >
+                      <div className="flex flex-col gap-3">
+                        {/* Botão Iniciar Pedido - aparece apenas quando o pedido não foi iniciado */}
+                        {!orderStarted && !editingOrder && (
                           <Button
-                            id="advance-status-button"
-                            data-testid="advance-status-button"
-                            onClick={handleAdvanceStatus}
+                            id="start-order-button"
+                            data-testid="start-order-button"
+                            onClick={handleStartOrder}
                             disabled={
-                              submittingOrder ||
-                              !pdvPermissions.canCreateOrder ||
-                              orderIsFinal
+                              submittingOrder || 
+                              !cart.length || 
+                              !selectedPaymentMethod ||
+                                (requiresTable && !selectedTable) ||
+                                (requiresTable && isTableOccupiedByOtherOrder) ||
+                              !pdvPermissions.canCreateOrder
                             }
-                            className="h-20 rounded-2xl text-xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="h-24 rounded-2xl text-2xl font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg"
                             title={
-                              orderIsFinal
-                                ? `Pedido com status final (${orderStatus}) não pode ter status alterado`
-                                : !pdvPermissions.canCreateOrder 
-                                ? "Você não tem permissão para avançar status" 
-                                : nextStatusName
-                                ? `Avançar de "${orderStatus}" para "${nextStatusName}"`
+                              !cart.length
+                                ? "Adicione itens ao pedido"
+                                : !selectedPaymentMethod
+                                ? "Selecione uma forma de pagamento"
+                                  : requiresTable && !selectedTable
+                                ? "Selecione uma mesa"
+                                  : requiresTable && isTableOccupiedByOtherOrder
+                                ? "Mesa ocupada - Finalize pedidos existentes"
+                                : !pdvPermissions.canCreateOrder
+                                ? "Você não tem permissão para criar pedidos"
                                 : undefined
                             }
                           >
                             {submittingOrder ? (
                               <>
-                                <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                                <Loader2 className="mr-3 h-6 w-6 animate-spin" />
                                 Processando...
                               </>
                             ) : (
                               <>
-                                <ArrowRight className="mr-3 h-5 w-5" />
-                                {nextStatusName ? `Avançar para ${nextStatusName}` : 'Avançar Status'}
+                                <Plus className="mr-3 h-6 w-6" />
+                                <div className="flex flex-col items-start">
+                                  <span>Iniciar Pedido</span>
+                                  {cart.length > 0 && (() => {
+                                    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+                                    const itemsText = totalItems === 1 ? 'item' : 'itens';
+                                    const totalText = formatCurrency(orderTotal);
+                                    const displayText = `${totalItems} ${itemsText} • ${totalText}`;
+                                    return (
+                                      <span className="text-sm font-normal opacity-90">
+                                        {displayText}
+                                      </span>
+                                    );
+                                  })()}
+                                </div>
                               </>
                             )}
                           </Button>
-                        )
-                      })()}
-
-                      {/* Botão de Finalizar Pedido - aparece apenas em "Pronto" ou "Em Entrega" */}
-                      {canFinalize && (
-                        <Button
-                          id="finalize-button"
-                          data-testid="finalize-order-button"
-                          onClick={handleFinalizeOrder}
-                          disabled={
-                            submittingOrder || 
-                            !cart.length ||
-                            !pdvPermissions.canCreateOrder ||
-                            orderIsFinal
-                          }
-                          className="h-20 rounded-2xl text-xl font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                          title={
-                            orderIsFinal
-                              ? `Pedido com status final (${orderStatus}) não pode ser editado`
-                              : !cart.length
-                              ? "Adicione itens ao pedido"
-                              : !pdvPermissions.canCreateOrder 
-                              ? "Você não tem permissão para finalizar pedidos" 
-                              : undefined
-                          }
-                        >
-                          {submittingOrder ? (
-                            <>
-                              <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                              Processando...
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 className="mr-3 h-5 w-5" />
-                              Finalizar Pedido
-                            </>
-                          )}
-                        </Button>
-                      )}
-
-                      {/* Botão de Cancelar Pedido */}
-                      <Button
-                        id="cancel-order-button"
-                        data-testid="cancel-order-button"
-                        onClick={handleCancelOrder}
-                        disabled={
-                          submittingOrder ||
-                          !pdvPermissions.canCreateOrder ||
-                          (orderIsFinal && orderStatus !== 'Cancelado')
-                        }
-                        className="h-20 rounded-2xl text-xl font-bold bg-red-600 hover:bg-red-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={
-                          orderIsFinal && orderStatus !== 'Cancelado'
-                            ? `Pedido com status final (${orderStatus}) não pode ser cancelado`
-                            : !pdvPermissions.canCreateOrder 
-                            ? "Você não tem permissão para cancelar pedidos" 
-                            : undefined
-                        }
-                      >
-                        {submittingOrder ? (
-                          <>
-                            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                            Processando...
-                          </>
-                        ) : (
-                          <>
-                            <X className="mr-3 h-5 w-5" />
-                            Cancelar Pedido
-                          </>
                         )}
-                      </Button>
-                    </>
-                  )
-                })()}
+
+                        {/* Botões que aparecem após iniciar o pedido ou ao editar um pedido existente */}
+                        {(orderStarted || editingOrder) && renderOrderActionButtons({
+                          orderStarted,
+                          editingOrder,
+                          currentOrder,
+                          isDelivery,
+                          submittingOrder,
+                          cart,
+                          pdvPermissions,
+                          handleUpdateOrder,
+                          handleAdvanceStatus,
+                          handleFinalizeOrder,
+                          handleCancelOrder,
+                          getNextStatusName,
+                          isFinalStatus,
+                        })}
+                      </div>
+                    </OrderStatusGuard>
+                    
+                      {/* Limpar carrinho */}
+                    <OrderStatusGuard
+                      status={currentOrderStatus}
+                      showAlert={false}
+                      allowViewOnly={true}
+                    >
+                      {cart.length > 0 && (
+                          <div className="pt-2 border-t">
+                          <Button
+                            variant="outline"
+                            onClick={clearCart}
+                            className="w-full h-12 rounded-2xl text-base text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="mr-2 h-5 w-5" />
+                            Limpar carrinho
+                          </Button>
+                        </div>
+                      )}
+                    </OrderStatusGuard>
+                  </>
+                )
+              })()}
               </div>
-              
-              {/* Limpar carrinho - movido para o final */}
-              {cart.length > 0 && (
-                <div className="pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={clearCart}
-                    className="w-full h-12 rounded-2xl text-base text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="mr-2 h-5 w-5" />
-                    Limpar carrinho
-                  </Button>
-                </div>
-              )}
-              </CardContent>
+            </CardContent>
           </Card>
-        </aside>
-      </div>
+          </aside>
+        }
+      />
 
       {/* Sheet de Pedidos de Hoje */}
       <Sheet open={showTodayOrdersSheet} onOpenChange={setShowTodayOrdersSheet}>
@@ -3244,7 +3368,10 @@ const handleClientChange = (value: string) => {
                   Carregando...
                 </span>
               ) : (
-                `${sidebarOrders.length} ${sidebarOrders.length === 1 ? 'pedido' : 'pedidos'}${selectedTable && !isDelivery && tableOrders && Array.isArray(tableOrders) && tableOrders.length > 0 ? ' (desta mesa)' : ' (de hoje)'}`
+                <span>
+                  {sidebarOrders.length} {sidebarOrders.length === 1 ? 'pedido' : 'pedidos'}
+                  {selectedTable && !isDelivery && tableOrders && Array.isArray(tableOrders) && tableOrders.length > 0 ? ' (desta mesa)' : ' (de hoje)'}
+                </span>
               )}
             </SheetDescription>
           </SheetHeader>
@@ -3279,7 +3406,7 @@ const handleClientChange = (value: string) => {
               <ScrollArea className="h-[calc(100vh-12rem)]">
                 <div className="p-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {sidebarOrders.map((order: any) => {
+                    {sidebarOrders.map((order: Order) => {
                       const orderId = order.identify || order.uuid || order.id
                       const orderTotal = parsePrice(order.total || 0)
                       const orderStatus = order.status || 'Pendente'
@@ -3292,7 +3419,7 @@ const handleClientChange = (value: string) => {
                             orderDate = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
                           }
                         } catch (error) {
-                          console.error('Erro ao formatar data:', error)
+
                         }
                       }
                       const isActive = editingOrder && (editingOrder.identify === orderId || editingOrder.uuid === orderId || editingOrder.id === order.id)
@@ -3305,7 +3432,7 @@ const handleClientChange = (value: string) => {
                         <button
                           key={orderId}
                           onClick={() => {
-                            loadOrderInPDV(orderId)
+                            loadOrderInPDV(String(orderId))
                             setShowTodayOrdersSheet(false)
                           }}
                           className={cn(
@@ -3846,8 +3973,19 @@ const handleClientChange = (value: string) => {
           }
         }}
       />
-    </div>
+
+      {/* Modal de Confirmação de Pagamento */}
+      <PaymentConfirmationDialog
+        open={showPaymentConfirmation}
+        onOpenChange={setShowPaymentConfirmation}
+        orderTotal={orderTotal}
+        payments={preparePaymentDataForConfirmation()}
+        formatCurrency={formatCurrency}
+        onConfirm={confirmFinalizeOrder}
+        isLoading={submittingOrder}
+        orderId={editingOrder?.identify || editingOrder?.id || currentOrder?.identify || currentOrder?.id}
+      />
+    </PDVMainLayout>
   )
 }
-
 

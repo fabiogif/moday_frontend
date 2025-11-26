@@ -40,7 +40,7 @@ export function useStates() {
         setStates([])
       }
     } catch (err) {
-      console.error('Error loading states:', err)
+
       setError('Erro ao carregar estados')
       setStates([])
     } finally {
@@ -86,7 +86,7 @@ export function useCitiesByState(uf: string | null) {
         setCities([])
       }
     } catch (err) {
-      console.error('Error loading cities:', err)
+
       setError('Erro ao carregar cidades')
       setCities([])
     } finally {
@@ -135,7 +135,7 @@ export function useSearchCities(searchTerm: string, minLength = 2) {
         setCities([])
       }
     } catch (err) {
-      console.error('Error searching cities:', err)
+
       setError('Erro ao pesquisar cidades')
       setCities([])
     } finally {

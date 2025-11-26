@@ -245,7 +245,7 @@ export function DataTable({
         const client = row.getValue("client") as any
           // Debug: verificar estrutura do cliente
           if (!client?.name) {
-            // console.log('Client data:', client, 'Full row:', row.original)
+
           }
         return (
           <div>
@@ -653,5 +653,4 @@ export function DataTable({
     </div>
   )
 }
-
 

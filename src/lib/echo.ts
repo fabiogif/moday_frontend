@@ -44,15 +44,10 @@ export const initializeEcho = () => {
   
   if (!token) {
     // Usuário não está autenticado ainda - isso é normal durante o carregamento
-    console.info('Echo: Waiting for authentication...', {
-      authToken: !!localStorage.getItem('auth-token'),
-      token: !!localStorage.getItem('token')
-    })
     return null
   }
 
   if (!appKey) {
-    console.warn('Echo: NEXT_PUBLIC_REVERB_APP_KEY is not set; realtime disabled')
     return null
   }
 
@@ -62,15 +57,10 @@ export const initializeEcho = () => {
     }
 
     window.Echo = createEchoInstance(token)
-    
-    // console.log('Echo: Initialized successfully', {
-    //   host: process.env.NEXT_PUBLIC_REVERB_HOST,
-    //   port: process.env.NEXT_PUBLIC_REVERB_PORT,
-    // })
-    
+
     return window.Echo
   } catch (error) {
-    console.warn('Echo: Could not initialize WebSocket (optional feature)', {
+    console.error('Erro ao inicializar Echo:', {
       error: error instanceof Error ? error.message : error,
       tip: 'Start Reverb server with: php artisan reverb:start'
     })
@@ -81,7 +71,6 @@ export const initializeEcho = () => {
 export const disconnectEcho = () => {
   if (typeof window !== 'undefined' && window.Echo) {
     window.Echo.disconnect()
-    // console.log('Echo: Disconnected')
   }
 }
 

@@ -164,7 +164,7 @@ export default function MensagensPage() {
       const response = await adminApi.getTenants({ per_page: 100 })
       setTenants(response.data)
     } catch (error) {
-      console.error('Erro ao carregar empresas:', error)
+
       toast.error('Erro ao carregar lista de empresas')
     } finally {
       setIsLoading(false)
@@ -231,7 +231,7 @@ export default function MensagensPage() {
       setSelectedTenants([])
       setDialogOpen(false)
     } catch (error) {
-      console.error('Erro ao enviar email:', error)
+
       toast.error('Erro ao enviar email. Tente novamente.')
     } finally {
       setSending(false)

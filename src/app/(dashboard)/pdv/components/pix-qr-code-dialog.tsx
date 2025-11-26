@@ -81,7 +81,7 @@ export function PixQrCodeDialog({
       }
       // Se status for 'pending', continua aguardando (não precisa fazer nada)
     } catch (error) {
-      console.error('Erro ao verificar status do pagamento:', error)
+
       setPaymentStatus('error')
       setIsPolling(false)
     }

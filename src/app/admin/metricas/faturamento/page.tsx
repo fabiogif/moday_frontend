@@ -62,7 +62,7 @@ export default function FaturamentoPage() {
       const response = await adminApi.getRevenueMetrics()
       setData(response.data)
     } catch (error) {
-      console.error('Erro ao carregar métricas de faturamento:', error)
+
     } finally {
       setIsLoading(false)
     }

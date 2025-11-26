@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { BankAccountForm } from '@/app/dashboard/contas-bancarias/components/bank-account-form'
+import { BankAccountForm } from '@/app/(dashboard)/contas-bancarias/components/bank-account-form'
 import api from '@/lib/api-client'
 import { toast } from 'sonner'
 

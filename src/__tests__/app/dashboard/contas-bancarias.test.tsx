@@ -1,6 +1,6 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import ContasBancariasPage from '@/app/dashboard/contas-bancarias/page'
+import ContasBancariasPage from '@/app/(dashboard)/contas-bancarias/page'
 import api from '@/lib/api-client'
 import { toast } from 'sonner'
 

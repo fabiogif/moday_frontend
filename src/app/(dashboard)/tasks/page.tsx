@@ -23,7 +23,7 @@ export default function TaskPage() {
         const taskList = await getTasks()
         setTasks(taskList)
       } catch (error) {
-        console.error("Failed to load tasks:", error)
+
       } finally {
         setLoading(false)
       }

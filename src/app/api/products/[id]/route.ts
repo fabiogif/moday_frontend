@@ -27,9 +27,9 @@ export async function PUT(
       }
       
       // Debug: Log dos dados recebidos na API Route PUT
-      // console.log('API Route PUT: FormData recebido:')
+
       for (const [key, value] of formData.entries()) {
-        // console.log(`${key}:`, value)
+
       }
       
       response = await fetch(`${backendUrl}/api/product/${id}`, {
@@ -67,7 +67,7 @@ export async function PUT(
     const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {
-    console.error('Erro na API route PUT:', error)
+
     return NextResponse.json(
       { message: 'Erro interno do servidor' },
       { status: 500 }

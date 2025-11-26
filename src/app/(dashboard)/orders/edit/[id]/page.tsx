@@ -175,7 +175,7 @@ export default function EditOrderPage() {
         }
       } catch (err) {
         if (process.env.NODE_ENV === "development") {
-          console.error("Erro ao buscar CEP no formulário de edição:", err)
+
         }
       }
     },
@@ -232,7 +232,7 @@ export default function EditOrderPage() {
         router.push('/orders')
       }
     } catch (error: any) {
-      console.error('Erro ao atualizar pedido:', error)
+
       // Verificar se o erro é de pedido finalizado
       if (error?.response?.status === 403 || error?.message?.includes('finalizado')) {
         toast.error('Este pedido está finalizado e não pode ser alterado.')

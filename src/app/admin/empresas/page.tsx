@@ -60,7 +60,7 @@ export default function AdminEmpresasPage() {
       setTenants(tenantsResponse.data)
       setStats(dashboardResponse.data.tenants)
     } catch (error) {
-      console.error('Erro ao carregar dados:', error)
+
     } finally {
       setIsLoading(false)
     }

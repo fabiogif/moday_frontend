@@ -45,7 +45,7 @@ export function PlansSection() {
           }
         }
       } catch (error) {
-        console.error('Erro ao buscar plano do tenant:', error)
+
       }
     }
 

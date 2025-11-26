@@ -7,6 +7,7 @@ import { useAuthenticatedReviews, useAuthenticatedReviewStats, useMutation } fro
 import { endpoints } from '@/lib/api-client'
 import { PageLoading } from '@/components/ui/loading-progress'
 import { toast } from 'sonner'
+import { useAuth } from '@/contexts/auth-context'
 
 export interface Review {
   uuid: string
@@ -44,6 +45,7 @@ export default function ReviewsPage() {
   
   // Dados autenticados
   const { data: reviewsData, loading: loadingReviews, error: errorReviews, refetch, isAuthenticated } = useAuthenticatedReviews(statusFilter)
+  const { isLoading: authLoading } = useAuth()
   const { data: statsData, loading: loadingStats } = useAuthenticatedReviewStats()
   const { mutate: approveReview } = useMutation()
   const { mutate: rejectReview } = useMutation()
@@ -54,15 +56,15 @@ export default function ReviewsPage() {
   const stats = statsData as ReviewStats | null
 
   const handleApprove = useCallback(async (uuid: string) => {
-    // console.log('🔵 handleApprove chamado com uuid:', uuid)
+
     try {
-      // console.log('🔵 Chamando approveReview...')
+
       await approveReview(endpoints.reviews.approve(uuid), 'POST', {})
-      // console.log('🔵 approveReview concluído')
+
       toast.success('Avaliação aprovada!')
       refetch()
     } catch (error: any) {
-      console.error('🔴 Erro no handleApprove:', error)
+
       toast.error(error.message || 'Erro ao aprovar avaliação')
     }
   }, [approveReview, refetch])
@@ -99,7 +101,8 @@ export default function ReviewsPage() {
     }
   }, [deleteReview, refetch])
 
-  if (!isAuthenticated) {
+  // Só mostrar mensagem de não autenticado se não estiver carregando E não estiver autenticado
+  if (!authLoading && !isAuthenticated) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-destructive">Usuário não autenticado. Faça login para continuar.</div>

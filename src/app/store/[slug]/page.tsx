@@ -155,6 +155,8 @@ export default function PublicStorePage() {
   const [paymentMethodName, setPaymentMethodName] = useState("")
   const [paymentMethods, setPaymentMethods] = useState<any[]>([])
   const [shippingMethod, setShippingMethod] = useState("delivery")
+  const [serviceTypes, setServiceTypes] = useState<any[]>([])
+  const [selectedServiceType, setSelectedServiceType] = useState<string | null>(null)
   const [orderResult, setOrderResult] = useState<{
     order_id: string
     total: string
@@ -230,7 +232,7 @@ export default function PublicStorePage() {
       const data = await response.json()
       
       if (data.success && data.data) {
-        // console.log('data.data', data.data, data)
+
         setPaymentMethods(data.data)
         // Selecionar primeiro método por padrão
         if (data.data.length > 0) {
@@ -242,11 +244,63 @@ export default function PublicStorePage() {
         setPaymentMethods([])
       }
     } catch (error) {
-      console.error('Erro ao carregar formas de pagamento:', error)
+
       toast.error('Erro ao carregar formas de pagamento')
       setPaymentMethods([])
     }
   }, [slug])
+
+  const loadServiceTypes = useCallback(async () => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
+      const response = await fetch(`${apiUrl}/api/service-type/menu`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        mode: 'cors',
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao carregar tipos de atendimento')
+      }
+
+      const data = await response.json()
+      
+      if (data.success && data.data) {
+        const menuTypes = Array.isArray(data.data) ? data.data : []
+        setServiceTypes(menuTypes)
+        
+        // Selecionar primeiro tipo por padrão (preferir Delivery, depois Retirada)
+        if (menuTypes.length > 0) {
+          const deliveryType = menuTypes.find((st: any) => (st.slug || st.identify) === 'delivery')
+          const pickupType = menuTypes.find((st: any) => (st.slug || st.identify) === 'pickup')
+          
+          const defaultType = deliveryType || pickupType || menuTypes[0]
+          const typeSlug = (defaultType.slug || defaultType.identify || '').toLowerCase()
+          setSelectedServiceType(defaultType.identify || defaultType.slug)
+          setShippingMethod(typeSlug === 'delivery' ? 'delivery' : 'pickup')
+        }
+      } else {
+        // Fallback para tipos padrão
+        setServiceTypes([
+          { identify: 'delivery', slug: 'delivery', name: 'Delivery', requires_address: true },
+          { identify: 'pickup', slug: 'pickup', name: 'Retirada', requires_address: false },
+        ])
+        setSelectedServiceType('delivery')
+        setShippingMethod('delivery')
+      }
+    } catch (error) {
+      // Fallback para tipos padrão em caso de erro
+      setServiceTypes([
+        { identify: 'delivery', slug: 'delivery', name: 'Delivery', requires_address: true },
+        { identify: 'pickup', slug: 'pickup', name: 'Retirada', requires_address: false },
+      ])
+      setSelectedServiceType('delivery')
+      setShippingMethod('delivery')
+    }
+  }, [])
 
   const loadStoreData = useCallback(async () => {
     try {
@@ -259,6 +313,9 @@ export default function PublicStorePage() {
         fetch(`${apiUrl}/api/store/${slug}/info`, { mode: 'cors' }),
         fetch(`${apiUrl}/api/store/${slug}/products`, { mode: 'cors' }),
       ])
+      
+      // Carregar tipos de atendimento do menu
+      await loadServiceTypes()
 
       // Check if response is JSON
       const storeContentType = storeRes.headers.get("content-type")
@@ -283,13 +340,13 @@ export default function PublicStorePage() {
         setProducts(productsData.data)
       }
     } catch (error) {
-      console.error("Error loading store:", error)
+
       const errorMessage = error instanceof Error ? error.message : "Erro ao carregar dados da loja"
       toast.error(errorMessage)
-    } finally {
+        } finally {
       setLoading(false)
     }
-  }, [slug, loadPaymentMethods])
+  }, [slug, loadPaymentMethods, loadServiceTypes])
 
   useEffect(() => {
     loadStoreData()
@@ -318,25 +375,19 @@ export default function PublicStorePage() {
 
   function handleProductClick(product: Product) {
     // DEBUG: Ver o produto clicado
-    // console.log('🛒 Produto clicado:', product);
-    // console.log('🔍 Variations:', product.variations);
-    // console.log('🔍 Optionals:', product.optionals);
-    
+
     // Se o produto tem variações OU opcionais, abrir modal de seleção
     const hasVariations = product.variations && product.variations.length > 0
     const hasOptionals = product.optionals && product.optionals.length > 0
-    
-    // console.log('✅ hasVariations:', hasVariations);
-    // console.log('✅ hasOptionals:', hasOptionals);
-    
+
     if (hasVariations || hasOptionals) {
-      // console.log('📱 Abrindo modal de seleção...');
+
       setSelectedProduct(product)
       setSelectedVariation(product.variations?.[0]?.id || '')
       setSelectedOptionalsQty({})
       setShowSelectionDialog(true)
     } else {
-      // console.log('➡️ Adicionando direto ao carrinho (sem opções)');
+      // ');
       // Adicionar direto ao carrinho sem variações/opcionais
       addToCart(product)
     }
@@ -664,19 +715,10 @@ export default function PublicStorePage() {
       }
 
       // Debug log to see what's being sent
-      // console.log('=== DEBUG: Order Data Being Sent ===')
-      // console.log('shippingMethod:', shippingMethod)
-      // console.log('deliveryDataToSend:', deliveryDataToSend)
-      // console.log('full orderData:', orderData)
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
       const fullUrl = `${apiUrl}/api/store/${slug}/orders`
-      
-      // console.log('=== DEBUG: Request Info ===')
-      // console.log('API URL:', apiUrl)
-      // console.log('Full URL:', fullUrl)
-      // console.log('Slug:', slug)
-      
+
       const response = await fetch(fullUrl, {
         method: "POST",
         headers: {
@@ -743,18 +785,12 @@ export default function PublicStorePage() {
         }
       }
     } catch (error) {
-      console.error("=== ERROR creating order ===")
-      console.error("Error type:", error?.constructor?.name)
-      console.error("Error details:", error)
-      
+
       let errorMessage = "Erro ao finalizar pedido"
       
       if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
         errorMessage = "Não foi possível conectar ao servidor. Verifique sua conexão com a internet ou se o servidor está online."
-        console.error("Network error - possible causes:")
-        console.error("1. Backend is not running")
-        console.error("2. CORS is not configured properly")
-        console.error("3. Wrong API_URL:", process.env.NEXT_PUBLIC_API_URL)
+
       } else if (error instanceof Error) {
         errorMessage = error.message
       }
@@ -768,13 +804,12 @@ export default function PublicStorePage() {
   }
 
   function openWhatsApp() {
-    // console.log('openWhatsApp called - orderResult:', orderResult)
-    
+
     if (orderResult?.whatsapp_link) {
-      // console.log('Opening WhatsApp link:', orderResult.whatsapp_link)
+
       window.open(orderResult.whatsapp_link, "_blank")
     } else {
-      console.error('WhatsApp link não encontrado no resultado do pedido:', orderResult)
+
       toast.error('Link do WhatsApp não disponível. Verifique se a loja possui telefone cadastrado.')
     }
   }
@@ -822,7 +857,6 @@ export default function PublicStorePage() {
   const currentOrderIdentify = orderResult?.order_id || completedOrderId || ''
   const tenantIdForReview = storeInfo?.tenant_id || storeInfo?.id || 0
 
-  
   const progressSteps = [
     { key: 'cart', label: 'Seleção de Itens', description: 'Escolha seus produtos favoritos' },
     { key: 'checkout', label: 'Dados de Entrega', description: 'Informe seus dados e endereço' },
@@ -1565,24 +1599,58 @@ export default function PublicStorePage() {
                 {/* Shipping Method */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Método de Entrega</CardTitle>
+                    <CardTitle>Tipo de Atendimento</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <RadioGroup value={shippingMethod} onValueChange={setShippingMethod}>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="delivery" id="delivery" />
-                        <Label htmlFor="delivery">Entrega no endereço</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="pickup" id="pickup" />
-                        <Label htmlFor="pickup">Retirar no local</Label>
-                      </div>
+                    <RadioGroup 
+                      value={selectedServiceType || shippingMethod} 
+                      onValueChange={(value) => {
+                        const serviceType = serviceTypes.find((st: any) => 
+                          (st.identify || st.slug) === value
+                        )
+                        if (serviceType) {
+                          setSelectedServiceType(value)
+                          const typeSlug = (serviceType.slug || serviceType.identify || '').toLowerCase()
+                          setShippingMethod(typeSlug === 'delivery' ? 'delivery' : 'pickup')
+                        } else {
+                          setShippingMethod(value)
+                        }
+                      }}
+                    >
+                      {serviceTypes.length > 0 ? (
+                        serviceTypes.map((st: any) => {
+                          const typeValue = st.identify || st.slug
+                          const typeSlug = (st.slug || st.identify || '').toLowerCase()
+                          return (
+                            <div key={typeValue} className="flex items-center space-x-2">
+                              <RadioGroupItem value={typeValue} id={typeValue} />
+                              <Label htmlFor={typeValue}>{st.name}</Label>
+                            </div>
+                          )
+                        })
+                      ) : (
+                        <>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="delivery" id="delivery" />
+                            <Label htmlFor="delivery">Entrega no endereço</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="pickup" id="pickup" />
+                            <Label htmlFor="pickup">Retirar no local</Label>
+                          </div>
+                        </>
+                      )}
                     </RadioGroup>
                   </CardContent>
                 </Card>
 
-                {/* Delivery Address */}
-                {shippingMethod === "delivery" && (
+                {/* Delivery Address - Exibir apenas se o tipo selecionado requer endereço */}
+                {(() => {
+                  const currentType = serviceTypes.find((st: any) => 
+                    (st.identify || st.slug) === selectedServiceType
+                  )
+                  const requiresAddress = currentType?.requires_address || shippingMethod === "delivery"
+                  return requiresAddress && (
                   <Card>
                     <CardHeader>
                       <CardTitle>Endereço de Entrega</CardTitle>
@@ -1697,7 +1765,8 @@ export default function PublicStorePage() {
                       </div>
                     </CardContent>
                   </Card>
-                )}
+                  )
+                })()}
 
                 {/* Payment Method */}
                 <Card>

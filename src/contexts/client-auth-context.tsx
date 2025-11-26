@@ -69,7 +69,7 @@ export function ClientAuthProvider({ children }: ClientAuthProviderProps) {
         setToken(savedToken)
         setIsAuthenticated(true)
       } catch (error) {
-        console.error('Error loading client auth:', error)
+
         localStorage.removeItem('client-auth-user')
         localStorage.removeItem('client-auth-token')
       }

@@ -154,15 +154,12 @@ export default function TenantDetailsPage() {
   const loadData = async () => {
     try {
       setIsLoading(true)
-      // console.log('🔍 Carregando detalhes do tenant:', params.id)
-      
+
       const response = await adminApi.getTenant(params.id as string)
-      // console.log('📦 Resposta completa:', response)
-      // console.log('📊 Dados do tenant:', response.data.tenant)
-      // console.log('📈 Métricas:', response.data.metrics)
-      // console.log('💰 Faturamento (count):', response.data.billing?.length || 0)
-      // console.log('🔐 Logins recentes (count):', response.data.recent_access?.length || 0)
-      // console.log('📝 Histórico de ações (count):', response.data.action_history?.length || 0)
+
+      // :', response.data.billing?.length || 0)
+      // :', response.data.recent_access?.length || 0)
+      // :', response.data.action_history?.length || 0)
       
       setData(response.data)
       
@@ -173,7 +170,7 @@ export default function TenantDetailsPage() {
         admin_notes: response.data.tenant.admin_notes || '',
       })
     } catch (error) {
-      console.error('❌ Erro ao carregar detalhes:', error)
+
       toast.error('Erro ao carregar detalhes da empresa')
     } finally {
       setIsLoading(false)
@@ -188,7 +185,7 @@ export default function TenantDetailsPage() {
       setIsEditing(false)
       await loadData()
     } catch (error) {
-      console.error('Erro ao salvar:', error)
+
       toast.error('Erro ao salvar alterações')
     } finally {
       setIsSaving(false)
@@ -208,14 +205,12 @@ export default function TenantDetailsPage() {
   const executeAction = async () => {
     try {
       const tenantId = params.id as string
-      
-      // console.log('🔧 Executando ação:', actionDialog.action, 'para tenant:', tenantId)
 
       switch (actionDialog.action) {
         case 'activate':
-          // console.log('📤 Chamando activateTenant...')
+
           const activateResponse = await adminApi.activateTenant(tenantId)
-          // console.log('✅ Resposta activate:', activateResponse)
+
           toast.success('Empresa ativada com sucesso!')
           break
         case 'suspend':
@@ -243,9 +238,9 @@ export default function TenantDetailsPage() {
             toast.error('Informe o motivo da pausa')
             return
           }
-          // console.log('📤 Chamando pauseTenantAccess...')
+
           const pauseResponse = await adminApi.pauseTenantAccess(tenantId, actionDialog.reason)
-          // console.log('✅ Resposta pause:', pauseResponse)
+
           toast.success('Acesso pausado com sucesso! A empresa não poderá fazer login.')
           break
         case 'restore':
@@ -266,7 +261,7 @@ export default function TenantDetailsPage() {
         await loadData()
       }
     } catch (error) {
-      console.error('Erro ao executar ação:', error)
+
       toast.error('Erro ao executar ação')
     }
   }

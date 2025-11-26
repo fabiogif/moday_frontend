@@ -124,8 +124,7 @@ export default function CompanySettings() {
       setTimeout(() => {
         form.setValue('city', address.city);
       }, 500);
-      
-      // console.log('Endereço da empresa preenchido:', address);
+
     }
   }
   
@@ -162,8 +161,7 @@ export default function CompanySettings() {
         if (company.city) form.setValue('city', company.city);
         if (company.state) form.setValue('state', company.state);
         if (company.zipCode) form.setValue('zipcode', company.zipCode);
-        
-        // console.log('Dados da empresa preenchidos:', company);
+
         toast.success('Dados da empresa preenchidos automaticamente!');
       }
     }
@@ -207,7 +205,7 @@ export default function CompanySettings() {
           }
         }
       } catch (error) {
-        console.error('Erro ao carregar dados da empresa:', error)
+
         toast.error('Erro ao carregar informações da empresa')
       } finally {
         setLoading(false)
@@ -324,18 +322,12 @@ export default function CompanySettings() {
         }
       }
     } catch (error: any) {
-      console.error('Erro ao atualizar empresa:', error)
-      console.error('Detalhes do erro:', {
-        message: error.message,
-        data: error.data,
-        errors: error.errors
-      })
-      
+
       // Se houver erros de validação, mostrar no console
       if (error.data?.data) {
-        console.error('Erros de validação do backend:', error.data.data)
+
         Object.entries(error.data.data).forEach(([field, messages]) => {
-          console.error(`Campo ${field}:`, messages)
+
         })
       }
       

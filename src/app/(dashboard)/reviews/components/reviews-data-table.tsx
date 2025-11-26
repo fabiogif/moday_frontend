@@ -108,21 +108,21 @@ export function ReviewsDataTable({
   const [reviewToDelete, setReviewToDelete] = useState<Review | null>(null)
 
   const handleApproveClick = useCallback((review: Review) => {
-    // // console.log('🟢 handleApproveClick chamado', review)
+    // // 
     setReviewToApprove(review)
     setApproveModalOpen(true)
-    // // console.log('🟢 Modal deve abrir agora')
+    // // 
   }, [])
 
   const handleApproveConfirm = useCallback(async () => {
     if (!reviewToApprove) return
-    // // console.log('🟢 handleApproveConfirm chamado', reviewToApprove.uuid)
+    // // 
     try {
       await onApprove(reviewToApprove.uuid)
       setApproveModalOpen(false)
       setReviewToApprove(null)
     } catch (error) {
-      console.error('❌ Erro ao aprovar:', error)
+
     }
   }, [reviewToApprove, onApprove])
 
@@ -255,8 +255,8 @@ export function ReviewsDataTable({
                   size="sm"
                   variant="outline"
                   onClick={(e) => {
-                    // // console.log('🔴 BOTÃO APROVAR CLICADO!', e)
-                    // // console.log('🔴 Review:', review)
+                    // // 
+                    // // 
                     handleApproveClick(review)
                   }}
                   title="Aprovar"
@@ -267,7 +267,7 @@ export function ReviewsDataTable({
                   size="sm"
                   variant="outline"
                   onClick={(e) => {
-                    // // console.log('🟡 BOTÃO REJEITAR CLICADO!', e)
+                    // // 
                     handleRejectClick(review)
                   }}
                   title="Rejeitar"

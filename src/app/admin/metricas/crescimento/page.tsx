@@ -63,7 +63,7 @@ export default function CrescimentoPage() {
       const response = await adminApi.getGrowthMetrics()
       setData(response.data)
     } catch (error) {
-      console.error('Erro ao carregar métricas de crescimento:', error)
+
     } finally {
       setIsLoading(false)
     }

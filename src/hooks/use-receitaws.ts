@@ -100,7 +100,7 @@ export function useReceitaWSQuiet(): {
     try {
       return await searchCompanyByCNPJ(cnpj);
     } catch (err) {
-      console.error('Erro ao buscar CNPJ:', err);
+
       return null;
     }
   }, []);

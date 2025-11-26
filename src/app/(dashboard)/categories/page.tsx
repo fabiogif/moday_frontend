@@ -6,6 +6,7 @@ import { DataTable } from "./components/data-table"
 import { useAuthenticatedCategories, useMutation } from "@/hooks/use-authenticated-api"
 import { endpoints } from "@/lib/api-client"
 import { PageLoading } from "@/components/ui/loading-progress"
+import { useAuth } from "@/contexts/auth-context"
 
 interface Category {
   id?: number
@@ -30,6 +31,7 @@ interface CategoryFormValues {
 
 export default function CategoriesPage() {
   const { data: categories, loading, error, refetch, isAuthenticated } = useAuthenticatedCategories()
+  const { isLoading: authLoading } = useAuth()
   const { mutate: createCategory, loading: creating } = useMutation()
   const { mutate: deleteCategory, loading: deleting } = useMutation()
 
@@ -46,7 +48,7 @@ export default function CategoriesPage() {
         await refetch()
       }
     } catch (error) {
-      console.error('Erro ao criar categoria:', error)
+
     }
   }
 
@@ -62,15 +64,16 @@ export default function CategoriesPage() {
         await refetch()
       }
     } catch (error) {
-      console.error('Erro ao excluir categoria:', error)
+
     }
   }
 
   const handleEditCategory = (category: Category) => {
-    // console.log("Edit category:", category)
+
   }
 
-  if (!isAuthenticated) {
+  // Só mostrar mensagem de não autenticado se não estiver carregando E não estiver autenticado
+  if (!authLoading && !isAuthenticated) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-destructive">Usuário não autenticado. Faça login para continuar.</div>

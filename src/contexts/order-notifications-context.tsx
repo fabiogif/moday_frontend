@@ -71,20 +71,15 @@ export function OrderNotificationsProvider({ children }: OrderNotificationsProvi
 
   // Callback para novos pedidos
   const handleNewOrder = useCallback((order: any) => {
-    console.log('🔔 handleNewOrder CHAMADO', { order, timestamp: new Date().toISOString() })
-    
     // Verificar se já processamos este pedido
     const orderId = order.id?.toString() || order.identify
-    console.log('🔔 Verificando duplicata:', { orderId, jaProcessado: processedOrderIdsRef.current.has(orderId) })
     
     if (processedOrderIdsRef.current.has(orderId)) {
-      console.log('⚠️ Pedido já processado, ignorando')
       return
     }
     
     // Marcar como processado
     processedOrderIdsRef.current.add(orderId)
-    console.log('✅ Pedido marcado como processado:', orderId)
 
     const notification: OrderNotification = {
       id: `order-${orderId}-${Date.now()}`,
@@ -98,19 +93,13 @@ export function OrderNotificationsProvider({ children }: OrderNotificationsProvi
 
     // Adicionar à lista de notificações
     setNotifications((prev) => [notification, ...prev].slice(0, 10)) // Manter apenas últimas 10
-
-    console.log('🔔 Notificação criada:', notification)
     
     // Reproduzir som se habilitado
     if (soundEnabled) {
-      console.log('🔊 Tocando som...')
       playNotificationSound()
-    } else {
-      console.log('🔇 Som desabilitado')
     }
 
     // Exibir toast com ação
-    console.log('📱 Exibindo toast...')
     toast(
       <div className="flex items-start gap-3 w-full">
         <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-500 text-white flex-shrink-0">
@@ -141,12 +130,6 @@ export function OrderNotificationsProvider({ children }: OrderNotificationsProvi
   }, [soundEnabled, router])
   // processedOrderIdsRef é ref, não precisa estar nas dependências
 
-  console.log('🌐 OrderNotificationsProvider:', { 
-    tenantId, 
-    enabled: !!tenantId && tenantId > 0,
-    user: user?.name || 'null'
-  })
-
   // Conectar ao WebSocket
   const { isConnected } = useRealtimeOrders({
     tenantId,
@@ -154,36 +137,19 @@ export function OrderNotificationsProvider({ children }: OrderNotificationsProvi
     enabled: !!tenantId && tenantId > 0,
   })
 
-  console.log('🔌 WebSocket status:', { isConnected })
-
   // Fallback: Polling se WebSocket não estiver disponível
   useEffect(() => {
-    console.log('⏱️ Polling useEffect:', { isConnected, tenantId })
-    
     if (isConnected || !tenantId || tenantId === 0) {
-      console.log('⏭️ Polling desabilitado:', { 
-        reason: isConnected ? 'WebSocket conectado' : 'Tenant inválido',
-        isConnected,
-        tenantId 
-      })
       return // WebSocket está funcionando, não precisa de polling
     }
-
-    console.log('⏱️ Iniciando polling (WebSocket não disponível)...')
 
     // Usar polling apenas se WebSocket falhar
     const checkForNewOrders = async () => {
       try {
         const token = localStorage.getItem('auth-token') || localStorage.getItem('token')
         if (!token) {
-          console.log('⚠️ Polling: Sem token', {
-            authToken: !!localStorage.getItem('auth-token'),
-            token: !!localStorage.getItem('token')
-          })
           return
         }
-
-        console.log('🔍 Polling: Buscando pedidos...', { hasToken: !!token })
         
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/order?per_page=1&sort=created_at&order=desc`, {
           headers: {
@@ -191,43 +157,25 @@ export function OrderNotificationsProvider({ children }: OrderNotificationsProvi
             'Accept': 'application/json',
           },
         })
-
-        console.log('📡 Polling: Resposta recebida', { status: response.status, ok: response.ok })
         
         if (response.ok) {
           const data = await response.json()
-          console.log('📦 Polling: Dados recebidos', data)
           
           // API pode retornar data.data.data (paginado) ou data.data (array direto)
           const orders = Array.isArray(data.data?.data) ? data.data.data : 
                         Array.isArray(data.data) ? data.data : []
-          
-          console.log('📋 Polling: Pedidos extraídos', { count: orders.length, orders })
-          
+                    
           if (orders.length > 0) {
             const latestOrder = orders[0]
             const orderId = latestOrder.id?.toString() || latestOrder.identify
             
             const lastCheckedOrderId = lastCheckedOrderIdRef.current
             
-            console.log('🔍 Polling: Verificando último pedido', { 
-              orderId, 
-              lastCheckedOrderId,
-              localStorage: localStorage.getItem('lastCheckedOrderId'),
-              isNewOrder: orderId !== lastCheckedOrderId,
-              alreadyProcessed: processedOrderIdsRef.current.has(orderId)
-            })
-            
             // SOLUÇÃO DEFINITIVA: Detectar por mudança de ID ao invés de timestamp
             // Se o ID do último pedido mudou, é um pedido novo
             const isNewOrder = lastCheckedOrderId !== null && orderId !== lastCheckedOrderId
             
             if (isNewOrder && !processedOrderIdsRef.current.has(orderId)) {
-              console.log('🎯🎯🎯 POLLING: NOVO PEDIDO DETECTADO (ID MUDOU)! 🎯🎯🎯', {
-                newOrderId: orderId,
-                previousOrderId: lastCheckedOrderId,
-                timestamp: new Date().toLocaleString('pt-BR')
-              })
               handleNewOrder(latestOrder)
               
               // Salvar imediatamente no localStorage e ref
@@ -235,45 +183,27 @@ export function OrderNotificationsProvider({ children }: OrderNotificationsProvi
               lastCheckedOrderIdRef.current = orderId
               
               // Disparar atualização da lista de pedidos
-              console.log('🔄 Disparando refresh da lista de pedidos...')
               triggerRefresh()
             } else if (lastCheckedOrderId === null) {
               // Primeira verificação - não notificar, apenas registrar
-              console.log('📝 Polling: Primeira verificação, registrando último pedido:', orderId)
               // Salvar no localStorage e ref
               localStorage.setItem('lastCheckedOrderId', orderId)
               lastCheckedOrderIdRef.current = orderId
-            } else if (processedOrderIdsRef.current.has(orderId)) {
-              console.log('⏭️ Polling: Pedido já foi processado (não notificar novamente)', {
-                orderId,
-                lastCheckedOrderId
-              })
-            } else {
-              console.log('⏭️ Polling: Mesmo pedido da última verificação', {
-                orderId,
-                lastCheckedOrderId,
-                idsIguais: orderId === lastCheckedOrderId
-              })
             }
           }
-        } else {
-          console.log('❌ Polling: Resposta não OK', response.status)
         }
       } catch (error) {
-        console.error('❌ Polling: Erro', error)
+        // Erro silencioso no polling
       }
     }
 
     // Fazer primeira checagem imediatamente
-    console.log('⚡ Polling: Fazendo primeira checagem imediata...')
     checkForNewOrders()
     
     // Polling a cada 5 segundos
-    console.log('⏱️ Polling: Interval configurado (5s)')
     const interval = setInterval(checkForNewOrders, 5000)
     
     return () => {
-      console.log('🛑 Polling: Limpando interval')
       clearInterval(interval)
     }
   }, [isConnected, tenantId, handleNewOrder])

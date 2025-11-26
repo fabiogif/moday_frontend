@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -23,6 +24,8 @@ export default function DashboardLayout({
   const [themeCustomizerOpen, setThemeCustomizerOpen] = React.useState(false);
   const [notificationsSidebarOpen, setNotificationsSidebarOpen] = React.useState(false);
   const { config } = useSidebarConfig();
+  const pathname = usePathname();
+  const hideFooter = pathname?.startsWith("/pdv");
   
   // Sincronizar autenticação entre AuthContext e ApiClient
   useAuthSync();
@@ -57,7 +60,7 @@ export default function DashboardLayout({
                 </div>
               </div>
             </div>
-            <SiteFooter />
+            {!hideFooter && <SiteFooter />}
           </SidebarInset>
         </>
       ) : (
@@ -74,7 +77,7 @@ export default function DashboardLayout({
                 </div>
               </div>
             </div>
-            <SiteFooter />
+            {!hideFooter && <SiteFooter />}
           </SidebarInset>
           <AppSidebar
             variant={config.variant}

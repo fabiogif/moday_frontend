@@ -9,6 +9,7 @@ import {
   Building2,
 } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 
 import { Logo } from "@/components/logo"
@@ -39,10 +40,11 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const { logout } = useAuth()
+  const router = useRouter()
 
   const handleLogout = () => {
     logout()
-    window.location.href = '/login'
+    router.push('/login')
   }
 
   return (

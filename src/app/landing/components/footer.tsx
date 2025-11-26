@@ -41,7 +41,7 @@ export function LandingFooter() {
 
   function onSubmit(values: z.infer<typeof newsletterSchema>) {
     // Here you would typically send the email to your newsletter service
-    // console.log(values)
+
     // Show success message and reset form
     form.reset()
   }

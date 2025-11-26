@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
   } catch (error: any) {
-    console.error('Erro ao processar contato:', error)
+
     return NextResponse.json(
       { message: error.message || 'Erro ao enviar mensagem' },
       { status: 500 }

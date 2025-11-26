@@ -140,7 +140,7 @@ export function ProductRecommendations({
           setRecommendedProducts(getLocalRecommendations)
         }
       } catch (error) {
-        console.error('Erro ao buscar recomendações:', error)
+
         // Fallback: usar lógica local se a API falhar
         setRecommendedProducts(getLocalRecommendations)
       } finally {
@@ -150,7 +150,6 @@ export function ProductRecommendations({
 
     fetchRecommendations()
   }, [cartProductIds.join(','), getLocalRecommendations]) // Dependência baseada em string para evitar re-renders desnecessários
-
 
   // Não mostrar se não houver recomendações ou se o carrinho estiver vazio
   if ((recommendedProducts.length === 0 && !loading) || cart.length === 0) {

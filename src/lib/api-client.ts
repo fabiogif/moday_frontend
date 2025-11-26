@@ -44,12 +44,17 @@ class ApiClient {
         const cookies = document.cookie.split(';')
         const authCookie = cookies.find(cookie => cookie.trim().startsWith('auth-token='))
         if (authCookie) {
-          this.token = authCookie.split('=')[1]
+          this.token = authCookie.split('=')[1]?.trim()
         }
       }
       
-      if (process.env.NODE_ENV === 'development') {
-        // console.log('ApiClient: Token carregado:', this.token ? 'Sim' : 'Não')
+      // Debug em desenvolvimento
+      if (process.env.NODE_ENV === 'development' && this.token) {
+        console.log('[ApiClient] Token carregado:', {
+          hasToken: !!this.token,
+          tokenLength: this.token.length,
+          tokenPreview: this.token.substring(0, 20) + '...'
+        })
       }
     }
   }
@@ -60,9 +65,6 @@ class ApiClient {
       localStorage.setItem('auth-token', token)
       // Também salvar no cookie para sincronizar com AuthContext
       document.cookie = `auth-token=${token}; path=/; max-age=${2 * 60 * 60}`
-    }
-    if (process.env.NODE_ENV === 'development') {
-      // console.log('ApiClient: Token definido:', token ? 'Sim' : 'Não')
     }
   }
 
@@ -85,8 +87,21 @@ class ApiClient {
     }
   }
 
-  private getHeaders(isFormData = false): HeadersInit {
-    const headers: HeadersInit = {
+  private getHeaders(isFormData = false): Record<string, string> {
+    // SEMPRE verificar localStorage primeiro antes de construir headers
+    // Isso garante que o token mais recente seja usado
+    if (typeof window !== 'undefined') {
+      const tokenFromStorage = localStorage.getItem('auth-token')
+      if (tokenFromStorage) {
+        // Se encontrou token no storage, usar ele (pode ser mais recente)
+        this.token = tokenFromStorage
+      } else if (!this.token) {
+        // Se não encontrou no storage e não tem token, tentar recarregar
+        this.reloadToken()
+      }
+    }
+    
+    const headers: Record<string, string> = {
       'Accept': 'application/json',
       'X-Requested-With': 'XMLHttpRequest',
     }
@@ -97,7 +112,17 @@ class ApiClient {
     }
 
     if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`
+      headers['Authorization'] = `Bearer ${this.token}`
+    } else {
+      // Log apenas em desenvolvimento para debug
+      if (process.env.NODE_ENV === 'development') {
+        const tokenCheck = typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null
+        console.warn('[ApiClient] Token não encontrado para requisição', {
+          hasTokenInInstance: !!this.token,
+          hasTokenInStorage: !!tokenCheck,
+          storageTokenLength: tokenCheck?.length || 0
+        })
+      }
     }
 
     return headers
@@ -117,14 +142,13 @@ class ApiClient {
       const data = await response.json()
 
       if (!response.ok) {
-        // Log amigável apenas em desenvolvimento
-        if (process.env.NODE_ENV === 'development') {
-          console.group(`🔴 Erro ${response.status} - ${response.statusText}`)
-          // console.log('Mensagem:', data.message || 'Sem mensagem')
-          if (data.errors) {
-            // console.log('Erros de validação:', data.errors)
+        // Se for erro de autenticação (401), limpar token e redirecionar
+        if (response.status === 401) {
+          this.clearToken()
+          // Disparar evento para o AuthContext limpar estado
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('auth:unauthorized'))
           }
-          console.groupEnd()
         }
         
         const error: ApiError = {
@@ -139,13 +163,6 @@ class ApiClient {
 
       return data as ApiResponse<T>
     } catch (parseError) {
-      if (parseError instanceof Error && parseError.message.includes('JSON')) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('⚠️ Resposta não é JSON válido. Status:', response.status)
-          const text = await response.text()
-          console.error('Conteúdo:', text.substring(0, 200))
-        }
-      }
       throw parseError
     }
   }
@@ -161,13 +178,38 @@ class ApiClient {
       })
     }
 
+    // Garantir que o token está carregado antes de construir headers
+    // SEMPRE verificar localStorage primeiro, pois é a fonte mais confiável
+    if (typeof window !== 'undefined') {
+      const tokenFromStorage = localStorage.getItem('auth-token')
+      if (tokenFromStorage) {
+        // Se encontrou token no storage e é diferente do atual, atualizar
+        if (tokenFromStorage !== this.token) {
+          this.token = tokenFromStorage
+        }
+      } else if (!this.token) {
+        // Se não encontrou no storage e não tem token, tentar recarregar
+        this.reloadToken()
+      }
+    }
+    
+    const headers = this.getHeaders(false)
+    
+    // Debug: verificar token em desenvolvimento
     if (process.env.NODE_ENV === 'development') {
-      // console.log('ApiClient: GET:', url.toString())
+      const tokenFromStorage = typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null
+      console.log('[ApiClient GET]', {
+        url: url.toString(),
+        hasToken: !!this.token,
+        tokenLength: this.token?.length || 0,
+        tokenFromStorage: tokenFromStorage ? `${tokenFromStorage.substring(0, 20)}...` : 'null',
+        authorizationHeader: headers.Authorization ? 'Bearer ***' : 'missing'
+      })
     }
 
     const response = await fetch(url.toString(), {
       method: 'GET',
-      headers: this.getHeaders(false),
+      headers,
       credentials: 'include', // Importante para cookies
     })
 
@@ -176,10 +218,6 @@ class ApiClient {
 
   async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     const isFormData = data instanceof FormData
-    
-    if (process.env.NODE_ENV === 'development') {
-      // console.log('ApiClient: POST:', `${this.baseURL}${endpoint}`, 'isFormData:', isFormData)
-    }
 
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: 'POST',
@@ -300,6 +338,17 @@ export const endpoints = {
     show: (id: string) => `/api/table/${id}`,
     update: (id: number) => `/api/table/${id}`,
     delete: (id: string) => `/api/table/${id}`,
+  },
+  
+  // Tipos de Atendimento
+  serviceTypes: {
+    list: '/api/service-type',
+    active: '/api/service-type/active',
+    menu: '/api/service-type/menu',
+    create: '/api/service-type',
+    show: (identify: string) => `/api/service-type/${identify}`,
+    update: (id: number) => `/api/service-type/${id}`,
+    delete: (identify: string) => `/api/service-type/${identify}`,
   },
   
   // Usuários

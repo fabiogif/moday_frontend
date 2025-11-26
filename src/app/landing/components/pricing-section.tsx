@@ -42,7 +42,7 @@ export function PricingSection() {
           setPlans(plansWithNumberPrice)
         }
       } catch (error) {
-        console.error('Erro ao carregar planos:', error)
+
         // Se falhar, usa planos estáticos como fallback
         setPlans([
           {

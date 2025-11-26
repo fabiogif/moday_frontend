@@ -70,7 +70,7 @@ export const playNotificationSound = async () => {
     oscillator2.stop(now + delay + 0.25)
 
   } catch (error) {
-    console.error('Erro ao reproduzir som de notificação:', error)
+
   }
 }
 
@@ -108,7 +108,7 @@ export const playUrgentSound = async () => {
     })
 
   } catch (error) {
-    console.error('Erro ao reproduzir som urgente:', error)
+
   }
 }
 

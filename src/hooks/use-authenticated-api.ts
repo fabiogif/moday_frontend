@@ -26,7 +26,7 @@ export function useAuthenticatedApi<T>(
   options: { immediate?: boolean; queryParams?: Record<string, any> } = {}
 ): UseAuthenticatedApiState<T> {
   const { immediate = true, queryParams = {} } = options
-  const { token, isAuthenticated } = useAuth()
+  const { token, isAuthenticated, isLoading: authLoading } = useAuth()
   
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(false)
@@ -42,13 +42,28 @@ export function useAuthenticatedApi<T>(
   const queryParamsKey = useMemo(() => JSON.stringify(queryParams), [queryParams])
 
   const fetchData = useCallback(async () => {
+    // Aguardar o AuthContext terminar de carregar antes de verificar autenticação
+    if (authLoading) {
+      return
+    }
+    
     if (!isAuthenticated || !token) {
       setError('Usuário não autenticado')
       return
     }
 
     // Garantir que o token está no ApiClient
-    apiClient.setToken(token)
+    // Primeiro verifica se há token no localStorage (mais confiável)
+    if (typeof window !== 'undefined') {
+      const tokenFromStorage = localStorage.getItem('auth-token')
+      if (tokenFromStorage) {
+        apiClient.setToken(tokenFromStorage)
+      } else {
+        apiClient.setToken(token)
+      }
+    } else {
+      apiClient.setToken(token)
+    }
 
     setLoading(true)
     setError(null)
@@ -123,20 +138,25 @@ export function useAuthenticatedApi<T>(
     } finally {
       setLoading(false)
     }
-  }, [endpoint, isAuthenticated, token, queryParamsKey])
+  }, [endpoint, isAuthenticated, token, authLoading, queryParamsKey])
 
   useEffect(() => {
-    if (immediate && isAuthenticated && token) {
+    // Só fazer fetch quando não estiver carregando autenticação e estiver autenticado
+    if (immediate && !authLoading && isAuthenticated && token) {
       fetchData()
     }
-  }, [immediate, isAuthenticated, token, fetchData])
+  }, [immediate, authLoading, isAuthenticated, token, fetchData])
+
+  // Retornar isAuthenticated como false apenas se não estiver carregando E não estiver autenticado
+  // Isso evita mostrar "não autenticado" durante o carregamento inicial
+  const effectiveIsAuthenticated = authLoading ? true : isAuthenticated
 
   return { 
     data, 
     loading, 
     error, 
     refetch: fetchData,
-    isAuthenticated,
+    isAuthenticated: effectiveIsAuthenticated,
     pagination: pagination || undefined
   }
 }
@@ -192,6 +212,18 @@ export function useAuthenticatedTables() {
 
 export function useAuthenticatedPlans() {
   return useAuthenticatedApi(endpoints.plans.list, { immediate: true })
+}
+
+export function useAuthenticatedServiceTypes() {
+  return useAuthenticatedApi(endpoints.serviceTypes.list, { immediate: true })
+}
+
+export function useAuthenticatedActiveServiceTypes() {
+  return useAuthenticatedApi(endpoints.serviceTypes.active, { immediate: true })
+}
+
+export function useAuthenticatedMenuServiceTypes() {
+  return useAuthenticatedApi(endpoints.serviceTypes.menu, { immediate: true })
 }
 
 export function useAuthenticatedTableStats() {
@@ -284,8 +316,9 @@ export function useMutation<T, P = any>() {
       throw new Error('Usuário não autenticado')
     }
 
-    // Garantir que o token está no ApiClient
+    // Garantir que o token está no ApiClient e recarregar do localStorage se necessário
     apiClient.setToken(token)
+    apiClient.reloadToken() // Forçar recarga do token para garantir sincronização
 
     setLoading(true)
     setError(null)
@@ -324,14 +357,7 @@ export function useMutation<T, P = any>() {
     } catch (err: any) {
       // Log detalhado apenas em desenvolvimento
       if (process.env.NODE_ENV === 'development') {
-        console.group('🔴 AuthenticatedMutation: Erro na Requisição')
-        // console.log('Tipo:', err?.constructor?.name || typeof err)
-        // console.log('Mensagem:', err?.message || 'Sem mensagem')
-        // console.log('Data:', err?.data)
-        // console.log('Errors:', err?.errors)
-        // console.log('Status:', err?.status)
-        // console.log('Erro completo:', err)
-        console.groupEnd()
+
       }
       
       let errorMessage = 'Erro na requisição'
@@ -388,8 +414,9 @@ export function useMutationWithValidation<T, P = any>(
       return null
     }
 
-    // Garantir que o token está no ApiClient
+    // Garantir que o token está no ApiClient e recarregar do localStorage se necessário
     apiClient.setToken(token)
+    apiClient.reloadToken() // Forçar recarga do token para garantir sincronização
 
     setLoading(true)
     setError(null)
@@ -418,12 +445,10 @@ export function useMutationWithValidation<T, P = any>(
         return null
       }
     } catch (err: any) {
-      console.error('AuthenticatedMutation: Erro na requisição:', err)
-      
+
       // Tratar erros de validação do backend
       if (err.data && err.data.data) {
-        console.error('AuthenticatedMutation: Erros de validação:', err.data.data)
-        
+
         // Mapear erros para campos do formulário
         Object.entries(err.data.data).forEach(([field, messages]) => {
           const fieldName = fieldMapping?.[field] || field

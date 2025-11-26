@@ -86,7 +86,7 @@ export default function AdminDashboardPage() {
       setStats(statsResponse.data)
       setAlerts(alertsResponse.data)
     } catch (error) {
-      console.error('Erro ao carregar dashboard:', error)
+
     } finally {
       setIsLoading(false)
     }

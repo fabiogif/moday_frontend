@@ -64,53 +64,51 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const savedToken = localStorage.getItem('auth-token')
     const savedTrialStatus = localStorage.getItem('trial-status')
     
-    if (process.env.NODE_ENV === 'development') {
-      // console.log('AuthContext: Inicializando autenticação')
-      // console.log('AuthContext: Token presente?', !!savedToken)
-      // console.log('AuthContext: Token é JWT?', savedToken?.startsWith('eyJ'))
-    }
-    
     if (savedUser && savedToken) {
-      // Validar se o token parece ser um JWT válido
-      if (!savedToken.startsWith('eyJ')) {
-        console.error('AuthContext: Token inválido encontrado (não é JWT). Limpando...')
+      try {
+        const userData = JSON.parse(savedUser)
+        setUser(userData)
+        setToken(savedToken)
+        setIsAuthenticated(true)
+          
+        // Recuperar trial status se existir
+        if (savedTrialStatus) {
+          try {
+            const trialData = JSON.parse(savedTrialStatus)
+            setTrialStatus(trialData)
+          } catch (error) {
+            // Ignorar erro ao parsear trial status
+          }
+        }
+        
+        // Also set the token in apiClient
+        apiClient.setToken(savedToken)
+      } catch (error) {
+        // Limpar dados inválidos
         localStorage.removeItem('auth-user')
         localStorage.removeItem('auth-token')
         localStorage.removeItem('trial-status')
-        document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-      } else {
-        try {
-          const userData = JSON.parse(savedUser)
-          setUser(userData)
-          setToken(savedToken)
-          setIsAuthenticated(true)
-          
-          // Recuperar trial status se existir
-          if (savedTrialStatus) {
-            try {
-              const trialData = JSON.parse(savedTrialStatus)
-              setTrialStatus(trialData)
-            } catch (error) {
-              console.error('Erro ao recuperar trial status:', error)
-            }
-          }
-          
-          // Also set the token in apiClient
-          apiClient.setToken(savedToken)
-          
-          if (process.env.NODE_ENV === 'development') {
-            // console.log('AuthContext: Autenticação restaurada com sucesso')
-          }
-        } catch (error) {
-          console.error('Erro ao recuperar dados de autenticação:', error)
-          localStorage.removeItem('auth-user')
-          localStorage.removeItem('auth-token')
-          localStorage.removeItem('trial-status')
-        }
       }
     }
     
     setIsLoading(false)
+
+    // Ouvir eventos de autenticação não autorizada
+    const handleUnauthorized = () => {
+      setUser(null)
+      setToken(null)
+      setIsAuthenticated(false)
+      setTrialStatus(null)
+      localStorage.removeItem('auth-user')
+      localStorage.removeItem('auth-token')
+      localStorage.removeItem('trial-status')
+    }
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized)
+    
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized)
+    }
   }, [])
 
   const login = async (email: string, password: string) => {
@@ -134,30 +132,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       const result = await response.json()
       const data = result.data // Extract the data object from the response
-      
-      if (process.env.NODE_ENV === 'development') {
-        // console.log('AuthContext: Login bem-sucedido')
-        // console.log('AuthContext: Token recebido?', !!data.token)
-        // console.log('AuthContext: Token é JWT?', data.token?.startsWith('eyJ'))
-        // console.log('AuthContext: Trial status:', data.trial_status)
-      }
-      
-      setUser(data.user)
-      setToken(data.token) // Armazenar o token JWT recebido
-      setIsAuthenticated(true)
-
-      // Salvar trial status se presente
-      if (data.trial_status) {
-        setTrialStatus(data.trial_status)
-        localStorage.setItem('trial-status', JSON.stringify(data.trial_status))
-      }
 
       // Salvar dados do usuário e token
       localStorage.setItem('auth-user', JSON.stringify(data.user))
       localStorage.setItem('auth-token', data.token)
       
+      // IMPORTANTE: Atualizar o estado do contexto após login bem-sucedido
+      setUser(data.user)
+      setToken(data.token)
+      setIsAuthenticated(true)
+      
       // Also set the token in apiClient
       apiClient.setToken(data.token)
+      apiClient.reloadToken() // Forçar recarga para garantir sincronização
       
       // Também salvar no cookie para compatibilidade
       document.cookie = `auth-token=${data.token}; path=/; max-age=${2 * 60 * 60}`
@@ -180,7 +167,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         },
       })
     } catch (error) {
-      console.error('Erro ao fazer logout no backend:', error)
+
     } finally {
       setUser(null)
       setToken(null)
@@ -222,7 +209,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       }
     } catch (error) {
-      console.error('Erro ao atualizar trial status:', error)
+
     }
   }
 

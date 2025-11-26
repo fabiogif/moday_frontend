@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useAuth } from "@/contexts/auth-context"
 import { useRealtimeDashboard } from "@/hooks/use-realtime-dashboard"
 import { useAuthenticatedApi } from "@/hooks/use-authenticated-api"
+import { apiClient } from "@/lib/api-client"
 
 interface MetricData {
   value: number
@@ -34,7 +35,7 @@ interface MetricsData {
 }
 
 export function MetricsOverview() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading, token } = useAuth()
   const [metrics, setMetrics] = useState<MetricsData | null>(null)
 
   // Use authenticated API hook for metrics
@@ -42,13 +43,21 @@ export function MetricsOverview() {
     '/api/dashboard/metrics',
     { immediate: false }
   )
+  
+  // Garantir que o token está no apiClient antes de fazer refetch
+  useEffect(() => {
+    if (token) {
+      apiClient.setToken(token)
+      apiClient.reloadToken()
+    }
+  }, [token])
 
   // Real-time updates via WebSocket
   const { isConnected } = useRealtimeDashboard({
     tenantId: user?.tenant_id ? parseInt(user.tenant_id) : 0,
     enabled: isAuthenticated && !!user?.tenant_id,
     onMetricsUpdate: (data) => {
-      // console.log('Dashboard metrics updated in real-time:', data)
+
       refetch() // Reload when update received
     }
   })

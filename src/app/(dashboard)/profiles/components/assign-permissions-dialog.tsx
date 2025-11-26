@@ -89,7 +89,7 @@ export function AssignPermissionsDialog({
         setSelectedPermissions(permissions.map((p: Permission) => p.id))
       }
     } catch (error) {
-      console.error('Erro ao carregar permissões do perfil:', error)
+
     }
   }
 
@@ -117,7 +117,7 @@ export function AssignPermissionsDialog({
     if (!profile) return
 
     try {
-      // console.log('Vinculando permissões:', { profileId: profile.id, permissionIds: selectedPermissions })
+
       const result = await syncPermissions(
         endpoints.profiles.syncPermissions(profile.id),
         'PUT',
@@ -130,7 +130,7 @@ export function AssignPermissionsDialog({
         onOpenChange(false)
       }
     } catch (error: any) {
-      console.error('Erro ao vincular permissões:', error)
+
       toast.error(error.message || 'Erro ao vincular permissões')
     }
   }

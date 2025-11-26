@@ -36,7 +36,7 @@ export function StoreHoursBanner({ slug, onStatusChange }: StoreHoursBannerProps
           }
         }
       } catch (error) {
-        console.error('Erro ao verificar horário:', error)
+
         // Em caso de erro, assumir que está aberto (não bloquear loja)
         if (onStatusChange) {
           onStatusChange(true)

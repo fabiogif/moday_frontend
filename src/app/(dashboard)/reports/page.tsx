@@ -66,12 +66,7 @@ export default function ReportsPage() {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
       const fullUrl = `${API_URL}${endpoint}`
       const token = apiClient.getToken()
-      
-      // console.log('🔍 Gerando relatório:')
-      // console.log('  URL:', fullUrl)
-      // console.log('  Token:', token ? 'Presente' : 'Ausente')
-      // console.log('  Filtros:', filters)
-      
+
       if (!token) {
         throw new Error('Você precisa estar logado para gerar relatórios')
       }
@@ -87,18 +82,16 @@ export default function ReportsPage() {
         body: JSON.stringify(filters),
       })
 
-      // console.log('📡 Resposta:', response.status, response.statusText)
-
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('❌ Erro na resposta:', errorText)
+
         let errorMessage = 'Erro ao gerar relatório'
         
         try {
           const errorJson = JSON.parse(errorText)
           errorMessage = errorJson.message || errorMessage
         } catch (e) {
-          console.error('Erro ao parsear resposta:', errorText)
+
         }
         
         throw new Error(errorMessage)
@@ -123,7 +116,7 @@ export default function ReportsPage() {
       
       toast.success('Relatório gerado com sucesso!')
     } catch (error: any) {
-      console.error('Erro ao gerar relatório:', error)
+
       toast.error(error.message || 'Erro ao gerar relatório')
     } finally {
       setLoading(false)

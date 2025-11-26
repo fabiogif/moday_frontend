@@ -78,7 +78,7 @@ export async function searchAddressByCEP(cep: string): Promise<AddressData | nul
       uf: data.uf || '',
     };
   } catch (error) {
-    console.error('Erro ao buscar CEP:', error);
+
     throw error;
   }
 }

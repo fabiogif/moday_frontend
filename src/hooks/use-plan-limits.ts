@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { apiClient, endpoints } from '@/lib/api-client'
+import { useAuth } from '@/contexts/auth-context'
 
 export interface PlanLimitData {
   has_limit_reached: boolean
@@ -50,12 +51,35 @@ export function usePlanLimits(): UsePlanLimitsState {
   const [data, setData] = useState<PlanLimitData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { token, isAuthenticated, isLoading: authLoading } = useAuth()
 
   const fetchLimits = useCallback(async () => {
+    // Não fazer requisição se não estiver autenticado ou ainda estiver carregando
+    if (!isAuthenticated || authLoading || !token) {
+      return
+    }
+
     setLoading(true)
     setError(null)
 
     try {
+      // Garantir que o token está carregado antes da requisição
+      // Verificar diretamente no localStorage primeiro
+      if (typeof window !== 'undefined') {
+        const tokenFromStorage = localStorage.getItem('auth-token')
+        if (tokenFromStorage) {
+          apiClient.setToken(tokenFromStorage)
+        } else if (token) {
+          apiClient.setToken(token)
+        } else {
+          apiClient.reloadToken()
+        }
+      } else if (token) {
+        apiClient.setToken(token)
+      } else {
+        apiClient.reloadToken()
+      }
+      
       const response = await apiClient.get<PlanLimitData>(endpoints.planLimits.check)
 
       if (response.success) {
@@ -68,18 +92,21 @@ export function usePlanLimits(): UsePlanLimitsState {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [isAuthenticated, authLoading, token])
 
   useEffect(() => {
-    fetchLimits()
-
-    // Verificar a cada 5 minutos
-    const interval = setInterval(() => {
+    // Só executar quando estiver autenticado e o token estiver disponível
+    if (!authLoading && isAuthenticated && token) {
       fetchLimits()
-    }, 5 * 60 * 1000)
 
-    return () => clearInterval(interval)
-  }, [fetchLimits])
+      // Verificar a cada 5 minutos
+      const interval = setInterval(() => {
+        fetchLimits()
+      }, 5 * 60 * 1000)
+
+      return () => clearInterval(interval)
+    }
+  }, [fetchLimits, authLoading, isAuthenticated, token])
 
   return {
     hasLimitReached: data?.has_limit_reached ?? false,

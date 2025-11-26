@@ -172,7 +172,7 @@ export function StoreHourFormDialog({
 
       return { hasOverlap: false }
     } catch (error) {
-      console.error('Erro ao verificar sobreposição:', error)
+
       return { hasOverlap: false }
     }
   }

@@ -109,7 +109,7 @@ export function RegisterForm({
           setPlans(plansWithNumberPrice)
         }
       } catch (error) {
-        console.error('Erro ao carregar planos:', error)
+
         toast({
           title: "Erro",
           description: "Não foi possível carregar os planos. Tente novamente.",
@@ -181,8 +181,7 @@ export function RegisterForm({
         }
       }
     } catch (error: any) {
-      console.error('Erro no cadastro:', error)
-      
+
       const errorMessage = error.message || "Erro ao realizar cadastro. Tente novamente."
       
       toast({

@@ -102,9 +102,7 @@ export async function searchCompanyByCNPJ(cnpj: string): Promise<CompanyData | n
     if (cleanCNPJ.length !== 14) {
       throw new Error('CNPJ deve ter 14 dígitos');
     }
-    
-    // console.log('Consultando CNPJ na ReceitaWS:', cleanCNPJ);
-    
+
     // Faz requisição para ReceitaWS
     const response = await fetch(`https://www.receitaws.com.br/v1/cnpj/${cleanCNPJ}`, {
       method: 'GET',
@@ -118,12 +116,10 @@ export async function searchCompanyByCNPJ(cnpj: string): Promise<CompanyData | n
     }
     
     const data: ReceitaWSResponse = await response.json();
-    
-    // console.log('Resposta ReceitaWS:', data);
-    
+
     // Verifica se retornou erro
     if (data.status === 'ERROR' || data.message) {
-      console.error('Erro na consulta:', data.message);
+
       return null;
     }
     
@@ -154,7 +150,7 @@ export async function searchCompanyByCNPJ(cnpj: string): Promise<CompanyData | n
       naturezaJuridica: data.natureza_juridica || '',
     };
   } catch (error) {
-    console.error('Erro ao buscar CNPJ:', error);
+
     throw error;
   }
 }

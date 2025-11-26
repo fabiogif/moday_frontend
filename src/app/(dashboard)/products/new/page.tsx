@@ -160,8 +160,7 @@ export default function NewProductPage() {
         router.push('/products');
       }
     } catch (error: any) {
-      console.error('Erro ao criar produto:', error);
-      
+
       const handled = handleBackendErrors(error, commonFieldMappings as any);
       
       if (!handled) {
@@ -536,7 +535,6 @@ export default function NewProductPage() {
                 />
               </CardContent>
             </Card>
-
 
             {/* Imagem */}
             <Card>

@@ -1,3 +1,4 @@
+import React from 'react'
 import { screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { render, generateClient } from '../utils/test-utils'

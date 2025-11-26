@@ -29,17 +29,11 @@ export default function ContasBancariasPage() {
       if (response.success && response.data) {
         setAccounts(response.data)
       } else {
-        console.warn('Resposta sem dados:', response)
+
         setAccounts([])
       }
     } catch (error: any) {
-      console.error('Erro ao carregar contas:', {
-        error,
-        message: error?.message,
-        response: error?.response?.data,
-        stack: error?.stack
-      })
-      
+
       const errorMessage = error?.response?.data?.message || 
                           error?.message || 
                           'Erro ao carregar contas bancárias'
@@ -61,7 +55,7 @@ export default function ContasBancariasPage() {
       toast.success('Conta bancária excluída com sucesso!')
       await loadAccounts()
     } catch (error: any) {
-      console.error('Erro ao excluir:', error)
+
       toast.error(error.message || 'Erro ao excluir conta bancária')
     }
   }
@@ -72,7 +66,7 @@ export default function ContasBancariasPage() {
       toast.success('Conta definida como principal!')
       await loadAccounts()
     } catch (error: any) {
-      console.error('Erro ao definir como principal:', error)
+
       toast.error(error.message || 'Erro ao definir conta como principal')
     }
   }

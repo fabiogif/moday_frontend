@@ -47,7 +47,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
           setAdmin(JSON.parse(storedAdmin))
         }
       } catch (error) {
-        console.error('Erro ao carregar dados do admin:', error)
+
       } finally {
         setIsLoading(false)
       }
@@ -60,10 +60,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      
-      // console.log('🔍 API URL:', apiUrl)
-      // console.log('🔍 Full URL:', `${apiUrl}/api/admin/auth/login`)
-      
+
       const response = await fetch(`${apiUrl}/api/admin/auth/login`, {
         method: 'POST',
         headers: {
@@ -92,7 +89,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
       router.push('/admin/dashboard')
     } catch (error) {
-      console.error('Erro no login:', error)
+
       throw error
     }
   }
@@ -116,7 +113,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('admin-user', JSON.stringify(adminData))
       }
     } catch (error) {
-      console.error('Erro ao buscar dados do admin:', error)
+
     }
   }
 
@@ -134,7 +131,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         })
       }
     } catch (error) {
-      console.error('Erro ao fazer logout:', error)
+
     } finally {
       // Limpa dados locais
       localStorage.removeItem('admin-token')
@@ -170,7 +167,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         logout()
       }
     } catch (error) {
-      console.error('Erro ao renovar token:', error)
+
       logout()
     }
   }
