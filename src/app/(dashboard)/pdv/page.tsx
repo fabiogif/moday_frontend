@@ -873,13 +873,54 @@ export default function POSPage() {
   
   // Obter tipo de atendimento selecionado
   const currentServiceType = useMemo(() => {
-    if (!selectedServiceType) {
-      // Determinar tipo baseado no estado atual
-      if (isDelivery) return serviceTypes.find((st: any) => (st.slug || st.identify) === 'delivery')
-      if (selectedTable) return serviceTypes.find((st: any) => (st.slug || st.identify) === 'table')
-      return serviceTypes.find((st: any) => (st.slug || st.identify) === 'counter')
+    if (!serviceTypes || serviceTypes.length === 0) return null
+
+    // Se já existe um tipo selecionado, priorizar esse
+    if (selectedServiceType) {
+      const match = serviceTypes.find(
+        (st: any) =>
+          (st.identify || st.slug || "").toLowerCase() ===
+          selectedServiceType.toLowerCase()
+      )
+      if (match) return match
     }
-    return serviceTypes.find((st: any) => (st.identify || st.slug) === selectedServiceType)
+
+    // Determinar tipo baseado no estado atual e na configuração dos tipos
+    if (isDelivery) {
+      return (
+        serviceTypes.find(
+          (st: any) =>
+            (st.slug || st.identify || "").toLowerCase() === "delivery" ||
+            st.requires_address
+        ) || null
+      )
+    }
+
+    if (selectedTable) {
+      return (
+        serviceTypes.find(
+          (st: any) =>
+            st.requires_table ||
+            ["table", "mesa"].includes(
+              (st.slug || st.identify || "").toLowerCase()
+            )
+        ) || null
+      )
+    }
+
+    // Fallback: atendimento de balcão
+    return (
+      serviceTypes.find(
+        (st: any) =>
+          !st.requires_address &&
+          !st.requires_table &&
+          ["counter", "balcao"].includes(
+            (st.slug || st.identify || "").toLowerCase()
+          )
+      ) ||
+      serviceTypes[0] ||
+      null
+    )
   }, [selectedServiceType, isDelivery, selectedTable, serviceTypes])
   
   // Determinar se precisa de endereço baseado no tipo de atendimento
@@ -2599,20 +2640,12 @@ const handleClientChange = (value: string) => {
                     <span className="xs:hidden">Atend.</span>
                   </TabsTrigger>
                   <TabsTrigger
-                    value="client"
-                    className="cursor-pointer flex items-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+                  value="client"
+                  className="cursor-pointer flex items-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
                   >
                     <User className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
                     <span className="hidden xs:inline truncate">Cliente</span>
                     <span className="xs:hidden">Cliente</span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="items"
-                    className="cursor-pointer flex items-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
-                  >
-                    <ShoppingCartIcon className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-                    <span className="hidden xs:inline truncate">Carrinho</span>
-                    <span className="xs:hidden">Carr.</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="payment"
@@ -2621,6 +2654,14 @@ const handleClientChange = (value: string) => {
                     <CreditCardIcon className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
                     <span className="hidden xs:inline truncate">Pagamento</span>
                     <span className="xs:hidden">Pag.</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                  value="items"
+                  className="cursor-pointer flex items-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+                  >
+                    <ShoppingCartIcon className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="hidden xs:inline truncate">Carrinho</span>
+                    <span className="xs:hidden">Carr.</span>
                   </TabsTrigger>
                 </TabsList>
                 <div className="flex-1 min-h-0 mt-2 overflow-y-auto pr-3 max-h-full">
@@ -2640,13 +2681,14 @@ const handleClientChange = (value: string) => {
                         <div className="flex-1 flex items-center justify-center">
                           <OrderTypeSelector
                             selectedType={
-                              selectedServiceType
-                                ? (selectedServiceType as OrderType)
-                                : isDelivery
-                                ? "delivery"
-                                : selectedTable
-                                ? "table"
-                                : "counter"
+                              (currentServiceType?.identify ||
+                                currentServiceType?.slug ||
+                                selectedServiceType ||
+                                (isDelivery
+                                  ? "delivery"
+                                  : selectedTable
+                                  ? "table"
+                                  : "counter")) as OrderType
                             }
                             onTypeChange={(type) => {
                               // Encontrar o tipo de atendimento correspondente
@@ -2846,68 +2888,6 @@ const handleClientChange = (value: string) => {
                     </div>
                   </TabsContent>
 
-                  {/* Aba: Carrinho (Itens e Notas) */}
-                  <TabsContent value="items" className="mt-0 h-full">
-                    <div className="space-y-3 h-full flex flex-col">
-                      {/* Itens do carrinho */}
-                      <OrderStatusGuard
-                        status={
-                          editingOrder?.status ||
-                          editingOrder?.order_status?.name ||
-                          currentOrder?.status ||
-                          currentOrder?.order_status?.name
-                        }
-                        showAlert={false}
-                        allowViewOnly={true}
-                      >
-                        <div className="space-y-2">
-                          <p className="text-xs font-medium">Itens selecionados</p>
-                          <OrderItemsList
-                            items={cart as any}
-                            getUnitPrice={getCartItemUnitPrice as any}
-                            formatCurrency={formatCurrency}
-                            onIncrease={(signature) => updateItemQuantity(signature, 1)}
-                            onDecrease={(signature) => updateItemQuantity(signature, -1)}
-                            onRemove={removeItem}
-                            onObservationChange={updateItemObservation}
-                            addingItem={addingItem}
-                            removingItem={removingItem}
-                          />
-                        </div>
-                      </OrderStatusGuard>
-
-                      {/* Total e Subtotal - dentro da aba Itens */}
-                      <div className="pt-2 border-t">
-                        <OrderTotals
-                          subtotal={orderTotal}
-                          taxes={0}
-                          discounts={0}
-                          formatCurrency={formatCurrency}
-                        />
-                      </div>
-
-                      {/* Notas do pedido */}
-                      <OrderStatusGuard
-                        status={
-                          editingOrder?.status ||
-                          editingOrder?.order_status?.name ||
-                          currentOrder?.status ||
-                          currentOrder?.order_status?.name
-                        }
-                        showAlert={false}
-                        allowViewOnly={true}
-                      >
-                        <div className="space-y-2 pt-2 border-t">
-                          <OrderNotes
-                            value={orderNotes}
-                            onChange={setOrderNotes}
-                            placeholder="Instruções adicionais"
-                          />
-                        </div>
-                      </OrderStatusGuard>
-                    </div>
-                  </TabsContent>
-
                   {/* Aba: Forma de Pagamento */}
                   <TabsContent value="payment" className="mt-0 h-full">
                     <div className="space-y-3 h-full flex flex-col">
@@ -2948,6 +2928,9 @@ const handleClientChange = (value: string) => {
                               setNeedsChange(false)
                               setReceivedAmount(null)
                             }
+
+                            // Fechar modal após seleção em pagamento único
+                            setShowPaymentMethods(false)
                           }
                         }
                         
@@ -2967,7 +2950,7 @@ const handleClientChange = (value: string) => {
                           >
                             <div id="payment-section" className="space-y-3">
                               <div className="flex items-center justify-between">
-                                <p className="text-xs font-medium">Forma de pagamento</p>
+                                <p className="text-xs font-medium">Pagamento</p>
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -2991,78 +2974,202 @@ const handleClientChange = (value: string) => {
                                   {useSplitPayment ? "Pagamento único" : "Dividir pagamento"}
                                 </Button>
                               </div>
+
+                              {/* Botão que abre o modal de seleção de pagamento */}
+                              <Button
+                                type="button"
+                                variant={selectedMethods.length ? "default" : "outline"}
+                                size="lg"
+                                className={cn(
+                                  "w-full h-12 justify-between px-3",
+                                  selectedMethods.length && "bg-primary text-primary-foreground"
+                                )}
+                                onClick={() => {
+                                  if (!paymentLoading && paymentMethodsFormatted.length > 0) {
+                                    setShowPaymentMethods(true)
+                                  }
+                                }}
+                                disabled={paymentLoading || paymentMethodsFormatted.length === 0}
+                              >
+                                <span className="flex items-center gap-2 text-xs sm:text-sm">
+                                  <CreditCard className="h-4 w-4" />
+                                  {paymentLoading
+                                    ? "Carregando formas de pagamento..."
+                                    : paymentMethodsFormatted.length === 0
+                                    ? "Nenhuma forma de pagamento disponível"
+                                    : useSplitPayment
+                                    ? selectedMethods.length > 0
+                                      ? `${selectedMethods.length} métodos selecionados`
+                                      : "Selecione os métodos de pagamento"
+                                    : selectedMethods.length === 1
+                                    ? selectedMethods[0].name
+                                    : "Selecione a forma de pagamento"}
+                                </span>
+                                <ChevronDown className="h-4 w-4 opacity-70" />
+                              </Button>
+
+                              {/* Modal com a lista de pagamentos */}
+                              <Dialog open={showPaymentMethods} onOpenChange={setShowPaymentMethods}>
+                                <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
+                                  <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2">
+                                      <CreditCard className="h-5 w-5" />
+                                      Selecionar forma de pagamento
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                      Escolha {useSplitPayment ? "uma ou mais formas de pagamento para este pedido" : "a forma de pagamento para este pedido"}
+                                    </DialogDescription>
+                                  </DialogHeader>
+
+                                  {paymentLoading ? (
+                                    <div className="space-y-2">
+                                      <div className="h-10 rounded-lg border bg-muted animate-pulse" />
+                                      <div className="h-10 rounded-lg border bg-muted animate-pulse" />
+                                    </div>
+                                  ) : paymentMethodsFormatted.length === 0 ? (
+                                    <div className="rounded-lg border border-dashed px-3 py-2 text-xs text-muted-foreground">
+                                      Nenhuma forma de pagamento ativa encontrada. Cadastre ou ative métodos no painel.
+                                    </div>
+                                  ) : !useSplitPayment ? (
+                                    <PaymentButtonsGrid
+                                      methods={paymentMethodsFormatted}
+                                      selectedMethods={selectedMethods}
+                                      onSelect={handlePaymentSelect}
+                                      onRemove={handlePaymentRemove}
+                                    />
+                                  ) : (
+                                    <SplitPaymentForm
+                                      methods={paymentMethodsFormatted}
+                                      orderTotal={orderTotal}
+                                      items={splitPaymentItems}
+                                      onChange={setSplitPaymentItems}
+                                      formatCurrency={formatCurrency}
+                                    />
+                                  )}
+                                </DialogContent>
+                              </Dialog>
+
+                              {/* Campo de valor recebido para dinheiro */}
+                              {selectedPaymentMethod && (() => {
+                                const selectedMethod = paymentMethods.find(m => m.uuid === selectedPaymentMethod)
+                                const isCash = selectedMethod && (
+                                  selectedMethod.name.toLowerCase().includes('dinheiro') || 
+                                  selectedMethod.name.toLowerCase().includes('money') || 
+                                  selectedMethod.name.toLowerCase().includes('cash')
+                                )
+                                
+                                if (isCash && needsChange) {
+                                  return (
+                                    <PaymentAmountInput
+                                      value={receivedAmount}
+                                      onChange={setReceivedAmount}
+                                      orderTotal={orderTotal}
+                                      label="Valor recebido"
+                                      placeholder="0,00"
+                                      showChange={true}
+                                    />
+                                  )
+                                }
+                                return null
+                              })()}
                               
-                              {paymentLoading ? (
-                                <div className="space-y-2">
-                                  <div className="h-10 rounded-lg border bg-muted animate-pulse" />
-                                  <div className="h-10 rounded-lg border bg-muted animate-pulse" />
-                                </div>
-                              ) : paymentMethodsFormatted.length === 0 ? (
-                                <div className="rounded-lg border border-dashed px-3 py-2 text-xs text-muted-foreground">
-                                  Nenhuma forma de pagamento ativa encontrada. Cadastre ou ative métodos no painel.
-                                </div>
-                              ) : !useSplitPayment ? (
-                                <>
-                                  <PaymentButtonsGrid
-                                    methods={paymentMethodsFormatted}
-                                    selectedMethods={selectedMethods}
-                                    onSelect={handlePaymentSelect}
-                                    onRemove={handlePaymentRemove}
-                                  />
-                                  
-                                  {/* Campo de valor recebido para dinheiro */}
-                                  {selectedPaymentMethod && (() => {
-                                    const selectedMethod = paymentMethods.find(m => m.uuid === selectedPaymentMethod)
-                                    const isCash = selectedMethod && (
-                                      selectedMethod.name.toLowerCase().includes('dinheiro') || 
-                                      selectedMethod.name.toLowerCase().includes('money') || 
-                                      selectedMethod.name.toLowerCase().includes('cash')
-                                    )
-                                    
-                                    if (isCash && needsChange) {
-                                      return (
-                                        <PaymentAmountInput
-                                          value={receivedAmount}
-                                          onChange={setReceivedAmount}
-                                          orderTotal={orderTotal}
-                                          label="Valor recebido"
-                                          placeholder="0,00"
-                                          showChange={true}
-                                        />
-                                      )
-                                    }
-                                    return null
-                                  })()}
-                                  
-                                  {/* Documento Fiscal */}
-                                  <Separator />
-                                  <FiscalDocument
-                                    documentType={fiscalDocumentType}
-                                    cpfCnpj={fiscalCpfCnpj}
-                                    onDocumentTypeChange={setFiscalDocumentType}
-                                    onCpfCnpjChange={setFiscalCpfCnpj}
-                                    onEmitNow={() => {
-                                      // TODO: Implementar emissão de NFC-e
-                                      toast.info("NFC-e emitida com sucesso")
-                                    }}
-                                    onEmitLater={() => {
-                                      toast.info("NFC-e será emitida posteriormente")
-                                    }}
-                                  />
-                                </>
-                              ) : (
-                                <SplitPaymentForm
-                                  methods={paymentMethodsFormatted}
-                                  orderTotal={orderTotal}
-                                  items={splitPaymentItems}
-                                  onChange={setSplitPaymentItems}
-                                  formatCurrency={formatCurrency}
-                                />
-                              )}
+                              {/* Documento Fiscal */}
+                              <Separator />
+                              <FiscalDocument
+                                documentType={fiscalDocumentType}
+                                cpfCnpj={fiscalCpfCnpj}
+                                onDocumentTypeChange={setFiscalDocumentType}
+                                onCpfCnpjChange={setFiscalCpfCnpj}
+                                onEmitNow={() => {
+                                  // TODO: Implementar emissão de NFC-e
+                                  toast.info("NFC-e emitida com sucesso")
+                                }}
+                                onEmitLater={() => {
+                                  toast.info("NFC-e será emitida posteriormente")
+                                }}
+                              />
                             </div>
                           </OrderStatusGuard>
                         )
                       })()}
+                    </div>
+                  </TabsContent>
+
+                  {/* Aba: Carrinho (Itens e Notas) */}
+                  <TabsContent value="items" className="mt-0 h-full">
+                    <div className="space-y-3 h-full flex flex-col bg-gradient-to-b from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-blue-950/20 dark:via-purple-950/10 dark:to-pink-950/20 rounded-lg p-2">
+                      {/* Itens do carrinho */}
+                      <OrderStatusGuard
+                        status={
+                          editingOrder?.status ||
+                          editingOrder?.order_status?.name ||
+                          currentOrder?.status ||
+                          currentOrder?.order_status?.name
+                        }
+                        showAlert={false}
+                        allowViewOnly={true}
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 pb-1">
+                            <ShoppingCartIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            <p className="text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                              Itens selecionados
+                            </p>
+                            {cart.length > 0 && (
+                              <Badge className="bg-blue-500 text-white dark:bg-blue-600">
+                                {cart.length}
+                              </Badge>
+                            )}
+                          </div>
+                          <OrderItemsList
+                            items={cart as any}
+                            getUnitPrice={getCartItemUnitPrice as any}
+                            formatCurrency={formatCurrency}
+                            onIncrease={(signature) => updateItemQuantity(signature, 1)}
+                            onDecrease={(signature) => updateItemQuantity(signature, -1)}
+                            onRemove={removeItem}
+                            onObservationChange={updateItemObservation}
+                            addingItem={addingItem}
+                            removingItem={removingItem}
+                          />
+                        </div>
+                      </OrderStatusGuard>
+
+                      {/* Total e Subtotal - dentro da aba Itens */}
+                      <div className="pt-2 border-t-2 border-purple-200 dark:border-purple-800">
+                        <OrderTotals
+                          subtotal={orderTotal}
+                          taxes={0}
+                          discounts={0}
+                          formatCurrency={formatCurrency}
+                        />
+                      </div>
+
+                      {/* Notas do pedido */}
+                      <OrderStatusGuard
+                        status={
+                          editingOrder?.status ||
+                          editingOrder?.order_status?.name ||
+                          currentOrder?.status ||
+                          currentOrder?.order_status?.name
+                        }
+                        showAlert={false}
+                        allowViewOnly={true}
+                      >
+                        <div className="space-y-2 pt-2 border-t-2 border-pink-200 dark:border-pink-800">
+                          <div className="flex items-center gap-2 pb-1">
+                            <NotebookPen className="h-4 w-4 text-pink-600 dark:text-pink-400" />
+                            <p className="text-xs font-semibold text-pink-700 dark:text-pink-300">
+                              Observações do Pedido
+                            </p>
+                          </div>
+                          <OrderNotes
+                            value={orderNotes}
+                            onChange={setOrderNotes}
+                            placeholder="Instruções adicionais"
+                          />
+                        </div>
+                      </OrderStatusGuard>
                     </div>
                   </TabsContent>
                 </div>

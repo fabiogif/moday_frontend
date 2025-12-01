@@ -3,6 +3,7 @@
 import { OrderItemCard, type CartItem } from "./order-item-card"
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Package } from "lucide-react"
 
 interface OrderItemsListProps {
   items: CartItem[]
@@ -33,11 +34,17 @@ export function OrderItemsList({
     return (
       <div
         className={cn(
-          "rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground flex-shrink-0",
+          "rounded-lg border-2 border-dashed border-blue-300 dark:border-blue-700 bg-gradient-to-br from-blue-50/50 to-purple-50/30 dark:from-blue-950/30 dark:to-purple-950/20 p-6 text-center flex-shrink-0",
           className
         )}
       >
-        Nenhum item no pedido.
+        <Package className="h-8 w-8 mx-auto mb-2 text-blue-400 dark:text-blue-500" />
+        <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+          Nenhum item no pedido
+        </p>
+        <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
+          Adicione produtos ao carrinho
+        </p>
       </div>
     )
   }

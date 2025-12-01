@@ -1,15 +1,16 @@
 "use client"
 
-import { useMemo } from "react"
+import { useState, useMemo } from "react"
+import { Button } from "@/components/ui/button"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Utensils, X } from "lucide-react"
+import { Utensils, X, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TableStatusIndicator } from "./table-status-indicator"
 
@@ -109,9 +110,11 @@ export function TableSelector({
     return tablesWithOpenOrders.has(selectedTable) ? 1 : 0
   }, [selectedTable, tablesWithOpenOrders])
 
-  const handleTableChange = (value: string) => {
+  const [isOpen, setIsOpen] = useState(false)
+
+  const handleTableSelect = (tableKey: string) => {
     const table = tables.find(
-      (t) => (t.uuid || t.identify || t.name) === value
+      (t) => (t.uuid || t.identify || t.name) === tableKey
     )
     if (!table) return
 
@@ -132,21 +135,56 @@ export function TableSelector({
     }
 
     onTableSelect(key)
+    setIsOpen(false)
   }
 
   return (
     <div className={cn("space-y-2", className)}>
       <div className="space-y-2">
-        <p className="text-xs font-medium">Mesa</p>
-        <Select
-          value={selectedTable || ""}
-          onValueChange={handleTableChange}
+        <p className="text-sm font-semibold mb-2">Mesa</p>
+        <Button
+          variant={selectedTableData ? "default" : "outline"}
+          size="lg"
+          onClick={() => !disabled && setIsOpen(true)}
           disabled={disabled}
+          className={cn(
+            "w-full h-16 justify-start gap-3",
+            selectedTableData && "bg-primary text-primary-foreground"
+          )}
         >
-          <SelectTrigger className="h-10 w-full text-sm">
-            <SelectValue placeholder="Selecione uma mesa..." />
-          </SelectTrigger>
-          <SelectContent>
+          {selectedTableData ? (
+            <>
+              <Utensils className="h-6 w-6" />
+              <span className="text-sm font-semibold">{selectedTableData.name}</span>
+              <TableStatusIndicator
+                isOccupied={tablesWithOpenOrders.has(selectedTable)}
+                orderCount={orderCount}
+                size="sm"
+                className="ml-auto"
+              />
+            </>
+          ) : (
+            <>
+              <Utensils className="h-6 w-6" />
+              <span className="text-sm font-medium">Selecione uma mesa</span>
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Modal de seleção de mesa */}
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Utensils className="h-5 w-5" />
+              Selecionar Mesa
+            </DialogTitle>
+            <DialogDescription>
+              Escolha a mesa para este pedido
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 py-4">
             {sortedTables.map((table) => {
               const key = table.uuid || table.identify || table.name
               const hasOpenOrders = tablesWithOpenOrders.has(key)
@@ -156,38 +194,51 @@ export function TableSelector({
                   (editingOrder.table?.uuid !== key &&
                     editingOrder.table?.identify !== key &&
                     editingOrder.table?.name !== key))
+              const isSelected = selectedTable === key
 
               return (
-                <SelectItem
+                <Button
                   key={key}
-                  value={key}
-                  disabled={isOccupiedByOther && !editingOrder}
+                  variant={isSelected ? "default" : "outline"}
+                  size="lg"
+                  onClick={() => handleTableSelect(key)}
+                  disabled={disabled || (isOccupiedByOther && !editingOrder)}
                   className={cn(
-                    isOccupiedByOther && "text-red-600 dark:text-red-400"
+                    "h-24 flex-col gap-2 py-3 px-4 relative",
+                    isSelected && "bg-primary text-primary-foreground shadow-md ring-2 ring-primary ring-offset-2",
+                    isOccupiedByOther && !editingOrder && "opacity-50 cursor-not-allowed"
                   )}
                 >
-                  <div className="flex items-center justify-between w-full gap-2">
-                    <div className="flex items-center gap-2 flex-1">
-                      <Utensils className="h-4 w-4" />
-                      <span>{table.name}</span>
+                  {isSelected && (
+                    <div className="absolute top-2 right-2">
+                      <Check className="h-5 w-5" />
                     </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Utensils className="h-5 w-5" />
+                    <span className="text-sm font-semibold leading-tight">{table.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
                     <TableStatusIndicator
                       isOccupied={hasOpenOrders}
                       orderCount={hasOpenOrders ? 1 : 0}
                       size="sm"
                     />
-                    {isOccupiedByOther && (
-                      <Badge variant="destructive" className="text-xs ml-auto">
+                    {isOccupiedByOther && !editingOrder && (
+                      <Badge variant="destructive" className="text-xs">
                         Ocupada
                       </Badge>
                     )}
                   </div>
-                </SelectItem>
+                  {isSelected && (
+                    <span className="text-xs opacity-90 mt-1">Selecionado</span>
+                  )}
+                </Button>
               )
             })}
-          </SelectContent>
-        </Select>
-      </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Aviso se mesa está ocupada por outro pedido */}
       {showOccupiedWarning && selectedTable && isTableOccupiedByOther && (

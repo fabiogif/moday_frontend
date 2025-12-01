@@ -81,10 +81,10 @@ export function OrderItemCard({
     <div
       data-testid={`cart-item-${item.signature}`}
       className={cn(
-        "rounded-lg border p-3 transition-all bg-card shadow-sm relative",
-        isAdding && "border-green-500 bg-green-50/50 scale-105 shadow-md",
-        isRemoving && "border-red-500 bg-red-50/50 opacity-50 scale-95",
-        !isAdding && !isRemoving && "border-gray-200 hover:border-primary/40 hover:shadow-md"
+        "rounded-lg border-2 p-3 transition-all shadow-sm relative",
+        isAdding && "border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50 scale-105 shadow-lg ring-2 ring-green-300 dark:ring-green-700",
+        isRemoving && "border-red-500 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/50 dark:to-rose-950/50 opacity-50 scale-95",
+        !isAdding && !isRemoving && "border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50/50 via-white to-purple-50/30 dark:from-blue-950/30 dark:via-gray-900 dark:to-purple-950/20 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-lg hover:scale-[1.02]"
       )}
     >
       <div className="flex items-center gap-3">
@@ -109,17 +109,17 @@ export function OrderItemCard({
         
         {/* Informações do produto */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate mb-1">{item.product.name}</p>
+          <p className="text-sm font-bold truncate mb-1 text-blue-900 dark:text-blue-100">{item.product.name}</p>
           {item.observation && (
-            <p className="text-xs text-muted-foreground truncate mb-1">
+            <p className="text-xs text-purple-600 dark:text-purple-400 truncate mb-1 font-medium">
               {item.observation}
             </p>
           )}
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold">
             {formatCurrency(unitPrice)} cada
           </p>
           {item.selectedVariation && (
-            <Badge variant="outline" className="mt-0.5 text-[10px] px-1.5 py-0.5">
+            <Badge variant="outline" className="mt-0.5 text-[10px] px-1.5 py-0.5 border-purple-300 text-purple-700 dark:border-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50">
               {item.selectedVariation.name}
             </Badge>
           )}
@@ -156,7 +156,7 @@ export function OrderItemCard({
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8 rounded-lg"
+            className="h-8 w-8 rounded-lg border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/50"
             aria-label={`Diminuir ${item.product.name}`}
             onClick={onDecrease}
           >
@@ -164,14 +164,14 @@ export function OrderItemCard({
           </Button>
           <span
             data-testid={`cart-item-qty-${item.signature}`}
-            className="min-w-[40px] rounded-lg bg-muted px-2 py-1 text-center text-sm font-bold"
+            className="min-w-[40px] rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 text-white px-2 py-1 text-center text-sm font-bold shadow-md"
           >
             {item.quantity}
           </span>
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8 rounded-lg"
+            className="h-8 w-8 rounded-lg border-green-300 text-green-600 hover:bg-green-50 hover:border-green-400 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950/50"
             aria-label={`Aumentar ${item.product.name}`}
             onClick={onIncrease}
           >
@@ -181,10 +181,10 @@ export function OrderItemCard({
         
         {/* Preço individual e total */}
         <div className="text-right min-w-[100px]">
-          <p className="text-xs text-muted-foreground mb-1">
+          <p className="text-xs text-indigo-600 dark:text-indigo-400 mb-1 font-medium">
             {formatCurrency(unitPrice)}
           </p>
-          <p className="text-base font-bold">
+          <p className="text-base font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
             {formatCurrency(totalPrice)}
           </p>
         </div>
