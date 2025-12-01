@@ -157,7 +157,7 @@ export function TableSelector({
               <Utensils className="h-6 w-6" />
               <span className="text-sm font-semibold">{selectedTableData.name}</span>
               <TableStatusIndicator
-                isOccupied={tablesWithOpenOrders.has(selectedTable)}
+                isOccupied={selectedTable ? tablesWithOpenOrders.has(selectedTable) : false}
                 orderCount={orderCount}
                 size="sm"
                 className="ml-auto"
