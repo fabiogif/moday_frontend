@@ -17,6 +17,8 @@ import { useAuth } from "@/contexts/auth-context"
 import { usePermissions } from "@/hooks/usePermissions"
 import { endpoints, apiClient } from "@/lib/api-client"
 import { toast } from "sonner"
+import { showErrorToast } from "@/components/ui/error-toast"
+import { extractValidationErrors } from "@/lib/error-formatter"
 import { cn } from "@/lib/utils"
 import {
   Card,
@@ -2105,7 +2107,16 @@ const handleClientChange = (value: string) => {
         refetchTodayOrders()
       }
     } catch (error: any) {
-      toast.error(error?.message || "Erro ao iniciar pedido")
+      // Exibir erros de validação do backend
+      const validationErrors = extractValidationErrors(error)
+      
+      if (Object.keys(validationErrors).length > 0) {
+        // Usar showErrorToast para exibir erros formatados
+        showErrorToast(error, "Erro ao iniciar pedido")
+      } else {
+        // Fallback para erro genérico
+        toast.error(error?.message || "Erro ao iniciar pedido")
+      }
     }
   }
 

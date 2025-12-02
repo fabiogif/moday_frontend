@@ -152,6 +152,10 @@ export function translateFieldName(field: string): string {
     
     // Pedido
     'payment_method': 'Forma de pagamento',
+    'payment_method_id': 'Forma de pagamento',
+    'split_payments': 'Pagamentos divididos',
+    'split_payments.*.payment_method_id': 'Método de pagamento',
+    'split_payments.*.amount': 'Valor do pagamento',
     'shipping_method': 'Método de entrega',
     'table': 'Mesa',
     'status': 'Status',
