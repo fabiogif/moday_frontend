@@ -2177,6 +2177,76 @@ const handleClientChange = (value: string) => {
     )
   }
 
+  // Função para limpar todos os estados do PDV
+  const resetPDVState = () => {
+    // Limpar estados do pedido
+    setOrderStarted(false)
+    setCurrentOrder(null)
+    setEditingOrder(null)
+    clearCart()
+    
+    // Limpar estados do cliente
+    setCustomerName("")
+    setCustomerPhone("")
+    setSelectedClientId("")
+    
+    // Limpar estados de pagamento
+    setSelectedPaymentMethod(null)
+    setUseSplitPayment(false)
+    setSplitPaymentItems([])
+    setNeedsChange(false)
+    setReceivedAmount(null)
+    setChangeDialogAnswered(false)
+    setShowPaymentConfirmation(false)
+    setShowPaymentMethods(true)
+    
+    // Limpar estados de entrega
+    setIsDelivery(false)
+    setDeliveryAddress({
+      zip: "",
+      address: "",
+      number: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+      complement: "",
+    })
+    
+    // Limpar estados de mesa e serviço
+    setSelectedTable(null)
+    setSelectedServiceType(null)
+    
+    // Limpar notas e observações
+    setOrderNotes("")
+    
+    // Limpar estados de seleção de produtos
+    setSelectionDialogOpen(false)
+    setSelectionProduct(null)
+    setSelectionVariationId("")
+    setSelectionOptionals({})
+    
+    // Limpar estados de edição
+    setEditOrderSheetOpen(false)
+    setEditOrderCart([])
+    setEditOrderNotes("")
+    
+    // Limpar estados de UI
+    setSelectedCategory(null)
+    setProductSearchQuery("")
+    setCartTab("service") // Resetar para a primeira aba
+    
+    // Limpar estados de documento fiscal
+    setFiscalDocumentType(null)
+    setFiscalCpfCnpj("")
+    
+    // Limpar estados de PIX
+    setShowPixDialog(false)
+    setPixOrderData(null)
+    
+    // Limpar estados de feedback
+    setShowFeedbackDialog(false)
+  }
+
   // Finalizar pedido - atualiza para status "Entregue" (chamado após confirmação)
   const confirmFinalizeOrder = async () => {
     if (!currentOrder && !editingOrder) {
@@ -2284,22 +2354,8 @@ const handleClientChange = (value: string) => {
         }
         refetchTodayOrders()
         
-        // Limpar estado
-        setOrderStarted(false)
-        setCurrentOrder(null)
-        setEditingOrder(null)
-        clearCart()
-        setCustomerName("")
-        setCustomerPhone("")
-        setSelectedClientId("")
-        setSelectedPaymentMethod(null)
-        setOrderNotes("")
-        setUseSplitPayment(false)
-        setSplitPaymentItems([])
-        setNeedsChange(false)
-        setReceivedAmount(null)
-        setChangeDialogAnswered(false)
-        setShowPaymentConfirmation(false)
+        // Limpar todos os estados do PDV
+        resetPDVState()
       }
     } catch (error: any) {
       toast.error(error?.message || "Erro ao finalizar pedido")
@@ -2380,16 +2436,8 @@ const handleClientChange = (value: string) => {
         }
         refetchTodayOrders()
         
-        // Limpar estado
-        setOrderStarted(false)
-        setCurrentOrder(null)
-        setEditingOrder(null)
-        clearCart()
-        setCustomerName("")
-        setCustomerPhone("")
-        setSelectedClientId("")
-        setSelectedPaymentMethod(null)
-        setOrderNotes("")
+        // Limpar todos os estados do PDV
+        resetPDVState()
       }
     } catch (error: any) {
       toast.error(error?.message || "Erro ao cancelar pedido")
@@ -3155,6 +3203,49 @@ const handleClientChange = (value: string) => {
                           formatCurrency={formatCurrency}
                         />
                       </div>
+
+                      {/* Resumo do Pagamento - dentro da aba Itens */}
+                      {(() => {
+                        // Preparar dados do pagamento para exibição
+                        const paymentItems: Array<{ method: PaymentMethodType; amount: number }> = []
+                        
+                        if (useSplitPayment && splitPaymentItems.length > 0) {
+                          // Pagamento dividido
+                          splitPaymentItems
+                            .filter(item => item.amount !== null && item.amount > 0)
+                            .forEach(item => {
+                              paymentItems.push({
+                                method: item.method,
+                                amount: item.amount!
+                              })
+                            })
+                        } else if (selectedPaymentMethod) {
+                          // Pagamento único
+                          const selectedMethod = paymentMethods.find(m => m.uuid === selectedPaymentMethod)
+                          if (selectedMethod) {
+                            const amount = needsChange && receivedAmount ? receivedAmount : orderTotal
+                            paymentItems.push({
+                              method: selectedMethod,
+                              amount: amount
+                            })
+                          }
+                        }
+
+                        // Só exibir se houver métodos de pagamento selecionados
+                        if (paymentItems.length === 0) {
+                          return null
+                        }
+
+                        return (
+                          <div className="pt-2 border-t-2 border-green-200 dark:border-green-800">
+                            <PaymentSummary
+                              items={paymentItems}
+                              orderTotal={orderTotal}
+                              formatCurrency={formatCurrency}
+                            />
+                          </div>
+                        )
+                      })()}
 
                       {/* Notas do pedido */}
                       <OrderStatusGuard
