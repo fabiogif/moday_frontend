@@ -118,6 +118,7 @@ import { OrderTypeSelector, type OrderType } from "./components/order/order-type
 import { TableSelector } from "./components/tables/table-selector"
 import { DeliveryAddressForm } from "./components/delivery/delivery-address-form"
 import { OrderStatusGuard } from "./components/order/order-status-guard"
+import { ClientFormDialog } from "../clients/components/client-form-dialog"
 import { OrderStatusBadge } from "./components/order/order-status-badge"
 import { PaymentMethodsSelector } from "./components/payment/payment-methods-selector"
 import { PaymentButtonsGrid } from "./components/payment/payment-buttons-grid"
@@ -218,6 +219,14 @@ type Client = {
   email?: string
   phone?: string
   cpf?: string
+  address?: string
+  city?: string
+  state?: string
+  zip_code?: string
+  neighborhood?: string
+  number?: string
+  complement?: string
+  has_complete_address?: boolean
 }
 
 interface CartItem {
@@ -738,6 +747,7 @@ export default function POSPage() {
     data: clientsData,
     loading: clientsLoading,
     error: clientsError,
+    refetch: refetchClients,
   } = useAuthenticatedClients()
   const {
     data: todayOrdersData,
@@ -810,7 +820,10 @@ export default function POSPage() {
   const [splitPaymentItems, setSplitPaymentItems] = useState<SplitPaymentItem[]>([])
   const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false)
   const [showOrderActions, setShowOrderActions] = useState(true)
-  const [cartTab, setCartTab] = useState<"service" | "payment" | "client" | "items">("service")
+  const [cartTab, setCartTab] = useState<"service" | "payment" | "client" | "items">("client")
+  const [showAddressDialog, setShowAddressDialog] = useState(false)
+  const [pendingDeliverySelection, setPendingDeliverySelection] = useState(false)
+  const [showClientDialog, setShowClientDialog] = useState(false)
   // Documento Fiscal
   const [fiscalDocumentType, setFiscalDocumentType] = useState<"nfce" | "nfe" | null>(null)
   const [fiscalCpfCnpj, setFiscalCpfCnpj] = useState("")
@@ -1139,6 +1152,45 @@ const handleClientChange = (value: string) => {
     } else {
       // Se o cliente não for encontrado, limpar CPF
       setFiscalCpfCnpj("")
+    }
+  }
+
+  // Função para adicionar cliente a partir do modal
+  const handleAddClientFromDialog = async (clientData: any) => {
+    try {
+      const result = await mutateOrder(
+        endpoints.clients.create,
+        'POST',
+        clientData
+      )
+      
+      if (result && typeof result === 'object' && 'data' in result && result.data && typeof result.data === 'object' && 'id' in result.data) {
+        const newClient = (result.data as any)
+        
+        // Recarregar lista de clientes para sincronizar com backend
+        setTimeout(async () => {
+          await refetchClients()
+        }, 100)
+        
+        // Selecionar automaticamente o cliente recém-criado
+        const clientId = newClient.uuid || newClient.identify || newClient.id?.toString()
+        if (clientId) {
+          setSelectedClientId(clientId)
+          handleClientChange(clientId)
+        }
+        
+        // Fechar o modal de adicionar cliente
+        setShowClientDialog(false)
+        
+        // Extrair mensagem de sucesso do backend
+        const successMessage = (result as any)?.message || `${newClient.name} foi cadastrado e selecionado com sucesso!`
+        
+        // Mostrar mensagem de sucesso
+        toast.success(successMessage)
+      }
+    } catch (error) {
+      // Erro já é tratado pelo ClientFormDialog
+      throw error
     }
   }
 
@@ -2233,7 +2285,7 @@ const handleClientChange = (value: string) => {
     // Limpar estados de UI
     setSelectedCategory(null)
     setProductSearchQuery("")
-    setCartTab("service") // Resetar para a primeira aba
+    setCartTab("client") // Resetar para a primeira aba (Cliente)
     
     // Limpar estados de documento fiscal
     setFiscalDocumentType(null)
@@ -2691,20 +2743,20 @@ const handleClientChange = (value: string) => {
               <Tabs value={cartTab} onValueChange={(value) => setCartTab(value as typeof cartTab)} className="flex flex-col flex-1 min-h-0 h-full">
                 <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-muted/50 p-1 rounded-lg h-auto min-h-[2.5rem] flex-shrink-0">
                   <TabsTrigger
-                    value="service"
-                    className="cursor-pointer flex items-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
-                  >
-                    <Handshake className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-                    <span className="hidden xs:inline truncate">Atendimento</span>
-                    <span className="xs:hidden">Atend.</span>
-                  </TabsTrigger>
-                  <TabsTrigger
                   value="client"
                   className="cursor-pointer flex items-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
                   >
                     <User className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
                     <span className="hidden xs:inline truncate">Cliente</span>
                     <span className="xs:hidden">Cliente</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="service"
+                    className="cursor-pointer flex items-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+                  >
+                    <Handshake className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="hidden xs:inline truncate">Atendimento</span>
+                    <span className="xs:hidden">Atend.</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="payment"
@@ -2758,6 +2810,30 @@ const handleClientChange = (value: string) => {
                                     .trim() === type.toLowerCase().trim()
                               )
 
+                              const isDeliveryType = serviceType?.requires_address || type === "delivery"
+
+                              // Se for delivery e cliente selecionado tem endereço, perguntar se quer preencher
+                              if (isDeliveryType && selectedClientId) {
+                                const client = clients.find(
+                                  (c) => (c.uuid || c.identify) === selectedClientId
+                                )
+                                
+                                // Verificar se cliente tem endereço completo
+                                const hasAddress = client && (
+                                  client.address ||
+                                  (client.has_complete_address === true) ||
+                                  (client.address && client.city && client.state && client.zip_code)
+                                )
+
+                                if (hasAddress) {
+                                  // Mostrar dialog de confirmação
+                                  setPendingDeliverySelection(true)
+                                  setShowAddressDialog(true)
+                                  return // Não aplicar mudança ainda, aguardar resposta do usuário
+                                }
+                              }
+
+                              // Aplicar mudança normalmente
                               if (serviceType) {
                                 setSelectedServiceType(
                                   serviceType.identify || serviceType.slug
@@ -2888,18 +2964,34 @@ const handleClientChange = (value: string) => {
                         </Button>
                         {showClientSection && (
                           <div className="space-y-3 rounded-xl border p-4 bg-muted/30">
-                            {clients.length > 0 && (
-                              <Combobox
-                                options={clientOptions}
-                                value={selectedClientId}
-                                onValueChange={handleClientChange}
-                                placeholder="Selecione um cliente... (digite para buscar)"
-                                searchPlaceholder="Buscar cliente..."
-                                emptyText="Nenhum cliente encontrado"
-                                allowClear
-                                className="h-12 rounded-2xl text-lg"
-                              />
-                            )}
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                              {clients.length > 0 ? (
+                                <Combobox
+                                  options={clientOptions}
+                                  value={selectedClientId}
+                                  onValueChange={handleClientChange}
+                                  placeholder="Selecione um cliente... (digite para buscar)"
+                                  searchPlaceholder="Buscar cliente..."
+                                  emptyText="Nenhum cliente encontrado"
+                                  allowClear
+                                  className="h-12 rounded-2xl text-xs sm:text-sm flex-1 min-w-0"
+                                />
+                              ) : (
+                                <div className="flex-1 text-sm text-muted-foreground flex items-center justify-center h-12 px-3 rounded-lg bg-background/50">
+                                  Nenhum cliente cadastrado
+                                </div>
+                              )}
+                              <Button
+                                type="button"
+                                onClick={() => setShowClientDialog(true)}
+                                className="h-12 px-3 sm:px-4 shrink-0 w-full sm:w-auto font-medium"
+                                variant="default"
+                              >
+                                <Plus className="h-4 w-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Adicionar</span>
+                                <span className="sm:hidden">Novo Cliente</span>
+                              </Button>
+                            </div>
                             <div id="client-section" className="space-y-2">
                               <p className="text-xs text-muted-foreground">Ou preencha manualmente:</p>
                               <Input
@@ -4194,6 +4286,103 @@ const handleClientChange = (value: string) => {
         isLoading={submittingOrder}
         orderId={editingOrder?.identify || editingOrder?.id || currentOrder?.identify || currentOrder?.id}
       />
+
+      {/* Modal de Cadastro de Cliente */}
+      <ClientFormDialog
+        onAddClient={handleAddClientFromDialog}
+        onEditClient={() => {}}
+        editingClient={null}
+        open={showClientDialog}
+        onOpenChange={setShowClientDialog}
+        hideTrigger={true}
+      />
+
+      {/* Dialog de Confirmação de Endereço */}
+      <Dialog 
+        open={showAddressDialog} 
+        onOpenChange={(open) => {
+          if (!open) {
+            // Se fechar sem confirmar, apenas limpar estados pendentes
+            // Não alterar o tipo de atendimento
+            setShowAddressDialog(false)
+            setPendingDeliverySelection(false)
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Preencher endereço automaticamente?</DialogTitle>
+            <DialogDescription>
+              O cliente selecionado possui um endereço cadastrado. Deseja preencher automaticamente o endereço de entrega?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                // Aplicar seleção de delivery sem preencher endereço
+                if (pendingDeliverySelection) {
+                  setIsDelivery(true)
+                  setSelectedTable(null)
+                  const deliveryServiceType = serviceTypes.find(
+                    (st: any) => st.requires_address || (st.slug || st.identify || "").toLowerCase() === "delivery"
+                  )
+                  if (deliveryServiceType) {
+                    setSelectedServiceType(deliveryServiceType.identify || deliveryServiceType.slug)
+                  } else {
+                    setSelectedServiceType("delivery")
+                  }
+                }
+                setShowAddressDialog(false)
+                setPendingDeliverySelection(false)
+              }}
+            >
+              Não
+            </Button>
+            <Button
+              onClick={() => {
+                // Aplicar endereço do cliente
+                if (selectedClientId) {
+                  const client = clients.find(
+                    (c) => (c.uuid || c.identify) === selectedClientId
+                  )
+                  
+                  if (client) {
+                    setDeliveryAddress({
+                      zip: client.zip_code || "",
+                      address: client.address || "",
+                      number: client.number || "",
+                      neighborhood: client.neighborhood || "",
+                      city: client.city || "",
+                      state: client.state || "",
+                      complement: client.complement || "",
+                    })
+                  }
+                }
+
+                // Aplicar seleção de delivery
+                if (pendingDeliverySelection) {
+                  setIsDelivery(true)
+                  setSelectedTable(null)
+                  const deliveryServiceType = serviceTypes.find(
+                    (st: any) => st.requires_address || (st.slug || st.identify || "").toLowerCase() === "delivery"
+                  )
+                  if (deliveryServiceType) {
+                    setSelectedServiceType(deliveryServiceType.identify || deliveryServiceType.slug)
+                  } else {
+                    setSelectedServiceType("delivery")
+                  }
+                }
+
+                setShowAddressDialog(false)
+                setPendingDeliverySelection(false)
+              }}
+            >
+              Sim, preencher
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PDVMainLayout>
   )
 }
