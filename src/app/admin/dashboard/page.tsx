@@ -68,14 +68,26 @@ export default function AdminDashboardPage() {
   }, [authLoading, isAuthenticated, router])
 
   useEffect(() => {
-    if (isAuthenticated) {
+    // Aguardar que a autenticação esteja completa e o token esteja disponível
+    if (!authLoading && isAuthenticated) {
+      // Garantir que o adminApi tenha o token antes de carregar dados
+      const token = localStorage.getItem('admin-token')
+      if (token) {
+        adminApi.setToken(token)
+      }
       loadDashboardData()
     }
-  }, [isAuthenticated])
+  }, [authLoading, isAuthenticated])
 
   const loadDashboardData = async () => {
     try {
       setIsLoading(true)
+
+      // Garantir que o token está configurado antes de fazer requisições
+      const token = localStorage.getItem('admin-token')
+      if (token) {
+        adminApi.setToken(token)
+      }
 
       // Carrega estatísticas e alertas em paralelo
       const [statsResponse, alertsResponse] = await Promise.all([
@@ -85,8 +97,11 @@ export default function AdminDashboardPage() {
 
       setStats(statsResponse.data)
       setAlerts(alertsResponse.data)
-    } catch (error) {
-
+    } catch (error: any) {
+      console.error('Erro ao carregar dados do dashboard:', error)
+      // Manter stats como null para mostrar mensagem de erro
+      setStats(null)
+      setAlerts([])
     } finally {
       setIsLoading(false)
     }
@@ -107,7 +122,7 @@ export default function AdminDashboardPage() {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Erro</AlertTitle>
           <AlertDescription>
-            Não foi possível carregar os dados do dashboard.
+            Não foi possível carregar os dados do dashboard. Tente atualizar a página.
           </AlertDescription>
         </Alert>
       </div>

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import adminApi from '@/lib/admin-api-client'
 
 interface AdminUser {
   id: number
@@ -43,6 +44,8 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         const storedAdmin = localStorage.getItem('admin-user')
 
         if (storedToken && storedAdmin) {
+          // IMPORTANTE: Configurar o token no adminApi quando carregar do localStorage
+          adminApi.setToken(storedToken)
           setToken(storedToken)
           setAdmin(JSON.parse(storedAdmin))
         }
@@ -151,6 +154,9 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('admin-token', authToken)
       localStorage.setItem('admin-user', JSON.stringify(adminData))
 
+      // IMPORTANTE: Atualizar o adminApi com o token antes de fazer outras requisições
+      adminApi.setToken(authToken)
+
       setToken(authToken)
       setAdmin(adminData)
 
@@ -211,6 +217,8 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       // Limpa dados locais
       localStorage.removeItem('admin-token')
       localStorage.removeItem('admin-user')
+      // IMPORTANTE: Limpar token do adminApi também
+      adminApi.clearToken()
       setToken(null)
       setAdmin(null)
       router.push('/admin/login')

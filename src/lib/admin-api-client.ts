@@ -38,6 +38,11 @@ class AdminApiClient {
     }
   }
 
+  // Método público para recarregar token do localStorage
+  reloadToken() {
+    this.loadToken()
+  }
+
   clearToken() {
     this.token = null
     if (typeof window !== 'undefined') {
@@ -49,25 +54,45 @@ class AdminApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
+    // Sempre recarregar o token do localStorage antes de cada requisição
+    // Isso garante que o token mais recente seja usado
+    this.loadToken()
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
       ...(options.headers as Record<string, string>),
     }
 
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`
+    } else {
+      // Se não tiver token após recarregar, pode ser um problema
+      console.warn('[AdminApiClient] Token não encontrado para requisição:', endpoint)
     }
 
     const response = await fetch(`${this.baseURL}/api/admin${endpoint}`, {
       ...options,
       headers,
+      credentials: 'include',
     })
+
+    // Verificar se a resposta é JSON antes de fazer parse
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error(`Resposta inválida do servidor: ${response.status} ${response.statusText}`)
+    }
 
     const data = await response.json()
 
     if (!response.ok) {
-      throw new Error(data.message || 'Erro na requisição')
+      // Tratar estrutura padrão da aplicação
+      const errorMessage = data.message || 'Erro na requisição'
+      const error: any = new Error(errorMessage)
+      error.status = response.status
+      error.data = data
+      throw error
     }
 
     return data
