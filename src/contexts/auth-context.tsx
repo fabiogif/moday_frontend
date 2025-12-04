@@ -119,6 +119,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
         },
         credentials: 'include', // Importante para cookies
@@ -126,11 +127,78 @@ export function AuthProvider({ children }: AuthProviderProps) {
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Erro ao fazer login')
+        let errorMessage = 'Erro ao fazer login'
+        let errors: Record<string, string[]> = {}
+        
+        // Verificar se a resposta é JSON antes de tentar fazer parse
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const error = await response.json()
+            
+            // Tratar estrutura padrão da aplicação: { success: false, message: "...", errors: {...} }
+            if (error.success === false) {
+              // Usar a mensagem do backend se disponível
+              if (error.message) {
+                errorMessage = error.message
+              }
+              
+              // Extrair erros de validação se disponíveis
+              if (error.errors) {
+                errors = error.errors
+                // Se não tiver mensagem, usar primeira mensagem de erro
+                if (!error.message) {
+                  const firstError = Object.values(error.errors)[0]
+                  if (Array.isArray(firstError) && firstError.length > 0) {
+                    errorMessage = firstError[0] as string
+                  } else if (typeof firstError === 'string') {
+                    errorMessage = firstError
+                  }
+                }
+              }
+            } else if (error.errors) {
+              // Formato alternativo: erro com errors direto
+              errors = error.errors
+              const firstError = Object.values(error.errors)[0]
+              if (Array.isArray(firstError) && firstError.length > 0) {
+                errorMessage = firstError[0] as string
+              } else if (typeof firstError === 'string') {
+                errorMessage = firstError
+              } else {
+                errorMessage = error.message || 'Credenciais inválidas'
+              }
+            } else if (error.message) {
+              // Erro com mensagem específica
+              errorMessage = error.message
+            }
+          } catch (parseError) {
+            // Se falhar ao fazer parse JSON, usar mensagem genérica
+            errorMessage = `Erro ${response.status}: ${response.statusText || 'Credenciais inválidas'}`
+          }
+        } else {
+          // Se não for JSON, usar mensagem baseada no status
+          if (response.status === 401 || response.status === 422) {
+            errorMessage = 'Credenciais inválidas'
+          } else {
+            errorMessage = `Erro ${response.status}: ${response.statusText || 'Erro ao fazer login'}`
+          }
+        }
+        
+        const error = new Error(errorMessage)
+        ;(error as any).errors = errors
+        throw error
       }
 
       const result = await response.json()
+      
+      // Verificar estrutura padrão: { success: true, data: {...}, message: "..." }
+      if (!result.success) {
+        const errorMessage = result.message || 'Erro ao fazer login'
+        const error = new Error(errorMessage)
+        ;(error as any).errors = result.errors || {}
+        throw error
+      }
+      
       const data = result.data // Extract the data object from the response
 
       // Salvar dados do usuário e token
@@ -149,6 +217,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Também salvar no cookie para compatibilidade
       document.cookie = `auth-token=${data.token}; path=/; max-age=${2 * 60 * 60}`
     } catch (error) {
+      // Tratar erros de rede (Failed to fetch)
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        throw new Error('Não foi possível conectar ao servidor. Verifique sua conexão com a internet.')
+      }
+      
+      // Re-lançar outros erros
       throw error
     } finally {
       setIsLoading(false)
