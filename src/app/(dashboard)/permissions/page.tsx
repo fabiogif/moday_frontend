@@ -149,7 +149,7 @@ export default function PermissionsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 py-2 px-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Permissões</h1>

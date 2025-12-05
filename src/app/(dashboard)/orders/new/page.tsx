@@ -661,7 +661,7 @@ export default function NewOrderPage() {
     (discountType === "percentage" ? (subtotal * discountValue) / 100 : discountValue) : 0;
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 py-2 px-6">
       <SuccessAlert
         open={successAlertOpen}
         onOpenChange={(open) => {

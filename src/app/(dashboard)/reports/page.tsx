@@ -202,7 +202,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 py-2 px-6">
       <div>
         <h1 className="text-3xl font-bold">Relatórios</h1>
         <p className="text-muted-foreground">Gere relatórios detalhados do sistema</p>
