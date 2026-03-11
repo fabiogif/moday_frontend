@@ -649,34 +649,68 @@ function renderOrderActionButtons({
         )}
       </Button>
 
-      {/* Avançar Pedido */}
-          <Button
-            id="advance-status-button"
-            data-testid="advance-status-button"
-            onClick={handleAdvanceStatus}
-            disabled={
-              submittingOrder ||
-              !pdvPermissions.canCreateOrder ||
-          orderIsFinal ||
-          !canAdvanceStatus
-            }
-        className="h-16 rounded-2xl text-sm sm:text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed w-full"
-        title={advanceTitle}
-          >
-            {submittingOrder ? (
-              <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processando...
-              </>
-            ) : (
-              <>
-            <ArrowRight className="mr-2 h-4 w-4" />
-            <span className="truncate">
-              {nextStatusNameForAdvance ? `Avançar para ${nextStatusNameForAdvance}` : "Avançar Pedido"}
-            </span>
-              </>
-            )}
-          </Button>
+      {/* Botão Concluir Pedido - aparece quando o pedido pode ser finalizado */}
+      {canFinalize ? (
+        <Button
+          id="finalize-order-button"
+          data-testid="finalize-order-button"
+          onClick={handleFinalizeOrder}
+          disabled={
+            submittingOrder ||
+            !pdvPermissions.canCreateOrder ||
+            !cart.length
+          }
+          className="h-16 rounded-2xl text-sm sm:text-base font-semibold bg-green-600 hover:bg-green-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed w-full"
+          title={
+            !cart.length
+              ? "Adicione itens ao pedido antes de finalizar"
+              : !pdvPermissions.canCreateOrder 
+              ? "Você não tem permissão para finalizar pedidos" 
+              : `Finalizar pedido com status ${orderStatus}`
+          }
+        >
+          {submittingOrder ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processando...
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              <span className="truncate">Concluir Pedido</span>
+            </>
+          )}
+        </Button>
+      ) : (
+        /* Avançar Pedido - aparece quando não pode finalizar */
+        <Button
+          id="advance-status-button"
+          data-testid="advance-status-button"
+          onClick={handleAdvanceStatus}
+          disabled={
+            submittingOrder ||
+            !pdvPermissions.canCreateOrder ||
+            orderIsFinal ||
+            !canAdvanceStatus
+          }
+          className="h-16 rounded-2xl text-sm sm:text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed w-full"
+          title={advanceTitle}
+        >
+          {submittingOrder ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processando...
+            </>
+          ) : (
+            <>
+              <ArrowRight className="mr-2 h-4 w-4" />
+              <span className="truncate">
+                {nextStatusNameForAdvance ? `Avançar para ${nextStatusNameForAdvance}` : "Avançar Pedido"}
+              </span>
+            </>
+          )}
+        </Button>
+      )}
 
       {/* Cancelar Pedido */}
       <Button
