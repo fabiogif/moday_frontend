@@ -68,9 +68,11 @@ interface Plan {
 export function RegisterForm({
   className,
   preSelectedPlanId,
+  onSuccess,
   ...props
 }: React.ComponentProps<"div"> & {
   preSelectedPlanId?: string
+  onSuccess?: () => void
 }) {
   const router = useRouter()
   const { toast } = useToast()
@@ -174,7 +176,8 @@ export function RegisterForm({
             description: "Bem-vindo ao Alba Tech. Redirecionando...",
           })
 
-          // Redirecionar para o dashboard
+          onSuccess?.()
+
           setTimeout(() => {
             router.push('/dashboard')
           }, 1000)
