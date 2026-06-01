@@ -14,7 +14,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
-    "test:deploy": "jest --ci --watchAll=false --testPathPattern=\"(coupon-form|notifications-sidebar|service-types-delete|dashboard-charts|payment-methods-conflict|product-optionals|order-notification-toggle|product-variations-optionals-simple|order-notifications-context|stat-card|simple-permission-test|notification-sound|api-client-bank-accounts)\"",
+    "test:deploy": "jest --ci --watchAll=false --testPathPatterns=\"(coupon-form|notifications-sidebar|service-types-delete|dashboard-charts|payment-methods-conflict|product-optionals|order-notification-toggle|product-variations-optionals-simple|order-notifications-context|stat-card|simple-permission-test|notification-sound|api-client-bank-accounts)\"",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "heroku-postbuild": "npm run build"
