@@ -6,6 +6,7 @@ import { z } from "zod"
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Utensils } from 'lucide-react'
 import {
   Form,
   FormControl,
@@ -84,11 +85,14 @@ export function LandingFooter() {
         <div className="grid gap-8 grid-cols-2 lg:grid-cols-4">
           {/* Brand Column */}
           <div className="col-span-2 max-w-2xl">
-            <div className="flex items-center space-x-2 mb-4 max-lg:justify-center">
-              <span className="font-bold text-xl">Alba Tech</span>
+            <div className="flex items-center gap-2.5 mb-4 max-lg:justify-center">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                <Utensils className="h-4 w-4" />
+              </div>
+              <span className="font-bold text-xl tracking-tight">Alba Tech</span>
             </div>
-            <p className="text-muted-foreground mb-6 max-lg:text-center max-lg:flex max-lg:justify-center">
-              Sistema completo de gestão para restaurantes. Simplifique seus processos e aumente suas vendas.
+            <p className="text-muted-foreground mb-6 max-lg:text-center max-lg:flex max-lg:justify-center text-sm leading-relaxed">
+              Sistema completo de gestão para restaurantes. Pedidos, cardápio, financeiro e relatórios em uma única plataforma.
             </p>
           </div>
 

@@ -7,7 +7,11 @@ import { Separator } from '@/components/ui/separator'
 
 export function CTASection() {
   return (
-    <section className='py-16 lg:py-24 bg-muted/80'>
+    <section className='py-16 lg:py-24 relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-violet-500/10'>
+      <div className='absolute inset-0 pointer-events-none overflow-hidden'>
+        <div className='absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl' />
+        <div className='absolute bottom-0 right-1/4 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl' />
+      </div>
       <div className='container mx-auto px-4 lg:px-8'>
         <div className='mx-auto max-w-4xl'>
           <div className='text-center'>
@@ -90,3 +94,4 @@ export function CTASection() {
     </section>
   )
 }
+

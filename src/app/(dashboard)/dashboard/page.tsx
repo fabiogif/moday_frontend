@@ -6,19 +6,13 @@ import { QuickActions } from "./components/quick-actions"
 import { OrdersVolumeChart } from "./components/orders-volume-chart"
 import { CustomersChart } from "./components/customers-chart"
 import { RecentReviewsCard } from "./components/recent-reviews-card"
+import { DashboardGreeting } from "./components/dashboard-greeting"
 
 export default function Dashboard() {
   return (
     <div className="flex-1 space-y-6 px-6 pt-0">
-        {/* Enhanced Header */}
-
         <div className="flex md:flex-row flex-col md:items-center justify-between gap-4 md:gap-6">
-          <div className="flex flex-col gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">Painel de Controle</h1>
-            <p className="text-muted-foreground">
-            Alba Tech - Sistema de Gestão de Restaurante 
-            </p>
-          </div>
+          <DashboardGreeting />
           <QuickActions />
         </div>
 

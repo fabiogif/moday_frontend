@@ -70,11 +70,18 @@ const faqItems: FaqItem[] = [
 
 const FaqSection = () => {
   return (
-    <section id="faq" className="py-24 sm:py-32">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="faq" className="py-24 sm:py-32 relative overflow-hidden bg-gradient-to-b from-muted/20 via-background to-background">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-violet-500/5 rounded-full blur-3xl" />
+      </div>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
         {/* Section Header */}
         <div className="mx-auto max-w-2xl text-center mb-16">
-          <Badge variant="outline" className="mb-4">Perguntas Frequentes</Badge>
+          <Badge variant="outline" className="mb-4 border-primary/20 bg-primary/5 text-primary">
+            <CircleHelp className="h-3 w-3 mr-1.5" />
+            Perguntas Frequentes
+          </Badge>
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
             Perguntas Frequentes
           </h2>
@@ -123,3 +130,4 @@ const FaqSection = () => {
 }
 
 export { FaqSection }
+

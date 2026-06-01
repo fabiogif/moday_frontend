@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Menu, X, Moon, Sun } from 'lucide-react'
+import { Menu, X, Moon, Sun, Utensils } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   NavigationMenu,
@@ -22,7 +22,6 @@ import { ModeToggle } from '@/components/mode-toggle'
 import { useTheme } from '@/hooks/use-theme'
 
 const navigationItems = [
-  { name: 'Home', href: '/landing' },
   { name: 'Recursos', href: '#features' },
   { name: 'Planos', href: '#pricing' },
   { name: 'FAQ', href: '#faq' },
@@ -52,10 +51,11 @@ export function LandingNavbar() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
         {/* Logo */}
         <div className="flex items-center space-x-2">
-          <Link href="/landing" className="flex items-center cursor-pointer">
-            <span className="font-bold text-xl">
-              Alba Tech
-            </span>
+          <Link href="/landing" className="flex items-center gap-2.5 cursor-pointer">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+              <Utensils className="h-4 w-4" />
+            </div>
+            <span className="font-bold text-xl tracking-tight">Alba Tech</span>
           </Link>
         </div>
 
@@ -106,6 +106,9 @@ export function LandingNavbar() {
               {/* Header */}
               <SheetHeader className="space-y-0 p-4 pb-2 border-b">
                 <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                    <Utensils className="h-3.5 w-3.5" />
+                  </div>
                   <SheetTitle className="text-lg font-semibold">Alba Tech</SheetTitle>
                   <div className="ml-auto flex items-center gap-2">
                     <Button

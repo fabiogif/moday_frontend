@@ -88,10 +88,17 @@ export function ContactSection() {
   }
 
   return (
-    <section id="contact" className="py-24 sm:py-32">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="contact" className="py-24 sm:py-32 relative overflow-hidden bg-gradient-to-b from-background via-muted/10 to-background">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-violet-500/5 rounded-full blur-3xl" />
+      </div>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="mx-auto max-w-2xl text-center mb-16">
-          <Badge variant="outline" className="mb-4">Entre em Contato</Badge>
+          <Badge variant="outline" className="mb-4 border-primary/20 bg-primary/5 text-primary">
+            <Mail className="h-3 w-3 mr-1.5" />
+            Entre em Contato
+          </Badge>
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
             Precisa de ajuda ou tem dúvidas?
           </h2>
@@ -103,35 +110,39 @@ export function ContactSection() {
         <div className="grid gap-8 lg:grid-cols-4">
           {/* Contact Options */}
           <div className="lg:col-span-2 order-2 lg:order-1 space-y-6">
-            <Card>
+            <Card className="border-border/60 hover:border-primary/30 transition-colors">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-primary/10">
+                    <Mail className="h-5 w-5 text-primary" />
+                  </div>
                   E-mail
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-2">Entre em contato por e-mail</p>
-                <a href="mailto:fabiosantanagif@gmail.com" className="text-primary hover:underline">
+                <a href="mailto:atendimento@albatech.tec.br" className="text-primary hover:underline font-medium">
                   atendimento@albatech.tec.br
                 </a>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-border/60 hover:border-primary/30 transition-colors">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Phone className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10">
+                    <Phone className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
                   WhatsApp
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-2">Fale conosco pelo WhatsApp</p>
-                <a 
-                  href="https://wa.me/557991981871" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="text-primary hover:underline"
+                <a
+                  href="https://wa.me/557991981871"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline font-medium"
                 >
                   +55 71 99198-1871
                 </a>
@@ -236,3 +247,4 @@ export function ContactSection() {
     </section>
   )
 }
+

@@ -2,7 +2,10 @@ import type { NextConfig } from "next";
 
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  // Standalone is needed for Docker deployment (Linux server).
+  // On Windows, symlink creation requires Developer Mode or admin rights,
+  // so we disable it locally and enable only in CI/deploy via env var.
+  output: process.env.NEXT_STANDALONE === '1' ? 'standalone' : undefined,
   experimental: {
     optimizePackageImports: ["lucide-react", "@radix-ui/react-icons"],
   },

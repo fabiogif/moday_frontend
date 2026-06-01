@@ -1,12 +1,13 @@
 "use client"
 
-import { Check } from 'lucide-react'
+import { Check, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import ApiClient from '@/lib/api-client'
+import { cn } from '@/lib/utils'
 
 interface PlanDetail {
   id: number
@@ -129,16 +130,24 @@ export function PricingSection() {
   }
 
   return (
-    <section id="pricing" className="py-24 sm:py-32 bg-muted/40">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="pricing" className="py-24 sm:py-32 relative overflow-hidden bg-gradient-to-b from-muted/30 via-background to-muted/30">
+      {/* Background decoration */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-primary/5 rounded-full blur-3xl" />
+      </div>
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
         {/* Section Header */}
         <div className="mx-auto max-w-2xl text-center mb-12">
-          <Badge variant="outline" className="mb-4">Planos</Badge>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
-            Escolha seu plano
+          <Badge variant="outline" className="mb-4 border-primary/20 bg-primary/5 text-primary">
+            <Zap className="h-3 w-3 mr-1" />
+            Planos e Preços
+          </Badge>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-5xl mb-4">
+            Simples, transparente e sem surpresas
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Comece hoje mesmo e transforme a gestão do seu negócio com nossa plataforma completa.
+            Escolha o plano ideal para o seu negócio. Comece grátis e escale quando precisar.
           </p>
 
           {/* Billing Toggle */}
@@ -164,86 +173,121 @@ export function PricingSection() {
             </ToggleGroup>
           </div>
 
-          <p className="text-sm text-muted-foreground">
-            <span className="text-primary font-semibold">Economize 20%</span> no plano anual
-          </p>
+          {isYearly && (
+            <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+              Economize 20% com o plano anual
+            </p>
+          )}
+          {!isYearly && (
+            <p className="text-sm text-muted-foreground">
+              Troque para anual e <span className="text-primary font-semibold">economize 20%</span>
+            </p>
+          )}
         </div>
 
         {/* Pricing Cards */}
-        <div className="mx-auto max-w-6xl">
-          <div className="rounded-xl border">
-            <div className="grid lg:grid-cols-3">
-              {plans.map((plan, index) => (
+        <div className="mx-auto max-w-5xl">
+          <div className="grid gap-6 lg:grid-cols-3 lg:gap-4 items-start">
+            {plans.map((plan, index) => {
+              const popular = isPopular(index)
+              const isFree = plan.price === 0 || plan.price === '0' || Number(plan.price) === 0
+
+              return (
                 <div
                   key={plan.url || `plan-${index}`}
-                  className={`p-8 grid grid-rows-subgrid row-span-4 gap-6 ${
-                    isPopular(index)
-                      ? 'my-2 mx-4 rounded-xl bg-card border-transparent shadow-xl ring-1 ring-foreground/10 backdrop-blur'
-                      : ''
-                  }`}
+                  className={cn(
+                    "relative flex flex-col rounded-2xl border p-8 transition-all duration-200",
+                    popular
+                      ? "border-primary/30 bg-gradient-to-b from-primary/10 via-primary/5 to-background shadow-2xl shadow-primary/10 ring-1 ring-primary/20 scale-[1.02]"
+                      : "border-border bg-card hover:border-primary/20 hover:shadow-lg"
+                  )}
                 >
+                  {popular && (
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                      <Badge className="bg-primary text-primary-foreground shadow-lg px-4 py-1">
+                        <Zap className="h-3 w-3 mr-1" />
+                        Mais popular
+                      </Badge>
+                    </div>
+                  )}
+
                   {/* Plan Header */}
-                  <div>
-                    <div className="text-lg font-medium tracking-tight mb-2">{plan.name}</div>
-                    <div className="text-muted-foreground text-balance text-sm">{plan.description || 'Plano completo para seu negócio'}</div>
+                  <div className="mb-6">
+                    <div className={cn("text-lg font-bold tracking-tight mb-1", popular && "text-primary")}>
+                      {plan.name}
+                    </div>
+                    <div className="text-muted-foreground text-sm">{plan.description || 'Plano completo para seu negócio'}</div>
                   </div>
 
                   {/* Pricing */}
-                  <div>
-                    <div className="text-4xl font-bold mb-1">
-                      {plan.price === 0 || plan.price === '0' || Number(plan.price) === 0
-                        ? 'Grátis'
-                        : `R$ ${isYearly 
-                          ? (Number(plan.price) * 12 * 0.8).toFixed(2) 
-                          : Number(plan.price).toFixed(2)}`}
+                  <div className="mb-6">
+                    <div className="flex items-end gap-1">
+                      {isFree ? (
+                        <span className="text-4xl font-bold">Grátis</span>
+                      ) : (
+                        <>
+                          <span className="text-sm text-muted-foreground self-start mt-2">R$</span>
+                          <span className="text-4xl font-bold tabular-nums">
+                            {isYearly
+                              ? (Number(plan.price) * 0.8).toFixed(2)
+                              : Number(plan.price).toFixed(2)}
+                          </span>
+                          <span className="text-muted-foreground text-sm mb-1">/mês</span>
+                        </>
+                      )}
                     </div>
-                    <div className="text-muted-foreground text-sm">
-                      {plan.price === 0 || plan.price === '0' || Number(plan.price) === 0
-                        ? 'Para sempre'
-                        : 'Por mês'}
-                    </div>
+                    {!isFree && isYearly && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Cobrado anualmente · R$ {(Number(plan.price) * 12 * 0.8).toFixed(2)}/ano
+                      </p>
+                    )}
+                    {isFree && (
+                      <p className="text-xs text-muted-foreground mt-1">Para sempre, sem cartão</p>
+                    )}
                   </div>
 
                   {/* CTA Button */}
-                  <div>
-                    <Button
-                      onClick={() => handleSelectPlan(plan.id)}
-                      className={`w-full cursor-pointer my-2 ${
-                        isPopular(index)
-                          ? 'shadow-md border-[0.5px] border-white/25 shadow-black/20 bg-primary ring-1 ring-primary/15 text-primary-foreground hover:bg-primary/90'
-                          : 'shadow-sm shadow-black/15 border border-transparent bg-background ring-1 ring-foreground/10 hover:bg-muted/50'
-                      }`}
-                      variant={isPopular(index) ? 'default' : 'secondary'}
-                    >
-                      Começar agora
-                    </Button>
-                  </div>
+                  <Button
+                    onClick={() => handleSelectPlan(plan.id)}
+                    className={cn(
+                      "w-full cursor-pointer mb-8",
+                      popular
+                        ? "bg-gradient-to-r from-primary to-violet-600 hover:from-primary/90 hover:to-violet-600/90 shadow-lg shadow-primary/25 text-white"
+                        : ""
+                    )}
+                    variant={popular ? 'default' : 'outline'}
+                    size="lg"
+                  >
+                    {isFree ? "Começar de graça" : "Começar agora"}
+                  </Button>
 
                   {/* Features */}
-                  <div>
-                    <ul role="list" className="space-y-3 text-sm">
-                      {plan.details.map((detail) => (
-                        <li key={`${plan.id}-${detail.id || detail.name}`} className="flex items-center gap-3">
-                          <Check className="text-muted-foreground size-4 flex-shrink-0" strokeWidth={2.5} />
-                          <span>{detail.name}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  <ul className="space-y-3 text-sm flex-1">
+                    {plan.details.map((detail) => (
+                      <li key={`${plan.id}-${detail.id || detail.name}`} className="flex items-start gap-3">
+                        <Check
+                          className={cn(
+                            "size-4 flex-shrink-0 mt-0.5",
+                            popular ? "text-primary" : "text-emerald-500"
+                          )}
+                          strokeWidth={2.5}
+                        />
+                        <span className="text-foreground/80">{detail.name}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              ))}
-            </div>
+              )
+            })}
           </div>
         </div>
 
         {/* Enterprise Note */}
         <div className="mt-16 text-center">
           <p className="text-muted-foreground">
-            Precisa de recursos personalizados? {' '}
-            <Button variant="link" className="p-0 h-auto cursor-pointer" asChild>
-              <a href="#contact">
-                Entre em contato
-              </a>
+            Precisa de recursos personalizados?{' '}
+            <Button variant="link" className="p-0 h-auto cursor-pointer text-primary" asChild>
+              <a href="#contact">Entre em contato com nossa equipe</a>
             </Button>
           </p>
         </div>

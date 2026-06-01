@@ -11,7 +11,6 @@ import {
   BarChart3,
   Shield,
   UserCog,
-  Settings,
   CreditCard,
   Building2,
   CalendarDays,
@@ -29,14 +28,13 @@ import {
   Utensils,
   ListOrdered,
   TicketPercent,
-  TrendingDown as TrendingDownIcon,
   LineChart,
   MonitorSmartphone,
   Handshake,
+  Settings,
+  Megaphone,
 } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
-import { Logo } from "@/components/logo"
 import { useAuth } from "@/contexts/auth-context"
 
 import { NavMain } from "@/components/nav-main"
@@ -65,14 +63,8 @@ const navGroups = [
         url: "/orders",
         icon: ShoppingCart,
         items: [
-          {
-            title: "Todos os Pedidos",
-            url: "/orders",
-          },
-          {
-            title: "Quadro de Pedidos",
-            url: "/orders/board",
-          },
+          { title: "Todos os Pedidos", url: "/orders" },
+          { title: "Quadro Kanban", url: "/orders/board" },
         ],
       },
       {
@@ -93,102 +85,48 @@ const navGroups = [
     ],
   },
   {
-    label: "Cardápio",
+    label: "Operações",
     items: [
       {
-        title: "Categorias",
-        url: "/categories",
-        icon: Tag,
-      },
-      {
-        title: "Produtos",
+        title: "Cardápio",
         url: "/products",
-        icon: Package,
-      },
-      {
-        title: "Mesas",
-        url: "/tables",
-        icon: Table,
-      },
-      {
-        title: "Tipos de Atendimento",
-        url: "/service-types",
-        icon: Handshake,
-      },
-    ],
-  },
-  {
-    label: "Financeiro",
-    items: [
-      {
-        title: "Dashboard Financeiro",
-        url: "/financial/dashboard",
-        icon: Wallet,
-      },
-      {
-        title: "Contas a Receber",
-        url: "/financial/accounts-receivable",
-        icon: TrendingUp,
-      },
-      {
-        title: "Contas a Pagar",
-        url: "/financial/accounts-payable",
-        icon: TrendingDown,
-      },
-      {
-        title: "Despesas",
-        url: "/financial/expenses",
-        icon: Receipt,
-      },
-      {
-        title: "Fornecedores",
-        url: "/financial/suppliers",
-        icon: Truck,
-      },
-      {
-        title: "Categorias Financeiras",
-        url: "/financial/categories",
-        icon: FileText,
-      },
-      {
-        title: "Dados Bancários",
-        url: "/contas-bancarias",
-        icon: Building2,
-      },
-    ],
-  },
-  {
-    label: "Marketing",
-    items: [
-      {
-        title: "Programa de Fidelidade",
-        url: "/loyalty/program",
-        icon: Gift,
+        icon: Utensils,
         items: [
-          {
-            title: "Configuração",
-            url: "/loyalty/program",
-          },
-          {
-            title: "Recompensas",
-            url: "/loyalty/rewards",
-          },
+          { title: "Produtos", url: "/products" },
+          { title: "Categorias", url: "/categories" },
+          { title: "Mesas", url: "/tables" },
+          { title: "Tipos de Atendimento", url: "/service-types" },
         ],
       },
       {
-        title: "Cupons",
-        url: "/marketing/coupons",
-        icon: TicketPercent,
+        title: "Financeiro",
+        url: "/financial/dashboard",
+        icon: Wallet,
+        items: [
+          { title: "Resumo", url: "/financial/dashboard" },
+          { title: "Contas a Receber", url: "/financial/accounts-receivable" },
+          { title: "Contas a Pagar", url: "/financial/accounts-payable" },
+          { title: "Despesas", url: "/financial/expenses" },
+          { title: "Fornecedores", url: "/financial/suppliers" },
+          { title: "Categorias", url: "/financial/categories" },
+          { title: "Dados Bancários", url: "/contas-bancarias" },
+        ],
       },
       {
-        title: "Eventos",
-        url: "/events",
-        icon: CalendarDays,
+        title: "Marketing",
+        url: "/marketing/coupons",
+        icon: Megaphone,
+        items: [
+          { title: "Programa de Fidelidade", url: "/loyalty/program" },
+          { title: "Recompensas", url: "/loyalty/rewards" },
+          { title: "Cupons", url: "/marketing/coupons" },
+          { title: "Eventos", url: "/events" },
+        ],
       },
     ],
   },
   {
-    label: "Gestão",
+    label: "Análise",
     items: [
       {
         title: "Relatórios",
@@ -196,7 +134,7 @@ const navGroups = [
         icon: BarChart3,
       },
       {
-        title: "Desempenho/Vendas",
+        title: "Desempenho de Vendas",
         url: "/sales-performance",
         icon: LineChart,
       },
@@ -205,30 +143,20 @@ const navGroups = [
         url: "/payment-methods",
         icon: CreditCard,
       },
-    ],
-  },
-  {
-    label: "Integrações",
-    items: [
       {
-        title: "Catálogo iFood",
+        title: "iFood",
         url: "/integrations/ifood/catalogs",
         icon: Store,
-      },
-      {
-        title: "Autorização iFood",
-        url: "/integrations/ifood/oauth",
-        icon: Shield,
-      },
-      {
-        title: "Pedidos iFood",
-        url: "/integrations/ifood/orders",
-        icon: ShoppingCart,
+        items: [
+          { title: "Catálogo", url: "/integrations/ifood/catalogs" },
+          { title: "Autorização", url: "/integrations/ifood/oauth" },
+          { title: "Pedidos iFood", url: "/integrations/ifood/orders" },
+        ],
       },
     ],
   },
   {
-    label: "Administração",
+    label: "Sistema",
     items: [
       {
         title: "Usuários",
@@ -236,39 +164,24 @@ const navGroups = [
         icon: Users,
       },
       {
-        title: "Perfis",
+        title: "Perfis e Permissões",
         url: "/profiles",
         icon: UserCog,
+        items: [
+          { title: "Perfis", url: "/profiles" },
+          { title: "Permissões", url: "/permissions" },
+        ],
       },
       {
-        title: "Permissões",
-        url: "/permissions",
-        icon: Shield,
-      },
-    ],
-  },
-  {
-    label: "Configurações",
-    items: [
-      {
-        title: "Dados da Empresa",
+        title: "Configurações",
         url: "/settings/company",
-        icon: Building2,
-      },
-      {
-        title: "Horários",
-        url: "/settings/store-hours",
-        icon: Clock,
-      },
-      {
-        title: "Delivery e Retirada",
-        url: "/settings/delivery",
-        icon: Truck,
-      },
-      {
-        title: "Status de Pedidos",
-        url: "/configuracoes/status-pedidos",
-        icon: ListOrdered,
+        icon: Settings,
+        items: [
+          { title: "Dados da Empresa", url: "/settings/company" },
+          { title: "Horários de Funcionamento", url: "/settings/store-hours" },
+          { title: "Delivery e Retirada", url: "/settings/delivery" },
+          { title: "Status de Pedidos", url: "/configuracoes/status-pedidos" },
+        ],
       },
     ],
   },
@@ -277,15 +190,14 @@ const navGroups = [
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, isAuthenticated } = useAuth()
 
-  // Dados do usuário para exibir no sidebar
   const userData = {
     name: user?.name || "Usuário",
     email: user?.email || "user@example.com",
     avatar: "",
   }
 
-  // Dados do tenant para exibir logo
   const tenantData = (user as any)?.tenant
+  const tenantName = tenantData?.name || "Meu Restaurante"
 
   return (
     <Sidebar {...props}>
@@ -294,17 +206,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden border border-border">
-                
-                     <Utensils className="h-4 w-4 text-primary" />
-                  </div>
-                 
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <Utensils className="h-4 w-4" />
+                </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">
-                    {/* {tenantData?.name || "Alba Tech"} */}
-                    Alba Tech
-                  </span>
-                  <span className="truncate text-xs">Gestão de Restaurante</span>
+                  <span className="truncate font-semibold">{tenantName}</span>
+                  <span className="truncate text-xs text-muted-foreground">Gestão de Restaurante</span>
                 </div>
               </Link>
             </SidebarMenuButton>

@@ -11,9 +11,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 export const metadata: Metadata = {
   title: "Alba Tech - Gestão",
   description: "Sistema de gestão para restaurantes",
-  icons: {
-    icon: "/favicon.ico",
-  },
   manifest: "/manifest.json",
 };
 

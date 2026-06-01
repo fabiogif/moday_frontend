@@ -10,12 +10,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Logo } from "@/components/logo"
 import Link from "next/link"
-import Image from "next/image"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
-import { Utensils } from "lucide-react"
+import { Utensils, ShoppingCart, BarChart3, Users } from "lucide-react"
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -133,14 +131,36 @@ export function LoginForm3({
               </Button>
             </div>
           </form>
-          <div className="bg-muted relative hidden md:block">
-            <Image
-              src="https://ui.shadcn.com/placeholder.svg"
-              alt="Image"
-              fill
-              sizes="(max-width: 768px) 0vw, 50vw"
-              className="object-cover dark:brightness-[0.95] dark:invert"
+          <div className="relative hidden md:flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-violet-700 p-8 text-white">
+            <div className="absolute inset-0 opacity-10"
+              style={{
+                backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
+                backgroundSize: "32px 32px",
+              }}
             />
+            <div className="relative z-10 flex flex-col items-center text-center gap-6">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
+                <Utensils className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold mb-2">Gestão completa do seu restaurante</h2>
+                <p className="text-white/75 text-sm leading-relaxed">
+                  Controle pedidos, cardápio, finanças e muito mais em um só lugar.
+                </p>
+              </div>
+              <div className="grid grid-cols-3 gap-3 w-full mt-2">
+                {[
+                  { icon: ShoppingCart, label: "Pedidos" },
+                  { icon: BarChart3, label: "Relatórios" },
+                  { icon: Users, label: "Clientes" },
+                ].map(({ icon: Icon, label }) => (
+                  <div key={label} className="flex flex-col items-center gap-1.5 rounded-xl bg-white/10 p-3">
+                    <Icon className="h-5 w-5" />
+                    <span className="text-xs font-medium">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

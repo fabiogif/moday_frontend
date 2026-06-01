@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --no-lint",
-    "postbuild": "cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/",
+    "build:deploy": "NEXT_STANDALONE=1 next build --no-lint && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/",
+    "postbuild": "",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
