@@ -578,6 +578,7 @@ export default function NewOrderPage() {
         delivery_number: data.deliveryNumber,
         delivery_complement: data.deliveryComplement,
         delivery_notes: data.deliveryNotes,
+        payment_method_id: data.paymentMethodId, // Campo obrigatório
         comment: '', // Campo comentário se necessário
         products: data.products.map(product => ({
           identify: product.productId, // Este já será o UUID agora

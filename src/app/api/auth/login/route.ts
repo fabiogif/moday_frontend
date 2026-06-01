@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { buildApiUrl } from '@/lib/api-config'
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
 
-    // Fazer requisição para o backend Laravel
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
-
-    const response = await fetch(`${backendUrl}/api/auth/login`, {
+    const response = await fetch(buildApiUrl('/api/auth/login', { server: true }), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

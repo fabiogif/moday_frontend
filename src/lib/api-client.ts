@@ -3,7 +3,9 @@
  * Inclui autenticação JWT, tratamento de erros e cache
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
+import { getApiBaseUrl } from './api-config'
+
+const API_BASE_URL = getApiBaseUrl()
 
 interface ApiResponse<T = any> {
   success: boolean
@@ -167,9 +169,24 @@ class ApiClient {
     }
   }
 
-  async get<T>(endpoint: string, params?: Record<string, any>): Promise<ApiResponse<T>> {
-    const url = new URL(`${this.baseURL}${endpoint}`)
-    
+  private buildUrl(endpoint: string, params?: Record<string, unknown>): string {
+    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+
+    if (!this.baseURL) {
+      if (!params) {
+        return path
+      }
+      const search = new URLSearchParams()
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          search.append(key, String(value))
+        }
+      })
+      const qs = search.toString()
+      return qs ? `${path}?${qs}` : path
+    }
+
+    const url = new URL(`${this.baseURL}${path}`)
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
@@ -177,6 +194,11 @@ class ApiClient {
         }
       })
     }
+    return url.toString()
+  }
+
+  async get<T>(endpoint: string, params?: Record<string, any>): Promise<ApiResponse<T>> {
+    const urlString = this.buildUrl(endpoint, params)
 
     // Garantir que o token está carregado antes de construir headers
     // SEMPRE verificar localStorage primeiro, pois é a fonte mais confiável
@@ -199,15 +221,15 @@ class ApiClient {
     if (process.env.NODE_ENV === 'development') {
       const tokenFromStorage = typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null
       console.log('[ApiClient GET]', {
-        url: url.toString(),
+        url: urlString,
         hasToken: !!this.token,
         tokenLength: this.token?.length || 0,
         tokenFromStorage: tokenFromStorage ? `${tokenFromStorage.substring(0, 20)}...` : 'null',
-        authorizationHeader: headers.Authorization ? 'Bearer ***' : 'missing'
+        authorizationHeader: headers.Authorization ? 'Bearer ***' : 'missing',
       })
     }
 
-    const response = await fetch(url.toString(), {
+    const response = await fetch(urlString, {
       method: 'GET',
       headers,
       credentials: 'include', // Importante para cookies
@@ -218,8 +240,9 @@ class ApiClient {
 
   async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     const isFormData = data instanceof FormData
+    const urlString = this.buildUrl(endpoint)
 
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
+    const response = await fetch(urlString, {
       method: 'POST',
       headers: this.getHeaders(isFormData),
       credentials: 'include', // Importante para cookies
@@ -232,7 +255,7 @@ class ApiClient {
   async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     const isFormData = data instanceof FormData
 
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
+    const response = await fetch(this.buildUrl(endpoint), {
       method: 'PUT',
       headers: this.getHeaders(isFormData),
       credentials: 'include', // Importante para cookies
@@ -256,7 +279,7 @@ class ApiClient {
   }
 
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
+    const response = await fetch(this.buildUrl(endpoint), {
       method: 'DELETE',
       headers: this.getHeaders(false),
       credentials: 'include', // Importante para cookies

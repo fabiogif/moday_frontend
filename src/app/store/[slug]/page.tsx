@@ -27,6 +27,7 @@ import { SiteFooter } from '@/components/site-footer'
 import { ReviewModal } from './components/review-modal'
 import { ReviewsSection } from './components/reviews-section'
 import { apiClient, endpoints } from '@/lib/api-client'
+import { buildApiUrl } from '@/lib/api-config'
 import { ProductRecommendations } from './components/product-recommendations'
 
 interface ProductVariation {
@@ -215,8 +216,7 @@ export default function PublicStorePage() {
 
   const loadPaymentMethods = useCallback(async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
-      const response = await fetch(`${apiUrl}/api/store/${slug}/payment-methods`, {
+      const response = await fetch(buildApiUrl(`/api/store/${slug}/payment-methods`), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -306,12 +306,9 @@ export default function PublicStorePage() {
     try {
       setLoading(true)
 
-1      // Prefer env var; fallback to Laravel default port 8000
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
-      
       const [storeRes, productsRes] = await Promise.all([
-        fetch(`${apiUrl}/api/store/${slug}/info`, { mode: 'cors' }),
-        fetch(`${apiUrl}/api/store/${slug}/products`, { mode: 'cors' }),
+        fetch(buildApiUrl(`/api/store/${slug}/info`), { mode: 'cors' }),
+        fetch(buildApiUrl(`/api/store/${slug}/products`), { mode: 'cors' }),
       ])
       
       // Carregar tipos de atendimento do menu
@@ -716,10 +713,7 @@ export default function PublicStorePage() {
 
       // Debug log to see what's being sent
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
-      const fullUrl = `${apiUrl}/api/store/${slug}/orders`
-
-      const response = await fetch(fullUrl, {
+      const response = await fetch(buildApiUrl(`/api/store/${slug}/orders`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

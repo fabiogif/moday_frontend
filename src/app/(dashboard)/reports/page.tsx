@@ -12,6 +12,7 @@ import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { apiClient, endpoints } from "@/lib/api-client"
+import { buildApiUrl } from "@/lib/api-config"
 import { toast } from "sonner"
 
 interface ReportFilters {
@@ -63,8 +64,7 @@ export default function ReportsPage() {
     try {
       setLoading(true)
       
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
-      const fullUrl = `${API_URL}${endpoint}`
+      const fullUrl = buildApiUrl(endpoint)
       const token = apiClient.getToken()
 
       if (!token) {

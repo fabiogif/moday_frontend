@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { buildApiUrl } from '@/lib/api-config'
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,8 +9,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Token não fornecido' }, { status: 401 })
     }
 
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
-    const response = await fetch(`${backendUrl}/api/product`, {
+    const response = await fetch(buildApiUrl('/api/product', { server: true }), {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json',
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     const contentType = request.headers.get('content-type')
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
+    const productApiUrl = buildApiUrl('/api/product', { server: true })
     
     let response: Response
     
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       // Para FormData (com arquivos), repassar diretamente
       const formData = await request.formData()
 
-      response = await fetch(`${backendUrl}/api/product`, {
+      response = await fetch(productApiUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       // Para JSON (dados simples), converter como antes
       const body = await request.json()
       
-      response = await fetch(`${backendUrl}/api/product`, {
+      response = await fetch(productApiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -19,8 +19,7 @@ import { useAuthenticatedPermissions, useMutation } from "@/hooks/use-authentica
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { endpoints } from "@/lib/api-client"
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
+import { buildApiUrl } from "@/lib/api-config"
 
 interface Permission {
   id: number
@@ -76,7 +75,7 @@ export function AssignPermissionsDialog({
     if (!profile) return
 
     try {
-      const response = await fetch(API_BASE_URL + endpoints.profiles.permissions(profile.id), {
+      const response = await fetch(buildApiUrl(endpoints.profiles.permissions(profile.id)), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           'Accept': 'application/json',

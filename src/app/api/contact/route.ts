@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiClient } from '@/lib/api-client'
+import { buildApiUrl } from '@/lib/api-config'
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Enviar para o backend Laravel
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/contact`, {
+    const response = await fetch(buildApiUrl('/api/contact', { server: true }), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

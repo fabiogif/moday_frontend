@@ -1,5 +1,6 @@
 import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
+import { buildApiUrl } from './api-config'
 
 declare global {
   interface Window {
@@ -23,7 +24,7 @@ export const createEchoInstance = (token: string) => {
     wssPort: process.env.NEXT_PUBLIC_REVERB_PORT ? parseInt(process.env.NEXT_PUBLIC_REVERB_PORT) : 8080,
     forceTLS: (process.env.NEXT_PUBLIC_REVERB_SCHEME || 'http') === 'https',
     enabledTransports: ['ws', 'wss'],
-    authEndpoint: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/broadcasting/auth`,
+    authEndpoint: buildApiUrl('/broadcasting/auth'),
     auth: {
       headers: {
         Authorization: `Bearer ${token}`,

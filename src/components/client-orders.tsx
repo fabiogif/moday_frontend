@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Package, Calendar, MapPin, CreditCard, Truck, ShoppingBag } from 'lucide-react'
 import { toast } from 'sonner'
+import { buildApiUrl } from '@/lib/api-config'
 
 interface OrderProduct {
   uuid: string
@@ -61,7 +62,7 @@ export function ClientOrders({ slug }: ClientOrdersProps) {
       setLoading(true)
       
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/store/${slug}/orders`,
+        buildApiUrl(`/api/store/${slug}/orders`),
         {
           headers: {
             'Authorization': `Bearer ${token}`,

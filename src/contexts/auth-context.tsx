@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { apiClient } from '@/lib/api-client'
+import { buildApiUrl } from '@/lib/api-config'
 
 interface User {
   id: string
@@ -57,8 +58,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [trialStatus, setTrialStatus] = useState<TrialStatus | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [hasMounted, setHasMounted] = useState(false)
 
   useEffect(() => {
+    setHasMounted(true)
+    
     // Verificar se há dados no localStorage ao inicializar
     const savedUser = localStorage.getItem('auth-user')
     const savedToken = localStorage.getItem('auth-token')
@@ -114,8 +118,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (email: string, password: string) => {
     setIsLoading(true)
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      const response = await fetch(`${apiUrl}/api/auth/login`, {
+      const response = await fetch(buildApiUrl('/api/auth/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -231,9 +234,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
       // Chamar logout no backend
-      await fetch(`${apiUrl}/api/auth/logout`, {
+      await fetch(buildApiUrl('/api/auth/logout'), {
         method: 'POST',
         credentials: 'include',
         headers: {
