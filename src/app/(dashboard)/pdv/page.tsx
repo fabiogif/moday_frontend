@@ -100,7 +100,6 @@ import {
 import { maskPhone, maskZipCode } from "@/lib/masks"
 import { useViaCEP } from "@/hooks/use-viacep"
 import { PixQrCodeDialog } from "./components/pix-qr-code-dialog"
-import { ProductRecommendations } from "./components/product-recommendations"
 import { PDVTutorial } from "./components/pdv-tutorial"
 import { PDVFeedback } from "./components/pdv-feedback"
 import { ChangeDialog } from "./components/change-dialog"
@@ -855,6 +854,7 @@ export default function POSPage() {
   const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false)
   const [showOrderActions, setShowOrderActions] = useState(true)
   const [cartTab, setCartTab] = useState<"service" | "payment" | "client" | "items">("client")
+  const [mobileView, setMobileView] = useState<"catalog" | "cart">("catalog")
   const [showAddressDialog, setShowAddressDialog] = useState(false)
   const [pendingDeliverySelection, setPendingDeliverySelection] = useState(false)
   const [showClientDialog, setShowClientDialog] = useState(false)
@@ -2703,34 +2703,28 @@ const handleClientChange = (value: string) => {
 
       {/* Conteúdo principal com scroll otimizado */}
       <PDVTwoColumnLayout
+        mobileActiveView={mobileView}
         leftColumn={
           <section className="flex flex-col gap-2 overflow-hidden min-h-0">
           {/* Busca de Produtos */}
-          <Card id="search-section" className="flex-shrink-0 border-purple-200 bg-purple-50/50 dark:border-purple-800 dark:bg-purple-950/20">
-            <CardContent className="pt-2 pb-2">
-              <ProductSearch
-                products={products as any}
-                onProductSelect={(product: any) => startProductSelection(product)}
-                onSearchChange={(query) => setProductSearchQuery(query)}
-                placeholder="Buscar produtos por nome ou código..."
-                showRecentSearches={true}
-              />
-            </CardContent>
-          </Card>
+          <div id="search-section" className="flex-shrink-0">
+            <ProductSearch
+              products={products as any}
+              onProductSelect={(product: any) => startProductSelection(product)}
+              onSearchChange={(query) => setProductSearchQuery(query)}
+              placeholder="Buscar produtos por nome ou código..."
+              showRecentSearches={true}
+            />
+          </div>
 
           {/* Categorias */}
-          <Card id="categories-section" className="flex-shrink-0 border-blue-200 bg-blue-50/30 dark:border-blue-800 dark:bg-blue-950/10">
-            <CardHeader className="pb-1 pt-2.5">
-              <CardTitle className="text-sm font-semibold text-blue-900 dark:text-blue-100">Categorias</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0 pb-1.5">
-              <ProductFilters
-                categories={categories as any}
-                selectedCategory={selectedCategory}
-                onCategorySelect={setSelectedCategory}
-              />
-            </CardContent>
-          </Card>
+          <div id="categories-section" className="flex-shrink-0">
+            <ProductFilters
+              categories={categories as any}
+              selectedCategory={selectedCategory}
+              onCategorySelect={setSelectedCategory}
+            />
+          </div>
 
           {/* Grid de Produtos */}
           <ProductGrid
@@ -2740,29 +2734,16 @@ const handleClientChange = (value: string) => {
             getProductId={(product: any) => getProductId(product)}
             formatCurrency={formatCurrency}
             selectedCategory={selectedCategory}
-            className="border-green-200 bg-green-50/30 dark:border-green-800 dark:bg-green-950/10"
           />
-
-          {/* Recomendações Inteligentes - Fase 4 */}
-          {cart.length > 0 && (
-            <ProductRecommendations
-              cart={cart}
-              allProducts={products}
-              onAddProduct={(product) => {
-                startProductSelection(product)
-              }}
-              orderHistory={todayOrders}
-            />
-          )}
           </section>
         }
         rightColumn={
           <aside id="order-summary" className="flex flex-col min-h-0">
-          <Card className="flex flex-col border-orange-200 bg-orange-50/30 dark:border-orange-800 dark:bg-orange-950/10 min-h-[650px] h-full max-h-[calc(100vh-4rem)]">
+          <Card className="flex flex-col min-h-[650px] h-full max-h-[calc(100vh-4rem)]">
             <CardHeader className="flex-shrink-0 space-y-0 pb-1.5 pt-3">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <CardTitle className="text-sm font-semibold text-orange-900 dark:text-orange-100">Carrinho</CardTitle>
+                  <CardTitle className="text-sm font-semibold">Carrinho</CardTitle>
                 </div>
                 {/* Badge de Status do Pedido */}
                 {(editingOrder || currentOrder) && (
@@ -3282,7 +3263,7 @@ const handleClientChange = (value: string) => {
 
                   {/* Aba: Carrinho (Itens e Notas) */}
                   <TabsContent value="items" className="mt-0 h-full">
-                    <div className="space-y-3 h-full flex flex-col bg-gradient-to-b from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-blue-950/20 dark:via-purple-950/10 dark:to-pink-950/20 rounded-lg p-2">
+                    <div className="space-y-3 h-full flex flex-col rounded-lg p-2">
                       {/* Itens do carrinho */}
                       <OrderStatusGuard
                         status={
@@ -3296,12 +3277,12 @@ const handleClientChange = (value: string) => {
                       >
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 pb-1">
-                            <ShoppingCartIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                            <p className="text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                            <ShoppingCartIcon className="h-4 w-4 text-primary" />
+                            <p className="text-sm font-bold">
                               Itens selecionados
                             </p>
                             {cart.length > 0 && (
-                              <Badge className="bg-blue-500 text-white dark:bg-blue-600">
+                              <Badge>
                                 {cart.length}
                               </Badge>
                             )}
@@ -3321,7 +3302,7 @@ const handleClientChange = (value: string) => {
                       </OrderStatusGuard>
 
                       {/* Total e Subtotal - dentro da aba Itens */}
-                      <div className="pt-2 border-t-2 border-purple-200 dark:border-purple-800">
+                      <div className="pt-2 border-t">
                         <OrderTotals
                           subtotal={orderTotal}
                           taxes={0}
@@ -3363,7 +3344,7 @@ const handleClientChange = (value: string) => {
                         }
 
                         return (
-                          <div className="pt-2 border-t-2 border-green-200 dark:border-green-800">
+                          <div className="pt-2 border-t">
                             <PaymentSummary
                               items={paymentItems}
                               orderTotal={orderTotal}
@@ -3384,10 +3365,10 @@ const handleClientChange = (value: string) => {
                         showAlert={false}
                         allowViewOnly={true}
                       >
-                        <div className="space-y-2 pt-2 border-t-2 border-pink-200 dark:border-pink-800">
+                        <div className="space-y-2 pt-2 border-t">
                           <div className="flex items-center gap-2 pb-1">
-                            <NotebookPen className="h-4 w-4 text-pink-600 dark:text-pink-400" />
-                            <p className="text-xs font-semibold text-pink-700 dark:text-pink-300">
+                            <NotebookPen className="h-4 w-4 text-muted-foreground" />
+                            <p className="text-xs font-semibold text-foreground">
                               Observações do Pedido
                             </p>
                           </div>
@@ -3488,9 +3469,9 @@ const handleClientChange = (value: string) => {
               )}
 
                 {/* Resumo Financeiro - Quantidade de itens e troco */}
-              <div className="rounded-lg border-2 border-purple-300 bg-purple-50 p-3 dark:border-purple-700 dark:bg-purple-950/30 space-y-2">
+              <div className="rounded-lg border bg-muted/50 p-3 space-y-2">
                 {/* Quantidade de itens */}
-                <div className="flex items-center justify-between text-xs text-purple-700 dark:text-purple-300 pb-1.5 border-b border-purple-200 dark:border-purple-800">
+                <div className="flex items-center justify-between text-xs text-muted-foreground pb-1.5 border-b">
                   <span>Itens</span>
                   <span className="font-medium">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
                 </div>
@@ -3508,12 +3489,12 @@ const handleClientChange = (value: string) => {
                     const changeAmount = receivedAmount - orderTotal
                     return (
                       <>
-                        <div className="pt-1.5 border-t border-purple-200 dark:border-purple-800 space-y-1.5">
-                          <div className="flex items-center justify-between text-xs text-purple-700 dark:text-purple-300">
+                        <div className="pt-1.5 border-t space-y-1.5">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
                             <span>Valor Entregue</span>
                             <span className="font-medium">{formatCurrency(receivedAmount)}</span>
                           </div>
-                          <div className="flex items-center justify-between text-sm font-semibold text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/30 rounded px-2 py-1.5">
+                          <div className="flex items-center justify-between text-sm font-semibold text-foreground bg-muted rounded px-2 py-1.5">
                             <span>Troco</span>
                             <span className="font-bold text-base">{formatCurrency(changeAmount)}</span>
                           </div>
@@ -3687,6 +3668,42 @@ const handleClientChange = (value: string) => {
           </aside>
         }
       />
+
+      {/* Mobile Bottom Navigation — switches between catalog and cart views */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden flex border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <button
+          onClick={() => setMobileView("catalog")}
+          className={cn(
+            "flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors",
+            mobileView === "catalog" ? "text-primary" : "text-muted-foreground"
+          )}
+        >
+          <Package className="h-5 w-5" />
+          <span>Produtos</span>
+        </button>
+        <button
+          onClick={() => setMobileView("cart")}
+          className={cn(
+            "flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors",
+            mobileView === "cart" ? "text-primary" : "text-muted-foreground"
+          )}
+        >
+          <div className="relative">
+            <ShoppingCartIcon className="h-5 w-5" />
+            {cart.reduce((s, i) => s + i.quantity, 0) > 0 && (
+              <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.5 text-[10px] font-bold text-primary-foreground">
+                {cart.reduce((s, i) => s + i.quantity, 0) > 9 ? "9+" : cart.reduce((s, i) => s + i.quantity, 0)}
+              </span>
+            )}
+          </div>
+          <span>Pedido</span>
+          {cart.reduce((s, i) => s + i.quantity, 0) > 0 && (
+            <span className="text-[10px] font-semibold text-primary leading-none">
+              {formatCurrency(orderTotal)}
+            </span>
+          )}
+        </button>
+      </nav>
 
       {/* Sheet de Pedidos de Hoje */}
       <Sheet open={showTodayOrdersSheet} onOpenChange={setShowTodayOrdersSheet}>
@@ -4050,12 +4067,12 @@ const handleClientChange = (value: string) => {
           {/* Botões de Ação Fixos */}
           {editingOrder && (
             <div className="border-t p-6 bg-muted/30 space-y-3">
-              <div className="rounded-2xl border-2 border-purple-300 bg-purple-50 p-4 dark:border-purple-700 dark:bg-purple-950/30">
-                <div className="flex items-center justify-between text-sm text-purple-700 dark:text-purple-300">
+              <div className="rounded-2xl border bg-muted/50 p-4">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <span>Itens</span>
                   <span>{editOrderCart.reduce((sum, item) => sum + item.quantity, 0)}</span>
                 </div>
-                <div className="mt-2 flex items-center justify-between text-xl font-bold text-purple-900 dark:text-purple-100">
+                <div className="mt-2 flex items-center justify-between text-xl font-bold">
                   <span>Total</span>
                   <span>
                     {formatCurrency(

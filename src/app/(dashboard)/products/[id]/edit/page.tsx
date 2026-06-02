@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ComboboxForm, ComboboxOption } from "@/components/ui/combobox";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Trash2, Loader2 } from "lucide-react";
+import { resolveImageUrl } from "@/lib/resolve-image-url";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -178,7 +179,7 @@ export default function EditProductPage() {
 
       // Carregar imagem atual
       if (product.url || product.image) {
-        const imageUrl = product.url || product.image;
+        const imageUrl = resolveImageUrl(product.url || product.image);
 
         setCurrentImage(imageUrl || null);
       } else {

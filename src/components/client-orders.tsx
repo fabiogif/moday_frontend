@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Package, Calendar, MapPin, CreditCard, Truck, ShoppingBag } from 'lucide-react'
 import { toast } from 'sonner'
 import { buildApiUrl } from '@/lib/api-config'
+import { resolveImageUrl } from '@/lib/resolve-image-url'
 
 interface OrderProduct {
   uuid: string
@@ -203,7 +204,7 @@ export function ClientOrders({ slug }: ClientOrdersProps) {
                         {product.image && (
                           <div className="h-12 w-12 rounded overflow-hidden bg-muted flex-shrink-0">
                             <img 
-                              src={product.image} 
+                              src={resolveImageUrl(product.image) || ""} 
                               alt={product.name}
                               className="h-full w-full object-cover"
                             />

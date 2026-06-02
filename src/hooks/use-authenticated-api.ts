@@ -21,13 +21,48 @@ interface UseAuthenticatedApiState<T> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Module-level TTL cache — keyed by "endpoint::queryParamsJSON"
+// Survives re-renders and component remounts within the same browser session.
+// ---------------------------------------------------------------------------
+const REQUEST_CACHE = new Map<string, { data: unknown; timestamp: number; ttl: number }>()
+
+function getCachedData(key: string): unknown | null {
+  const entry = REQUEST_CACHE.get(key)
+  if (!entry) return null
+  if (Date.now() - entry.timestamp > entry.ttl) {
+    REQUEST_CACHE.delete(key)
+    return null
+  }
+  return entry.data
+}
+
+function setCachedData(key: string, data: unknown, ttl: number): void {
+  REQUEST_CACHE.set(key, { data, timestamp: Date.now(), ttl })
+}
+
+/**
+ * Invalidate cache entries whose key contains `pattern`.
+ * Call with no argument to clear the entire cache.
+ */
+export function invalidateCache(pattern?: string): void {
+  if (!pattern) {
+    REQUEST_CACHE.clear()
+    return
+  }
+  for (const key of REQUEST_CACHE.keys()) {
+    if (key.includes(pattern)) REQUEST_CACHE.delete(key)
+  }
+}
+// ---------------------------------------------------------------------------
+
 export function useAuthenticatedApi<T>(
   endpoint: string,
-  options: { immediate?: boolean; queryParams?: Record<string, any> } = {}
+  options: { immediate?: boolean; queryParams?: Record<string, any>; ttl?: number } = {}
 ): UseAuthenticatedApiState<T> {
-  const { immediate = true, queryParams = {} } = options
+  const { immediate = true, queryParams = {}, ttl = 30_000 } = options
   const { token, isAuthenticated, isLoading: authLoading } = useAuth()
-  
+
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -46,21 +81,24 @@ export function useAuthenticatedApi<T>(
     if (authLoading) {
       return
     }
-    
+
     if (!isAuthenticated || !token) {
       setError('Usuário não autenticado')
       return
     }
 
+    // Serve from cache if the data is still fresh — no network request needed
+    const cacheKey = `${endpoint}::${queryParamsKey}`
+    const cached = getCachedData(cacheKey)
+    if (cached !== null) {
+      setData(cached as T)
+      return
+    }
+
     // Garantir que o token está no ApiClient
-    // Primeiro verifica se há token no localStorage (mais confiável)
     if (typeof window !== 'undefined') {
       const tokenFromStorage = localStorage.getItem('auth-token')
-      if (tokenFromStorage) {
-        apiClient.setToken(tokenFromStorage)
-      } else {
-        apiClient.setToken(token)
-      }
+      apiClient.setToken(tokenFromStorage || token)
     } else {
       apiClient.setToken(token)
     }
@@ -69,12 +107,10 @@ export function useAuthenticatedApi<T>(
     setError(null)
 
     try {
-      // Reconstruir queryParams do queryParamsKey para garantir atualização
       const currentQueryParams = queryParamsKey ? JSON.parse(queryParamsKey) : {}
-      
-      // Construir URL com query parameters apenas se houver queryParams adicionais
+
       let finalEndpoint = endpoint
-      
+
       if (Object.keys(currentQueryParams).length > 0) {
         const url = new URL(endpoint, window.location.origin)
         Object.entries(currentQueryParams).forEach(([key, value]) => {
@@ -84,37 +120,29 @@ export function useAuthenticatedApi<T>(
         })
         finalEndpoint = url.pathname + url.search
       }
-      
+
       const response = await apiClient.get<T>(finalEndpoint)
-      
+
       if (response.success) {
-        // Verificar diferentes estruturas de resposta
         let extractedData = response.data
         let paginationData = null
-        
-        // 1. Se response.data é um array, usar diretamente
+
         if (Array.isArray(response.data)) {
           extractedData = response.data
-        }
-        // 2. Se response.data é um objeto e tem pagination no mesmo nível
-        else if (response.data && typeof response.data === 'object' && 'pagination' in response.data) {
-          // Verificar se há paginação
+        } else if (response.data && typeof response.data === 'object' && 'pagination' in response.data) {
           paginationData = (response.data as any).pagination
           extractedData = response.data
-        }
-        // 3. Se response.data tem uma propriedade data (Laravel Resource Collection)
-        else if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+        } else if (response.data && typeof response.data === 'object' && 'data' in response.data) {
           extractedData = (response.data as any).data
-          // Verificar se há paginação
           if ('pagination' in response.data) {
             paginationData = (response.data as any).pagination
           }
-        }
-        // 4. Se response.data é um objeto simples 
-        else if (response.data && typeof response.data === 'object') {
+        } else if (response.data && typeof response.data === 'object') {
           extractedData = response.data
         }
-        
+
+        // Cache the result and update state
+        setCachedData(cacheKey, extractedData, ttl)
         setData(extractedData as T)
         if (paginationData) {
           setPagination(paginationData)
@@ -123,8 +151,6 @@ export function useAuthenticatedApi<T>(
         setError(response.message || 'Erro ao carregar dados')
       }
     } catch (err: any) {
-      
-      // Tentar extrair mais informações do erro
       let errorMessage = 'Erro na requisição'
       if (err.message) {
         errorMessage = err.message
@@ -133,37 +159,45 @@ export function useAuthenticatedApi<T>(
       } else if (typeof err === 'string') {
         errorMessage = err
       }
-      
+
       setError(errorMessage)
     } finally {
       setLoading(false)
     }
-  }, [endpoint, isAuthenticated, token, authLoading, queryParamsKey])
+  }, [endpoint, isAuthenticated, token, authLoading, queryParamsKey, ttl])
+
+  // refetch always bypasses cache so the caller gets fresh data on demand
+  const refetch = useCallback(async () => {
+    invalidateCache(`${endpoint}::${queryParamsKey}`)
+    await fetchData()
+  }, [endpoint, queryParamsKey, fetchData])
 
   useEffect(() => {
-    // Só fazer fetch quando não estiver carregando autenticação e estiver autenticado
     if (immediate && !authLoading && isAuthenticated && token) {
       fetchData()
     }
   }, [immediate, authLoading, isAuthenticated, token, fetchData])
 
-  // Retornar isAuthenticated como false apenas se não estiver carregando E não estiver autenticado
-  // Isso evita mostrar "não autenticado" durante o carregamento inicial
   const effectiveIsAuthenticated = authLoading ? true : isAuthenticated
 
-  return { 
-    data, 
-    loading, 
-    error, 
-    refetch: fetchData,
+  return {
+    data,
+    loading,
+    error,
+    refetch,
     isAuthenticated: effectiveIsAuthenticated,
     pagination: pagination || undefined
   }
 }
 
-// Hooks específicos para endpoints autenticados
+// ---------------------------------------------------------------------------
+// Hooks específicos — TTL configurado por frequência de mudança dos dados:
+//   60 s — dados estáticos (produtos, categorias, métodos de pagamento)
+//   30 s — dados semi-estáticos (mesas, clientes, tipos de atendimento)
+//   15 s — dados dinâmicos (pedidos do dia, pedidos por mesa)
+// ---------------------------------------------------------------------------
 export function useAuthenticatedProducts() {
-  return useAuthenticatedApi(endpoints.products.list, { immediate: true })
+  return useAuthenticatedApi(endpoints.products.list, { ttl: 60_000 })
 }
 
 export function useAuthenticatedPermissions() {
@@ -187,11 +221,11 @@ export function useAuthenticatedProductStats() {
 }
 
 export function useAuthenticatedCategories() {
-  return useAuthenticatedApi(endpoints.categories.list, { immediate: true })
+  return useAuthenticatedApi(endpoints.categories.list, { ttl: 60_000 })
 }
 
 export function useAuthenticatedCategoryStats() {
-  return useAuthenticatedApi(endpoints.categories.stats, { immediate: true })
+  return useAuthenticatedApi(endpoints.categories.stats, { ttl: 60_000 })
 }
 
 export function useAuthenticatedOrders(params?: { page?: number; per_page?: number; status?: string }) {
@@ -207,7 +241,7 @@ export function useAuthenticatedOrderStats() {
 }
 
 export function useAuthenticatedTables() {
-  return useAuthenticatedApi(endpoints.tables.list, { immediate: true })
+  return useAuthenticatedApi(endpoints.tables.list, { ttl: 30_000 })
 }
 
 export function useAuthenticatedPlans() {
@@ -219,11 +253,11 @@ export function useAuthenticatedServiceTypes() {
 }
 
 export function useAuthenticatedActiveServiceTypes() {
-  return useAuthenticatedApi(endpoints.serviceTypes.active, { immediate: true })
+  return useAuthenticatedApi(endpoints.serviceTypes.active, { ttl: 60_000 })
 }
 
 export function useAuthenticatedMenuServiceTypes() {
-  return useAuthenticatedApi(endpoints.serviceTypes.menu, { immediate: true })
+  return useAuthenticatedApi(endpoints.serviceTypes.menu, { ttl: 60_000 })
 }
 
 export function useAuthenticatedTableStats() {
@@ -269,18 +303,18 @@ export function useAuthenticatedRoles() {
 }
 
 export function useAuthenticatedClients() {
-  return useAuthenticatedApi(endpoints.clients.list, { immediate: true })
+  return useAuthenticatedApi(endpoints.clients.list, { ttl: 30_000 })
 }
 
 export function useAuthenticatedOrdersByTable(tableUuid: string | null) {
   return useAuthenticatedApi(
     tableUuid ? endpoints.orders.getByTable(tableUuid) : '',
-    { immediate: !!tableUuid }
+    { immediate: !!tableUuid, ttl: 15_000 }
   )
 }
 
 export function useAuthenticatedTodayOrders() {
-  return useAuthenticatedApi(endpoints.orders.getToday, { immediate: true })
+  return useAuthenticatedApi(endpoints.orders.getToday, { ttl: 15_000 })
 }
 
 export function useAuthenticatedClientStats() {
@@ -473,12 +507,10 @@ export function useMutationWithValidation<T, P = any>(
   return { mutate, loading, error }
 }
 
-// Hook específico para formas de pagamento
 export function useAuthenticatedPaymentMethods() {
-  return useAuthenticatedApi(endpoints.paymentMethods.list)
+  return useAuthenticatedApi(endpoints.paymentMethods.list, { ttl: 60_000 })
 }
 
-// Hook específico para formas de pagamento ativas
 export function useAuthenticatedActivePaymentMethods() {
-  return useAuthenticatedApi(endpoints.paymentMethods.active)
+  return useAuthenticatedApi(endpoints.paymentMethods.active, { ttl: 60_000 })
 }

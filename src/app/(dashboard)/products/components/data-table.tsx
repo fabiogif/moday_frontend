@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { resolveImageUrl } from "@/lib/resolve-image-url"
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -156,7 +157,7 @@ export function DataTable({ products, onDeleteProduct, onEditProduct, onAddProdu
           <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-md bg-muted">
             {row.original.url ? (
               <img
-                src={row.original.url}
+                src={resolveImageUrl(row.original.url) || ""}
                 alt={row.getValue("name")}
                 className="h-full w-full object-cover"
                 onError={(e) => {

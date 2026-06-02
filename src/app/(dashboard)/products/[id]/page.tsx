@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { resolveImageUrl } from "@/lib/resolve-image-url"
 import {
   ArrowLeft,
   Package,
@@ -233,7 +234,7 @@ export default function ProductDetailPage() {
               <div className="aspect-square relative overflow-hidden rounded-lg border bg-muted">
                 {product.image || product.url ? (
                   <img
-                    src={product.url || product.image}
+                    src={resolveImageUrl(product.url || product.image) || ""}
                     alt={product.name}
                     className="object-cover w-full h-full"
                   />

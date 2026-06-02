@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ShoppingCart, Eye } from 'lucide-react'
 import { useOrderRefresh } from '@/hooks/use-order-refresh'
+import { invalidateCache } from '@/hooks/use-authenticated-api'
 
 interface OrderNotification {
   id: string
@@ -137,79 +138,81 @@ export function OrderNotificationsProvider({ children }: OrderNotificationsProvi
     enabled: !!tenantId && tenantId > 0,
   })
 
-  // Fallback: Polling se WebSocket não estiver disponível
+  // Ref para o callback de novo pedido — evita recriar o intervalo de polling
+  // quando handleNewOrder muda (ex: alteração do estado soundEnabled)
+  const handleNewOrderRef = useRef(handleNewOrder)
+  useEffect(() => {
+    handleNewOrderRef.current = handleNewOrder
+  }, [handleNewOrder])
+
+  // Fallback: polling quando WebSocket não está disponível.
+  // Intervalo de 30 s — o WebSocket é o mecanismo primário; polling é apenas segurança.
   useEffect(() => {
     if (isConnected || !tenantId || tenantId === 0) {
-      return // WebSocket está funcionando, não precisa de polling
+      return
     }
 
-    // Usar polling apenas se WebSocket falhar
     const checkForNewOrders = async () => {
+      // Não fazer polling com a aba em segundo plano
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return
+      }
+
       try {
         const token = localStorage.getItem('auth-token') || localStorage.getItem('token')
-        if (!token) {
+        if (!token) return
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/order?per_page=1&sort=created_at&order=desc`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+            },
+          }
+        )
+
+        if (!response.ok) return
+
+        const data = await response.json()
+        const orders = Array.isArray(data.data?.data)
+          ? data.data.data
+          : Array.isArray(data.data)
+          ? data.data
+          : []
+
+        if (orders.length === 0) return
+
+        const latestOrder = orders[0]
+        const orderId = latestOrder.id?.toString() || latestOrder.identify
+        const lastCheckedOrderId = lastCheckedOrderIdRef.current
+
+        if (lastCheckedOrderId === null) {
+          // Primeira verificação — apenas registrar o ID atual, não notificar
+          localStorage.setItem('lastCheckedOrderId', orderId)
+          lastCheckedOrderIdRef.current = orderId
           return
         }
-        
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/order?per_page=1&sort=created_at&order=desc`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-          },
-        })
-        
-        if (response.ok) {
-          const data = await response.json()
-          
-          // API pode retornar data.data.data (paginado) ou data.data (array direto)
-          const orders = Array.isArray(data.data?.data) ? data.data.data : 
-                        Array.isArray(data.data) ? data.data : []
-                    
-          if (orders.length > 0) {
-            const latestOrder = orders[0]
-            const orderId = latestOrder.id?.toString() || latestOrder.identify
-            
-            const lastCheckedOrderId = lastCheckedOrderIdRef.current
-            
-            // SOLUÇÃO DEFINITIVA: Detectar por mudança de ID ao invés de timestamp
-            // Se o ID do último pedido mudou, é um pedido novo
-            const isNewOrder = lastCheckedOrderId !== null && orderId !== lastCheckedOrderId
-            
-            if (isNewOrder && !processedOrderIdsRef.current.has(orderId)) {
-              handleNewOrder(latestOrder)
-              
-              // Salvar imediatamente no localStorage e ref
-              localStorage.setItem('lastCheckedOrderId', orderId)
-              lastCheckedOrderIdRef.current = orderId
-              
-              // Disparar atualização da lista de pedidos
-              triggerRefresh()
-            } else if (lastCheckedOrderId === null) {
-              // Primeira verificação - não notificar, apenas registrar
-              // Salvar no localStorage e ref
-              localStorage.setItem('lastCheckedOrderId', orderId)
-              lastCheckedOrderIdRef.current = orderId
-            }
-          }
+
+        if (orderId !== lastCheckedOrderId && !processedOrderIdsRef.current.has(orderId)) {
+          handleNewOrderRef.current(latestOrder)
+          localStorage.setItem('lastCheckedOrderId', orderId)
+          lastCheckedOrderIdRef.current = orderId
+          // Invalidar cache de pedidos para que o PDV recarregue dados frescos
+          invalidateCache('/api/order')
+          triggerRefresh()
         }
-      } catch (error) {
+      } catch {
         // Erro silencioso no polling
       }
     }
 
-    // Fazer primeira checagem imediatamente
     checkForNewOrders()
-    
-    // Polling a cada 5 segundos
-    const interval = setInterval(checkForNewOrders, 5000)
-    
-    return () => {
-      clearInterval(interval)
-    }
-  }, [isConnected, tenantId, handleNewOrder])
-  
-  // processedOrderIdsRef, lastCheckedOrderIdRef e triggerRefresh são refs/funções estáveis
-  // NÃO devem estar nas dependências para evitar re-renders infinitos
+    const interval = setInterval(checkForNewOrders, 30_000)
+    return () => clearInterval(interval)
+    // handleNewOrder NÃO está nas deps — usamos a ref para evitar recriar o intervalo
+    // triggerRefresh é estável (Zustand action), também omitido intencionalmente
+  }, [isConnected, tenantId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const clearNotification = useCallback((id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id))

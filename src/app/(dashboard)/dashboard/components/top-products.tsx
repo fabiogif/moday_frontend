@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAuth } from "@/contexts/auth-context"
 import { useAuthenticatedApi } from "@/hooks/use-authenticated-api"
+import { resolveImageUrl } from "@/lib/resolve-image-url"
 
 interface TopProduct {
   rank: number
@@ -97,7 +98,7 @@ export function TopProducts() {
               <div key={product.id} className="flex items-center gap-4">
                 <div className="flex items-center justify-center h-10 w-10 rounded bg-muted">
                   {product.image ? (
-                    <img src={product.image} alt={product.name} className="h-full w-full object-cover rounded" />
+                    <img src={resolveImageUrl(product.image) || ""} alt={product.name} className="h-full w-full object-cover rounded" />
                   ) : (
                     <Package className="h-5 w-5 text-muted-foreground" />
                   )}

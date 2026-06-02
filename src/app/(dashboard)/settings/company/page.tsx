@@ -30,6 +30,7 @@ import { useReceitaWS } from "@/hooks/use-receitaws"
 import { AlertCircle, CheckCircle2 } from "lucide-react"
 import { StateCityFormFields } from "@/components/location/state-city-form-fields"
 import { PlansSection } from "./components/plans-section"
+import { resolveImageUrl } from "@/lib/resolve-image-url"
 
 const companyFormSchema = z.object({
   name: z.string().min(1, "Nome da empresa é obrigatório"),
@@ -392,7 +393,7 @@ export default function CompanySettings() {
             <div className="flex items-center gap-4 mb-6">
               {tenantData.logo ? (
                 <Image 
-                  src={tenantData.logo} 
+                  src={resolveImageUrl(tenantData.logo) || ""} 
                   alt={tenantData.name} 
                   width={80} 
                   height={80} 
@@ -514,7 +515,7 @@ export default function CompanySettings() {
                       />
                     ) : tenantData?.logo && !removeLogo ? (
                       <Image 
-                        src={tenantData.logo} 
+                        src={resolveImageUrl(tenantData.logo) || ""} 
                         alt="Logo atual" 
                         width={128} 
                         height={128} 

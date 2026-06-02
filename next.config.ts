@@ -38,6 +38,11 @@ const nextConfig: NextConfig = {
         protocol: 'http',
         hostname: 'localhost',
       },
+      {
+        protocol: 'http',
+        hostname: '163.176.233.174',
+        pathname: '/**',
+      },
       { protocol: 'https', 
         hostname: 'moday.sfo3.digitaloceanspaces.com' 
       },

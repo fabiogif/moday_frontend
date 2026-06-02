@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { useAuthenticatedApi, useMutation } from "@/hooks/use-authenticated-api"
 import { endpoints } from "@/lib/api-client"
 import { CouponForm, CouponFormValues } from "../../components/coupon-form"
+import { resolveImageUrl } from "@/lib/resolve-image-url"
 
 interface CouponResponse {
   uuid: string
@@ -77,7 +78,7 @@ export default function EditCouponPage() {
     }
   }, [coupon])
 
-  const fullImageUrl = coupon?.image_url ?? null
+  const fullImageUrl = resolveImageUrl(coupon?.image_url ?? null)
 
   const handleSubmit = async ({
     values,

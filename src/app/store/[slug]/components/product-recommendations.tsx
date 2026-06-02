@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Sparkles, TrendingUp, Package } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
+import { resolveImageUrl } from "@/lib/resolve-image-url"
 
 interface Product {
   uuid: string
@@ -163,7 +164,9 @@ export function ProductRecommendations({
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
           {recommendedProducts.map((product) => {
             const priceInfo = getProductPrice(product)
-            const imageUrl = product.image || product.image_url
+            const imageUrl =
+              resolveImageUrl(product.image) ||
+              resolveImageUrl(product.image_url)
 
             return (
               <div

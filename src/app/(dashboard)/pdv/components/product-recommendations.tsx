@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { toast } from "sonner"
 import { apiClient, endpoints } from "@/lib/api-client"
+import { resolveImageUrl } from "@/lib/resolve-image-url"
 
 interface Product {
   uuid?: string
@@ -206,7 +207,9 @@ export function ProductRecommendations({
             {recommendedProducts.map((product) => {
             const priceInfo = getProductPrice(product)
             const productId = product.uuid || product.identify || product.name
-            const imageUrl = product.image || product.image_url
+            const imageUrl =
+              resolveImageUrl(product.image) ||
+              resolveImageUrl(product.image_url)
 
             return (
               <div

@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useAuthenticatedApi, useMutation } from "@/hooks/use-authenticated-api"
 import { endpoints } from "@/lib/api-client"
+import { resolveImageUrl } from "@/lib/resolve-image-url"
 import { toast } from "sonner"
 import { MoreHorizontal, Plus, RefreshCcw, TicketPercent } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -272,7 +273,7 @@ export default function CouponsPage() {
                           {coupon.image_url && (
                             <div className="h-[60px] w-[110px] overflow-hidden rounded-md border border-border/50">
                               <img
-                                src={coupon.image_url}
+                                src={resolveImageUrl(coupon.image_url) || ""}
                                 alt={`Banner do cupom ${coupon.code}`}
                                 className="h-full w-full object-cover"
                               />

@@ -4,6 +4,7 @@ import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { NotebookPen } from "lucide-react"
+import { resolveImageUrl } from "@/lib/resolve-image-url"
 
 type Product = {
   uuid?: string
@@ -64,6 +65,9 @@ export function ProductGrid({
           >
             {products.map((product) => {
               const price = getProductPrice(product)
+              const imageSrc =
+                resolveImageUrl(product.image_url) ||
+                resolveImageUrl(product.image)
               return (
                 <button
                   key={getProductId(product)}
@@ -72,9 +76,9 @@ export function ProductGrid({
                   className="flex h-32 flex-col rounded-xl border bg-card text-left shadow-sm transition hover:scale-[1.02] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <div className="relative h-16 w-full overflow-hidden rounded-t-xl bg-muted">
-                    {product.image_url || product.image ? (
+                    {imageSrc ? (
                       <Image
-                        src={product.image_url || product.image || ""}
+                        src={imageSrc}
                         alt={product.name}
                         fill
                         className="object-cover"

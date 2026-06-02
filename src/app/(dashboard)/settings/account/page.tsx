@@ -32,6 +32,7 @@ import { apiClient } from "@/lib/api-client"
 import { toast } from "sonner"
 import { Loader2, Building2 } from "lucide-react"
 import Image from "next/image"
+import { resolveImageUrl } from "@/lib/resolve-image-url"
 
 const accountFormSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -235,7 +236,7 @@ export default function AccountSettings() {
                     <div className="flex items-center gap-3 mt-1">
                       {userData.tenant.logo ? (
                         <Image 
-                          src={userData.tenant.logo} 
+                          src={resolveImageUrl(userData.tenant.logo) || ""} 
                           alt={userData.tenant.name} 
                           width={40} 
                           height={40} 

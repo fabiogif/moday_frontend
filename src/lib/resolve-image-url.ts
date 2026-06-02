@@ -1,43 +1,66 @@
-"use client"
+import { getApiBaseUrl } from "@/lib/api-config"
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "")
+const STALE_HOSTS = new Set(["localhost", "127.0.0.1"])
+
+/**
+ * Converte URLs absolutas com host de dev (localhost) em caminho relativo /storage/...
+ */
+function rewriteStaleAbsoluteUrl(url: string): string {
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    return url
+  }
+
+  try {
+    const parsed = new URL(url)
+    if (STALE_HOSTS.has(parsed.hostname)) {
+      return parsed.pathname + parsed.search
+    }
+  } catch {
+    // mantém URL original se não for parseável
+  }
+
+  return url
+}
 
 /**
  * Normaliza URLs de imagens vindas da API.
- * Aceita URLs absolutos, relativos ou apenas nomes de arquivos.
+ * Aceita URLs absolutas, relativas ou apenas nomes de arquivos.
  */
 export function resolveImageUrl(image?: string | null): string | null {
   if (!image) {
     return null
   }
 
-  const trimmed = image.trim()
+  let trimmed = image.trim()
   if (trimmed === "") {
     return null
   }
 
-  // Já é uma URL absoluta ou data URI
-  if (
-    trimmed.startsWith("http://") ||
-    trimmed.startsWith("https://") ||
-    trimmed.startsWith("data:")
-  ) {
+  trimmed = rewriteStaleAbsoluteUrl(trimmed)
+
+  if (trimmed.startsWith("data:")) {
     return trimmed
   }
 
-  if (!API_BASE_URL) {
+  const apiBase = getApiBaseUrl()
+
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
     return trimmed
+  }
+
+  if (trimmed.startsWith("/storage/") || trimmed.startsWith("/")) {
+    return apiBase ? `${apiBase}${trimmed}` : trimmed
+  }
+
+  if (!apiBase) {
+    return trimmed.startsWith("storage/") ? `/${trimmed}` : `/storage/${trimmed}`
   }
 
   const sanitized = trimmed.replace(/^\/+/, "")
 
-  // Se já aponta para storage/, apenas prefixar domínio
   if (sanitized.startsWith("storage/")) {
-    return `${API_BASE_URL}/${sanitized}`
+    return `${apiBase}/${sanitized}`
   }
 
-  // Caminho relativo: assumir pasta storage por padrão
-  return `${API_BASE_URL}/storage/${sanitized}`
+  return `${apiBase}/storage/${sanitized}`
 }
-
-

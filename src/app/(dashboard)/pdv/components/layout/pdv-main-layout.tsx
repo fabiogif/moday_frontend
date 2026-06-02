@@ -9,15 +9,14 @@ interface PDVMainLayoutProps {
 }
 
 /**
- * Layout principal do PDV com duas colunas:
- * - Esquerda: Área do pedido (carrinho, totalizador, ações)
- * - Direita: Catálogo de produtos
+ * Layout principal do PDV.
+ * Reserva espaço para a barra de navegação mobile inferior (lg:hidden).
  */
 export function PDVMainLayout({ children, className }: PDVMainLayoutProps) {
   return (
     <div
       className={cn(
-        "flex flex-col h-[calc(100vh-4rem)] overflow-hidden",
+        "flex flex-col h-[calc(100vh-8rem)] lg:h-[calc(100vh-4rem)] overflow-hidden",
         className
       )}
     >
@@ -29,17 +28,19 @@ export function PDVMainLayout({ children, className }: PDVMainLayoutProps) {
 interface PDVTwoColumnLayoutProps {
   leftColumn: ReactNode
   rightColumn: ReactNode
+  mobileActiveView?: "catalog" | "cart"
   className?: string
 }
 
 /**
- * Layout de duas colunas para o PDV
- * - Coluna Esquerda: Catálogo de produtos (60% da largura)
- * - Coluna Direita: Carrinho e pedido (40% da largura)
+ * Layout de duas colunas para o PDV.
+ * Mobile: exibe uma coluna por vez, controlada por mobileActiveView.
+ * Desktop (lg+): exibe ambas as colunas lado a lado.
  */
 export function PDVTwoColumnLayout({
   leftColumn,
   rightColumn,
+  mobileActiveView = "catalog",
   className,
 }: PDVTwoColumnLayoutProps) {
   return (
@@ -49,13 +50,21 @@ export function PDVTwoColumnLayout({
         className
       )}
     >
-      {/* Coluna Esquerda: Catálogo de Produtos (60%) */}
-      <section className="flex flex-col flex-[3] min-w-0 overflow-hidden min-h-0">
+      {/* Catálogo: full-width on mobile, 60% on desktop */}
+      <section className={cn(
+        "flex-col min-w-0 overflow-hidden min-h-0",
+        "lg:flex lg:flex-[3]",
+        mobileActiveView === "catalog" ? "flex flex-1" : "hidden"
+      )}>
         {leftColumn}
       </section>
 
-      {/* Coluna Direita: Carrinho e Pedido (40%) */}
-      <aside className="flex flex-col flex-[2] min-w-0 overflow-hidden min-h-0 flex-shrink-0 border-l border-border/50 pl-3">
+      {/* Carrinho: hidden on mobile (via nav tab), 40% on desktop */}
+      <aside className={cn(
+        "flex-col min-w-0 overflow-hidden min-h-0 flex-shrink-0",
+        "lg:flex lg:flex-[2] lg:border-l lg:border-border/50 lg:pl-3",
+        mobileActiveView === "cart" ? "flex flex-1" : "hidden"
+      )}>
         {rightColumn}
       </aside>
     </div>

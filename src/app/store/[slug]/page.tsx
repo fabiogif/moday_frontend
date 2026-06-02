@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useState, useCallback } from "react"
-import { ShoppingCart, Plus, Minus, Trash2, Store, MapPin, Phone, Mail, Image as ImageIcon, Loader2, Search, Package, Menu, X, MessageCircle, UserCircle2, Check, Clock, CreditCard } from "lucide-react"
+import { ShoppingCart, Plus, Minus, Store, MapPin, Phone, Image as ImageIcon, Loader2, Search, Package, Menu, X, MessageCircle, Check, Clock, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,19 +12,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import Image from "next/image"
-import { maskCPF, validateCPF, maskPhone, validatePhone, maskZipCode, validateEmail } from '@/lib/masks'
+import { maskCPF, maskPhone } from '@/lib/masks'
 import { useViaCEP } from '@/hooks/use-viacep'
 import { StateCitySelect } from '@/components/location/state-city-select'
 import { StoreHoursBanner } from './components/store-hours-banner'
 import { SiteFooter } from '@/components/site-footer'
 import { ReviewModal } from './components/review-modal'
+import { resolveImageUrl } from '@/lib/resolve-image-url'
 import { ReviewsSection } from './components/reviews-section'
 import { apiClient, endpoints } from '@/lib/api-client'
 import { buildApiUrl } from '@/lib/api-config'
@@ -207,12 +205,6 @@ export default function PublicStorePage() {
   // 4 Melhores ofertas (maior desconto)
   const bestOffers = productsWithOffers
 
-  // Para produtos mais vendidos, vou usar uma propriedade fictícia por enquanto
-  // Você pode substituir isso por dados reais da API se tiver um campo 'total_sales'
-  const bestSellers = products
-    .slice()
-    .sort(() => Math.random() - 0.5) // Por enquanto, aleatório
-    .slice(0, 4)
 
   const loadPaymentMethods = useCallback(async () => {
     try {
@@ -884,7 +876,7 @@ export default function PublicStorePage() {
 
   const estimatedTime = storeInfo?.settings?.delivery_pickup?.pickup_time_minutes
   const estimatedTimeLabel = estimatedTime ? `${estimatedTime} min` : '30-45 min'
-  const acceptedPayments = paymentMethods.length > 0 ? paymentMethods.map((method) => method.name) : ['Verificar na loja']
+  const acceptedPayments = paymentMethods.length > 0 ? paymentMethods : [{ uuid: 'default', name: 'Verificar na loja' }]
 
   const handleContactToggle = (type: 'whatsapp' | 'location') => {
     setContactExpanded((prev) => ({
@@ -1066,9 +1058,9 @@ export default function PublicStorePage() {
               <span className="font-medium">Formas de pagamento</span>
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
-              {acceptedPayments.map((method) => (
-                <Badge key={method} variant="outline" className="text-xs">
-                  {method}
+              {acceptedPayments.map((method, i) => (
+                <Badge key={method.uuid ?? i} variant="outline" className="text-xs">
+                  {method.name}
                 </Badge>
               ))}
             </div>
@@ -1151,7 +1143,7 @@ export default function PublicStorePage() {
                     <div className="flex items-center gap-3">
                       {storeInfo.logo ? (
                         <Image
-                          src={storeInfo.logo}
+                          src={resolveImageUrl(storeInfo.logo) || ""}
                           alt={storeInfo.name}
                           width={48}
                           height={48}
@@ -1168,7 +1160,7 @@ export default function PublicStorePage() {
                       </div>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <Button
                         className="w-full gap-2"
                         onClick={() => {
@@ -1177,7 +1169,7 @@ export default function PublicStorePage() {
                         }}
                       >
                         <ShoppingCart className="h-4 w-4" />
-                        Ver carrinho ({cartCount})
+                        Ver carrinho {cartCount > 0 && `(${cartCount})`}
                       </Button>
                       <Button variant="outline" className="w-full gap-2" asChild>
                         <Link href={`/store/${slug}/track`} onClick={() => setMobileMenuOpen(false)}>
@@ -1189,36 +1181,37 @@ export default function PublicStorePage() {
 
                     <Separator />
 
-                    <div className="space-y-3 text-sm text-muted-foreground">
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Contato e Endereço</p>
                       {displayWhatsapp !== 'Não informado' && (
                         <a
                           href={whatsappLink}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex items-center gap-2 rounded-lg border border-transparent bg-muted/50 px-4 py-2 transition hover:border-primary hover:text-primary"
+                          className="flex items-center gap-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 px-4 py-3 text-sm font-medium text-emerald-700 dark:text-emerald-400 transition hover:bg-emerald-100 dark:hover:bg-emerald-950/40"
                         >
-                          <MessageCircle className="h-4 w-4 text-primary" />
-                          <span>WhatsApp: {displayWhatsapp}</span>
+                          <MessageCircle className="h-4 w-4 flex-shrink-0" />
+                          <span>{displayWhatsapp}</span>
                         </a>
-                  )}
+                      )}
                       {locationText && (
-                        <div className="flex items-start gap-2 rounded-lg bg-muted/40 px-4 py-2">
-                          <MapPin className="mt-1 h-4 w-4 text-primary" />
+                        <div className="flex items-start gap-3 rounded-xl bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+                          <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
                           <span>{locationText}</span>
                         </div>
                       )}
-                      <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-4 py-2">
-                        <Clock className="h-4 w-4 text-primary" />
+                      <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4 flex-shrink-0 text-primary" />
                         <span>{attendanceText}</span>
-                </div>
-              </div>
+                      </div>
+                    </div>
             </div>
                 </SheetContent>
               </Sheet>
 
               {storeInfo.logo ? (
                 <Image
-                  src={storeInfo.logo}
+                  src={resolveImageUrl(storeInfo.logo) || ""}
                   alt={storeInfo.name}
                   width={48}
                   height={48}
@@ -1276,206 +1269,132 @@ export default function PublicStorePage() {
           </div>
         </div>
 
-        <div className="border-b bg-muted/50">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-start">
-                <div className="relative flex-1 min-w-[200px] max-w-sm">
-                  <button
-                    type="button"
-                    onClick={() => handleContactToggle('whatsapp')}
-                    className="flex w-full items-center justify-center gap-2 rounded-full border bg-background px-4 py-2 text-sm font-medium shadow-sm transition hover:border-primary hover:text-primary"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    <span>WhatsApp</span>
-                    <span className="text-xs text-muted-foreground">(toque para ver detalhes)</span>
-                  </button>
-                  <div
-                    className={`overflow-hidden transition-all ${contactExpanded.whatsapp ? 'max-h-32 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}
-                  >
-                    <div className="rounded-lg border bg-background/95 px-4 py-3 text-xs text-muted-foreground shadow-sm">
-                      <p className="font-medium text-foreground">
-                        {displayWhatsapp !== 'Não informado' ? displayWhatsapp : 'Contato não informado'}
-                      </p>
-                      <p className="mt-1">{attendanceText}</p>
-                      {whatsappLink && (
-                        <Button variant="link" className="px-0 text-primary" asChild>
-                          <a href={whatsappLink} target="_blank" rel="noreferrer">
-                            Conversar no WhatsApp
-                          </a>
-                </Button>
-              )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="relative flex-1 min-w-[200px] max-w-sm">
-                  <button
-                    type="button"
-                    onClick={() => handleContactToggle('location')}
-                    className="flex w-full items-center justify-center gap-2 rounded-full border bg-background px-4 py-2 text-sm font-medium shadow-sm transition hover:border-primary hover:text-primary"
-                  >
-                    <MapPin className="h-4 w-4" />
-                    <span>Localização</span>
-                    <span className="text-xs text-muted-foreground">(toque para ver detalhes)</span>
-                  </button>
-                  <div
-                    className={`overflow-hidden transition-all ${contactExpanded.location ? 'max-h-32 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}
-                  >
-                    <div className="rounded-lg border bg-background/95 px-4 py-3 text-xs text-muted-foreground shadow-sm">
-                      <p className="font-medium text-foreground">
-                        {locationText || 'Endereço não informado'}
-                      </p>
-                      <p className="mt-1">{attendanceText}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-b bg-background/90">
-          <div className="container mx-auto px-4 py-2 sm:py-3">
-            <div className="flex items-stretch gap-3 overflow-x-auto pb-2 pt-1 md:gap-4">
-              {progressSteps.map((step, index) => {
-                const isCompleted = index < currentStepIndex
-                const isActive = index === currentStepIndex
-
-                return (
-                  <div
-                    key={step.key}
-                    className={`flex flex-none items-center gap-3 rounded-2xl border border-border/60 bg-background px-3 py-2 text-xs shadow-sm transition md:flex-1 md:px-5 md:py-3 md:text-sm ${
-                      isActive ? 'ring-1 ring-primary/30' : ''
-                    }`}
-                  >
-                    <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-semibold transition-all md:h-10 md:w-10 md:text-sm ${
-                        isActive
-                          ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                          : isCompleted
-                            ? 'border-primary/60 bg-primary/10 text-primary'
-                            : 'border-border text-muted-foreground'
-                      }`}
-                    >
-                      {isCompleted ? <Check className="h-4 w-4 md:h-5 md:w-5" /> : index + 1}
-                    </div>
-                    <div className="min-w-[110px] md:min-w-0">
-                      <span
-                        className={`block font-semibold ${
-                          isActive ? 'text-foreground' : isCompleted ? 'text-primary' : 'text-muted-foreground'
-                        }`}
-                      >
-                        {step.label}
-                      </span>
-                      <span className="hidden text-xs text-muted-foreground sm:block">{step.description}</span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
       </header>
 
-      <main className="flex-1">
-        <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
+      <main className="flex-1 pb-24 lg:pb-0">
+        <div className="w-full">
           {checkoutStep === "cart" && (
             <section className="container mx-auto space-y-10 px-4 py-10">
               <div className="flex flex-col gap-10 lg:flex-row">
                 <div className="flex-1 space-y-6">
-                  <TabsContent value={selectedCategory} className="mt-0">
+                  {/* Category filter chips */}
+                  {categories.length > 0 && (
+                    <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                      <button
+                        onClick={() => setSelectedCategory("all")}
+                        className={`flex-shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                          selectedCategory === "all"
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        Todos
+                      </button>
+                      {categories.map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => setSelectedCategory(cat)}
+                          className={`flex-shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                            selectedCategory === cat
+                              ? "bg-primary text-primary-foreground shadow-sm"
+                              : "bg-muted text-muted-foreground hover:bg-muted/80"
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-0">
                     {filteredProducts.length === 0 ? (
                       <div className="rounded-2xl border border-dashed border-muted p-12 text-center">
                         <p className="text-lg text-muted-foreground">Nenhum produto encontrado nesta categoria.</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+                      <div className="flex flex-col gap-3 md:grid md:grid-cols-2 xl:grid-cols-3 md:gap-4">
                         {filteredProducts.map((product) => {
                           const price = product.promotional_price || product.price;
                           const hasDiscount = product.promotional_price && product.promotional_price < product.price;
+                          const hasCustomization = (product.variations && product.variations.length > 0) || (product.optionals && product.optionals.length > 0);
 
                           return (
-                            <Card
+                            <button
                               key={product.uuid}
-                              className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/90 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                              onClick={() => product.qtd_stock !== 0 && handleProductClick(product)}
+                              disabled={product.qtd_stock === 0}
+                              className="group flex gap-3 rounded-2xl border border-border/70 bg-card p-3 text-left transition hover:border-primary/40 hover:shadow-md disabled:opacity-60 w-full"
                             >
-                              <div className="relative aspect-square bg-muted">
+                              {/* Image */}
+                              <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-muted md:h-28 md:w-28">
                                 {product.image ? (
                                   <Image
-                                    src={product.image}
+                                    src={resolveImageUrl(product.image) || ""}
                                     alt={product.name}
                                     fill
                                     className="object-cover"
-                                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
+                                    sizes="112px"
                                   />
                                 ) : (
-                                  <div className="flex h-full w-full items-center justify-center bg-muted">
-                                    <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
+                                  <div className="flex h-full w-full items-center justify-center">
+                                    <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
                                   </div>
                                 )}
                                 {hasDiscount && (
-                                  <Badge className="absolute right-2 top-2 rounded-full bg-red-500 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
-                                    {Math.round((1 - (getNumericPrice(product.promotional_price!) / getNumericPrice(product.price))) * 100)}% OFF
-                                  </Badge>
-                                )}
-                                {product.categories && product.categories.length > 0 && (
-                                  <Badge className="absolute bottom-2 left-2 rounded-full bg-black/70 px-3 py-1 text-xs font-medium text-white">
-                                    {product.categories[0].name}
+                                  <Badge className="absolute left-1 top-1 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                    -{Math.round((1 - (getNumericPrice(product.promotional_price!) / getNumericPrice(product.price))) * 100)}%
                                   </Badge>
                                 )}
                               </div>
-                              <CardHeader className="flex-1 space-y-2 p-4">
-                                <CardTitle className="line-clamp-2 text-base font-semibold leading-tight sm:text-lg">
-                                  {product.name}
-                                </CardTitle>
-                                {product.description && (
-                                  <CardDescription className="line-clamp-2 text-xs sm:text-sm">
-                                    {product.description}
-                                  </CardDescription>
-                                )}
-                              </CardHeader>
-                              <CardContent className="space-y-4 p-4 pt-0">
-                                <div className="space-y-1">
-                                  {hasDiscount && (
-                                    <p className="text-xs text-muted-foreground line-through">
-                                      R$ {formatPrice(product.price)}
+
+                              {/* Content */}
+                              <div className="flex flex-1 flex-col justify-between min-w-0 py-0.5">
+                                <div className="space-y-0.5">
+                                  <p className="font-semibold text-sm leading-snug line-clamp-2 text-foreground group-hover:text-primary transition-colors">
+                                    {product.name}
+                                  </p>
+                                  {product.description && (
+                                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                                      {product.description}
                                     </p>
                                   )}
-                                  <p className="text-lg font-semibold text-primary sm:text-2xl">
-                                    R$ {formatPrice(price)}
-                                  </p>
-                                </div>
-                                <Button
-                                  onClick={() => handleProductClick(product)}
-                                  className="w-full rounded-full py-5 text-sm font-semibold sm:text-base"
-                                  disabled={product.qtd_stock === 0}
-                                >
-                                  {product.qtd_stock === 0 ? "Esgotado" : "Adicionar"}
-                                </Button>
-                                {((product.variations && product.variations.length > 0) ||
-                                  (product.optionals && product.optionals.length > 0)) && (
-                                    <div className="flex flex-wrap items-center justify-center gap-2 text-[10px] text-muted-foreground sm:text-xs">
-                                      {product.variations && product.variations.length > 0 && (
-                                        <Badge variant="outline" className="rounded-full px-3 py-1">
-                                          {product.variations.length} {product.variations.length === 1 ? 'variação' : 'variações'}
-                                        </Badge>
-                                      )}
-                                      {product.optionals && product.optionals.length > 0 && (
-                                        <Badge variant="outline" className="rounded-full px-3 py-1">
-                                          {product.optionals.length} {product.optionals.length === 1 ? 'opcional' : 'opcionais'}
-                                        </Badge>
-                                      )}
-                                    </div>
+                                  {hasCustomization && (
+                                    <p className="text-[10px] text-primary/70 font-medium">Personalizável</p>
                                   )}
-                              </CardContent>
-                            </Card>
+                                </div>
+
+                                <div className="flex items-center justify-between mt-2 gap-2">
+                                  <div>
+                                    {hasDiscount && (
+                                      <p className="text-[10px] text-muted-foreground line-through leading-none">
+                                        R$ {formatPrice(product.price)}
+                                      </p>
+                                    )}
+                                    <p className="text-base font-bold text-primary leading-tight">
+                                      R$ {formatPrice(price)}
+                                    </p>
+                                  </div>
+                                  <div
+                                    className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-colors ${
+                                      product.qtd_stock === 0
+                                        ? 'bg-muted text-muted-foreground'
+                                        : 'bg-primary text-primary-foreground group-hover:bg-primary/90'
+                                    }`}
+                                  >
+                                    {product.qtd_stock === 0 ? (
+                                      <X className="h-4 w-4" />
+                                    ) : (
+                                      <Plus className="h-4 w-4" />
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </button>
                           )
                         })}
                       </div>
                     )}
-                  </TabsContent>
+                  </div>
 
                   {/* Recomendações de Produtos */}
                   {cart.length > 0 && (
@@ -1531,7 +1450,7 @@ export default function PublicStorePage() {
                               </div>
                             </section>
                           )}
-                        </Tabs>
+                        </div>
                 
                         {checkoutStep === "checkout" && (
           <section className="container mx-auto px-4 py-10">
@@ -1539,15 +1458,15 @@ export default function PublicStorePage() {
               ← Voltar para o carrinho
             </Button>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <div className="lg:col-span-2 space-y-4">
                 {/* Client Information */}
                 <Card>
                   <CardHeader>
                     <CardTitle>Informações Pessoais</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
                         <Label htmlFor="name">Nome Completo *</Label>
                         <Input
@@ -1555,6 +1474,7 @@ export default function PublicStorePage() {
                           value={clientData.name}
                           onChange={(e) => setClientData({ ...clientData, name: e.target.value })}
                           required
+                          className="h-12"
                         />
                       </div>
                       <div>
@@ -2112,21 +2032,21 @@ export default function PublicStorePage() {
       </main>
 
       {showMobileSummaryButton && (
-        <Button
+        <button
           onClick={() => setMobileSummaryOpen(true)}
-          size="icon"
-          className="fixed bottom-6 right-6 z-[60] h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-xl transition hover:scale-105 lg:hidden"
+          className="fixed bottom-5 left-4 right-4 z-[60] flex items-center justify-between gap-3 rounded-2xl bg-primary px-5 py-3.5 text-primary-foreground shadow-2xl transition active:scale-[0.98] lg:hidden"
         >
-          <div className="relative">
-            <ShoppingCart className="h-6 w-6" />
-            {cartCount > 0 && (
-              <Badge className="absolute -top-3 -right-3 h-6 min-w-[1.5rem] rounded-full px-1 text-xs">
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <ShoppingCart className="h-5 w-5" />
+              <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] font-bold text-primary">
                 {cartCount}
-                          </Badge>
-            )}
+              </span>
+            </div>
+            <span className="text-sm font-semibold">Ver carrinho</span>
           </div>
-          <span className="sr-only">Abrir resumo do pedido</span>
-                          </Button>
+          <span className="text-sm font-bold">R$ {formatPrice(cartTotal)}</span>
+        </button>
       )}
 
       <Sheet open={mobileSummaryOpen} onOpenChange={setMobileSummaryOpen}>
@@ -2163,7 +2083,7 @@ export default function PublicStorePage() {
                 <div className="relative h-20 w-20 overflow-hidden rounded-2xl bg-muted sm:h-24 sm:w-24">
                   {selectedProduct.image ? (
                     <Image
-                      src={selectedProduct.image}
+                      src={resolveImageUrl(selectedProduct.image) || ""}
                       alt={selectedProduct.name}
                       fill
                       className="object-cover"
