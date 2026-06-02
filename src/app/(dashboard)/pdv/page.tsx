@@ -2601,10 +2601,7 @@ const handleClientChange = (value: string) => {
     authLoading ||
     categoriesLoading ||
     productsLoading ||
-    tablesLoading ||
-    paymentLoading ||
-    clientsLoading ||
-    serviceTypesLoading
+    paymentLoading
 
   if (isLoadingData) {
     return (
@@ -2615,12 +2612,12 @@ const handleClientChange = (value: string) => {
     )
   }
 
-  if (categoriesError || productsError || tablesError || paymentError || clientsError || serviceTypesError) {
+  if (categoriesError || productsError || paymentError) {
     return (
       <div className="flex h-96 flex-col items-center justify-center gap-2 text-center">
         <h2 className="text-xl font-semibold text-destructive">Erro ao carregar o PDV</h2>
         <p className="text-muted-foreground">
-          {categoriesError || productsError || tablesError || paymentError || clientsError || serviceTypesError}
+          {categoriesError || productsError || paymentError}
         </p>
       </div>
     )

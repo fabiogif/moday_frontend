@@ -197,95 +197,109 @@ class ApiClient {
     return url.toString()
   }
 
+  private withAbortSignal(timeoutMs: number): { signal: AbortSignal; cleanup: () => void } {
+    const controller = new AbortController()
+    const id = setTimeout(() => controller.abort(), timeoutMs)
+    return { signal: controller.signal, cleanup: () => clearTimeout(id) }
+  }
+
   async get<T>(endpoint: string, params?: Record<string, any>): Promise<ApiResponse<T>> {
     const urlString = this.buildUrl(endpoint, params)
-
-    // Garantir que o token está carregado antes de construir headers
-    // SEMPRE verificar localStorage primeiro, pois é a fonte mais confiável
-    if (typeof window !== 'undefined') {
-      const tokenFromStorage = localStorage.getItem('auth-token')
-      if (tokenFromStorage) {
-        // Se encontrou token no storage e é diferente do atual, atualizar
-        if (tokenFromStorage !== this.token) {
-          this.token = tokenFromStorage
-        }
-      } else if (!this.token) {
-        // Se não encontrou no storage e não tem token, tentar recarregar
-        this.reloadToken()
-      }
-    }
-    
     const headers = this.getHeaders(false)
-    
-    // Debug: verificar token em desenvolvimento
-    if (process.env.NODE_ENV === 'development') {
-      const tokenFromStorage = typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null
-      console.log('[ApiClient GET]', {
-        url: urlString,
-        hasToken: !!this.token,
-        tokenLength: this.token?.length || 0,
-        tokenFromStorage: tokenFromStorage ? `${tokenFromStorage.substring(0, 20)}...` : 'null',
-        authorizationHeader: headers.Authorization ? 'Bearer ***' : 'missing',
+    const { signal, cleanup } = this.withAbortSignal(30_000)
+
+    try {
+      const response = await fetch(urlString, {
+        method: 'GET',
+        headers,
+        credentials: 'include',
+        signal,
       })
+      cleanup()
+      return this.handleResponse<T>(response)
+    } catch (err) {
+      cleanup()
+      throw err
     }
-
-    const response = await fetch(urlString, {
-      method: 'GET',
-      headers,
-      credentials: 'include', // Importante para cookies
-    })
-
-    return this.handleResponse<T>(response)
   }
 
   async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     const isFormData = data instanceof FormData
     const urlString = this.buildUrl(endpoint)
+    const { signal, cleanup } = this.withAbortSignal(30_000)
 
-    const response = await fetch(urlString, {
-      method: 'POST',
-      headers: this.getHeaders(isFormData),
-      credentials: 'include', // Importante para cookies
-      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
-    })
-
-    return this.handleResponse<T>(response)
+    try {
+      const response = await fetch(urlString, {
+        method: 'POST',
+        headers: this.getHeaders(isFormData),
+        credentials: 'include',
+        body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
+        signal,
+      })
+      cleanup()
+      return this.handleResponse<T>(response)
+    } catch (err) {
+      cleanup()
+      throw err
+    }
   }
 
   async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     const isFormData = data instanceof FormData
+    const { signal, cleanup } = this.withAbortSignal(30_000)
 
-    const response = await fetch(this.buildUrl(endpoint), {
-      method: 'PUT',
-      headers: this.getHeaders(isFormData),
-      credentials: 'include', // Importante para cookies
-      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
-    })
-
-    return this.handleResponse<T>(response)
+    try {
+      const response = await fetch(this.buildUrl(endpoint), {
+        method: 'PUT',
+        headers: this.getHeaders(isFormData),
+        credentials: 'include',
+        body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
+        signal,
+      })
+      cleanup()
+      return this.handleResponse<T>(response)
+    } catch (err) {
+      cleanup()
+      throw err
+    }
   }
 
   async patch<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     const isFormData = data instanceof FormData
+    const { signal, cleanup } = this.withAbortSignal(30_000)
 
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      method: 'PATCH',
-      headers: this.getHeaders(isFormData),
-      credentials: 'include',
-      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
-    })
-
-    return this.handleResponse<T>(response)
+    try {
+      const response = await fetch(`${this.baseURL}${endpoint}`, {
+        method: 'PATCH',
+        headers: this.getHeaders(isFormData),
+        credentials: 'include',
+        body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
+        signal,
+      })
+      cleanup()
+      return this.handleResponse<T>(response)
+    } catch (err) {
+      cleanup()
+      throw err
+    }
   }
 
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-    const response = await fetch(this.buildUrl(endpoint), {
-      method: 'DELETE',
-      headers: this.getHeaders(false),
-      credentials: 'include', // Importante para cookies
-    })
+    const { signal, cleanup } = this.withAbortSignal(30_000)
 
-    return this.handleResponse<T>(response)
+    try {
+      const response = await fetch(this.buildUrl(endpoint), {
+        method: 'DELETE',
+        headers: this.getHeaders(false),
+        credentials: 'include',
+        signal,
+      })
+      cleanup()
+      return this.handleResponse<T>(response)
+    } catch (err) {
+      cleanup()
+      throw err
+    }
   }
 }
 
