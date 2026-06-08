@@ -50,7 +50,7 @@ export default function TaskPage() {
       <div className="md:hidden">
         <div className="flex items-center justify-center h-96 border rounded-lg bg-muted/20">
           <div className="text-center p-8">
-            <h3 className="text-lg font-semibold mb-2">Tasks Dashboard</h3>
+            <h3 className="text-lg font-semibold mb-2">Painel de Tarefas</h3>
             <p className="text-muted-foreground">
               Please use a larger screen to view the full tasks interface.
             </p>

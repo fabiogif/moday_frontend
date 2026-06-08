@@ -253,7 +253,7 @@ export function PDVHeader({
             size="icon"
             onClick={onToggleDashboard}
             className="h-8 w-8 flex-shrink-0"
-            title="Exibir dashboard"
+            title="Exibir painel"
           >
             <Eye className="h-4 w-4" />
           </Button>

@@ -80,7 +80,7 @@ export function StatsSection() {
             Números que Impressionam
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Resultados reais de restaurantes que transformaram seus negócios com o Alba Tech
+            Resultados reais de restaurantes que transformaram seus negócios com o Alba Tec
           </p>
         </div>
 

@@ -55,6 +55,13 @@ export interface Order {
   orderNumber?: string
   customerName?: string
   customerEmail?: string
+  created_at?: string
+  updated_at?: string
+  payment_method?: string
+  payment_method_name?: string
+  client_phone?: string
+  client_full_name?: string
+  client_email?: string
   items?: number
   orderDate?: string
   deliveryDate?: string

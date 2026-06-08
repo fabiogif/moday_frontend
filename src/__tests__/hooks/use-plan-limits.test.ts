@@ -6,6 +6,15 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { usePlanLimits, useCurrentUsage } from '@/hooks/use-plan-limits'
 import { apiClient } from '@/lib/api-client'
 
+// Mock do auth context
+jest.mock('@/contexts/auth-context', () => ({
+  useAuth: () => ({
+    token: 'mock-token',
+    isAuthenticated: true,
+    isLoading: false,
+  }),
+}))
+
 // Mock do apiClient
 jest.mock('@/lib/api-client', () => ({
   apiClient: {

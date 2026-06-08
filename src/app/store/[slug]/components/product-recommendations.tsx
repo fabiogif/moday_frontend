@@ -185,6 +185,7 @@ export function ProductRecommendations({
                       fill
                       className="object-cover group-hover:scale-105 transition-transform"
                       sizes="(max-width: 640px) 128px, 160px"
+                      unoptimized
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center">

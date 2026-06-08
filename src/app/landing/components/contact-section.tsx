@@ -17,8 +17,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Mail, MessageCircle, Github, BookOpen, Phone } from 'lucide-react'
+import { Mail, MessageCircle, Github, BookOpen, Phone, Headphones, Wallet } from 'lucide-react'
 import { useState } from 'react'
+import { COMPANY_EMAILS } from '@/lib/company-emails'
 
 const contactFormSchema = z.object({
   firstName: z.string().min(2, {
@@ -103,7 +104,7 @@ export function ContactSection() {
             Precisa de ajuda ou tem dúvidas?
           </h2>
           <p className="text-lg text-muted-foreground">
-            Nossa equipe está aqui para ajudá-lo a aproveitar ao máximo o Alba Tech. Entre em contato conosco.
+            Nossa equipe está aqui para ajudá-lo a aproveitar ao máximo o Alba Tec. Entre em contato conosco.
           </p>
         </div>
 
@@ -116,13 +117,47 @@ export function ContactSection() {
                   <div className="p-2.5 rounded-xl bg-primary/10">
                     <Mail className="h-5 w-5 text-primary" />
                   </div>
-                  E-mail
+                  Contato geral
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-2">Entre em contato por e-mail</p>
-                <a href="mailto:atendimento@albatech.tec.br" className="text-primary hover:underline font-medium">
-                  atendimento@albatech.tec.br
+                <p className="text-muted-foreground mb-2">Dúvidas, parcerias e informações</p>
+                <a href={`mailto:${COMPANY_EMAILS.contact}`} className="text-primary hover:underline font-medium">
+                  {COMPANY_EMAILS.contact}
+                </a>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60 hover:border-primary/30 transition-colors">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-blue-500/10">
+                    <Headphones className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  Atendimento
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-2">Suporte a clientes e assistência técnica</p>
+                <a href={`mailto:${COMPANY_EMAILS.support}`} className="text-primary hover:underline font-medium">
+                  {COMPANY_EMAILS.support}
+                </a>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60 hover:border-primary/30 transition-colors">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-amber-500/10">
+                    <Wallet className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  Financeiro / PIX
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-2">Pagamentos, faturas e questões financeiras</p>
+                <a href={`mailto:${COMPANY_EMAILS.pix}`} className="text-primary hover:underline font-medium">
+                  {COMPANY_EMAILS.pix}
                 </a>
               </CardContent>
             </Card>
@@ -139,7 +174,7 @@ export function ContactSection() {
               <CardContent>
                 <p className="text-muted-foreground mb-2">Fale conosco pelo WhatsApp</p>
                 <a
-                  href="https://wa.me/557991981871"
+                  href="https://wa.me/5571991981871"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline font-medium"
@@ -224,7 +259,7 @@ export function ContactSection() {
                           <FormLabel>Mensagem</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Conte-nos como podemos ajudá-lo com o sistema Alba Tech..."
+                              placeholder="Conte-nos como podemos ajudá-lo com o sistema Alba Tec..."
                               rows={10}
                               className="min-h-50"
                               {...field}

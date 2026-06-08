@@ -13,22 +13,32 @@ jest.mock('next/image', () => {
   }
 })
 
+jest.mock('@/hooks/use-landing-cta-click', () => ({
+  useLandingCTAClick: () => jest.fn(),
+}))
+
 describe('FeaturesSection', () => {
   it('deve renderizar o título da seção', () => {
     render(<FeaturesSection />)
     expect(screen.getByText(/Tudo que você precisa para gerenciar seu restaurante/i)).toBeInTheDocument()
   })
 
-  it('deve renderizar todos os 8 cards de features', () => {
+  it('deve renderizar cards principais de features', () => {
     render(<FeaturesSection />)
-    expect(screen.getByText(/PDV Touch-First/i)).toBeInTheDocument()
-    expect(screen.getByText(/Sistema de Avaliações/i)).toBeInTheDocument()
-    expect(screen.getByText(/Controle de Mesas/i)).toBeInTheDocument()
-    expect(screen.getByText(/Cardápio Digital/i)).toBeInTheDocument()
-    expect(screen.getByText(/Relatórios em Tempo Real/i)).toBeInTheDocument()
-    expect(screen.getByText(/Controle de Estoque/i)).toBeInTheDocument()
-    expect(screen.getByText(/Gestão de Equipe/i)).toBeInTheDocument()
-    expect(screen.getByText(/Integrações/i)).toBeInTheDocument()
+    const expectedFeatures = [
+      /PDV Touch-First/i,
+      /Sistema de Avaliações Moderado/i,
+      /Controle de Mesas Inteligente/i,
+      /Cardápio Digital com Variações/i,
+      /Gestão Omnichannel de Pedidos/i,
+      /Controle de Estoque Inteligente/i,
+      /Relatórios em Tempo Real/i,
+      /Acesso Mobile Total/i,
+    ]
+
+    expectedFeatures.forEach((pattern) => {
+      expect(screen.getAllByText(pattern).length).toBeGreaterThanOrEqual(1)
+    })
   })
 
   it('deve renderizar badges NOVO nos 3 primeiros cards', () => {
@@ -39,8 +49,7 @@ describe('FeaturesSection', () => {
 
   it('deve renderizar métricas de benefício', () => {
     render(<FeaturesSection />)
-    expect(screen.getByText(/\+3x produtividade/i)).toBeInTheDocument()
-    expect(screen.getByText(/\+35% conversão/i)).toBeInTheDocument()
+    expect(screen.getByText(/Aumenta produtividade em até 3x/i)).toBeInTheDocument()
+    expect(screen.getByText(/Aumenta conversão em até 35%/i)).toBeInTheDocument()
   })
 })
-

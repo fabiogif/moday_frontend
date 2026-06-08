@@ -322,6 +322,7 @@ export const endpoints = {
   // Produtos
   products: {
     list: '/api/product',
+    catalog: '/api/product/catalog',
     stats: '/api/product/stats', // Added
     create: '/api/product',
     show: (id: string) => `/api/product/${id}`,
@@ -365,6 +366,7 @@ export const endpoints = {
     delete: (id: string) => `/api/order/${id}`,
     invoice: (id: string) => `/api/order/${id}/invoice`,
     receipt: (id: string) => `/api/order/${id}/receipt`,
+    sendReceiptEmail: (id: string) => `/api/order/${id}/receipt/email`,
   },
   
   // Mesas

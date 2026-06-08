@@ -225,6 +225,15 @@ describe('AdminAuthContext', () => {
   describe('Refresh Token', () => {
     it('should refresh token successfully', async () => {
       localStorage.setItem('admin-token', 'old-token')
+      localStorage.setItem('admin-user', JSON.stringify({
+        id: 1,
+        name: 'Admin',
+        email: 'admin@test.com',
+        role: 'admin',
+        is_active: true,
+        last_login_at: null,
+        permissions: {},
+      }))
 
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
@@ -235,6 +244,10 @@ describe('AdminAuthContext', () => {
       })
 
       const { result } = renderHook(() => useAdminAuth(), { wrapper })
+
+      await waitFor(() => {
+        expect(result.current.token).toBe('old-token')
+      })
 
       await act(async () => {
         await result.current.refreshToken()

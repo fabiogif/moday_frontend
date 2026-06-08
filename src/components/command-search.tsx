@@ -127,8 +127,8 @@ export function CommandSearch({ open, onOpenChange }: CommandSearchProps) {
   const commandRef = React.useRef<HTMLDivElement>(null)
 
   const searchItems: SearchItem[] = [
-    // Dashboards
-    { title: "Dashboard", url: "/dashboard", group: "Dashboards", icon: LayoutDashboard },
+    // Painel de Controle
+    { title: "Painel de Controle", url: "/dashboard", group: "Painéis", icon: LayoutDashboard },
 
     // Apps
     { title: "Mail", url: "/mail", group: "Apps", icon: Mail },

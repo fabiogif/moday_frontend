@@ -23,6 +23,59 @@ function rewriteStaleAbsoluteUrl(url: string): string {
 }
 
 /**
+ * Converte path relativo do banco (ex.: tenants/{uuid}/products/foo.png) em URL pública /storage/...
+ */
+function toPublicStoragePath(value: string): string | null {
+  const normalized = value.replace(/^\/+/, "")
+
+  if (normalized.startsWith("storage/products/")) {
+    return `/${normalized}`
+  }
+  if (normalized.startsWith("storage/logos/")) {
+    return `/${normalized}`
+  }
+  // URL antiga incorreta: /storage/tenants/{uuid}/products/...
+  if (/^storage\/tenants\/[^/]+\/products\//.test(normalized)) {
+    return `/storage/products/${normalized.replace(/^storage\//, "")}`
+  }
+  if (/^storage\/tenants\/[^/]+\/logos\//.test(normalized)) {
+    return `/storage/logos/${normalized.replace(/^storage\//, "")}`
+  }
+  if (normalized.startsWith("storage/")) {
+    return `/${normalized}`
+  }
+
+  if (/^tenants\/[^/]+\/products\//.test(normalized)) {
+    return `/storage/products/${normalized}`
+  }
+  if (/^tenants\/[^/]+\/logos\//.test(normalized)) {
+    return `/storage/logos/${normalized}`
+  }
+
+  // Cupons e anexos no disco public (storage/app/public/coupons, etc.)
+  if (
+    normalized.startsWith("coupons/") ||
+    normalized.startsWith("expenses/") ||
+    normalized.startsWith("documents/")
+  ) {
+    return `/storage/${normalized}`
+  }
+
+  return null
+}
+
+function resolveAssetBase(): string {
+  const apiBase = getApiBaseUrl()
+  if (apiBase) {
+    return apiBase
+  }
+  if (typeof window !== "undefined") {
+    return window.location.origin
+  }
+  return ""
+}
+
+/**
  * Normaliza URLs de imagens vindas da API.
  * Aceita URLs absolutas, relativas ou apenas nomes de arquivos.
  */
@@ -42,25 +95,30 @@ export function resolveImageUrl(image?: string | null): string | null {
     return trimmed
   }
 
-  const apiBase = getApiBaseUrl()
+  const publicPath = toPublicStoragePath(trimmed)
+  if (publicPath) {
+    trimmed = publicPath
+  }
+
+  const assetBase = resolveAssetBase()
 
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
     return trimmed
   }
 
   if (trimmed.startsWith("/storage/") || trimmed.startsWith("/")) {
-    return apiBase ? `${apiBase}${trimmed}` : trimmed
+    return assetBase ? `${assetBase}${trimmed}` : trimmed
   }
 
-  if (!apiBase) {
+  if (!assetBase) {
     return trimmed.startsWith("storage/") ? `/${trimmed}` : `/storage/${trimmed}`
   }
 
   const sanitized = trimmed.replace(/^\/+/, "")
 
   if (sanitized.startsWith("storage/")) {
-    return `${apiBase}/${sanitized}`
+    return `${assetBase}/${sanitized}`
   }
 
-  return `${apiBase}/storage/${sanitized}`
+  return `${assetBase}/storage/${sanitized}`
 }

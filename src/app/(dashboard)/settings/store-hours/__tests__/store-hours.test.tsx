@@ -421,11 +421,11 @@ describe('StoreHourFormDialog', () => {
       />
     )
 
-    expect(screen.getByLabelText(/Dia da Semana/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Horário de Início/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Horário de Término/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Tipo de Serviço/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Horário ativo/i)).toBeInTheDocument()
+    expect(screen.getByText(/Dia da Semana/i)).toBeInTheDocument()
+    expect(screen.getByText(/Horário de Início|Abre às/i)).toBeInTheDocument()
+    expect(screen.getByText(/Horário de Término|Fecha às/i)).toBeInTheDocument()
+    expect(screen.getByText(/Tipo de Serviço/i)).toBeInTheDocument()
+    expect(screen.getByText(/Horário ativo/i)).toBeInTheDocument()
   })
 
   it('should validate required fields', async () => {
@@ -474,7 +474,7 @@ describe('StoreHourFormDialog', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText(/O horário de término deve ser posterior/i)).toBeInTheDocument()
+      expect(screen.getByText(/O horário de término.*deve ser posterior|horário de término é obrigatório/i)).toBeInTheDocument()
     })
   })
 

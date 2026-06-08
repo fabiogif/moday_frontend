@@ -208,7 +208,7 @@ describe('DeliverySettingsPage - Configurações de Delivery e Retirada', () => 
     await user.type(pickupTimeInput, '45')
 
     // Salvar
-    const saveButton = screen.getByRole('button', { name: /Salvar Configurações/i })
+    const saveButton = screen.getByRole('button', { name: /Salvar/i })
     await user.click(saveButton)
 
     await waitFor(() => {

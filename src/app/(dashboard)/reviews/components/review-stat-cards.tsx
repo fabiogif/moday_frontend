@@ -14,7 +14,7 @@ export function ReviewStatCards({ stats }: ReviewStatCardsProps) {
     {
       title: 'Total de Avaliações',
       value: stats?.total || 0,
-      subtitle: `Média: ${stats?.average_rating.toFixed(1) || 0} ⭐`,
+      subtitle: `Média: ${stats?.average_rating?.toFixed(1) || 0} ⭐`,
       icon: Star,
       variant: 'default' as const
     },

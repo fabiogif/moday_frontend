@@ -9,11 +9,6 @@ import {
   ArrowRightLeft,
   Users,
   Gift,
-  RefreshCw,
-  ArrowRight,
-  CheckCircle2,
-  X,
-  Loader2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CustomerNoteDialog } from "../dialogs/customer-note-dialog"
@@ -71,94 +66,70 @@ export function OrderActions({
 
   const disabled = isFinalStatus && orderStatus !== "Cancelado"
 
+  const actions = [
+    {
+      key: "customer",
+      icon: MessageSquare,
+      label: "Obs. cliente",
+      onClick: () => setShowCustomerNote(true),
+      show: true,
+    },
+    {
+      key: "internal",
+      icon: FileText,
+      label: "Obs. interna",
+      onClick: () => setShowInternalNote(true),
+      show: true,
+    },
+    {
+      key: "split",
+      icon: Split,
+      label: "Dividir",
+      onClick: () => setShowSplit(true),
+      show: true,
+    },
+    {
+      key: "transfer",
+      icon: ArrowRightLeft,
+      label: "Transferir",
+      onClick: () => setShowTransfer(true),
+      show: true,
+    },
+    {
+      key: "guests",
+      icon: Users,
+      label: "Clientes",
+      onClick: () => setShowGuests(true),
+      show: true,
+    },
+    {
+      key: "reward",
+      icon: Gift,
+      label: "Recompensa",
+      onClick: () => {},
+      show: !!onReward,
+    },
+  ].filter((a) => a.show)
+
   return (
     <div className={cn("space-y-2", className)}>
-      <div className="grid grid-cols-2 gap-2">
-        {/* Customer Note */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowCustomerNote(true)}
-          disabled={disabled}
-          className="h-12 justify-start gap-2"
-          title="Adicionar observação do cliente"
-        >
-          <MessageSquare className="h-4 w-4" />
-          <span className="text-xs">Cliente</span>
-        </Button>
-
-        {/* Internal Note */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowInternalNote(true)}
-          disabled={disabled}
-          className="h-12 justify-start gap-2"
-          title="Adicionar observação interna"
-        >
-          <FileText className="h-4 w-4" />
-          <span className="text-xs">Interna</span>
-        </Button>
-
-        {/* Split */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowSplit(true)}
-          disabled={disabled}
-          className="h-12 justify-start gap-2"
-          title="Dividir conta"
-        >
-          <Split className="h-4 w-4" />
-          <span className="text-xs">Dividir</span>
-        </Button>
-
-        {/* Transfer */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowTransfer(true)}
-          disabled={disabled}
-          className="h-12 justify-start gap-2"
-          title="Transferir pedido/mesa"
-        >
-          <ArrowRightLeft className="h-4 w-4" />
-          <span className="text-xs">Transferir</span>
-        </Button>
-
-        {/* Dine-in Guests */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowGuests(true)}
-          disabled={disabled}
-          className="h-12 justify-start gap-2"
-          title="Definir quantidade de clientes"
-        >
-          <Users className="h-4 w-4" />
-          <span className="text-xs">Clientes</span>
-        </Button>
-
-        {/* Reward */}
-        {onReward && (
+      <div className="grid grid-cols-3 gap-1.5">
+        {actions.map(({ key, icon: Icon, label, onClick }) => (
           <Button
+            key={key}
             variant="outline"
             size="sm"
-            onClick={() => {
-              // TODO: Implementar seleção de reward
-              console.log("Aplicar reward")
-            }}
+            onClick={onClick}
             disabled={disabled}
-            className="h-12 justify-start gap-2"
-            title="Aplicar recompensa"
+            className="h-10 flex-col gap-0.5 px-1 text-[10px] font-medium"
+            title={label}
           >
-            <Gift className="h-4 w-4" />
-            <span className="text-xs">Recompensa</span>
+            <Icon className="h-3.5 w-3.5 shrink-0" />
+            <span className="leading-none">{label}</span>
           </Button>
-        )}
+        ))}
       </div>
 
-      {/* Modais */}
       <CustomerNoteDialog
         open={showCustomerNote}
         onOpenChange={setShowCustomerNote}
@@ -180,7 +151,7 @@ export function OrderActions({
       <RefundDialog
         open={showRefund}
         onOpenChange={setShowRefund}
-        orderTotal={0} // TODO: Passar total do pedido
+        orderTotal={0}
         onConfirm={(amount, reason) => {
           onRefund?.(amount, reason)
           setShowRefund(false)
@@ -190,7 +161,7 @@ export function OrderActions({
       <SplitBillDialog
         open={showSplit}
         onOpenChange={setShowSplit}
-        items={[]} // TODO: Passar itens do pedido
+        items={[]}
         onConfirm={(items, amounts) => {
           onSplit?.(items, amounts)
           setShowSplit(false)
@@ -211,7 +182,7 @@ export function OrderActions({
       <GuestsDialog
         open={showGuests}
         onOpenChange={setShowGuests}
-        currentGuests={1} // TODO: Passar quantidade atual
+        currentGuests={1}
         onConfirm={(count) => {
           onGuests?.(count)
           setShowGuests(false)
@@ -220,4 +191,3 @@ export function OrderActions({
     </div>
   )
 }
-

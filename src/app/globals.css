@@ -193,3 +193,41 @@ html {
     opacity: 0;
   }
 }
+
+@media print {
+  @page {
+    margin: 12mm;
+    size: A4;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .no-print,
+  [data-slot="sidebar"],
+  [data-slot="sidebar-wrapper"],
+  [data-sidebar="sidebar"],
+  header,
+  footer,
+  [data-sonner-toaster],
+  [data-radix-popper-content-wrapper] {
+    display: none !important;
+  }
+
+  .order-success-page {
+    min-height: auto !important;
+    background: #fff !important;
+  }
+
+  .order-success-print {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .order-success-print .text-muted-foreground {
+    color: #444 !important;
+  }
+}

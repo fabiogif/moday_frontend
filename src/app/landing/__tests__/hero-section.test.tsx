@@ -1,8 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { HeroSection } from '../components/hero-section'
-import { RegisterModalProvider } from '@/contexts/register-modal-context'
 
-// Mock Next.js Link and Image
 jest.mock('next/link', () => {
   return ({ children, href }: { children: React.ReactNode; href: string }) => {
     return <a href={href}>{children}</a>
@@ -15,40 +13,32 @@ jest.mock('next/image', () => {
   }
 })
 
+jest.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(),
+}))
+
 describe('HeroSection', () => {
-  const renderWithProvider = (component: React.ReactElement) => {
-    return render(<RegisterModalProvider>{component}</RegisterModalProvider>)
-  }
-
-  it('deve renderizar o título principal', () => {
-    renderWithProvider(<HeroSection />)
-    expect(screen.getByText(/Gerencie seu Restaurante/i)).toBeInTheDocument()
+  it('deve renderizar o título principal com proposta de valor', () => {
+    render(<HeroSection />)
+    expect(
+      screen.getByText(/Venda mais e cometa menos erros no seu restaurante/i)
+    ).toBeInTheDocument()
   })
 
-  it('deve renderizar o badge NOVO', () => {
-    renderWithProvider(<HeroSection />)
-    expect(screen.getByText(/NOVO/i)).toBeInTheDocument()
-  })
-
-  it('deve renderizar o botão de teste grátis', () => {
-    renderWithProvider(<HeroSection />)
+  it('deve renderizar informação do teste de 7 dias', () => {
+    render(<HeroSection />)
+    expect(screen.getByText(/7 dias grátis nos planos Básico e Premium/i)).toBeInTheDocument()
     expect(screen.getByText(/Teste grátis por 7 dias/i)).toBeInTheDocument()
   })
 
-  it('deve renderizar o card de promoção', () => {
-    renderWithProvider(<HeroSection />)
-    expect(screen.getByText(/Oferta Especial/i)).toBeInTheDocument()
-    expect(screen.getByText(/Sistema Completo/i)).toBeInTheDocument()
+  it('deve renderizar micro-copy de cadastro', () => {
+    render(<HeroSection />)
+    expect(screen.getByText(/Cadastro em 2 min/i)).toBeInTheDocument()
   })
 
-  it('deve ter botões que abrem o modal de registro', () => {
-    renderWithProvider(<HeroSection />)
-    const buttons = screen.getAllByRole('button', { name: /teste grátis por 7 dias/i })
-    expect(buttons.length).toBeGreaterThan(0)
-    // Os botões agora devem ser buttons, não links
-    buttons.forEach(button => {
-      expect(button.tagName).toBe('BUTTON')
-    })
+  it('deve ter link de cadastro com teste grátis', () => {
+    render(<HeroSection />)
+    const registerLink = screen.getByRole('link', { name: /teste grátis por 7 dias/i })
+    expect(registerLink).toHaveAttribute('href', '/auth/register')
   })
 })
-

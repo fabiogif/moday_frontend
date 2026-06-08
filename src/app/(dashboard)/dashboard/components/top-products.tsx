@@ -16,6 +16,7 @@ interface TopProduct {
   uuid: string
   name: string
   image: string | null
+  image_url?: string | null
   price: number
   formatted_price: string
   total_quantity: number
@@ -97,8 +98,15 @@ export function TopProducts() {
             products.map((product) => (
               <div key={product.id} className="flex items-center gap-4">
                 <div className="flex items-center justify-center h-10 w-10 rounded bg-muted">
-                  {product.image ? (
-                    <img src={resolveImageUrl(product.image) || ""} alt={product.name} className="h-full w-full object-cover rounded" />
+                  {product.image || product.image_url ? (
+                    <img
+                      src={resolveImageUrl(product.image_url || product.image) || ""}
+                      alt={product.name}
+                      className="h-full w-full object-cover rounded"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none"
+                      }}
+                    />
                   ) : (
                     <Package className="h-5 w-5 text-muted-foreground" />
                   )}

@@ -3,13 +3,18 @@
 import { Clock, Package, Truck, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
+  isCancelledOrderStatus,
+  resolveOrderStatusStepIndex,
+  type OrderTrackerStatus,
+} from '@/lib/order-status'
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 
-type OrderStatus = 'Em Preparo' | 'Pronto' | 'Saiu para entrega' | 'A Caminho' | 'Entregue' | 'Concluído' | 'Cancelado'
+type OrderStatus = OrderTrackerStatus
 
 interface Step {
   id: number
@@ -64,6 +69,7 @@ interface OrderStatusTrackerProps {
   estimatedDelivery?: string
   className?: string
   vertical?: boolean
+  showInfoCards?: boolean
 }
 
 export function OrderStatusTracker({ 
@@ -72,10 +78,13 @@ export function OrderStatusTracker({
   updatedAt,
   estimatedDelivery,
   className,
-  vertical = false 
+  vertical = false,
+  showInfoCards = true,
 }: OrderStatusTrackerProps) {
+  const currentStepIndex = resolveOrderStatusStepIndex(currentStatus)
+
   // Se pedido cancelado, não mostrar tracker
-  if (currentStatus === 'Cancelado') {
+  if (currentStatus === 'Cancelado' || isCancelledOrderStatus(currentStatus)) {
     return (
       <div className={cn("p-6 text-center space-y-2", className)}>
         <div className="h-16 w-16 rounded-full bg-rose-100 dark:bg-rose-950 flex items-center justify-center mx-auto">
@@ -91,8 +100,6 @@ export function OrderStatusTracker({
     )
   }
 
-  const currentStepIndex = DELIVERY_STEPS.findIndex(step => step.status === currentStatus)
-  
   const getStepState = (stepIndex: number): 'completed' | 'current' | 'upcoming' => {
     if (stepIndex < currentStepIndex) return 'completed'
     if (stepIndex === currentStepIndex) return 'current'
@@ -102,9 +109,52 @@ export function OrderStatusTracker({
   return (
     <TooltipProvider>
       <div className={cn("w-full space-y-6", className)}>
+        {/* Versão simplificada para impressão */}
+        <div className="hidden print:block space-y-3 rounded-lg border p-4">
+          <div className="flex items-center justify-between gap-4 text-sm">
+            <span className="font-medium text-muted-foreground">Status atual</span>
+            <span className="font-semibold">{currentStatus}</span>
+          </div>
+          <div className="grid grid-cols-5 gap-1">
+            {DELIVERY_STEPS.map((step, index) => {
+              const state = getStepState(index)
+              return (
+                <div key={step.id} className="text-center">
+                  <div
+                    className={cn(
+                      'mx-auto mb-1 h-2 w-full rounded-full',
+                      state === 'completed' && 'bg-emerald-500',
+                      state === 'current' && 'bg-blue-500',
+                      state === 'upcoming' && 'bg-muted'
+                    )}
+                  />
+                  <p className="text-[9px] leading-tight text-muted-foreground">{step.label}</p>
+                </div>
+              )
+            })}
+          </div>
+          {createdAt && (
+            <p className="text-xs text-muted-foreground">
+              Pedido criado em{' '}
+              {new Date(createdAt).toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </p>
+          )}
+          {estimatedDelivery && currentStepIndex < 4 && (
+            <p className="text-xs">
+              <span className="font-medium">Previsão de entrega:</span> {estimatedDelivery}
+            </p>
+          )}
+        </div>
+
         {/* Timeline */}
         <div className={cn(
-          "flex items-center",
+          "flex items-center print:hidden",
           vertical 
             ? "flex-col space-y-8" 
             : "flex-col md:flex-row md:justify-between space-y-8 md:space-y-0 md:space-x-2"
@@ -209,7 +259,8 @@ export function OrderStatusTracker({
         </div>
 
         {/* Info Cards */}
-        <div className="grid gap-3 md:grid-cols-2">
+        {showInfoCards && (
+        <div className="grid gap-3 md:grid-cols-2 print:hidden">
           {createdAt && (
             <div className="p-3 rounded-lg bg-muted/50 border">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
@@ -255,6 +306,7 @@ export function OrderStatusTracker({
             </div>
           )}
         </div>
+        )}
       </div>
     </TooltipProvider>
   )

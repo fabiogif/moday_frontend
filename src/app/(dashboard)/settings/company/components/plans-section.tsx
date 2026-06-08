@@ -198,16 +198,17 @@ export function PlansSection() {
               </div>
             )}
 
-            {hasLimitReached && (
-              <Alert variant="destructive" className="mt-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Você atingiu um ou mais limites do seu plano atual. Considere migrar para um plano superior.
-                </AlertDescription>
-              </Alert>
-            )}
           </CardContent>
         </Card>
+      )}
+
+      {hasLimitReached && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Você atingiu um ou mais limites do seu plano atual. Considere migrar para um plano superior.
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Cards de Planos Disponíveis */}

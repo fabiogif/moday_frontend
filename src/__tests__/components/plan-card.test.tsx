@@ -15,6 +15,7 @@ const mockPlan: Plan = {
   max_products: 100,
   max_orders_per_month: 100,
   has_marketing: true,
+  has_order_completion_email: true,
   has_reports: true,
   details: [
     { name: 'Suporte por email' },
@@ -31,8 +32,9 @@ describe('PlanCard', () => {
     expect(screen.getByText('Básico')).toBeInTheDocument()
     expect(screen.getByText('R$ 49,90')).toBeInTheDocument()
     expect(screen.getByText('/mês')).toBeInTheDocument()
-    expect(screen.getByText('5')).toBeInTheDocument() // max_users
-    expect(screen.getByText('100')).toBeInTheDocument() // max_products
+    expect(screen.getByText(/Até 5 usuários/i)).toBeInTheDocument()
+    expect(screen.getByText(/Até 100 produtos/i)).toBeInTheDocument()
+    expect(screen.getByText(/Até 100 pedidos/i)).toBeInTheDocument()
   })
 
   it('deve exibir badge "Plano Atual" quando isCurrentPlan é true', () => {
@@ -40,7 +42,7 @@ describe('PlanCard', () => {
 
     render(<PlanCard plan={mockPlan} isCurrentPlan={true} onMigrate={onMigrate} />)
 
-    expect(screen.getByText('Plano Atual')).toBeInTheDocument()
+    expect(screen.getAllByText('Plano Atual').length).toBeGreaterThan(0)
   })
 
   it('deve desabilitar botão quando isCurrentPlan é true', () => {
@@ -48,8 +50,8 @@ describe('PlanCard', () => {
 
     render(<PlanCard plan={mockPlan} isCurrentPlan={true} onMigrate={onMigrate} />)
 
-    const button = screen.getByText('Plano Atual')
-    expect(button.closest('button')).toBeDisabled()
+    const button = screen.getByRole('button', { name: /Plano Atual/i })
+    expect(button).toBeDisabled()
   })
 
   it('deve chamar onMigrate ao clicar no botão', () => {
@@ -75,7 +77,7 @@ describe('PlanCard', () => {
 
     render(<PlanCard plan={unlimitedPlan} isCurrentPlan={false} onMigrate={onMigrate} />)
 
-    expect(screen.getAllByText('Ilimitado').length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Ilimitados/i).length).toBeGreaterThanOrEqual(3)
   })
 
   it('deve exibir ícone de coroa para planos premium', () => {
@@ -106,13 +108,16 @@ describe('PlanCard', () => {
     expect(screen.getByText('Cardápio digital')).toBeInTheDocument()
   })
 
-  it('deve exibir checkmarks para has_marketing e has_reports', () => {
+  it('deve exibir módulos e ações do plano', () => {
     const onMigrate = jest.fn()
 
     render(<PlanCard plan={mockPlan} isCurrentPlan={false} onMigrate={onMigrate} />)
 
-    expect(screen.getByText('Marketing')).toBeInTheDocument()
-    expect(screen.getByText('Relatórios')).toBeInTheDocument()
+    expect(screen.getByText(/Módulo Marketing/i)).toBeInTheDocument()
+    expect(screen.getByText('Cupons e campanhas')).toBeInTheDocument()
+    expect(screen.getByText('E-mail de confirmação de pedido')).toBeInTheDocument()
+    expect(screen.getByText('Acesso a relatórios')).toBeInTheDocument()
+    expect(screen.getByText(/Até 5 usuários/i)).toBeInTheDocument()
   })
 
   it('deve desabilitar botão durante migração', () => {

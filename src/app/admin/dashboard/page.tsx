@@ -122,7 +122,7 @@ export default function AdminDashboardPage() {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Erro</AlertTitle>
           <AlertDescription>
-            Não foi possível carregar os dados do dashboard. Tente atualizar a página.
+            Não foi possível carregar os dados do painel de controle. Tente atualizar a página.
           </AlertDescription>
         </Alert>
       </div>
@@ -156,7 +156,7 @@ export default function AdminDashboardPage() {
       {/* Header */}
       <div className="flex md:flex-row flex-col md:items-center justify-between gap-4 md:gap-6">
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Painel de Controle</h1>
           <p className="text-muted-foreground">
             Visão geral do sistema e principais métricas
           </p>

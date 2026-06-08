@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Edit, Trash2, Eye, CheckCircle, XCircle } from "lucide-react"
 import { Plan } from "../page"
+import { PLAN_MODULE_OPTION_LABELS, type PlanModuleOptionKey } from "@/lib/plan-modules"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,12 +92,13 @@ export function DataTable({ plans, onDeletePlan, onEditPlan }: DataTableProps) {
                 }
               </TableCell>
               <TableCell className="hidden xl:table-cell">
-                <div className="flex gap-1">
-                  {plan.has_marketing && (
-                    <Badge variant="secondary" className="text-xs">Marketing</Badge>
-                  )}
-                  {plan.has_reports && (
-                    <Badge variant="secondary" className="text-xs">Reports</Badge>
+                <div className="flex flex-wrap gap-1">
+                  {(Object.keys(PLAN_MODULE_OPTION_LABELS) as PlanModuleOptionKey[]).map((key) =>
+                    plan[key] ? (
+                      <Badge key={key} variant="secondary" className="text-xs">
+                        {PLAN_MODULE_OPTION_LABELS[key]}
+                      </Badge>
+                    ) : null
                   )}
                 </div>
               </TableCell>

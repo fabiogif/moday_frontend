@@ -24,7 +24,7 @@ interface SiteHeaderProps {
 }
 
 const routeLabels: Record<string, string> = {
-  dashboard: "Dashboard",
+  dashboard: "Painel de Controle",
   orders: "Pedidos",
   board: "Quadro Kanban",
   new: "Novo",

@@ -40,13 +40,6 @@ describe('Admin Login Page', () => {
     expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument()
   })
 
-  it('should show default credentials', () => {
-    renderLoginPage()
-
-    expect(screen.getByText(/admin@moday.app/)).toBeInTheDocument()
-    expect(screen.getByText(/admin123/)).toBeInTheDocument()
-  })
-
   it('should validate required fields', async () => {
     const user = userEvent.setup()
     renderLoginPage()
@@ -72,7 +65,7 @@ describe('Admin Login Page', () => {
         admin: {
           id: 1,
           name: 'Admin Test',
-          email: 'admin@moday.app',
+          email: 'admin@albtec.app',
           role: 'super_admin',
         },
         token: 'test-token-123',
@@ -81,6 +74,7 @@ describe('Admin Login Page', () => {
 
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
+      headers: { get: () => 'application/json' },
       json: async () => mockResponse,
     })
 
@@ -90,7 +84,7 @@ describe('Admin Login Page', () => {
     const passwordInput = screen.getByLabelText(/senha/i)
     const submitButton = screen.getByRole('button', { name: /entrar/i })
 
-    await user.type(emailInput, 'admin@moday.app')
+    await user.type(emailInput, 'admin@albtec.app')
     await user.type(passwordInput, 'admin123')
     await user.click(submitButton)
 
@@ -104,6 +98,7 @@ describe('Admin Login Page', () => {
 
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
+      headers: { get: () => 'application/json' },
       json: async () => ({
         success: false,
         message: 'Credenciais inválidas',
@@ -121,7 +116,7 @@ describe('Admin Login Page', () => {
     await user.click(submitButton)
 
     await waitFor(() => {
-      expect(screen.getByText(/erro ao fazer login/i)).toBeInTheDocument()
+      expect(screen.getByText('Credenciais inválidas')).toBeInTheDocument()
     })
   })
 
@@ -148,7 +143,7 @@ describe('Admin Login Page', () => {
     const passwordInput = screen.getByLabelText(/senha/i)
     const submitButton = screen.getByRole('button', { name: /entrar/i })
 
-    await user.type(emailInput, 'admin@moday.app')
+    await user.type(emailInput, 'admin@albtec.app')
     await user.type(passwordInput, 'admin123')
     await user.click(submitButton)
 
@@ -169,7 +164,7 @@ describe('Admin Login Page', () => {
     const passwordInput = screen.getByLabelText(/senha/i)
     const submitButton = screen.getByRole('button', { name: /entrar/i })
 
-    await user.type(emailInput, 'admin@moday.app')
+    await user.type(emailInput, 'admin@albtec.app')
     await user.type(passwordInput, 'admin123')
     await user.click(submitButton)
 

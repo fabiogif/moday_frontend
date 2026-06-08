@@ -9,10 +9,12 @@ import { useRouter } from 'next/navigation'
 
 // Mock dos hooks
 jest.mock('@/hooks/use-plan-limits')
-jest.mock('next/navigation')
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(),
+}))
 
 const mockUsePlanLimits = usePlanLimits as jest.MockedFunction<typeof usePlanLimits>
-const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>
+const mockUseRouter = useRouter as jest.Mock
 
 describe('PlanLimitNotification', () => {
   const mockPush = jest.fn()

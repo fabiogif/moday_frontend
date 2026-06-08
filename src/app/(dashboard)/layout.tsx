@@ -15,6 +15,8 @@ import { OrderNotificationsProvider } from "@/contexts/order-notifications-conte
 import { NotificationsSidebar } from "@/components/notifications/notifications-sidebar";
 import { POSHeaderProvider } from "@/contexts/pos-header-context";
 import { PlanLimitNotification } from "@/components/plan-limit-notification";
+import { AuthGuard } from "@/components/auth-guard";
+import { TrialBanner } from "@/components/trial-banner";
 
 export default function DashboardLayout({
   children,
@@ -31,6 +33,7 @@ export default function DashboardLayout({
   useAuthSync();
 
   return (
+    <AuthGuard>
     <OrderNotificationsProvider>
       <POSHeaderProvider>
       <SidebarProvider
@@ -43,55 +46,75 @@ export default function DashboardLayout({
     >
       {config.side === "left" ? (
         <>
-          <AppSidebar
-            variant={config.variant}
-            collapsible={config.collapsible}
-            side={config.side}
-          />
+          <div className="print:hidden">
+            <AppSidebar
+              variant={config.variant}
+              collapsible={config.collapsible}
+              side={config.side}
+            />
+          </div>
           <SidebarInset>
-            <SiteHeader onNotificationsClick={() => setNotificationsSidebarOpen(true)} />
+            <div className="print:hidden">
+              <SiteHeader onNotificationsClick={() => setNotificationsSidebarOpen(true)} />
+            </div>
             <div className="flex flex-1 flex-col">
               <div className="@container/main flex flex-1 flex-col gap-2">
                 <div className="flex flex-col gap-1 py-1 md:gap-1 md:py-1">
-                  <div className="px-4 lg:px-6">
+                  <div className="px-4 lg:px-6 print:hidden space-y-2">
+                    <TrialBanner />
                     <PlanLimitNotification />
                   </div>
                   {children}
                 </div>
               </div>
             </div>
-            {!hideFooter && <SiteFooter />}
+            {!hideFooter && (
+              <div className="print:hidden">
+                <SiteFooter />
+              </div>
+            )}
           </SidebarInset>
         </>
       ) : (
         <>
           <SidebarInset>
-            <SiteHeader onNotificationsClick={() => setNotificationsSidebarOpen(true)} />
+            <div className="print:hidden">
+              <SiteHeader onNotificationsClick={() => setNotificationsSidebarOpen(true)} />
+            </div>
             <div className="flex flex-1 flex-col">
               <div className="@container/main flex flex-1 flex-col gap-2">
                 <div className="flex flex-col gap-1 py-1 md:gap-1 md:py-1">
-                  <div className="px-4 lg:px-6">
+                  <div className="px-4 lg:px-6 print:hidden space-y-2">
+                    <TrialBanner />
                     <PlanLimitNotification />
                   </div>
                   {children}
                 </div>
               </div>
             </div>
-            {!hideFooter && <SiteFooter />}
+            {!hideFooter && (
+              <div className="print:hidden">
+                <SiteFooter />
+              </div>
+            )}
           </SidebarInset>
-          <AppSidebar
-            variant={config.variant}
-            collapsible={config.collapsible}
-            side={config.side}
-          />
+          <div className="print:hidden">
+            <AppSidebar
+              variant={config.variant}
+              collapsible={config.collapsible}
+              side={config.side}
+            />
+          </div>
         </>
       )}
 
       {/* Notifications Sidebar */}
-      <NotificationsSidebar
-        open={notificationsSidebarOpen}
-        onClose={() => setNotificationsSidebarOpen(false)}
-      />
+      <div className="print:hidden">
+        <NotificationsSidebar
+          open={notificationsSidebarOpen}
+          onClose={() => setNotificationsSidebarOpen(false)}
+        />
+      </div>
 
       {/* Theme Customizer */}
       {/* <ThemeCustomizerTrigger onClick={() => setThemeCustomizerOpen(true)} /> */}
@@ -108,5 +131,6 @@ export default function DashboardLayout({
       </SidebarProvider>
       </POSHeaderProvider>
     </OrderNotificationsProvider>
+    </AuthGuard>
   );
 }

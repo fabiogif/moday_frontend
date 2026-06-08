@@ -16,6 +16,7 @@ describe('AdminApiClient', () => {
 
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
+        headers: { get: () => 'application/json' },
         json: async () => ({ success: true, data: {} }),
       })
 
@@ -39,6 +40,7 @@ describe('AdminApiClient', () => {
     it('should not set authorization header when token does not exist', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
+        headers: { get: () => 'application/json' },
         json: async () => ({ success: true, data: {} }),
       })
 
@@ -53,6 +55,7 @@ describe('AdminApiClient', () => {
     it('should call dashboard stats endpoint', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
+        headers: { get: () => 'application/json' },
         json: async () => ({
           success: true,
           data: { tenants: { total: 150 } },
@@ -71,6 +74,7 @@ describe('AdminApiClient', () => {
     it('should call recent activity endpoint with limit', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
+        headers: { get: () => 'application/json' },
         json: async () => ({ success: true, data: [] }),
       })
 
@@ -87,6 +91,7 @@ describe('AdminApiClient', () => {
     it('should call tenants list with filters', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
+        headers: { get: () => 'application/json' },
         json: async () => ({ success: true, data: [] }),
       })
 
@@ -110,6 +115,7 @@ describe('AdminApiClient', () => {
     it('should call tenant details endpoint', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
+        headers: { get: () => 'application/json' },
         json: async () => ({ success: true, data: { id: 1 } }),
       })
 
@@ -124,6 +130,7 @@ describe('AdminApiClient', () => {
     it('should call activate tenant endpoint', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
+        headers: { get: () => 'application/json' },
         json: async () => ({ success: true }),
       })
 
@@ -140,6 +147,7 @@ describe('AdminApiClient', () => {
     it('should call suspend tenant endpoint with reason', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
+        headers: { get: () => 'application/json' },
         json: async () => ({ success: true }),
       })
 
@@ -159,6 +167,7 @@ describe('AdminApiClient', () => {
     it('should call revenue metrics with date range', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
+        headers: { get: () => 'application/json' },
         json: async () => ({ success: true, data: {} }),
       })
 
@@ -172,6 +181,7 @@ describe('AdminApiClient', () => {
     it('should call tenant specific metrics', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
+        headers: { get: () => 'application/json' },
         json: async () => ({ success: true, data: {} }),
       })
 
@@ -184,10 +194,68 @@ describe('AdminApiClient', () => {
     })
   })
 
+  describe('Plans Endpoints', () => {
+    it('should call plans list endpoint', async () => {
+      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ success: true, data: [{ id: 1, name: 'Grátis' }] }),
+      })
+
+      const result = await adminApi.getPlans({ per_page: 100 })
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/admin/plans?per_page=100'),
+        expect.any(Object)
+      )
+      expect(result.data).toHaveLength(1)
+    })
+
+    it('should call plan CRUD endpoints', async () => {
+      ;(global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          headers: { get: () => 'application/json' },
+          json: async () => ({ success: true, data: { id: 1 } }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          headers: { get: () => 'application/json' },
+          json: async () => ({ success: true, data: { id: 1, name: 'Novo' } }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          headers: { get: () => 'application/json' },
+          json: async () => ({ success: true }),
+        })
+
+      await adminApi.getPlan(1)
+      await adminApi.createPlan({
+        name: 'Novo',
+        url: 'novo',
+        price: 10,
+        is_active: true,
+        max_users: null,
+        max_products: null,
+        max_orders_per_month: null,
+        has_marketing: false,
+        has_order_completion_email: false,
+        has_reports: false,
+      })
+      await adminApi.deletePlan(1)
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/admin/plans/1'),
+        expect.objectContaining({ method: 'DELETE' })
+      )
+    })
+  })
+
   describe('Error Handling', () => {
     it('should throw error on failed request', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
+        headers: { get: () => 'application/json' },
         json: async () => ({
           success: false,
           message: 'Erro no servidor',
@@ -202,6 +270,7 @@ describe('AdminApiClient', () => {
     it('should throw default error message when none provided', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
+        headers: { get: () => 'application/json' },
         json: async () => ({ success: false }),
       })
 

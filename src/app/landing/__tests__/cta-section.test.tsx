@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react'
 import { CTASection } from '../components/cta-section'
-import { RegisterModalProvider } from '@/contexts/register-modal-context'
 
 jest.mock('next/link', () => {
   return ({ children, href }: { children: React.ReactNode; href: string }) => {
@@ -9,34 +8,26 @@ jest.mock('next/link', () => {
 })
 
 describe('CTASection', () => {
-  const renderWithProvider = (component: React.ReactElement) => {
-    return render(<RegisterModalProvider>{component}</RegisterModalProvider>)
-  }
-
   it('deve renderizar o título principal', () => {
-    renderWithProvider(<CTASection />)
-    expect(screen.getByText(/Pronto para transformar seu restaurante/i)).toBeInTheDocument()
+    render(<CTASection />)
+    expect(screen.getByText(/Revolucione a gestão do seu/i)).toBeInTheDocument()
   })
 
-  it('deve renderizar os botões de CTA', () => {
-    renderWithProvider(<CTASection />)
-    expect(screen.getByText(/Teste grátis por 7 dias/i)).toBeInTheDocument()
-    expect(screen.getByText(/Agendar demonstração/i)).toBeInTheDocument()
+  it('deve renderizar informação do teste de 7 dias', () => {
+    render(<CTASection />)
+    expect(screen.getByText(/Teste os planos Básico e Premium por 7 dias grátis/i)).toBeInTheDocument()
+    expect(screen.getByText(/Teste grátis por 7 dias nos planos pagos/i)).toBeInTheDocument()
+  })
+
+  it('deve renderizar botões de CTA com copy unificado', () => {
+    render(<CTASection />)
+    expect(screen.getByRole('link', { name: /Teste grátis por 7 dias/i })).toHaveAttribute('href', '/auth/register')
+    expect(screen.getByRole('link', { name: /Ver Planos e Preços/i })).toHaveAttribute('href', '#pricing')
   })
 
   it('deve renderizar trust indicators', () => {
-    renderWithProvider(<CTASection />)
+    render(<CTASection />)
     expect(screen.getByText(/Sem cartão de crédito/i)).toBeInTheDocument()
-    expect(screen.getByText(/Ativação instantânea/i)).toBeInTheDocument()
-    expect(screen.getByText(/Suporte em português/i)).toBeInTheDocument()
-  })
-
-  it('deve ter botão que abre o modal de registro', () => {
-    renderWithProvider(<CTASection />)
-    const registerButton = screen.getByRole('button', { name: /Teste grátis por 7 dias/i })
-    expect(registerButton.tagName).toBe('BUTTON')
-    // Verifica que não é um link
-    expect(registerButton).not.toHaveAttribute('href', '/auth/register')
+    expect(screen.getByText(/Suporte especializado/i)).toBeInTheDocument()
   })
 })
-

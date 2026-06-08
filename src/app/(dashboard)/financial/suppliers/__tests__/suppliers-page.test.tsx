@@ -187,5 +187,5 @@ describe('SuppliersPage', () => {
       expect(screen.getByText(/tem certeza/i)).toBeInTheDocument()
     })
   })
-}
+})
 

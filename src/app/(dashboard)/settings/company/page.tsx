@@ -398,6 +398,7 @@ export default function CompanySettings() {
                   width={80} 
                   height={80} 
                   className="rounded-lg object-cover border"
+                  unoptimized
                 />
               ) : (
                 <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center border">
@@ -520,6 +521,7 @@ export default function CompanySettings() {
                         width={128} 
                         height={128} 
                         className="object-cover w-full h-full"
+                        unoptimized
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center text-muted-foreground">

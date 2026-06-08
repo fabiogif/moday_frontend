@@ -12,6 +12,15 @@ import OrdersPage from '../page'
 import { useOrders, useMutation } from '@/hooks/use-api'
 import { Order } from '../types'
 
+jest.mock('@/contexts/auth-context', () => ({
+  useAuth: () => ({
+    token: 'mock-token',
+    isAuthenticated: true,
+    isLoading: false,
+    user: { name: 'Test User', email: 'test@test.com' },
+  }),
+}))
+
 // Mock do toast
 jest.mock('sonner', () => ({
   toast: {

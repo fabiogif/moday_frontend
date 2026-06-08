@@ -35,11 +35,16 @@ import { useToast } from "@/hooks/use-toast"
 import { Loader2, Check } from "lucide-react"
 import { apiClient } from "@/lib/api-client"
 import { useAuth } from "@/contexts/auth-context"
+import { maskCNPJ, validateCNPJ } from "@/lib/masks"
+import { TRIAL_DAYS } from "@/lib/subscription"
+import type { TrialStatus } from "@/contexts/auth-context"
 
 const registerFormSchema = z.object({
   company_name: z.string().min(3, "Nome da empresa deve ter pelo menos 3 caracteres"),
   company_email: z.string().email("Email inválido").optional().or(z.literal("")),
-  company_cnpj: z.string().optional(),
+  company_cnpj: z.string().min(1, "CNPJ é obrigatório").refine((value) => validateCNPJ(value), {
+    message: "CNPJ inválido. Verifique os dígitos.",
+  }),
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
@@ -76,7 +81,7 @@ export function RegisterForm({
 }) {
   const router = useRouter()
   const { toast } = useToast()
-  const { login } = useAuth()
+  const { login, setTrialStatus } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [plans, setPlans] = useState<Plan[]>([])
   const [loadingPlans, setLoadingPlans] = useState(true)
@@ -157,6 +162,7 @@ export function RegisterForm({
         }
         token: string
         expires_in: number
+        trial_status?: TrialStatus
       }
 
       const response = await apiClient.post<RegisterResponse>('/api/register', data)
@@ -167,13 +173,17 @@ export function RegisterForm({
         
         if (token) {
           apiClient.setToken(token)
+
+          if (response.data.trial_status) {
+            setTrialStatus(response.data.trial_status)
+          }
           
           // Fazer login automático usando o contexto de autenticação
           await login(user.email, data.password)
 
           toast({
             title: "Cadastro realizado!",
-            description: "Bem-vindo ao Alba Tech. Redirecionando...",
+            description: "Bem-vindo ao Alba Tec. Redirecionando...",
           })
 
           onSuccess?.()
@@ -213,7 +223,7 @@ export function RegisterForm({
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Criar sua conta</CardTitle>
           <CardDescription>
-            Preencha os dados abaixo para começar a usar o Alba Tech
+            Preencha os dados abaixo para começar a usar o Alba Tec
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -260,9 +270,16 @@ export function RegisterForm({
                         name="company_cnpj"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>CNPJ</FormLabel>
+                            <FormLabel>CNPJ *</FormLabel>
                             <FormControl>
-                              <Input placeholder="00.000.000/0000-00" {...field} />
+                              <Input
+                                placeholder="00.000.000/0000-00"
+                                value={field.value}
+                                name={field.name}
+                                onBlur={field.onBlur}
+                                ref={field.ref}
+                                onChange={(e) => field.onChange(maskCNPJ(e.target.value))}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -385,9 +402,20 @@ export function RegisterForm({
                             {(() => {
                               const selectedPlan = plans.find(p => p.id.toString() === form.watch("plan_id"))
                               if (!selectedPlan) return null
+                              const isFreePlan = Number(selectedPlan.price) <= 0
                               return (
                                 <div>
                                   <p className="font-medium mb-2">{selectedPlan.name}</p>
+                                  {!isFreePlan && (
+                                    <p className="text-emerald-600 dark:text-emerald-400 text-xs font-medium mb-2">
+                                      Você terá {TRIAL_DAYS} dias para testar todos os recursos deste plano, sem cobrança.
+                                    </p>
+                                  )}
+                                  {isFreePlan && (
+                                    <p className="text-muted-foreground text-xs font-medium mb-2">
+                                      Plano gratuito permanente, sem limite de tempo.
+                                    </p>
+                                  )}
                                   <p className="text-muted-foreground text-xs mb-2">
                                     {selectedPlan.description}
                                   </p>

@@ -312,5 +312,5 @@ describe('ReviewsSection', () => {
       expect(screen.getByText(/1 avaliação em destaque/)).toBeInTheDocument()
     })
   })
-}
+})
 

@@ -9,7 +9,7 @@ import { ToasterProvider } from "@/components/toaster-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
-  title: "Alba Tech - Gestão",
+  title: "Alba Tec - Gestão",
   description: "Sistema de gestão para restaurantes",
   manifest: "/manifest.json",
 };
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#000000",
+  themeColor: "#7C3AED",
 };
 
 export default function RootLayout({

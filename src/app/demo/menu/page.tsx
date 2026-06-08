@@ -4,7 +4,6 @@ import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -12,16 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-import { 
-  UtensilsCrossed, 
-  ChefHat, 
-  Coffee, 
-  IceCream, 
-  Pizza, 
-  Salad,
-  Layers,
-  PlusCircle,
+import {
   ShoppingCart,
   Sparkles,
   ArrowLeft,
@@ -33,7 +23,6 @@ import {
   Image as ImageIcon,
   Store,
   Menu,
-  Package,
   MessageCircle,
   MapPin,
   Check,
@@ -375,14 +364,6 @@ const demoProducts: DemoProduct[] = [
   }
 ]
 
-const categoryIcons: Record<string, React.ElementType> = {
-  'Pizzas': Pizza,
-  'Lanches': ChefHat,
-  'Saladas': Salad,
-  'Bebidas': Coffee,
-  'Sobremesas': IceCream,
-  'Pratos Principais': UtensilsCrossed
-}
 
 interface DemoPaymentMethod {
   uuid: string
@@ -400,7 +381,7 @@ const demoPaymentMethods: DemoPaymentMethod[] = [
 
 export default function DemoMenuPage() {
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'checkout' | 'success'>('cart')
-  const [selectedCategory, setSelectedCategory] = useState<string>('Pizzas')
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedProduct, setSelectedProduct] = useState<DemoProduct | null>(null)
   const [selectedVariation, setSelectedVariation] = useState<string>('')
   const [selectedOptionalsQty, setSelectedOptionalsQty] = useState<Record<string, number>>({})
@@ -436,7 +417,9 @@ export default function DemoMenuPage() {
   const [orderResult, setOrderResult] = useState<any>(null)
 
   const categories = Array.from(new Set(demoProducts.map(p => p.category)))
-  const filteredProducts = demoProducts.filter(p => p.category === selectedCategory)
+  const filteredProducts = selectedCategory === 'all'
+    ? demoProducts
+    : demoProducts.filter(p => p.category === selectedCategory)
 
   const formatPrice = (price: number): string => {
     return new Intl.NumberFormat('pt-BR', {
@@ -1073,113 +1056,114 @@ export default function DemoMenuPage() {
       </header>
 
       <main className="flex-1">
-        <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
+        <div className="w-full">
           {checkoutStep === "cart" && (
             <section className="container mx-auto space-y-10 px-4 py-10">
             <div className="flex flex-col gap-10 lg:flex-row">
               <div className="flex-1 space-y-6">
-                <ScrollArea className="w-full whitespace-nowrap">
-                  <TabsList className="inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground w-full">
-                    {categories.map((category) => {
-                      const Icon = categoryIcons[category] || UtensilsCrossed
-                      return (
-                        <TabsTrigger key={category} value={category} className="flex items-center gap-2">
-                          <Icon className="h-4 w-4" />
-                          <span>{category}</span>
-                        </TabsTrigger>
-                      )
-                    })}
-                  </TabsList>
-                  <ScrollBar orientation="horizontal" />
-                </ScrollArea>
+                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                  <button
+                    onClick={() => setSelectedCategory("all")}
+                    className={`flex-shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                      selectedCategory === "all"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    Todos
+                  </button>
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`flex-shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                        selectedCategory === category
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
 
-                <TabsContent value={selectedCategory} className="mt-0">
+                <div className="mt-0">
                   {filteredProducts.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-muted p-12 text-center">
                       <p className="text-lg text-muted-foreground">Nenhum produto encontrado nesta categoria.</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+                    <div className="flex flex-col gap-3 md:grid md:grid-cols-2 xl:grid-cols-3 md:gap-4">
                       {filteredProducts.map((product) => {
                         const price = product.promotionalPrice || product.price
                         const hasDiscount = product.promotionalPrice && product.promotionalPrice < product.price
                         const hasVariations = product.variations && product.variations.length > 0
                         const hasOptionals = product.optionals && product.optionals.length > 0
+                        const hasCustomization = hasVariations || hasOptionals
 
                         return (
-                          <Card
+                          <button
                             key={product.id}
-                            className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/90 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                            onClick={() => handleProductClick(product)}
+                            className="group flex gap-3 rounded-2xl border border-border/70 bg-card p-3 text-left transition hover:border-primary/40 hover:shadow-md w-full"
                           >
-                            <div className="relative aspect-square bg-muted">
+                            <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-muted md:h-28 md:w-28">
                               {product.image ? (
                                 <Image
                                   src={product.image}
                                   alt={product.name}
                                   fill
                                   className="object-cover"
-                                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
+                                  sizes="112px"
                                 />
                               ) : (
-                                <div className="flex h-full w-full items-center justify-center bg-muted">
-                                  <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
+                                <div className="flex h-full w-full items-center justify-center">
+                                  <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
                                 </div>
                               )}
                               {hasDiscount && (
-                                <Badge className="absolute right-2 top-2 rounded-full bg-red-500 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
-                                  {Math.round((1 - (product.promotionalPrice! / product.price)) * 100)}% OFF
+                                <Badge className="absolute left-1 top-1 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                  -{Math.round((1 - (product.promotionalPrice! / product.price)) * 100)}%
                                 </Badge>
                               )}
-                              <Badge className="absolute bottom-2 left-2 rounded-full bg-black/70 px-3 py-1 text-xs font-medium text-white">
-                                {product.category}
-                              </Badge>
                             </div>
-                            <CardHeader className="flex-1 space-y-2 p-4">
-                              <CardTitle className="line-clamp-2 text-base font-semibold leading-tight sm:text-lg">
-                                {product.name}
-                              </CardTitle>
-                              <CardDescription className="line-clamp-2 text-xs sm:text-sm">
-                                {product.description}
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4 p-4 pt-0">
-                              <div className="space-y-1">
-                                {hasDiscount && (
-                                  <p className="text-xs text-muted-foreground line-through">
-                                    R$ {formatPrice(product.price)}
+
+                            <div className="flex flex-1 flex-col justify-between min-w-0 py-0.5">
+                              <div className="space-y-0.5">
+                                <p className="font-semibold text-sm leading-snug line-clamp-2 text-foreground group-hover:text-primary transition-colors">
+                                  {product.name}
+                                </p>
+                                {product.description && (
+                                  <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                                    {product.description}
                                   </p>
                                 )}
-                                <p className="text-lg font-semibold text-primary sm:text-2xl">
-                                  R$ {formatPrice(price)}
-                                </p>
+                                {hasCustomization && (
+                                  <p className="text-[10px] text-primary/70 font-medium">Personalizável</p>
+                                )}
                               </div>
-                              <Button
-                                onClick={() => handleProductClick(product)}
-                                className="w-full rounded-full py-5 text-sm font-semibold sm:text-base"
-                              >
-                                Adicionar
-                              </Button>
-                              {((hasVariations) || (hasOptionals)) && (
-                                <div className="flex flex-wrap items-center justify-center gap-2 text-[10px] text-muted-foreground sm:text-xs">
-                                  {hasVariations && (
-                                    <Badge variant="outline" className="rounded-full px-3 py-1">
-                                      {product.variations!.length} {product.variations!.length === 1 ? 'variação' : 'variações'}
-                                    </Badge>
+                              <div className="flex items-center justify-between mt-2 gap-2">
+                                <div>
+                                  {hasDiscount && (
+                                    <p className="text-[10px] text-muted-foreground line-through leading-none">
+                                      R$ {formatPrice(product.price)}
+                                    </p>
                                   )}
-                                  {hasOptionals && (
-                                    <Badge variant="outline" className="rounded-full px-3 py-1">
-                                      {product.optionals!.length} {product.optionals!.length === 1 ? 'opcional' : 'opcionais'}
-                                    </Badge>
-                                  )}
+                                  <p className="text-base font-bold text-primary leading-tight">
+                                    R$ {formatPrice(price)}
+                                  </p>
                                 </div>
-                              )}
-                            </CardContent>
-                          </Card>
+                                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors group-hover:bg-primary/90">
+                                  <Plus className="h-4 w-4" />
+                                </div>
+                              </div>
+                            </div>
+                          </button>
                         )
                       })}
                     </div>
                   )}
-                </TabsContent>
+                </div>
               </div>
 
               <aside className="hidden w-full max-w-sm lg:block" id="order-summary">
@@ -1536,7 +1520,7 @@ export default function DemoMenuPage() {
               </Card>
             </section>
           )}
-        </Tabs>
+        </div>
       </main>
 
       {/* Mobile Cart Button */}
@@ -1580,154 +1564,151 @@ export default function DemoMenuPage() {
           }
         }}
       >
-        <DialogContent className="max-w-2xl rounded-3xl border border-border/50 bg-background/95 p-0 shadow-2xl backdrop-blur">
+        <DialogContent className="flex flex-col max-w-lg max-h-[90dvh] rounded-2xl border border-border/50 bg-background p-0 shadow-2xl gap-0 overflow-hidden">
           {selectedProduct && (
-            <div className="space-y-6 overflow-y-auto p-6 sm:p-8">
-              <DialogHeader className="space-y-2 text-left">
-                <DialogTitle className="text-xl font-semibold sm:text-2xl">{selectedProduct.name}</DialogTitle>
-                <DialogDescription className="text-sm text-muted-foreground">
-                  Personalize o pedido antes de adicionar ao carrinho.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="flex items-start gap-4">
-                <div className="relative h-20 w-20 overflow-hidden rounded-2xl bg-muted sm:h-24 sm:w-24">
-                  {selectedProduct.image ? (
-                    <Image
-                      src={selectedProduct.image}
-                      alt={selectedProduct.name}
-                      fill
-                      className="object-cover"
-                      sizes="96px"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
+            <>
+              {/* Header fixo */}
+              <div className="shrink-0 px-5 pt-5 pb-4 border-b">
+                <DialogHeader className="space-y-0.5 text-left mb-3">
+                  <DialogTitle className="text-lg font-semibold leading-tight">{selectedProduct.name}</DialogTitle>
+                  <DialogDescription className="text-sm text-muted-foreground">
+                    Personalize o pedido antes de adicionar ao carrinho.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex items-center gap-3">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+                    {selectedProduct.image ? (
+                      <Image src={selectedProduct.image} alt={selectedProduct.name} fill className="object-cover" sizes="64px" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <ImageIcon className="h-6 w-6 text-muted-foreground/40" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {selectedProduct.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{selectedProduct.description}</p>
+                    )}
+                    <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                      Preço base: <span className="text-primary font-semibold ml-1">R$ {formatPrice(selectedProduct.promotionalPrice || selectedProduct.price)}</span>
                     </div>
-                  )}
-                </div>
-                <div className="flex-1 space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    {selectedProduct.description || 'Selecione as opções disponíveis e adicione ao seu pedido.'}
-                  </p>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-                    Preço base: <span className="text-primary font-semibold whitespace-nowrap">R$ {formatPrice(selectedProduct.promotionalPrice || selectedProduct.price)}</span>
                   </div>
                 </div>
               </div>
 
-              {selectedProduct.variations && selectedProduct.variations.length > 0 && (
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Variações</p>
-                    <p className="text-sm text-muted-foreground">Escolha uma opção</p>
-                  </div>
-                  <RadioGroup value={selectedVariation} onValueChange={setSelectedVariation} className="grid gap-2">
-                    {selectedProduct.variations.map((variation) => {
-                      const isSelected = selectedVariation === variation.id
-                      return (
-                        <div
-                          key={variation.id}
-                          className={`flex items-center justify-between rounded-2xl border px-4 py-3 transition ${
-                            isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:bg-muted/40'
-                          }`}
-                        >
-                          <RadioGroupItem value={variation.id} id={`variation-${variation.id}`} className="sr-only" />
-                          <label htmlFor={`variation-${variation.id}`} className="flex flex-1 cursor-pointer items-center justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-medium text-foreground">{variation.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {variation.price > 0 ? `+ R$ ${formatPrice(variation.price)}` : 'Sem custo adicional'}
-                              </p>
-                            </div>
-                            <div className={`flex h-5 w-5 items-center justify-center rounded-full border ${isSelected ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground'}`}>
-                              {isSelected ? <Check className="h-3 w-3" /> : null}
-                            </div>
-                          </label>
-                        </div>
-                      )
-                    })}
-                  </RadioGroup>
-                </div>
-              )}
-
-              {selectedProduct.optionals && selectedProduct.optionals.length > 0 && (
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Opcionais</p>
-                    <p className="text-sm text-muted-foreground">Adicione itens extras ao seu pedido</p>
-                  </div>
-                  <div className="space-y-3">
-                    {selectedProduct.optionals.map((optional) => {
-                      const qty = selectedOptionalsQty[optional.id] || 0
-                      return (
-                        <div
-                          key={optional.id}
-                          className="flex items-center justify-between rounded-2xl border border-dashed border-border/80 bg-muted/30 px-4 py-3"
-                        >
-                          <div>
-                            <p className="text-sm font-medium text-foreground">{optional.name}</p>
-                            <p className="text-xs text-muted-foreground">+ R$ {formatPrice(optional.price)}</p>
+              {/* Corpo scrollável */}
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+                {selectedProduct.variations && selectedProduct.variations.length > 0 && (
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Variações</p>
+                      <p className="text-xs text-muted-foreground">Escolha uma opção</p>
+                    </div>
+                    <RadioGroup value={selectedVariation} onValueChange={setSelectedVariation} className="grid gap-2">
+                      {selectedProduct.variations.map((variation) => {
+                        const isSelected = selectedVariation === variation.id
+                        return (
+                          <div
+                            key={variation.id}
+                            className={`flex items-center justify-between rounded-xl border px-3 py-2.5 transition cursor-pointer ${
+                              isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:bg-muted/40'
+                            }`}
+                          >
+                            <RadioGroupItem value={variation.id} id={`variation-${variation.id}`} className="sr-only" />
+                            <label htmlFor={`variation-${variation.id}`} className="flex flex-1 cursor-pointer items-center justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-medium text-foreground">{variation.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {variation.price > 0 ? `+ R$ ${formatPrice(variation.price)}` : 'Sem custo adicional'}
+                                </p>
+                              </div>
+                              <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${isSelected ? 'border-primary bg-primary/10 text-primary' : 'border-border'}`}>
+                                {isSelected && <Check className="h-3 w-3" />}
+                              </div>
+                            </label>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              onClick={() => handleOptionalQuantityChange(optional.id, -1)}
-                              disabled={qty === 0}
-                            >
-                              <Minus className="h-4 w-4" />
-                              <span className="sr-only">Remover opcional</span>
-                            </Button>
-                            <span className="w-6 text-center text-sm font-semibold">{qty}</span>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              onClick={() => handleOptionalQuantityChange(optional.id, 1)}
-                            >
-                              <Plus className="h-4 w-4" />
-                              <span className="sr-only">Adicionar opcional</span>
-                            </Button>
-                          </div>
-                        </div>
-                      )
-                    })}
+                        )
+                      })}
+                    </RadioGroup>
                   </div>
-                </div>
-              )}
-                
-              <Separator />
+                )}
 
-              <DialogFooter className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex w-full flex-col sm:w-auto">
-                  <span className="text-[14px] font-medium uppercase tracking-wide text-muted-foreground">Total estimado</span>
-                  <span className="text-xl font-semibold text-primary sm:text-2xl whitespace-nowrap">R$ {formatPrice(calculateSelectionTotal())}</span>
-                </div>
-                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                {selectedProduct.optionals && selectedProduct.optionals.length > 0 && (
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Opcionais</p>
+                      <p className="text-xs text-muted-foreground">Adicione itens extras</p>
+                    </div>
+                    <div className="space-y-2">
+                      {selectedProduct.optionals.map((optional) => {
+                        const qty = selectedOptionalsQty[optional.id] || 0
+                        return (
+                          <div
+                            key={optional.id}
+                            className="flex items-center justify-between rounded-xl border border-border/70 bg-muted/20 px-3 py-2.5"
+                          >
+                            <div className="min-w-0 flex-1 mr-3">
+                              <p className="text-sm font-medium text-foreground truncate">{optional.name}</p>
+                              <p className="text-xs text-muted-foreground">+ R$ {formatPrice(optional.price)}</p>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleOptionalQuantityChange(optional.id, -1)}
+                                disabled={qty === 0}
+                              >
+                                <Minus className="h-3.5 w-3.5" />
+                              </Button>
+                              <span className="w-5 text-center text-sm font-semibold tabular-nums">{qty}</span>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleOptionalQuantityChange(optional.id, 1)}
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer fixo */}
+              <div className="shrink-0 border-t bg-background px-5 py-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total estimado</p>
+                    <p className="text-xl font-bold text-primary">R$ {formatPrice(calculateSelectionTotal())}</p>
+                  </div>
                   <Button
                     type="button"
-                    variant="outline"
-                    className="sm:min-w-[140px]"
-                    onClick={() => {
-                      setShowSelectionDialog(false)
-                      resetSelectionState()
-                    }}
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => { setShowSelectionDialog(false); resetSelectionState() }}
                   >
                     Cancelar
                   </Button>
-                  <Button 
-                    type="button"
-                    className="sm:min-w-[180px]"
-                    onClick={confirmAddToCart}
-                    disabled={selectedProduct.variations && selectedProduct.variations.length > 0 && !selectedVariation}
-                  >
-                    <span className="whitespace-nowrap text-sm sm:text-base">Adicionar • R$ {formatPrice(calculateSelectionTotal())}</span>
-                  </Button>
                 </div>
-              </DialogFooter>
-            </div>
+                <Button
+                  type="button"
+                  className="w-full rounded-full"
+                  size="lg"
+                  onClick={confirmAddToCart}
+                  disabled={!!(selectedProduct.variations && selectedProduct.variations.length > 0 && !selectedVariation)}
+                >
+                  Adicionar ao carrinho · R$ {formatPrice(calculateSelectionTotal())}
+                </Button>
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>

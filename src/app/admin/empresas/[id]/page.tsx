@@ -332,7 +332,7 @@ export default function TenantDetailsPage() {
           <div className="flex flex-col gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{tenant.name}</h1>
             <p className="text-muted-foreground">
-              {tenant.subdomain}.moday.app
+              {tenant.subdomain}.albtec.app
             </p>
           </div>
         </div>
@@ -515,7 +515,7 @@ export default function TenantDetailsPage() {
             </div>
             <div>
               <Label className="text-muted-foreground">Subdomínio</Label>
-              <p className="font-medium">{tenant.subdomain}.moday.app</p>
+              <p className="font-medium">{tenant.subdomain}.albtec.app</p>
             </div>
             <div>
               <Label className="text-muted-foreground">Status</Label>

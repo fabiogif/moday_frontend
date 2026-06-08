@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { LandingPageContent } from '../landing-page-content'
 
 jest.mock('next/link', () => {
@@ -17,6 +17,7 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: jest.fn(),
   }),
+  useSearchParams: () => new URLSearchParams(),
 }))
 
 jest.mock('@/lib/api-client', () => ({
@@ -27,25 +28,39 @@ jest.mock('@/lib/api-client', () => ({
 }))
 
 describe('LandingPageContent', () => {
-  it('deve renderizar todos os componentes principais', () => {
+  it('deve renderizar componentes principais com nova proposta de valor', async () => {
     render(<LandingPageContent />)
-    
-    // Verifica se os componentes principais estão presentes
-    expect(screen.getByText(/Gerencie seu Restaurante/i)).toBeInTheDocument()
+
+    expect(
+      screen.getByText(/Venda mais e cometa menos erros no seu restaurante/i)
+    ).toBeInTheDocument()
     expect(screen.getByText(/Tudo que você precisa para gerenciar/i)).toBeInTheDocument()
-    expect(screen.getByText(/Planos que cabem no seu bolso/i)).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(screen.getByText(/Simples, transparente e sem surpresas/i)).toBeInTheDocument()
+    })
   })
 
-  it('deve renderizar navbar', () => {
+  it('deve renderizar seção de stats', () => {
     render(<LandingPageContent />)
-    // Verifica se há links de navegação
-    expect(screen.getByText(/Home/i)).toBeInTheDocument()
+    expect(screen.getByText(/Aumento de Vendas/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/Restaurantes Ativos/i).length).toBeGreaterThan(0)
+  })
+
+  it('deve renderizar trust badges', () => {
+    render(<LandingPageContent />)
+    expect(screen.getByText(/Dados protegidos \(LGPD\)/i)).toBeInTheDocument()
+  })
+
+  it('deve renderizar navbar com CTA de trial', () => {
+    render(<LandingPageContent />)
+    const trialLinks = screen.getAllByRole('link', { name: /Teste grátis por 7 dias/i })
+    expect(trialLinks.length).toBeGreaterThan(0)
   })
 
   it('deve renderizar footer', () => {
     render(<LandingPageContent />)
-    const companyNames = screen.getAllByText(/Alba Tech/i)
+    const companyNames = screen.getAllByText(/Alba Tec/i)
     expect(companyNames.length).toBeGreaterThan(0)
   })
 })
-

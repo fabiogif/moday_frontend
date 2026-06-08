@@ -84,6 +84,7 @@ export function PlanLimitNotification({ onDismiss }: PlanLimitNotificationProps)
             variant="ghost"
             size="icon"
             onClick={handleDismiss}
+            aria-label="close"
             className="h-8 w-8 text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300"
           >
             <X className="h-4 w-4" />

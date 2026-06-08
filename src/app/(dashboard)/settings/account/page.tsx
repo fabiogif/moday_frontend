@@ -241,6 +241,7 @@ export default function AccountSettings() {
                           width={40} 
                           height={40} 
                           className="rounded-lg object-cover"
+                          unoptimized
                         />
                       ) : (
                         <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">

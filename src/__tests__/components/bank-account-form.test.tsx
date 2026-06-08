@@ -12,6 +12,28 @@ const mockBanks = [
   { code: '260', name: 'Nubank', full_name: 'Nu Pagamentos S.A.', supports_pix: true },
 ]
 
+const mockAccounts = [
+  {
+    uuid: '123-456',
+    account_type: 'checking',
+    bank_name: 'Banco do Brasil',
+    bank_code: '001',
+    agency: '1234',
+    agency_digit: '5',
+    account_number_masked: '12****78-9',
+    account_holder_name: 'Restaurant ABC Ltda',
+    account_holder_document_masked: '12.***.***/****-01',
+    account_holder_type: 'company',
+    pix_key_type: 'cnpj',
+    pix_key: '12.345.678/0001-01',
+    is_primary: true,
+    is_active: true,
+    is_verified: true,
+    verified_at: '2025-11-01T10:00:00Z',
+    created_at: '2025-11-01T10:00:00Z',
+  },
+]
+
 describe('BankAccountForm', () => {
   const mockOnClose = jest.fn()
   const mockOnSuccess = jest.fn()

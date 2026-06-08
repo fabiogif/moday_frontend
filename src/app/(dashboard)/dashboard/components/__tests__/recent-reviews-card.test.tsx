@@ -285,5 +285,5 @@ describe('RecentReviewsCard', () => {
       expect(screen.getByText('há 3 horas')).toBeInTheDocument()
     })
   })
-}
+})
 

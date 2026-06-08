@@ -133,7 +133,7 @@ describe('PlanMigrationModal', () => {
     const onOpenChange = jest.fn()
     const onConfirm = jest.fn()
 
-    render(
+    const { rerender } = render(
       <PlanMigrationModal
         open={true}
         onOpenChange={onOpenChange}
@@ -149,8 +149,8 @@ describe('PlanMigrationModal', () => {
     const cancelButton = screen.getByText('Cancelar')
     fireEvent.click(cancelButton)
 
-    // Reabrir modal
-    render(
+    // Reabrir modal via rerender para evitar múltiplos elementos
+    rerender(
       <PlanMigrationModal
         open={true}
         onOpenChange={onOpenChange}

@@ -28,7 +28,7 @@ import { Plus, UserPlus, Trash2, MapPin } from "lucide-react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useAuthenticatedClients, useAuthenticatedProducts, useAuthenticatedTables, useMutation } from "@/hooks/use-authenticated-api"
+import { useAuthenticatedClients, useAuthenticatedCatalogProducts, useAuthenticatedTables, useMutation } from "@/hooks/use-authenticated-api"
 import { useAuth } from "@/contexts/auth-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -158,7 +158,7 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
   
   const { token, isAuthenticated } = useAuth()
   const { data: clientsData, loading: clientsLoading, error: clientsError, refetch: refetchClients } = useAuthenticatedClients()
-  const { data: productsData, loading: productsLoading, error: productsError } = useAuthenticatedProducts()
+  const { data: productsData, loading: productsLoading, error: productsError } = useAuthenticatedCatalogProducts()
   const { data: tablesData, loading: tablesLoading, error: tablesError } = useAuthenticatedTables()
   const { mutate: createClient } = useMutation()
   

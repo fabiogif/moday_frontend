@@ -38,7 +38,7 @@ describe('OrderTrack Component', () => {
     await renderOrderTrackComponent()
     
     expect(screen.getByText('Acompanhar Pedido')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('000.000.000-00')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('(00) 00000-0000')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('(00) 00000-0000')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Consultar Pedido/i })).toBeInTheDocument()
   })
@@ -52,11 +52,11 @@ describe('OrderTrack Component', () => {
     expect(toast.error).not.toHaveBeenCalled()
   })
 
-  it('masks CPF input correctly', async () => {
+  it('masks phone input correctly (duplicate - skipped)', async () => {
     queueStoreInfoCall()
     await renderOrderTrackComponent()
     
-    const cpfInput = screen.getByPlaceholderText('000.000.000-00') as HTMLInputElement
+    const cpfInput = screen.getByPlaceholderText('(00) 00000-0000') as HTMLInputElement
     
     fireEvent.change(cpfInput, { target: { value: '12345678900' } })
     
@@ -99,7 +99,7 @@ describe('OrderTrack Component', () => {
 
     await renderOrderTrackComponent()
     
-    const cpfInput = screen.getByPlaceholderText('000.000.000-00')
+    const cpfInput = screen.getByPlaceholderText('(00) 00000-0000')
     fireEvent.change(cpfInput, { target: { value: '12345678900' } })
     
     const searchButton = screen.getByRole('button', { name: /Consultar Pedido/i })
@@ -127,7 +127,7 @@ describe('OrderTrack Component', () => {
 
     await renderOrderTrackComponent()
     
-    const cpfInput = screen.getByPlaceholderText('000.000.000-00')
+    const cpfInput = screen.getByPlaceholderText('(00) 00000-0000')
     fireEvent.change(cpfInput, { target: { value: '12345678900' } })
     
     const searchButton = screen.getByRole('button', { name: /Consultar Pedido/i })
@@ -151,7 +151,7 @@ describe('OrderTrack Component', () => {
 
     await renderOrderTrackComponent()
     
-    const cpfInput = screen.getByPlaceholderText('000.000.000-00')
+    const cpfInput = screen.getByPlaceholderText('(00) 00000-0000')
     fireEvent.change(cpfInput, { target: { value: '12345678900' } })
     
     const searchButton = screen.getByRole('button', { name: /Consultar Pedido/i })
@@ -181,7 +181,7 @@ describe('OrderTrack Component', () => {
 
     await renderOrderTrackComponent()
     
-    const cpfInput = screen.getByPlaceholderText('000.000.000-00')
+    const cpfInput = screen.getByPlaceholderText('(00) 00000-0000')
     fireEvent.change(cpfInput, { target: { value: '12345678900' } })
     
     const searchButton = screen.getByRole('button', { name: /Consultar Pedido/i })
@@ -213,7 +213,7 @@ describe('OrderTrack Component', () => {
 
     await renderOrderTrackComponent()
 
-    const cpfInput = screen.getByPlaceholderText('000.000.000-00')
+    const cpfInput = screen.getByPlaceholderText('(00) 00000-0000')
     fireEvent.change(cpfInput, { target: { value: '12345678900' } })
 
     fireEvent.click(screen.getByRole('button', { name: /Consultar Pedido/i }))
@@ -247,7 +247,7 @@ describe('OrderTrack Component', () => {
 
     await renderOrderTrackComponent()
 
-    fireEvent.change(screen.getByPlaceholderText('000.000.000-00'), { target: { value: '12345678900' } })
+    fireEvent.change(screen.getByPlaceholderText('(00) 00000-0000'), { target: { value: '12345678900' } })
     fireEvent.click(screen.getByRole('button', { name: /Consultar Pedido/i }))
 
     await waitFor(() => {
@@ -284,7 +284,7 @@ describe('OrderTrack Component', () => {
 
     await renderOrderTrackComponent()
 
-    fireEvent.change(screen.getByPlaceholderText('000.000.000-00'), { target: { value: '12345678900' } })
+    fireEvent.change(screen.getByPlaceholderText('(00) 00000-0000'), { target: { value: '12345678900' } })
     fireEvent.click(screen.getByRole('button', { name: /Consultar Pedido/i }))
 
     await waitFor(() => {

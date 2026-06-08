@@ -4,11 +4,11 @@ import { useState, useEffect } from "react"
 import { DataTable } from "./components/data-table"
 import { PlanFormDialog } from "./components/plan-form-dialog"
 import { SuccessAlert } from "./components/success-alert"
-import { useAuthenticatedPlans, useMutation } from "@/hooks/use-authenticated-api"
-import { endpoints } from "@/lib/api-client"
+import { useAdminPlans, useAdminMutation } from "@/hooks/use-admin-api"
 import { PageLoading } from "@/components/ui/loading-progress"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
+import adminApi, { type AdminPlanPayload } from "@/lib/admin-api-client"
 
 export interface PlanDetail {
   id: number
@@ -28,43 +28,26 @@ export interface Plan {
   max_products: number | null
   max_orders_per_month: number | null
   has_marketing: boolean
+  has_order_completion_email: boolean
   has_reports: boolean
   details: PlanDetail[]
 }
 
-export interface PlanFormValues {
-  name: string
-  url: string
-  price: number
-  description?: string
-  is_active: boolean
-  max_users: number | null
-  max_products: number | null
-  max_orders_per_month: number | null
-  has_marketing: boolean
-  has_reports: boolean
-  details?: Array<{ name: string }>
-}
+export type PlanFormValues = AdminPlanPayload
 
 export default function PlansPage() {
-  const { data: plansFromApi, loading, error, refetch, isAuthenticated } = useAuthenticatedPlans()
-  const { mutate: createPlan, loading: creating } = useMutation()
-  const { mutate: updatePlan, loading: updating } = useMutation()
-  const { mutate: deletePlan, loading: deleting } = useMutation()
+  const { data: plansFromApi, loading, error, refetch, isAuthLoading, isAuthenticated } = useAdminPlans()
+  const { mutate: runMutation, loading: mutating } = useAdminMutation<Plan>()
 
-  // Estado local para manipulação otimista da lista
   const [localPlans, setLocalPlans] = useState<Plan[]>([])
-  
   const [successAlert, setSuccessAlert] = useState({
     open: false,
     title: "",
     message: "",
   })
-
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null)
   const [formDialogOpen, setFormDialogOpen] = useState(false)
 
-  // Sincronizar planos da API com estado local
   useEffect(() => {
     if (plansFromApi && Array.isArray(plansFromApi)) {
       setLocalPlans(plansFromApi)
@@ -73,33 +56,26 @@ export default function PlansPage() {
 
   const handleAddPlan = async (planData: PlanFormValues) => {
     try {
-      const result = await createPlan(
-        endpoints.plans.create,
-        "POST",
-        planData
-      )
+      const result = await runMutation(async () => {
+        const response = await adminApi.createPlan(planData)
+        return response.data as Plan
+      })
 
       if (result) {
-        // Adicionar plano à lista local imediatamente
-        if (result && typeof result === 'object' && 'id' in result) {
-          setLocalPlans((prevPlans) => [...prevPlans, result as Plan])
-        }
-
+        setLocalPlans((prevPlans) => [...prevPlans, result])
         setSuccessAlert({
           open: true,
           title: "Sucesso!",
           message: "Plano criado com sucesso!",
         })
         setFormDialogOpen(false)
-        
-        // Recarregar da API em segundo plano
         refetch()
       }
-    } catch (error) {
+    } catch {
       setSuccessAlert({
         open: true,
         title: "Erro!",
-        message: "Erro ao criar plano. Tente novamente."
+        message: "Erro ao criar plano. Tente novamente.",
       })
     }
   }
@@ -108,13 +84,11 @@ export default function PlansPage() {
     if (!editingPlan) return
 
     try {
-      const result = await updatePlan(
-        endpoints.plans.update(editingPlan.id),
-        "PUT",
-        planData
-      )
+      await runMutation(async () => {
+        const response = await adminApi.updatePlan(editingPlan.id, planData)
+        return response.data as Plan
+      })
 
-      // Atualizar plano na lista local imediatamente
       setLocalPlans((prevPlans) =>
         prevPlans.map((p) =>
           p.id === editingPlan.id
@@ -130,45 +104,37 @@ export default function PlansPage() {
       })
       setFormDialogOpen(false)
       setEditingPlan(null)
-
-      // Recarregar da API em segundo plano
       refetch()
-    } catch (error) {
+    } catch {
       setSuccessAlert({
         open: true,
         title: "Erro!",
-        message: "Erro ao editar plano. Tente novamente."
+        message: "Erro ao editar plano. Tente novamente.",
       })
-      // Em caso de erro, recarregar lista para garantir consistência
       refetch()
     }
   }
 
   const handleDeletePlan = async (id: number) => {
     try {
-      const result = await deletePlan(
-        endpoints.plans.delete(id),
-        "DELETE"
-      )
+      await runMutation(async () => {
+        await adminApi.deletePlan(id)
+        return { id } as unknown as Plan
+      })
 
-      // Remover plano da lista local imediatamente (UI otimista)
       setLocalPlans((prevPlans) => prevPlans.filter((p) => p.id !== id))
-
       setSuccessAlert({
         open: true,
         title: "Sucesso!",
         message: "Plano excluído com sucesso!",
       })
-
-      // Recarregar da API em segundo plano para garantir sincronização
       refetch()
-    } catch (error) {
+    } catch {
       setSuccessAlert({
         open: true,
         title: "Erro!",
-        message: "Erro ao excluir plano. Tente novamente."
+        message: "Erro ao excluir plano. Tente novamente.",
       })
-      // Em caso de erro, recarregar lista para garantir consistência
       refetch()
     }
   }
@@ -183,8 +149,8 @@ export default function PlansPage() {
     setFormDialogOpen(true)
   }
 
-  if (!isAuthenticated) {
-    return <PageLoading />
+  if (isAuthLoading || !isAuthenticated) {
+    return <PageLoading message="Verificando autenticação..." />
   }
 
   if (loading) {
@@ -227,7 +193,7 @@ export default function PlansPage() {
         onOpenChange={setFormDialogOpen}
         onSubmit={editingPlan ? handleEditPlan : handleAddPlan}
         editPlan={editingPlan}
-        loading={creating || updating}
+        loading={mutating}
       />
 
       <SuccessAlert
@@ -241,4 +207,3 @@ export default function PlansPage() {
     </div>
   )
 }
-

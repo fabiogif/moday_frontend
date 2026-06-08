@@ -48,13 +48,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { AlbaTecLogo } from "@/components/albatec-logo"
 
 const navGroups = [
   {
     label: "Principal",
     items: [
       {
-        title: "Dashboard",
+        title: "Painel de Controle",
         url: "/dashboard",
         icon: LayoutDashboard,
       },
@@ -206,12 +207,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Utensils className="h-4 w-4" />
-                </div>
+                <AlbaTecLogo variant="icon" height={32} className="shrink-0" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">{tenantName}</span>
-                  <span className="truncate text-xs text-muted-foreground">Gestão de Restaurante</span>
+                  <span className="truncate text-xs text-muted-foreground">Alba Tec</span>
                 </div>
               </Link>
             </SidebarMenuButton>

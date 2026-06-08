@@ -227,6 +227,7 @@ export function ProductRecommendations({
                       alt={product.name}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform"
+                      unoptimized
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center">

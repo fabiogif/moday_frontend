@@ -8,8 +8,10 @@ import { Badge } from "@/components/ui/badge"
 import { PageLoading } from "@/components/ui/loading-progress"
 import { ArrowLeft, Edit, DollarSign, Users, Package, ShoppingCart, CheckCircle, XCircle, Layers } from "lucide-react"
 import Link from "next/link"
-import { apiClient, endpoints } from "@/lib/api-client"
+import { useAdminAuth } from "@/contexts/admin-auth-context"
+import adminApi from "@/lib/admin-api-client"
 import { Plan } from "../page"
+import { PLAN_MODULE_GROUPS } from "@/lib/plan-modules"
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -18,30 +20,38 @@ interface PageProps {
 export default function PlanDetailPage({ params }: PageProps) {
   const { id } = use(params)
   const router = useRouter()
+  const { isAuthenticated, isLoading: authLoading } = useAdminAuth()
   const [plan, setPlan] = useState<Plan | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (authLoading) return
+    if (!isAuthenticated) {
+      router.push('/admin/login')
+      return
+    }
+
     const fetchPlan = async () => {
       try {
         setLoading(true)
-        const response = await apiClient.get<Plan>(endpoints.plans.show(id))
-        
+        adminApi.reloadToken()
+        const response = await adminApi.getPlan(id)
+
         if (response.success && response.data) {
-          setPlan(response.data)
+          setPlan(response.data as Plan)
         } else {
           setError("Plano não encontrado")
         }
-      } catch (err: any) {
-        setError(err.message || "Erro ao carregar plano")
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Erro ao carregar plano")
       } finally {
         setLoading(false)
       }
     }
 
     fetchPlan()
-  }, [id])
+  }, [id, authLoading, isAuthenticated, router])
 
   if (loading) {
     return <PageLoading isLoading={loading} message="Carregando plano..." />
@@ -168,38 +178,30 @@ export default function PlanDetailPage({ params }: PageProps) {
             Funcionalidades disponíveis neste plano
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex items-center justify-between p-4 rounded-lg border">
-              <span className="font-medium">Acesso a Marketing</span>
-              {plan.has_marketing ? (
-                <Badge variant="default" className="gap-1">
-                  <CheckCircle className="w-3 h-3" />
-                  Incluído
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="gap-1">
-                  <XCircle className="w-3 h-3" />
-                  Não incluído
-                </Badge>
-              )}
+        <CardContent className="space-y-4">
+          {PLAN_MODULE_GROUPS.map((module) => (
+            <div key={module.id} className="space-y-3">
+              <h4 className="font-medium text-sm">{module.label}</h4>
+              <div className="grid gap-3 md:grid-cols-2">
+                {module.options.map((option) => (
+                  <div key={option.key} className="flex items-center justify-between p-4 rounded-lg border">
+                    <span className="font-medium text-sm">{option.label}</span>
+                    {plan[option.key] ? (
+                      <Badge variant="default" className="gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        Incluído
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="gap-1">
+                        <XCircle className="w-3 h-3" />
+                        Não incluído
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-
-            <div className="flex items-center justify-between p-4 rounded-lg border">
-              <span className="font-medium">Acesso a Relatórios</span>
-              {plan.has_reports ? (
-                <Badge variant="default" className="gap-1">
-                  <CheckCircle className="w-3 h-3" />
-                  Incluído
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="gap-1">
-                  <XCircle className="w-3 h-3" />
-                  Não incluído
-                </Badge>
-              )}
-            </div>
-          </div>
+          ))}
         </CardContent>
       </Card>
 

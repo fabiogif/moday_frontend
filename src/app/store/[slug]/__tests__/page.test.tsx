@@ -169,7 +169,7 @@ describe('PublicStorePage - Categorias', () => {
 
 describe('PublicStorePage - Ofertas', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
     ;(global.fetch as any).mockImplementation((url: string) => {
       if (url.includes('/store/')) {
         return Promise.resolve({
@@ -279,7 +279,7 @@ describe('PublicStorePage - Mais Vendidos', () => {
 
 describe('PublicStorePage - Badge de Categoria', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
     ;(global.fetch as any).mockImplementation((url: string) => {
       if (url.includes('/store/')) {
         return Promise.resolve({

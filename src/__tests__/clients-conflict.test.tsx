@@ -2,9 +2,18 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ClientsPage from '@/app/(dashboard)/clients/page'
 
+jest.mock('@/contexts/auth-context', () => ({
+  useAuth: () => ({
+    token: 'mock-token',
+    isAuthenticated: true,
+    isLoading: false,
+    user: { name: 'Test User', email: 'test@test.com' },
+  }),
+}))
+
 jest.mock('@/hooks/use-authenticated-api', () => ({
   useAuthenticatedClients: jest.fn(),
-  useMutation: jest.fn(),
+  useMutation: jest.fn(() => ({ mutate: jest.fn(), loading: false, error: null })),
 }))
 
 jest.mock('@/app/(dashboard)/clients/components/stat-cards', () => ({

@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Menu, X, Moon, Sun, Utensils } from 'lucide-react'
+import { Menu, X, Moon, Sun } from 'lucide-react'
+import { AlbaTecLogo } from '@/components/albatec-logo'
 import { Button } from '@/components/ui/button'
 import {
   NavigationMenu,
@@ -20,6 +21,8 @@ import {
 } from '@/components/ui/sheet'
 import { ModeToggle } from '@/components/mode-toggle'
 import { useTheme } from '@/hooks/use-theme'
+import { TRIAL_CTA_LABEL } from '@/lib/landing-copy'
+import { useLandingCTAClick } from '@/hooks/use-landing-cta-click'
 
 const navigationItems = [
   { name: 'Recursos', href: '#features' },
@@ -45,18 +48,14 @@ export function LandingNavbar() {
   const [isOpen, setIsOpen] = useState(false)
   const { setTheme, theme } = useTheme()
   const router = useRouter()
+  const trackCTA = useLandingCTAClick('cta_navbar_click')
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-20 items-center justify-between">
         {/* Logo */}
         <div className="flex items-center space-x-2">
-          <Link href="/landing" className="flex items-center gap-2.5 cursor-pointer">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-              <Utensils className="h-4 w-4" />
-            </div>
-            <span className="font-bold text-xl tracking-tight">Alba Tech</span>
-          </Link>
+          <AlbaTecLogo href="/landing" height={56} priority />
         </div>
 
         {/* Desktop Navigation */}
@@ -88,8 +87,10 @@ export function LandingNavbar() {
           <Button variant="ghost" asChild className="cursor-pointer">
             <Link href="/login">Login</Link>
           </Button>
-          <Button asChild className="cursor-pointer">
-            <Link href="/auth/register">Começar Agora</Link>
+          <Button asChild className="cursor-pointer bg-gradient-to-r from-primary to-violet-600 hover:from-primary/90 hover:to-violet-600/90 shadow-md shadow-primary/20">
+            <Link href="/auth/register" onClick={() => trackCTA('/auth/register')}>
+              {TRIAL_CTA_LABEL}
+            </Link>
           </Button>
         </div>
 
@@ -106,10 +107,8 @@ export function LandingNavbar() {
               {/* Header */}
               <SheetHeader className="space-y-0 p-4 pb-2 border-b">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                    <Utensils className="h-3.5 w-3.5" />
-                  </div>
-                  <SheetTitle className="text-lg font-semibold">Alba Tech</SheetTitle>
+                  <AlbaTecLogo height={44} />
+                  <SheetTitle className="sr-only">Alba Tec</SheetTitle>
                   <div className="ml-auto flex items-center gap-2">
                     <Button
                       variant="ghost"
@@ -157,8 +156,10 @@ export function LandingNavbar() {
                     <Button variant="outline" size="lg" asChild className="cursor-pointer">
                       <Link href="/login">Login</Link>
                     </Button>
-                    <Button asChild size="lg" className="cursor-pointer" >
-                      <Link href="/auth/register">Começar Agora</Link>
+                    <Button asChild size="lg" className="cursor-pointer bg-gradient-to-r from-primary to-violet-600">
+                      <Link href="/auth/register" onClick={() => trackCTA('/auth/register')}>
+                        {TRIAL_CTA_LABEL}
+                      </Link>
                     </Button>
                   </div>
                 </div>

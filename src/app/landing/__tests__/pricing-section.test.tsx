@@ -20,9 +20,13 @@ describe('PricingSection', () => {
     jest.clearAllMocks()
   })
 
-  it('deve renderizar o título da seção', () => {
+  it('deve renderizar o título da seção', async () => {
+    (ApiClient.get as jest.Mock).mockRejectedValue(new Error('API Error'))
     render(<PricingSection />)
-    expect(screen.getByText(/Planos que cabem no seu bolso/i)).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(screen.getByText(/Simples, transparente e sem surpresas/i)).toBeInTheDocument()
+    })
   })
 
   it('deve renderizar loading state inicialmente', () => {
@@ -37,9 +41,9 @@ describe('PricingSection', () => {
     render(<PricingSection />)
     
     await waitFor(() => {
-      expect(screen.getByText(/Grátis/i)).toBeInTheDocument()
-      expect(screen.getByText(/Básico/i)).toBeInTheDocument()
-      expect(screen.getByText(/Premium/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/^Grátis$/i).length).toBeGreaterThan(0)
+      expect(screen.getByText(/^Básico$/i)).toBeInTheDocument()
+      expect(screen.getByText(/^Premium$/i)).toBeInTheDocument()
     })
   })
 
@@ -51,16 +55,26 @@ describe('PricingSection', () => {
         url: 'gratis',
         price: 0,
         description: 'Teste',
-        details: []
-      }
-    ]
-    
+        max_users: 1,
+        max_products: 50,
+        max_orders_per_month: 30,
+        has_marketing: false,
+        has_order_completion_email: false,
+        has_reports: false,
+        details: [],
+      },
+    ];
+
     (ApiClient.get as jest.Mock).mockResolvedValue({ data: mockPlans })
     
     render(<PricingSection />)
     
     await waitFor(() => {
-      expect(screen.getByText(/Grátis/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/^Grátis$/i).length).toBeGreaterThan(0)
+      expect(screen.getByText(/Limites do plano/i)).toBeInTheDocument()
+      expect(screen.getByText(/1 usuário/i)).toBeInTheDocument()
+      expect(screen.getByText(/Módulo Marketing/i)).toBeInTheDocument()
+      expect(screen.getByText(/Cupons e campanhas/i)).toBeInTheDocument()
     })
   })
 
@@ -70,7 +84,7 @@ describe('PricingSection', () => {
     render(<PricingSection />)
     
     await waitFor(() => {
-      expect(screen.getByText(/Grátis/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/^Grátis$/i).length).toBeGreaterThan(0)
     }, { timeout: 5000 })
     
     // Verifica se o toggle está presente (pode estar em um componente ToggleGroup)
@@ -84,7 +98,20 @@ describe('PricingSection', () => {
     render(<PricingSection />)
     
     await waitFor(() => {
-      expect(screen.getByText(/MAIS POPULAR/i)).toBeInTheDocument()
+      expect(screen.getByText(/Mais popular/i)).toBeInTheDocument()
+    })
+  })
+
+  it('deve exibir trial de 7 dias apenas em planos pagos', async () => {
+    (ApiClient.get as jest.Mock).mockRejectedValue(new Error('API Error'))
+
+    render(<PricingSection />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Planos Básico e Premium incluem 7 dias de teste grátis/i)).toBeInTheDocument()
+      expect(screen.getByText(/Para sempre, sem cartão/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/7 dias de teste grátis/i).length).toBeGreaterThanOrEqual(2)
+      expect(screen.getAllByText(/Iniciar teste grátis/i).length).toBeGreaterThanOrEqual(2)
     })
   })
 })

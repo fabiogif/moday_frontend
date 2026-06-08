@@ -207,7 +207,7 @@ export default function StoreHoursSettings() {
           <CardContent>
             {loading ? (
               <div className="flex justify-center items-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <Loader2 role="status" className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : error ? (
               <Alert variant="destructive">

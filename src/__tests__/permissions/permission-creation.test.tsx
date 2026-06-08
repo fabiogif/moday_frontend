@@ -5,14 +5,15 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
-// Mock do useForm
+// Mock do useForm preservando os outros exports necessários para o shadcn Form
 jest.mock('react-hook-form', () => ({
-  useForm: jest.fn()
+  ...jest.requireActual('react-hook-form'),
+  useForm: jest.fn(),
 }))
 
 // Mock do zodResolver
 jest.mock('@hookform/resolvers/zod', () => ({
-  zodResolver: jest.fn()
+  zodResolver: jest.fn(() => jest.fn()),
 }))
 
 // Mock do toast

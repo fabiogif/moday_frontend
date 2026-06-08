@@ -85,7 +85,7 @@ export default function FinancialDashboardPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Wallet className="h-4 w-4" />
             </div>
-            Dashboard Financeiro
+            Painel de Controle Financeiro
           </h1>
           <p className="text-muted-foreground text-sm mt-1">Visão geral das finanças do mês atual</p>
         </div>

@@ -14,7 +14,7 @@ import { ArrowLeft, Plus, Trash2, Calculator, UserPlus } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAuthenticatedClients, useAuthenticatedProducts, useAuthenticatedTables, useAuthenticatedActivePaymentMethods, useMutation } from "@/hooks/use-authenticated-api";
+import { useAuthenticatedClients, useAuthenticatedCatalogProducts, useAuthenticatedTables, useAuthenticatedActivePaymentMethods, useMutation } from "@/hooks/use-authenticated-api";
 import { useProducts } from "@/hooks/use-api"; // Temporário para teste
 import { apiClient, endpoints } from "@/lib/api-client";
 import { toast } from "sonner";
@@ -181,7 +181,7 @@ export default function NewOrderPage() {
   const [creating, setCreating] = useState(false);
   
   // Hook autenticado para produtos (inicializado após os outros)
-  const { data: productsDataAuth, loading: productsLoadingAuth } = useAuthenticatedProducts();
+  const { data: productsDataAuth, loading: productsLoadingAuth } = useAuthenticatedCatalogProducts();
   
   // Estado para controlar modal de adicionar cliente
   const [clientDialogOpen, setClientDialogOpen] = useState(false);

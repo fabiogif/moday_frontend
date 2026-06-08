@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useAdminAuth } from '@/contexts/admin-auth-context'
+import { AlbaTecLogo } from '@/components/albatec-logo'
 import {
   LayoutDashboard,
   Building2,
@@ -18,11 +19,12 @@ import {
   Shield,
   Users,
   CreditCard,
+  UserCog,
 } from 'lucide-react'
 
 const menuItems = [
   {
-    title: 'Dashboard',
+    title: 'Painel de Controle',
     href: '/admin/dashboard',
     icon: LayoutDashboard,
   },
@@ -35,6 +37,11 @@ const menuItems = [
     title: 'Planos',
     href: '/admin/plans',
     icon: CreditCard,
+  },
+  {
+    title: 'Meu Perfil',
+    href: '/admin/perfil',
+    icon: UserCog,
   },
   {
     title: 'Métricas',
@@ -55,9 +62,12 @@ export function AdminSidebar() {
   return (
     <div className="flex h-full w-64 flex-col border-r bg-background">
       {/* Header */}
-      <div className="flex h-16 items-center border-b px-6">
-        <Shield className="h-6 w-6 text-primary mr-2" />
-        <span className="font-semibold text-lg">Admin Alba Tech</span>
+      <div className="flex h-16 items-center border-b px-4 gap-2">
+        <AlbaTecLogo variant="icon" height={32} />
+        <div className="flex flex-col leading-tight">
+          <span className="font-semibold text-sm">Admin</span>
+          <span className="text-xs text-muted-foreground">Alba Tec</span>
+        </div>
       </div>
 
       {/* Admin Info */}

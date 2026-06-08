@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
+import { isPublicRoute } from "@/lib/auth-routes"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -13,7 +14,8 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
-import { Utensils, ShoppingCart, BarChart3, Users } from "lucide-react"
+import { ShoppingCart, BarChart3, Users } from "lucide-react"
+import { AlbaTecLogo } from "@/components/albatec-logo"
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -28,6 +30,7 @@ export function LoginForm3({
 }: React.ComponentProps<"div">) {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { login } = useAuth()
 
   const {
@@ -58,7 +61,17 @@ export function LoginForm3({
     try {
       await login(data.email, data.password)
       toast.success("Login realizado com sucesso!")
-      router.push("/dashboard")
+
+      const redirectParam = searchParams.get("redirect")
+      let destination = "/dashboard"
+      if (
+        redirectParam?.startsWith("/") &&
+        !redirectParam.startsWith("//") &&
+        !isPublicRoute(redirectParam.split("?")[0])
+      ) {
+        destination = redirectParam
+      }
+      router.push(destination)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Erro ao fazer login"
       toast.error(errorMessage)
@@ -74,18 +87,12 @@ export function LoginForm3({
           <form className="p-6 md:p-8" method="post" onSubmit={handleSubmit(onSubmit)}>
             <div className="flex flex-col gap-6">
               <div className="flex justify-center mb-2">
-                <Link href="/" className="flex items-center gap-2 font-medium">
-                  <div className="text-muted-foreground flex size-8 items-center justify-center rounded-md">
-                    {/* <Logo size={24} /> */}
-                    <Utensils className="h-4 w-4 text-primary" />
-                  </div>
-                  <span className="text-xl">Alba Tech</span>
-                </Link>
+                <AlbaTecLogo href="/" height={40} />
               </div>
               <div className="flex flex-col items-center text-center">
                 <h1 className="text-2xl font-bold">Bem-vindo de volta</h1>
                 <p className="text-muted-foreground text-balance">
-                  Faça login na sua conta Alba Tech
+                  Faça login na sua conta Alba Tec
                 </p>
               </div>
               <div className="grid gap-3">
@@ -139,8 +146,8 @@ export function LoginForm3({
               }}
             />
             <div className="relative z-10 flex flex-col items-center text-center gap-6">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
-                <Utensils className="h-8 w-8 text-white" />
+              <div className="rounded-2xl bg-white/10 backdrop-blur-sm px-6 py-5">
+                <AlbaTecLogo variant="full" height={120} />
               </div>
               <div>
                 <h2 className="text-2xl font-bold mb-2">Gestão completa do seu restaurante</h2>

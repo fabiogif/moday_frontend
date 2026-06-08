@@ -25,9 +25,13 @@ import {
   Wallet,
   Zap
 } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Image3D } from '@/components/image-3d'
+import { LandingScreenshot } from '@/app/landing/components/landing-screenshot'
+import { TRIAL_CTA_LABEL } from '@/lib/landing-copy'
+import { useLandingCTAClick } from '@/hooks/use-landing-cta-click'
 
 const mainFeatures = [
   {
@@ -176,6 +180,8 @@ const pdvHighlights = [
 ]
 
 export function FeaturesSection() {
+  const trackCTA = useLandingCTAClick('cta_features_click')
+
   return (
     <section id="features" className="py-24 sm:py-32 bg-gradient-to-b from-background via-muted/20 to-background relative overflow-hidden">
       {/* Background Decorations */}
@@ -202,29 +208,23 @@ export function FeaturesSection() {
         {/* First Feature Section */}
         <div className="grid items-center gap-16 lg:grid-cols-2 lg:gap-12 xl:gap-20 mb-32">
           {/* Left Image */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-3xl blur-3xl -z-10" />
-          <Image3D
-            lightSrc="/feature-1-light.png"
-            darkSrc="/feature-1-dark.png"
-            alt="Painel de controle de pedidos"
-            direction="left"
-              className="relative rounded-2xl shadow-2xl"
+          <LandingScreenshot
+            src="/landing/dashboard-painel.png"
+            alt="Painel de Controle — receita total, clientes ativos, volume de pedidos e gráficos"
           />
-          </div>
           
           {/* Right Content */}
           <div className="space-y-8">
             <div className="space-y-4">
               <Badge variant="secondary" className="mb-2 bg-gradient-to-r from-primary/10 to-purple-500/10 text-primary border-primary/20">
-                Principais Recursos
+                Painel de Controle
               </Badge>
               <h3 className="text-3xl sm:text-4xl font-bold tracking-tight text-balance bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                Ferramentas poderosas que geram resultados reais
+                Métricas e gráficos que mostram o pulso do seu negócio
               </h3>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Não é apenas um sistema, é um parceiro estratégico. Cada funcionalidade foi pensada para aumentar suas vendas, 
-                reduzir custos e melhorar a experiência dos seus clientes.
+                Acompanhe receita, pedidos, clientes ativos e taxa de conversão em tempo real. 
+                Gráficos de volume de pedidos e evolução de clientes ajudam você a agir rápido e crescer com dados.
               </p>
             </div>
 
@@ -318,15 +318,15 @@ export function FeaturesSection() {
           {/* Left Content */}
           <div className="space-y-8 order-2 lg:order-1">
             <div className="space-y-4">
-              <Badge variant="secondary" className="mb-2 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">
-                Operações Diárias
+              <Badge variant="secondary" className="mb-2 bg-gradient-to-r from-emerald-500/10 to-green-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                Gestão Financeira
               </Badge>
               <h3 className="text-3xl sm:text-4xl font-bold tracking-tight text-balance bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                Desenvolvido por quem entende restaurantes
+                Controle financeiro completo em um só painel
               </h3>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Criado com base em feedback de centenas de restaurantes. Interface intuitiva que sua equipe aprende em minutos, 
-                não em dias. Resultados que você vê desde o primeiro uso.
+                Visualize contas a receber e a pagar, despesas do mês e saldo projetado. 
+                Acesso rápido a fornecedores, categorias e dados bancários — tudo integrado à operação do restaurante.
               </p>
             </div>
 
@@ -360,10 +360,14 @@ export function FeaturesSection() {
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <Button size="lg" className="group bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-base shadow-lg shadow-primary/25" asChild>
-                <a href="/auth/register" className='flex items-center'>
-                  Começar Agora
+                <Link
+                  href="/auth/register"
+                  className="flex items-center"
+                  onClick={() => trackCTA('/auth/register')}
+                >
+                  {TRIAL_CTA_LABEL}
                   <ArrowRight className="ms-2 h-4 w-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-                </a>
+                </Link>
               </Button>
               <Button size="lg" variant="outline" className="text-base border-2" asChild>
                 <a href="#faq">
@@ -374,14 +378,11 @@ export function FeaturesSection() {
           </div>
 
           {/* Right Image */}
-          <div className="relative order-1 lg:order-2">
-            <div className="absolute inset-0 bg-gradient-to-l from-blue-500/20 to-cyan-500/20 rounded-3xl blur-3xl -z-10" />
-          <Image3D
-            lightSrc="/feature-2-light.png"
-            darkSrc="/feature-2-dark.png"
-            alt="Painel de relatórios"
-            direction="right"
-              className="relative rounded-2xl shadow-2xl"
+          <div className="order-1 lg:order-2">
+            <LandingScreenshot
+              src="/landing/financeiro-painel.png"
+              alt="Painel Financeiro — contas a receber, a pagar, despesas e fluxo de caixa"
+              glowClassName="from-emerald-500/20 to-green-500/20"
             />
           </div>
         </div>
@@ -397,8 +398,37 @@ export function FeaturesSection() {
               PDV mais rápido para o salão e delivery
             </h3>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Novos recursos que transformam a experiência: sistema de avaliações que aumenta confiança, controle de mesas inteligente e atalhos que aceleram qualquer operação.
+              Interface touch-first com categorias visuais, promoções destacadas e fluxo de pedido em poucos toques — do carrinho vazio até o pedido em andamento.
             </p>
+          </div>
+
+          <div className="grid gap-6 lg:gap-8 md:grid-cols-2 mb-12">
+            <div className="relative group rounded-2xl border border-border/60 bg-card/50 overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+              <Image
+                src="/landing/pdv-carrinho.png"
+                alt="PDV Moday — catálogo de produtos, categorias e início de pedido"
+                width={1200}
+                height={800}
+                loading="lazy"
+                className="w-full h-auto object-cover object-top"
+              />
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/95 via-background/80 to-transparent px-4 py-3">
+                <p className="text-sm font-medium text-foreground">Catálogo visual e início rápido de pedido</p>
+              </div>
+            </div>
+            <div className="relative group rounded-2xl border border-border/60 bg-card/50 overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+              <Image
+                src="/landing/pdv-pedido.png"
+                alt="PDV Moday — pedido em andamento com cliente, produtos e status"
+                width={1200}
+                height={800}
+                loading="lazy"
+                className="w-full h-auto object-cover object-top"
+              />
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/95 via-background/80 to-transparent px-4 py-3">
+                <p className="text-sm font-medium text-foreground">Pedido em andamento com cliente e pagamento</p>
+              </div>
+            </div>
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
@@ -433,7 +463,7 @@ export function FeaturesSection() {
           <div className="text-center mb-12">
             <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
               <Sparkles className="h-3 w-3 mr-1" />
-              Por Que Escolher o Alba Tech?
+              Por Que Escolher o Alba Tec?
             </Badge>
             <h3 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4 bg-gradient-to-r from-foreground via-foreground/90 to-foreground bg-clip-text">
               O Diferencial que Faz a Diferença

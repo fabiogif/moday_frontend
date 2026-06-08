@@ -67,7 +67,7 @@ export default function AdminLoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@moday.app"
+                placeholder="admin@albtec.app"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

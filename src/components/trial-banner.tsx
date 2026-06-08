@@ -6,6 +6,7 @@ import { AlertCircle, Clock, CreditCard } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { Progress } from "@/components/ui/progress"
+import { TRIAL_DAYS } from "@/lib/subscription"
 
 export function TrialBanner() {
   const { trialStatus } = useAuth()
@@ -21,7 +22,7 @@ export function TrialBanner() {
   }
 
   const daysRemaining = trialStatus.days_remaining
-  const percentage = ((7 - daysRemaining) / 7) * 100
+  const percentage = ((TRIAL_DAYS - daysRemaining) / TRIAL_DAYS) * 100
 
   // Definir cor e intensidade baseado nos dias restantes
   const getVariant = () => {
@@ -59,7 +60,7 @@ export function TrialBanner() {
           </div>
           
           <div className="text-sm opacity-90 mb-2">
-            {daysRemaining === 0 && "Não perca o acesso ao Alba Tech. Faça upgrade agora!"}
+            {daysRemaining === 0 && "Não perca o acesso ao Alba Tec. Faça upgrade agora!"}
             {daysRemaining === 1 && "Amanhã seu acesso será bloqueado. Escolha um plano hoje!"}
             {daysRemaining > 1 && "Continue aproveitando todos os recursos. Escolha um plano antes que expire."}
           </div>

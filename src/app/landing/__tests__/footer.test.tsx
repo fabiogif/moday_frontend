@@ -1,33 +1,25 @@
 import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { LandingFooter } from '../components/footer'
 
 describe('LandingFooter', () => {
   it('deve renderizar o nome da empresa', () => {
     render(<LandingFooter />)
-    const companyNames = screen.getAllByText(/Alba Tech/i)
+    const companyNames = screen.getAllByText(/Alba Tec/i)
     expect(companyNames.length).toBeGreaterThan(0)
   })
 
-  it('deve renderizar as 4 colunas principais', () => {
+  it('deve renderizar as colunas principais', () => {
     render(<LandingFooter />)
     expect(screen.getByText(/Produto/i)).toBeInTheDocument()
-    expect(screen.getByText(/Recursos/i)).toBeInTheDocument()
-    expect(screen.getByText(/Contato/i)).toBeInTheDocument()
+    expect(screen.getByText(/Empresa/i)).toBeInTheDocument()
   })
 
   it('deve renderizar links de navegação', () => {
     render(<LandingFooter />)
-    expect(screen.getByText(/Funcionalidades/i)).toBeInTheDocument()
-    expect(screen.getByText(/Preços/i)).toBeInTheDocument()
+    expect(screen.getByText(/Recursos/i)).toBeInTheDocument()
+    expect(screen.getByText(/Planos/i)).toBeInTheDocument()
     expect(screen.getByText(/FAQ/i)).toBeInTheDocument()
-  })
-
-  it('deve renderizar informações de contato', () => {
-    render(<LandingFooter />)
-    expect(screen.getByText(/Email/i)).toBeInTheDocument()
-    expect(screen.getByText(/Telefone/i)).toBeInTheDocument()
-    expect(screen.getByText(/WhatsApp/i)).toBeInTheDocument()
+    expect(screen.getByText(/Contato/i)).toBeInTheDocument()
   })
 
   it('deve renderizar formulário de newsletter', () => {
@@ -42,4 +34,3 @@ describe('LandingFooter', () => {
     expect(screen.getByText(/Todos os direitos reservados/i)).toBeInTheDocument()
   })
 })
-

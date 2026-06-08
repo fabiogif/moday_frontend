@@ -196,7 +196,7 @@ export function DataTable({ data, onRefresh, isLoading }: DataTableProps) {
                       <div>
                         <div className="font-medium">{tenant.name}</div>
                         <div className="text-sm text-muted-foreground">
-                          {tenant.subdomain}.moday.app
+                          {tenant.subdomain}.albtec.app
                         </div>
                       </div>
                     </TableCell>

@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Plan, PlanFormValues, PlanDetail } from "../page"
 import { PlanDetailsManager } from "./plan-details-manager"
+import { PLAN_MODULE_GROUPS, type PlanModuleOptionKey } from "@/lib/plan-modules"
 
 interface PlanFormDialogProps {
   open: boolean
@@ -18,6 +19,20 @@ interface PlanFormDialogProps {
   loading?: boolean
 }
 
+const DEFAULT_FORM: PlanFormValues = {
+  name: "",
+  url: "",
+  price: 0,
+  description: "",
+  is_active: true,
+  max_users: null,
+  max_products: null,
+  max_orders_per_month: null,
+  has_marketing: false,
+  has_order_completion_email: false,
+  has_reports: false,
+}
+
 export function PlanFormDialog({
   open,
   onOpenChange,
@@ -25,22 +40,9 @@ export function PlanFormDialog({
   editPlan,
   loading = false
 }: PlanFormDialogProps) {
-  const [formData, setFormData] = useState<PlanFormValues>({
-    name: "",
-    url: "",
-    price: 0,
-    description: "",
-    is_active: true,
-    max_users: null,
-    max_products: null,
-    max_orders_per_month: null,
-    has_marketing: false,
-    has_reports: false,
-  })
-
+  const [formData, setFormData] = useState<PlanFormValues>(DEFAULT_FORM)
   const [details, setDetails] = useState<PlanDetail[]>([])
 
-  // Carregar dados quando estiver editando
   useEffect(() => {
     if (editPlan) {
       setFormData({
@@ -53,46 +55,33 @@ export function PlanFormDialog({
         max_products: editPlan.max_products,
         max_orders_per_month: editPlan.max_orders_per_month,
         has_marketing: editPlan.has_marketing || false,
+        has_order_completion_email: editPlan.has_order_completion_email || false,
         has_reports: editPlan.has_reports || false,
       })
       setDetails(editPlan.details || [])
     } else {
-      // Resetar form quando não estiver editando
-      setFormData({
-        name: "",
-        url: "",
-        price: 0,
-        description: "",
-        is_active: true,
-        max_users: null,
-        max_products: null,
-        max_orders_per_month: null,
-        has_marketing: false,
-        has_reports: false,
-      })
+      setFormData(DEFAULT_FORM)
       setDetails([])
     }
   }, [editPlan, open])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Incluir details junto com formData
     const dataToSubmit = {
       ...formData,
       details: details.map(d => ({ name: d.name }))
     }
-    onSubmit(dataToSubmit as any)
+    onSubmit(dataToSubmit as PlanFormValues)
   }
 
-  // Gerar URL automaticamente a partir do nome
   const generateUrl = (name: string) => {
     return name
       .toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-      .replace(/[^a-z0-9\s-]/g, "") // Remove caracteres especiais
-      .replace(/\s+/g, "-") // Substitui espaços por hífen
-      .replace(/-+/g, "-") // Remove hífens duplicados
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
       .trim()
   }
 
@@ -102,6 +91,10 @@ export function PlanFormDialog({
       name,
       url: generateUrl(name)
     })
+  }
+
+  const handleModuleOptionChange = (key: PlanModuleOptionKey, checked: boolean) => {
+    setFormData({ ...formData, [key]: checked })
   }
 
   return (
@@ -119,7 +112,6 @@ export function PlanFormDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Informações Básicas */}
           <div className="space-y-4">
             <h3 className="font-semibold text-sm">Informações Básicas</h3>
             
@@ -179,7 +171,6 @@ export function PlanFormDialog({
             </div>
           </div>
 
-          {/* Limites */}
           <div className="space-y-4 border-t pt-4">
             <h3 className="font-semibold text-sm">Limites do Plano</h3>
             <p className="text-xs text-muted-foreground">
@@ -234,40 +225,43 @@ export function PlanFormDialog({
             </div>
           </div>
 
-          {/* Features */}
           <div className="space-y-4 border-t pt-4">
-            <h3 className="font-semibold text-sm">Features Incluídas</h3>
+            <div>
+              <h3 className="font-semibold text-sm">Módulos e Opções</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Ative as funcionalidades incluídas em cada plano
+              </p>
+            </div>
 
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="has_marketing">Acesso a Marketing</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Permite acesso ao módulo de Marketing
-                  </p>
+            <div className="space-y-4">
+              {PLAN_MODULE_GROUPS.map((module) => (
+                <div key={module.id} className="rounded-lg border p-4 space-y-3">
+                  <div>
+                    <h4 className="font-medium text-sm">{module.label}</h4>
+                    {module.description && (
+                      <p className="text-xs text-muted-foreground">{module.description}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    {module.options.map((option) => (
+                      <div key={option.key} className="flex items-center justify-between gap-4">
+                        <div className="space-y-0.5">
+                          <Label htmlFor={option.key}>{option.label}</Label>
+                          <p className="text-xs text-muted-foreground">{option.description}</p>
+                        </div>
+                        <Switch
+                          id={option.key}
+                          checked={formData[option.key]}
+                          onCheckedChange={(checked) => handleModuleOptionChange(option.key, checked)}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <Switch
-                  id="has_marketing"
-                  checked={formData.has_marketing}
-                  onCheckedChange={(checked) => setFormData({ ...formData, has_marketing: checked })}
-                />
-              </div>
+              ))}
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="has_reports">Acesso a Relatórios</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Permite acesso ao módulo de Relatórios
-                  </p>
-                </div>
-                <Switch
-                  id="has_reports"
-                  checked={formData.has_reports}
-                  onCheckedChange={(checked) => setFormData({ ...formData, has_reports: checked })}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between rounded-lg border p-4">
                 <div className="space-y-0.5">
                   <Label htmlFor="is_active">Plano Ativo</Label>
                   <p className="text-xs text-muted-foreground">
@@ -283,12 +277,10 @@ export function PlanFormDialog({
             </div>
           </div>
 
-          {/* Detalhes do Plano */}
           <div className="space-y-4 border-t pt-4">
             <PlanDetailsManager details={details} onChange={setDetails} />
           </div>
 
-          {/* Botões de ação */}
           <div className="flex justify-end gap-3 border-t pt-4">
             <Button
               type="button"
@@ -312,4 +304,3 @@ export function PlanFormDialog({
     </Dialog>
   )
 }
-

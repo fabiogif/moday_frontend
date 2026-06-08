@@ -2,7 +2,9 @@
  * Cliente API para endpoints administrativos
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+import { buildApiUrl, getApiBaseUrl } from '@/lib/api-config'
+
+const API_BASE_URL = getApiBaseUrl()
 
 interface ApiResponse<T = any> {
   success: boolean
@@ -14,6 +16,21 @@ interface ApiResponse<T = any> {
     per_page: number
     total: number
   }
+}
+
+export interface AdminPlanPayload {
+  name: string
+  url: string
+  price: number
+  description?: string
+  is_active: boolean
+  max_users: number | null
+  max_products: number | null
+  max_orders_per_month: number | null
+  has_marketing: boolean
+  has_order_completion_email: boolean
+  has_reports: boolean
+  details?: Array<{ name: string }>
 }
 
 class AdminApiClient {
@@ -48,6 +65,47 @@ class AdminApiClient {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('admin-token')
     }
+  }
+
+  private async requestAbsolute<T = any>(
+    path: string,
+    options: RequestInit = {}
+  ): Promise<ApiResponse<T>> {
+    this.loadToken()
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+      ...(options.headers as Record<string, string>),
+    }
+
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`
+    }
+
+    const response = await fetch(buildApiUrl(path), {
+      ...options,
+      headers,
+      credentials: 'include',
+    })
+
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error(`Resposta inválida do servidor: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const errorMessage = data.message || 'Erro na requisição'
+      const error: Error & { status?: number; data?: unknown } = new Error(errorMessage)
+      error.status = response.status
+      error.data = data
+      throw error
+    }
+
+    return data
   }
 
   private async request<T = any>(
@@ -122,6 +180,24 @@ class AdminApiClient {
   async refreshToken() {
     return this.request('/auth/refresh', {
       method: 'POST',
+    })
+  }
+
+  async updateProfile(data: { name: string; email: string }) {
+    return this.request('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updatePassword(data: {
+    current_password: string
+    password: string
+    password_confirmation: string
+  }) {
+    return this.request('/auth/password', {
+      method: 'PUT',
+      body: JSON.stringify(data),
     })
   }
 
@@ -278,6 +354,44 @@ class AdminApiClient {
     if (endDate) params.append('end_date', endDate)
 
     return this.request(`/metrics/tenant/${tenantId}${params.toString() ? `?${params}` : ''}`)
+  }
+
+  // ============================================================================
+  // PLANS (rotas /api/admin/plans)
+  // ============================================================================
+
+  async getPlans(params?: { per_page?: number; page?: number; filter?: string }) {
+    const query = new URLSearchParams()
+    if (params?.per_page) query.append('per_page', String(params.per_page))
+    if (params?.page) query.append('page', String(params.page))
+    if (params?.filter) query.append('filter', params.filter)
+
+    const suffix = query.toString() ? `?${query.toString()}` : ''
+    return this.request(`/plans${suffix}`)
+  }
+
+  async getPlan(id: string | number) {
+    return this.request(`/plans/${id}`)
+  }
+
+  async createPlan(data: AdminPlanPayload) {
+    return this.request('/plans', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updatePlan(id: string | number, data: AdminPlanPayload) {
+    return this.request(`/plans/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deletePlan(id: string | number) {
+    return this.request(`/plans/${id}`, {
+      method: 'DELETE',
+    })
   }
 
   // ============================================================================

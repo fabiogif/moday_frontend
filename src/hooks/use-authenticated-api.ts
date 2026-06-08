@@ -200,6 +200,11 @@ export function useAuthenticatedProducts() {
   return useAuthenticatedApi(endpoints.products.list, { ttl: 60_000 })
 }
 
+/** Produtos para PDV e vendas — apenas ativos e com estoque (backend: ProductCatalogVisibilityRule). */
+export function useAuthenticatedCatalogProducts() {
+  return useAuthenticatedApi(endpoints.products.catalog, { ttl: 60_000 })
+}
+
 export function useAuthenticatedPermissions() {
   const result = useAuthenticatedApi(endpoints.permissions.list, { 
     immediate: true

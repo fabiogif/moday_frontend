@@ -5,6 +5,15 @@ import ClientsPage from '../page'
 import { useAuthenticatedClients, useMutation } from '@/hooks/use-authenticated-api'
 import { showSuccessToast, showErrorToast } from '@/components/ui/error-toast'
 
+jest.mock('@/contexts/auth-context', () => ({
+  useAuth: () => ({
+    token: 'mock-token',
+    isAuthenticated: true,
+    isLoading: false,
+    user: { name: 'Test User', email: 'test@test.com' },
+  }),
+}))
+
 // Mock dos hooks
 jest.mock('@/hooks/use-authenticated-api')
 jest.mock('@/components/ui/error-toast')

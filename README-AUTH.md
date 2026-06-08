@@ -1,4 +1,4 @@
-# Sistema de Autenticação - Moday Frontend
+# Sistema de Autenticação - Alba Tec Frontend
 
 ## ✅ Funcionalidades Implementadas
 

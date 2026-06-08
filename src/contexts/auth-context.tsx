@@ -15,7 +15,7 @@ interface User {
   }
 }
 
-interface TrialStatus {
+export interface TrialStatus {
   is_trial: boolean
   is_active: boolean
   is_expired?: boolean
@@ -23,6 +23,7 @@ interface TrialStatus {
   expires_at: string | null
   is_expiring_soon?: boolean
   needs_payment: boolean
+  account_status?: string
 }
 
 interface AuthContextType {
@@ -35,6 +36,7 @@ interface AuthContextType {
   logout: () => Promise<void>
   setUser: (user: User) => void
   setToken: (token: string) => void
+  setTrialStatus: (status: TrialStatus | null) => void
   refreshTrialStatus: () => Promise<void>
 }
 
@@ -74,6 +76,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(userData)
         setToken(savedToken)
         setIsAuthenticated(true)
+
+        // Cookie para o middleware enxergar a sessão após refresh
+        document.cookie = `auth-token=${savedToken}; path=/; max-age=${2 * 60 * 60}; SameSite=Lax`
           
         // Recuperar trial status se existir
         if (savedTrialStatus) {
@@ -106,6 +111,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       localStorage.removeItem('auth-user')
       localStorage.removeItem('auth-token')
       localStorage.removeItem('trial-status')
+      document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+
+      const path = window.location.pathname + window.location.search
+      const loginPath = path && !path.startsWith('/login')
+        ? `/login?redirect=${encodeURIComponent(path)}`
+        : '/login'
+      window.location.href = loginPath
     }
 
     window.addEventListener('auth:unauthorized', handleUnauthorized)
@@ -114,6 +126,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       window.removeEventListener('auth:unauthorized', handleUnauthorized)
     }
   }, [])
+
+  const persistTrialStatus = (status: TrialStatus | null | undefined) => {
+    if (!status) return
+    setTrialStatus(status)
+    localStorage.setItem('trial-status', JSON.stringify(status))
+  }
 
   const login = async (email: string, password: string) => {
     setIsLoading(true)
@@ -219,6 +237,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       // Também salvar no cookie para compatibilidade
       document.cookie = `auth-token=${data.token}; path=/; max-age=${2 * 60 * 60}`
+
+      if (data.trial_status) {
+        persistTrialStatus(data.trial_status)
+      } else {
+        await refreshTrialStatusWithToken(data.token)
+      }
     } catch (error) {
       // Tratar erros de rede (Failed to fetch)
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
@@ -263,14 +287,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
-  const refreshTrialStatus = async () => {
-    if (!token) return
-    
+  const refreshTrialStatusWithToken = async (authToken: string) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      const response = await fetch(`${apiUrl}/api/subscription/trial-status`, {
+      const response = await fetch(buildApiUrl('/api/subscription/trial-status'), {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
         },
@@ -280,13 +301,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (response.ok) {
         const result = await response.json()
         if (result.data) {
-          setTrialStatus(result.data)
-          localStorage.setItem('trial-status', JSON.stringify(result.data))
+          persistTrialStatus(result.data)
         }
       }
     } catch (error) {
-
+      // Ignorar falha silenciosa
     }
+  }
+
+  const refreshTrialStatus = async () => {
+    if (!token) return
+    await refreshTrialStatusWithToken(token)
+  }
+
+  const updateTrialStatus = (status: TrialStatus | null) => {
+    if (!status) {
+      setTrialStatus(null)
+      localStorage.removeItem('trial-status')
+      return
+    }
+    persistTrialStatus(status)
   }
 
   const updateUser = (userData: User) => {
@@ -313,6 +347,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     setUser: updateUser,
     setToken: updateToken,
+    setTrialStatus: updateTrialStatus,
     refreshTrialStatus,
   }
 

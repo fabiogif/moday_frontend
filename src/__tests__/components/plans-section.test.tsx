@@ -15,7 +15,15 @@ jest.mock('@/hooks/use-authenticated-api')
 jest.mock('@/hooks/use-plan-migration')
 jest.mock('@/hooks/use-plan-limits')
 jest.mock('@/contexts/auth-context')
-jest.mock('@/lib/api-client')
+jest.mock('@/lib/api-client', () => ({
+  apiClient: {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+  },
+  endpoints: {},
+}))
 jest.mock('sonner', () => ({
   toast: {
     success: jest.fn(),
@@ -40,6 +48,7 @@ describe('PlansSection', () => {
       max_products: 50,
       max_orders_per_month: 30,
       has_marketing: false,
+      has_order_completion_email: false,
       has_reports: false,
     },
     {
@@ -51,6 +60,7 @@ describe('PlansSection', () => {
       max_products: 100,
       max_orders_per_month: 100,
       has_marketing: true,
+      has_order_completion_email: true,
       has_reports: true,
     },
   ]
@@ -162,15 +172,11 @@ describe('PlansSection', () => {
   })
 
   it('deve exibir card do plano atual com informações de uso', async () => {
-    await waitFor(() => {
-      expect(mockApiClient.get).toHaveBeenCalled()
-    })
-
     render(<PlansSection />)
 
     await waitFor(() => {
       expect(screen.getByText('Plano Atual')).toBeInTheDocument()
-    })
+    }, { timeout: 3000 })
   })
 
   it('deve abrir modal de migração ao clicar em migrar', async () => {

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import adminApi from '@/lib/admin-api-client'
+import { buildApiUrl } from '@/lib/api-config'
 
 interface AdminUser {
   id: number
@@ -21,6 +22,7 @@ interface AdminAuthContextType {
   login: (email: string, password: string) => Promise<void>
   logout: () => void
   refreshToken: () => Promise<void>
+  updateAdmin: (data: Partial<AdminUser>) => void
   isAuthenticated: boolean
   isSuperAdmin: boolean
   isAdmin: boolean
@@ -62,9 +64,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   // Login
   const login = async (email: string, password: string) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-
-      const response = await fetch(`${apiUrl}/api/admin/auth/login`, {
+      const response = await fetch(buildApiUrl('/api/admin/auth/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -178,8 +178,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   // Busca dados completos do admin
   const fetchAdminData = async (authToken: string) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      const response = await fetch(`${apiUrl}/api/admin/auth/me`, {
+      const response = await fetch(buildApiUrl('/api/admin/auth/me'), {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
@@ -202,8 +201,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       if (token) {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-        await fetch(`${apiUrl}/api/admin/auth/logout`, {
+        await fetch(buildApiUrl('/api/admin/auth/logout'), {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -230,8 +228,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (!token) return
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      const response = await fetch(`${apiUrl}/api/admin/auth/refresh`, {
+      const response = await fetch(buildApiUrl('/api/admin/auth/refresh'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -253,6 +250,15 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
       logout()
     }
+  }
+
+  const updateAdmin = (data: Partial<AdminUser>) => {
+    setAdmin(prev => {
+      if (!prev) return prev
+      const updated = { ...prev, ...data }
+      localStorage.setItem('admin-user', JSON.stringify(updated))
+      return updated
+    })
   }
 
   // Helpers
@@ -278,6 +284,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         refreshToken,
+        updateAdmin,
         isAuthenticated,
         isSuperAdmin,
         isAdmin,

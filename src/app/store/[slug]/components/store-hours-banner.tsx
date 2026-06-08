@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Clock, AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { buildApiUrl } from '@/lib/api-config'
 
 interface StoreHoursData {
   is_open: boolean
@@ -24,8 +25,7 @@ export function StoreHoursBanner({ slug, onStatusChange }: StoreHoursBannerProps
   useEffect(() => {
     const fetchStoreHours = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
-        const response = await fetch(`${apiUrl}/api/store/${slug}/is-open`)
+        const response = await fetch(buildApiUrl(`/api/store/${slug}/is-open`))
         const data = await response.json()
 
         if (data.success) {

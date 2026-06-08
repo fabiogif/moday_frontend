@@ -25,7 +25,7 @@ const modules = [
     title: 'Relatórios Inteligentes',
     description: 'Tome decisões baseadas em dados reais, não em achismos',
     features: [
-      'Dashboard em tempo real',
+      'Painel de Controle em tempo real',
       'Análise de vendas por produto/categoria',
       'Ranking de garçons',
       'Previsão de demanda (IA)',

@@ -5,7 +5,7 @@ import { FaqSection } from '../components/faq-section'
 describe('FaqSection', () => {
   it('deve renderizar o título da seção', () => {
     render(<FaqSection />)
-    expect(screen.getByText(/Perguntas Frequentes/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/Perguntas Frequentes/i).length).toBeGreaterThanOrEqual(1)
   })
 
   it('deve renderizar todas as perguntas do FAQ', () => {

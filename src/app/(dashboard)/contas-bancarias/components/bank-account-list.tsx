@@ -45,7 +45,13 @@ export function BankAccountList({ accounts, onEdit, onDelete, onSetPrimary }: Pr
                   {!account.is_active && (
                     <Badge variant="destructive">Inativa</Badge>
                   )}
-                  
+
+                  {account.is_verified ? (
+                    <Badge variant="outline" className="text-green-600 border-green-300">Verificada</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-yellow-600 border-yellow-300">Pendente</Badge>
+                  )}
+
                   <Badge variant="secondary">{accountTypeLabels[account.account_type]}</Badge>
                 </div>
                 

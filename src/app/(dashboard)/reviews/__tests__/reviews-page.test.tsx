@@ -4,6 +4,15 @@ import { apiClient } from '@/lib/api-client'
 import { toast } from 'sonner'
 import '@testing-library/jest-dom'
 
+jest.mock('@/contexts/auth-context', () => ({
+  useAuth: () => ({
+    token: 'mock-token',
+    isAuthenticated: true,
+    isLoading: false,
+    user: { name: 'Test User', email: 'test@test.com' },
+  }),
+}))
+
 // Mock do apiClient
 jest.mock('@/lib/api-client', () => ({
   apiClient: {
@@ -77,9 +86,12 @@ describe('ReviewsPage', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    ;(apiClient.get as jest.Mock)
-      .mockResolvedValueOnce({ success: true, data: mockReviews, message: '' })
-      .mockResolvedValueOnce({ success: true, data: mockStats, message: '' })
+    ;(apiClient.get as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/stats')) {
+        return Promise.resolve({ success: true, data: mockStats, message: '' })
+      }
+      return Promise.resolve({ success: true, data: mockReviews, message: '' })
+    })
   })
 
   it('deve renderizar a página corretamente', async () => {
@@ -370,5 +382,5 @@ describe('ReviewsPage', () => {
     const deleteButtons = screen.getAllByTitle('Deletar')
     expect(deleteButtons.length).toBe(2) // Uma para cada review
   })
-}
+})
 

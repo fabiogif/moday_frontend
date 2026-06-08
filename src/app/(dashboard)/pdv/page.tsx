@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import {
-  useAuthenticatedProducts,
+  useAuthenticatedCatalogProducts,
   useAuthenticatedCategories,
   useAuthenticatedTables,
   useAuthenticatedActivePaymentMethods,
@@ -440,7 +440,7 @@ function PDVQuickDashboard({
         size="icon"
         onClick={onToggle}
         className="h-8 w-8 text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100"
-        title={showDashboard ? "Ocultar dashboard" : "Exibir dashboard"}
+        title={showDashboard ? "Ocultar painel" : "Exibir painel"}
       >
         {showDashboard ? (
           <EyeOff className="h-4 w-4" />
@@ -765,7 +765,7 @@ export default function POSPage() {
     data: productsData,
     loading: productsLoading,
     error: productsError,
-  } = useAuthenticatedProducts()
+  } = useAuthenticatedCatalogProducts()
   const {
     data: tablesData,
     loading: tablesLoading,
