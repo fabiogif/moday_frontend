@@ -39,12 +39,12 @@ export function ProductGrid({
 }: ProductGridProps) {
   if (products.length === 0) {
     return (
-      <Card id="products-section" className="flex-1 flex flex-col border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20 min-h-0">
-        <CardHeader className="flex-shrink-0 pb-2">
-          <CardTitle className="text-base text-green-900 dark:text-green-100">Produtos</CardTitle>
+      <Card id="products-section" className="flex min-h-0 flex-1 flex-col gap-0 border-green-200 bg-green-50/50 py-0 dark:border-green-800 dark:bg-green-950/20">
+        <CardHeader className="flex-shrink-0 gap-0 px-2 py-1.5 pb-1 sm:px-3">
+          <CardTitle className="text-sm text-green-900 dark:text-green-100">Produtos</CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 overflow-hidden pt-0">
-          <div className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">
+        <CardContent className="flex-1 overflow-hidden px-2 pb-1.5 pt-0 sm:px-3">
+          <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
             Nenhum produto nesta categoria.
           </div>
         </CardContent>
@@ -53,14 +53,14 @@ export function ProductGrid({
   }
 
   return (
-    <Card id="products-section" className="flex-1 flex flex-col border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20 min-h-0">
-      <CardHeader className="flex-shrink-0 pb-2">
-        <CardTitle className="text-base text-green-900 dark:text-green-100">Produtos</CardTitle>
+    <Card id="products-section" className="flex min-h-0 flex-1 flex-col gap-0 border-green-200 bg-green-50/50 py-0 dark:border-green-800 dark:bg-green-950/20">
+      <CardHeader className="flex-shrink-0 gap-0 px-2 py-1.5 pb-1 sm:px-3">
+        <CardTitle className="text-sm text-green-900 dark:text-green-100">Produtos</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden pt-0">
+      <CardContent className="flex-1 overflow-hidden px-2 pb-1.5 pt-0 sm:px-3">
         <ScrollArea className="h-full" type="always">
           <div
-            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 pb-4"
+            className="grid gap-2 pb-2 sm:grid-cols-2 xl:grid-cols-3"
             data-testid="touch-grid-products"
           >
             {products.map((product) => {

@@ -45,24 +45,24 @@ export function ProductGrid({
     <Card
       id="products-section"
       className={cn(
-        "flex-1 flex flex-col border-green-200 bg-green-50/30 dark:border-green-800 dark:bg-green-950/10 min-h-0 h-full",
+        "flex h-full min-h-0 flex-1 flex-col gap-0 border-green-200 bg-green-50/30 py-0 dark:border-green-800 dark:bg-green-950/10",
         className
       )}
     >
-      <CardHeader className="flex-shrink-0 pb-2">
-        <CardTitle className="text-base text-green-900 dark:text-green-100">
+      <CardHeader className="flex-shrink-0 gap-0 px-2 py-1.5 pb-1 sm:px-3">
+        <CardTitle className="text-sm text-green-900 dark:text-green-100">
           Produtos
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden pt-0 min-h-0 flex flex-col">
+      <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden px-2 pb-1.5 pt-0 sm:px-3">
         {products.length === 0 ? (
-          <div className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">
+          <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
             {emptyMessage || defaultEmptyMessage}
           </div>
         ) : (
           <div className="flex-1 min-h-0 overflow-auto">
             <div
-              className="grid gap-2 pb-4 sm:gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+              className="grid grid-cols-2 gap-1.5 pb-2 sm:grid-cols-3 sm:gap-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
               data-testid="touch-grid-products"
             >
               {products.map((product) => {

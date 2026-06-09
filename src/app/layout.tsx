@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} antialiased`} data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang="pt-BR" className={`${inter.variable} antialiased`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <GoogleAnalyticsHead />
       </head>
