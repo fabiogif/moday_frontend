@@ -7,10 +7,7 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { inter } from "@/lib/fonts";
 import { ToasterProvider } from "@/components/toaster-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import {
-  GoogleTagManagerNoscript,
-  GoogleTagManagerScript,
-} from "@/components/google-tag-manager";
+import { GoogleAnalyticsHead } from "@/components/google-analytics";
 
 export const metadata: Metadata = {
   title: "Alba Tec - Gestão",
@@ -31,9 +28,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} antialiased`} data-scroll-behavior="smooth" suppressHydrationWarning>
+      <head>
+        <GoogleAnalyticsHead />
+      </head>
       <body className={inter.className}>
-        <GoogleTagManagerScript />
-        <GoogleTagManagerNoscript />
         <ThemeProvider defaultTheme="system" storageKey="nextjs-ui-theme">
           <AuthProvider>
             <SidebarConfigProvider>
