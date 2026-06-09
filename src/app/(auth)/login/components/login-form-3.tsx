@@ -89,7 +89,7 @@ export function LoginForm3({
           >
             <div className="mx-auto w-full max-w-sm flex flex-col gap-7">
               <div className="flex flex-col items-center gap-4 text-center">
-                <AlbaTecLogo href="/landing" variant="full" height={80} />
+                <AlbaTecLogo href="/landing" variant="full" height={80} adaptive />
                 <div>
                   <h1 className="text-2xl font-bold tracking-tight">Bem-vindo de volta</h1>
                   <p className="text-muted-foreground text-sm mt-1.5">
@@ -167,7 +167,9 @@ export function LoginForm3({
             <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-violet-300/20 blur-3xl" />
 
             <div className="relative z-10 flex w-full max-w-sm flex-col items-center text-center gap-8">
-              <AlbaTecLogo variant="full" height={140} withBackground />
+              <div className="flex flex-col items-center gap-2 rounded-xl border border-white/15 bg-white/10 backdrop-blur-sm p-4">
+                <AlbaTecLogo variant="full" height={140} onDark />
+              </div>
 
               <div>
                 <h2 className="text-2xl font-bold mb-2 leading-tight">

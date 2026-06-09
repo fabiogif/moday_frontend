@@ -384,26 +384,24 @@ function PDVQuickDashboard({
   }, [todayOrders])
   
   return (
-    <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20 px-4 flex items-center justify-between gap-3 flex-1">
-      <div className="flex items-center gap-2 flex-1">
-        <BarChart className="h-5 w-5 text-indigo-600" />
-        <div className="flex items-center gap-4 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Vendas:</span>
-            <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{formatCurrency(stats.totalSales)}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Pedidos:</span>
-            <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{stats.totalOrders}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Ticket Médio:</span>
-            <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{formatCurrency(stats.averageTicket)}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Mesas Ocupadas:</span>
-            <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{stats.occupiedTables}</span>
-          </div>
+    <div className="flex w-full min-w-0 items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/50 px-3 py-2 dark:border-indigo-800 dark:bg-indigo-950/20">
+      <BarChart className="h-5 w-5 shrink-0 text-indigo-600" />
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1">
+        <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+          <span className="text-xs text-muted-foreground">Vendas:</span>
+          <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{formatCurrency(stats.totalSales)}</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+          <span className="text-xs text-muted-foreground">Pedidos:</span>
+          <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{stats.totalOrders}</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+          <span className="text-xs text-muted-foreground">Ticket Médio:</span>
+          <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{formatCurrency(stats.averageTicket)}</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+          <span className="text-xs text-muted-foreground">Mesas Ocupadas:</span>
+          <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">{stats.occupiedTables}</span>
         </div>
       </div>
       <Button

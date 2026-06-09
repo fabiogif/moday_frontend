@@ -4,7 +4,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
-const LOGO_FULL = "/brand/logo-alba-tec-sem-fundo.png"
+const LOGO_LIGHT = "/brand/logo-alba-tec-sem-fundo.png"
+const LOGO_DARK = "/brand/logo-alba-escuro.png"
 const LOGO_SYMBOL = "/brand/logo-simbolo.png"
 
 export type AlbaTecLogoVariant = "horizontal" | "full" | "icon" | "wordmark"
@@ -18,8 +19,13 @@ interface AlbaTecLogoProps {
   className?: string
   href?: string
   priority?: boolean
+  /** Caixa branca atrás da logo (fundos coloridos/fotos) */
   withBackground?: boolean
-  /** @deprecated use withBackground */
+  /** Logo para fundo escuro (wordmark com "Alba" branco) */
+  onDark?: boolean
+  /** Alterna automaticamente entre claro/escuro conforme o tema */
+  adaptive?: boolean
+  /** @deprecated use onDark */
   inverted?: boolean
 }
 
@@ -31,10 +37,28 @@ export function AlbaTecLogo({
   href,
   priority = false,
   withBackground = false,
+  onDark = false,
+  adaptive = false,
   inverted = false,
 }: AlbaTecLogoProps) {
-  const useBackground = withBackground || inverted
+  const useDarkLogo = onDark || inverted
   const iconSize = Math.round(width ?? height)
+
+  const renderWordmark = (src: string, visibilityClass?: string) => {
+    const logoHeight = variant === "full" ? height : Math.round(height * 1.15)
+
+    return (
+      <Image
+        src={src}
+        alt="Alba Tec"
+        width={Math.round(logoHeight * 1.35)}
+        height={logoHeight}
+        className={cn("h-auto w-auto object-contain", visibilityClass, className)}
+        style={{ height: logoHeight, width: "auto" }}
+        priority={priority}
+      />
+    )
+  }
 
   const image = (() => {
     if (variant === "icon") {
@@ -56,25 +80,26 @@ export function AlbaTecLogo({
       )
     }
 
-    const logoHeight = variant === "full" ? height : Math.round(height * 1.15)
+    if (withBackground) {
+      return renderWordmark(LOGO_LIGHT)
+    }
 
-    return (
-      <Image
-        src={LOGO_FULL}
-        alt="Alba Tec"
-        width={Math.round(logoHeight * 1.35)}
-        height={logoHeight}
-        className={cn("h-auto w-auto object-contain", className)}
-        style={{ height: logoHeight, width: "auto" }}
-        priority={priority}
-      />
-    )
+    if (adaptive) {
+      return (
+        <>
+          {renderWordmark(LOGO_LIGHT, "dark:hidden")}
+          {renderWordmark(LOGO_DARK, "hidden dark:block")}
+        </>
+      )
+    }
+
+    return renderWordmark(useDarkLogo ? LOGO_DARK : LOGO_LIGHT)
   })()
 
-  const content = useBackground ? (
+  const content = withBackground ? (
     <span
       className={cn(
-        "inline-flex items-center justify-center rounded-2xl bg-white shadow-md border border-white/80",
+        "inline-flex items-center justify-center rounded-2xl border border-white/80 bg-white shadow-md",
         variant === "icon" ? "p-2" : "px-4 py-3"
       )}
     >
@@ -86,7 +111,7 @@ export function AlbaTecLogo({
 
   if (href) {
     return (
-      <Link href={href} className="inline-flex items-center cursor-pointer">
+      <Link href={href} className="inline-flex cursor-pointer items-center">
         {content}
       </Link>
     )

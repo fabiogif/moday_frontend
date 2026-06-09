@@ -7,7 +7,7 @@ export function SiteFooter() {
       <div className="px-4 py-6 lg:px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
           <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-            <AlbaTecLogo height={48} />
+            <AlbaTecLogo height={48} adaptive />
             <span>- Sistema de Gestão de Restaurante</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-muted-foreground">

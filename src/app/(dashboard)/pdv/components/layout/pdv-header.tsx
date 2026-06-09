@@ -245,7 +245,7 @@ export function PDVHeader({
         
         {/* Dashboard Rápido */}
         {canViewReports && showDashboard && dashboardComponent && (
-          <div className="flex-1 min-w-0 max-w-[300px]">{dashboardComponent}</div>
+          <div className="min-w-0 flex-1 basis-full lg:basis-auto">{dashboardComponent}</div>
         )}
         {canViewReports && !showDashboard && onToggleDashboard && (
           <Button

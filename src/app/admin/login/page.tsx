@@ -47,7 +47,7 @@ export default function AdminLoginPage() {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="space-y-4 text-center pb-2">
           <div className="mx-auto">
-            <AlbaTecLogo variant="full" height={72} withBackground />
+            <AlbaTecLogo variant="full" height={72} adaptive />
           </div>
           <div>
             <CardTitle className="text-2xl font-bold">Painel Administrativo</CardTitle>
