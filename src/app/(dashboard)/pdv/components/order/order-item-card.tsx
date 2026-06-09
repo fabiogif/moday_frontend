@@ -91,17 +91,16 @@ export function OrderItemCard({
         !isAdding && !isRemoving && "hover:border-primary/40 hover:shadow-sm"
       )}
     >
-      {/* Linha principal */}
-      <div className="flex items-start gap-2.5">
-        {/* Thumbnail */}
-        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-md bg-muted border">
+      {/* Produto */}
+      <div className="flex items-start gap-3">
+        <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md border bg-muted sm:h-12 sm:w-12">
           {productImage ? (
             <Image
               src={productImage}
               alt={item.product.name}
               fill
               className="object-cover"
-              sizes="48px"
+              sizes="56px"
               loading="lazy"
               unoptimized
             />
@@ -112,31 +111,30 @@ export function OrderItemCard({
           )}
         </div>
 
-        {/* Nome + variação + opcionais */}
-        <div className="flex-1 min-w-0 space-y-0.5">
-          <p className="text-sm font-semibold leading-tight truncate text-foreground">
+        <div className="min-w-0 flex-1 space-y-1">
+          <p className="text-sm font-semibold leading-snug text-foreground sm:truncate">
             {item.product.name}
           </p>
 
           {item.selectedVariation && (
             <Badge
               variant="secondary"
-              className="text-[10px] px-1.5 py-0 h-4 font-normal"
+              className="h-5 px-2 py-0 text-[11px] font-normal"
             >
               {item.selectedVariation.name}
             </Badge>
           )}
 
           {item.selectedOptionals && item.selectedOptionals.length > 0 && (
-            <div className="space-y-px">
+            <div className="space-y-0.5">
               {item.selectedOptionals.map((optional, idx) => {
                 const key = optional.id || optional.identify || optional.name || `opt-${idx}`
                 return (
                   <div
                     key={`${item.signature}-${key}-${idx}`}
-                    className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground"
+                    className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground"
                   >
-                    <span className="truncate">
+                    <span className="min-w-0 break-words">
                       + {optional.name} × {optional.quantity}
                     </span>
                     <span className="shrink-0 tabular-nums">
@@ -153,7 +151,7 @@ export function OrderItemCard({
           )}
 
           {item.observation && (
-            <p className="text-[10px] text-muted-foreground italic truncate">
+            <p className="text-[11px] italic text-muted-foreground break-words">
               {item.observation}
             </p>
           )}
@@ -162,48 +160,49 @@ export function OrderItemCard({
             {formatCurrency(unitPrice)} cada
           </p>
         </div>
+      </div>
 
-        {/* Controles de quantidade */}
-        <div className="flex items-center gap-1 shrink-0">
+      {/* Quantidade, preço e remoção — abaixo do produto no mobile */}
+      <div className="mt-3 flex items-center justify-between gap-3 border-t pt-3 sm:mt-2 sm:border-t-0 sm:pt-0">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="icon"
-            className="h-7 w-7 rounded-md"
+            className="h-10 w-10 rounded-md sm:h-8 sm:w-8"
             aria-label={`Diminuir ${item.product.name}`}
             onClick={onDecrease}
           >
-            <Minus className="h-3.5 w-3.5" />
+            <Minus className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
           </Button>
           <span
             data-testid={`cart-item-qty-${item.signature}`}
-            className="min-w-[28px] h-7 flex items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold tabular-nums px-1.5"
+            className="flex h-10 min-w-[40px] items-center justify-center rounded-md bg-primary px-2 text-sm font-bold tabular-nums text-primary-foreground sm:h-8 sm:min-w-[32px] sm:text-xs"
           >
             {item.quantity}
           </span>
           <Button
             variant="outline"
             size="icon"
-            className="h-7 w-7 rounded-md"
+            className="h-10 w-10 rounded-md sm:h-8 sm:w-8"
             aria-label={`Aumentar ${item.product.name}`}
             onClick={onIncrease}
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
           </Button>
         </div>
 
-        {/* Total do item + remover */}
-        <div className="flex flex-col items-end gap-1 shrink-0 min-w-[72px]">
-          <p className="text-sm font-bold text-foreground tabular-nums">
+        <div className="flex items-center gap-2">
+          <p className="text-base font-bold tabular-nums text-foreground sm:text-sm">
             {formatCurrency(totalPrice)}
           </p>
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md"
+            className="h-10 w-10 rounded-md text-destructive hover:bg-destructive/10 hover:text-destructive sm:h-8 sm:w-8"
             aria-label={`Remover ${item.product.name}`}
             onClick={onRemove}
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
           </Button>
         </div>
       </div>
@@ -214,7 +213,7 @@ export function OrderItemCard({
           value={item.observation}
           onChange={(e) => onObservationChange(e.target.value)}
           placeholder="Observação (ex: sem cebola)"
-          className="h-8 text-xs rounded-md"
+          className="h-10 rounded-md text-sm sm:h-8 sm:text-xs"
         />
         {templates.length > 0 && (
           <div className="flex flex-wrap gap-1">

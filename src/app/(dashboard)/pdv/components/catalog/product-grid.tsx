@@ -62,9 +62,8 @@ export function ProductGrid({
         ) : (
           <div className="flex-1 min-h-0 overflow-auto">
             <div
-              className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 pb-4"
+              className="grid gap-2 pb-4 sm:gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
               data-testid="touch-grid-products"
-              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}
             >
               {products.map((product) => {
                 const price = getProductPrice(product)

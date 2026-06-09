@@ -2702,7 +2702,7 @@ const handleClientChange = (value: string) => {
       <PDVTwoColumnLayout
         mobileActiveView={mobileView}
         leftColumn={
-          <section className="flex flex-col gap-2 overflow-hidden min-h-0">
+          <section className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
           {/* Busca de Produtos */}
           <div id="search-section" className="flex-shrink-0">
             <ProductSearch
@@ -2735,8 +2735,8 @@ const handleClientChange = (value: string) => {
           </section>
         }
         rightColumn={
-          <aside id="order-summary" className="flex flex-col min-h-0">
-          <Card className="flex flex-col min-h-[650px] h-full max-h-[calc(100vh-4rem)]">
+          <aside id="order-summary" className="flex min-h-0 w-full flex-1 flex-col">
+          <Card className="flex h-full min-h-0 flex-1 flex-col lg:min-h-[650px] lg:max-h-[calc(100vh-4rem)]">
             <CardHeader className="flex-shrink-0 space-y-0 pb-1.5 pt-3">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -2751,43 +2751,42 @@ const handleClientChange = (value: string) => {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="flex flex-col flex-1 min-h-0 space-y-2 pt-2 pb-3 overflow-hidden">
+            <CardContent className="flex min-h-0 flex-1 flex-col space-y-2 overflow-hidden pt-2 pb-2 sm:pb-3">
               <Tabs value={cartTab} onValueChange={(value) => setCartTab(value as typeof cartTab)} className="flex flex-col flex-1 min-h-0 h-full">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-muted/50 p-1 rounded-lg h-auto min-h-[2.5rem] flex-shrink-0">
+                <TabsList className="flex h-auto min-h-[2.75rem] w-full flex-shrink-0 flex-nowrap gap-1 overflow-x-auto rounded-lg bg-muted/50 p-1 scrollbar-hide">
                   <TabsTrigger
                   value="client"
-                  className="cursor-pointer flex items-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+                  className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium whitespace-normal transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:gap-2 sm:px-4"
                   >
-                    <User className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-                    <span className="hidden xs:inline truncate">Cliente</span>
-                    <span className="xs:hidden">Cliente</span>
+                    <User className="h-4 w-4 shrink-0" />
+                    <span className="truncate">Cliente</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="service"
-                    className="cursor-pointer flex items-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+                    className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium whitespace-normal transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:gap-2 sm:px-4"
                   >
-                    <Handshake className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-                    <span className="hidden xs:inline truncate">Atendimento</span>
-                    <span className="xs:hidden">Atend.</span>
+                    <Handshake className="h-4 w-4 shrink-0" />
+                    <span className="truncate sm:hidden">Atend.</span>
+                    <span className="hidden truncate sm:inline">Atendimento</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="payment"
-                    className="cursor-pointer flex items-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+                    className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium whitespace-normal transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:gap-2 sm:px-4"
                   >
-                    <CreditCardIcon className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-                    <span className="hidden xs:inline truncate">Pagamento</span>
-                    <span className="xs:hidden">Pag.</span>
+                    <CreditCardIcon className="h-4 w-4 shrink-0" />
+                    <span className="truncate sm:hidden">Pag.</span>
+                    <span className="hidden truncate sm:inline">Pagamento</span>
                   </TabsTrigger>
                   <TabsTrigger
                   value="items"
-                  className="cursor-pointer flex items-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+                  className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium whitespace-normal transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:gap-2 sm:px-4"
                   >
-                    <ShoppingCartIcon className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-                    <span className="hidden xs:inline truncate">Carrinho</span>
-                    <span className="xs:hidden">Carr.</span>
+                    <ShoppingCartIcon className="h-4 w-4 shrink-0" />
+                    <span className="truncate sm:hidden">Carr.</span>
+                    <span className="hidden truncate sm:inline">Carrinho</span>
                   </TabsTrigger>
                 </TabsList>
-                <div className="flex-1 min-h-0 mt-2 overflow-y-auto pr-3 max-h-full">
+                <div className="mt-2 min-h-0 flex-1 overflow-y-auto pr-1 sm:pr-3">
                   {/* Aba: Tipo de Atendimento */}
                   <TabsContent value="service" className="mt-0 h-full">
                     <div className="space-y-3 h-full flex flex-col">
@@ -3259,8 +3258,8 @@ const handleClientChange = (value: string) => {
                   </TabsContent>
 
                   {/* Aba: Carrinho (Itens e Notas) */}
-                  <TabsContent value="items" className="mt-0 h-full">
-                    <div className="space-y-3 h-full flex flex-col rounded-lg p-2">
+                  <TabsContent value="items" className="mt-0 flex h-full min-h-0 flex-col">
+                    <div className="flex min-h-0 flex-1 flex-col gap-3 rounded-lg p-1 sm:p-2">
                       {/* Itens do carrinho */}
                       <OrderStatusGuard
                         status={
@@ -3272,8 +3271,8 @@ const handleClientChange = (value: string) => {
                         showAlert={false}
                         allowViewOnly={true}
                       >
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 pb-1">
+                        <div className="flex min-h-0 flex-1 flex-col gap-2">
+                          <div className="flex flex-shrink-0 items-center gap-2 pb-1">
                             <ShoppingCartIcon className="h-4 w-4 text-primary" />
                             <p className="text-sm font-bold">
                               Itens selecionados
@@ -3285,6 +3284,7 @@ const handleClientChange = (value: string) => {
                             )}
                           </div>
                           <OrderItemsList
+                            className="min-h-[120px] flex-1"
                             items={cart as any}
                             getUnitPrice={getCartItemUnitPrice as any}
                             formatCurrency={formatCurrency}
@@ -3576,7 +3576,7 @@ const handleClientChange = (value: string) => {
                                 (requiresTable && isTableOccupiedByOtherOrder) ||
                               !pdvPermissions.canCreateOrder
                             }
-                            className="h-24 rounded-2xl text-2xl font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg"
+                            className="h-16 rounded-2xl text-lg font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg sm:h-20 sm:text-xl lg:h-24 lg:text-2xl"
                             title={
                               !cart.length
                                 ? "Adicione itens ao pedido"
@@ -3667,7 +3667,7 @@ const handleClientChange = (value: string) => {
       />
 
       {/* Mobile Bottom Navigation — switches between catalog and cart views */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden flex border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <nav className="flex flex-shrink-0 border-t bg-background lg:hidden supports-[backdrop-filter]:bg-background/95 supports-[backdrop-filter]:backdrop-blur [padding-bottom:env(safe-area-inset-bottom)]">
         <button
           onClick={() => setMobileView("catalog")}
           className={cn(

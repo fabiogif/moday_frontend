@@ -804,10 +804,10 @@ export default function NewOrderPage() {
                   name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormLabel>Status do Pedido</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-11 w-full bg-background text-base shadow-none">
                             <SelectValue placeholder="Selecionar status" />
                           </SelectTrigger>
                         </FormControl>
@@ -1002,50 +1002,50 @@ export default function NewOrderPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {fields.map((field, index) => (
-                  <div key={field.id} className="flex gap-4 items-end p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <FormField
-                        control={form.control}
-                        name={`products.${index}.productId`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Produto</FormLabel>
-                            <FormControl>
-                              <ComboboxForm
-                                field={{
-                                  ...field,
-                                  onChange: (value: string) => {
-                                    field.onChange(value);
-                                    handleProductChange(index, value);
-                                  }
-                                }}
-                                options={finalProductsLoading ? 
-                                  [{ value: "loading", label: "Carregando produtos...", disabled: true }] :
-                                  productOptions.length > 0 ? 
-                                    productOptions : 
-                                    [{ value: "no-products", label: "Nenhum produto disponível", disabled: true }]
+                  <div key={field.id} className="space-y-4 rounded-lg border p-4">
+                    <FormField
+                      control={form.control}
+                      name={`products.${index}.productId`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Produto</FormLabel>
+                          <FormControl>
+                            <ComboboxForm
+                              field={{
+                                ...field,
+                                onChange: (value: string) => {
+                                  field.onChange(value);
+                                  handleProductChange(index, value);
                                 }
-                                placeholder="Selecionar produto..."
-                                searchPlaceholder="Buscar produto..."
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                              }}
+                              options={finalProductsLoading ? 
+                                [{ value: "loading", label: "Carregando produtos...", disabled: true }] :
+                                productOptions.length > 0 ? 
+                                  productOptions : 
+                                  [{ value: "no-products", label: "Nenhum produto disponível", disabled: true }]
+                              }
+                              placeholder="Selecionar produto..."
+                              searchPlaceholder="Buscar produto..."
+                              className="h-11 text-base"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                    <div className="w-24">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
                       <FormField
                         control={form.control}
                         name={`products.${index}.quantity`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Qtd</FormLabel>
+                            <FormLabel>Quantidade</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
                                 min="1"
+                                className="h-11 text-base"
                                 {...field}
                                 onChange={(e) => field.onChange(Number(e.target.value))}
                               />
@@ -1054,9 +1054,7 @@ export default function NewOrderPage() {
                           </FormItem>
                         )}
                       />
-                    </div>
 
-                    <div className="w-32">
                       <FormField
                         control={form.control}
                         name={`products.${index}.price`}
@@ -1067,6 +1065,7 @@ export default function NewOrderPage() {
                               <Input
                                 type="number"
                                 step="0.01"
+                                className="h-11 text-base"
                                 {...field}
                                 onChange={(e) => field.onChange(Number(e.target.value))}
                                 readOnly
@@ -1076,17 +1075,19 @@ export default function NewOrderPage() {
                           </FormItem>
                         )}
                       />
-                    </div>
 
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => remove(index)}
-                      disabled={fields.length === 1}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => remove(index)}
+                        disabled={fields.length === 1}
+                        className="col-span-2 h-11 w-full sm:col-span-1 sm:w-12 sm:px-0"
+                        aria-label="Remover produto"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                        <span className="ml-2 sm:hidden">Remover item</span>
+                      </Button>
+                    </div>
                   </div>
                 ))}
 

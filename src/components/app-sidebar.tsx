@@ -199,15 +199,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar {...props}>
-      <SidebarHeader className="border-b px-3 py-3">
+      <SidebarHeader className="flex flex-row items-center gap-0 border-b p-0 px-2 py-2">
         <Link
           href="/dashboard"
-          className="flex min-h-20 min-w-0 w-full flex-row items-center gap-3 rounded-md px-1 py-2 transition-colors hover:bg-sidebar-accent"
+          className="flex flex-row items-center gap-3 min-w-0 w-full"
         >
-          <AlbaTecLogo variant="icon" width={80} height={80} />
-          <span className="min-w-0 flex-1 truncate text-left text-base font-semibold leading-snug">
-            {tenantName}
-          </span>
+          <AlbaTecLogo variant="icon" width={80} height={80} className="shrink-0" />
+          <div className="flex flex-col leading-tight min-w-0 flex-1">
+            <span className="font-semibold text-sm truncate">Alba Tec</span>
+            <span className="text-xs text-muted-foreground truncate">{tenantName}</span>
+          </div>
         </Link>
       </SidebarHeader>
       <SidebarContent>

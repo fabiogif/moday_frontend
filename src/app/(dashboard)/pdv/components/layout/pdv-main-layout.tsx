@@ -16,7 +16,8 @@ export function PDVMainLayout({ children, className }: PDVMainLayoutProps) {
   return (
     <div
       className={cn(
-        "flex flex-col h-[calc(100vh-8rem)] lg:h-[calc(100vh-4rem)] overflow-hidden",
+        "flex min-h-0 flex-col overflow-hidden",
+        "h-[calc(100dvh-10rem)] lg:h-[calc(100dvh-5rem)]",
         className
       )}
     >
@@ -46,7 +47,7 @@ export function PDVTwoColumnLayout({
   return (
     <div
       className={cn(
-        "flex flex-1 gap-3 overflow-hidden min-h-0 p-3",
+        "flex min-h-0 flex-1 gap-3 overflow-hidden p-2 sm:p-3",
         className
       )}
     >

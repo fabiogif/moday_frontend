@@ -43,7 +43,7 @@ describe('PDV - Layout e Viewport', () => {
     const { container } = render(<POSPage />)
 
     const mainLayout = container.querySelector(
-      '.flex.flex-col.h-\\[calc\\(100vh-8rem\\)\\].lg\\:h-\\[calc\\(100vh-4rem\\)\\].overflow-hidden'
+      '.flex.min-h-0.flex-col.overflow-hidden'
     )
     expect(mainLayout).toBeInTheDocument()
   })

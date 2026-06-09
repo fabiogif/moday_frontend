@@ -2,7 +2,6 @@
 
 import { OrderItemCard, type CartItem } from "./order-item-card"
 import { cn } from "@/lib/utils"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { ShoppingCart } from "lucide-react"
 
 interface OrderItemsListProps {
@@ -48,8 +47,8 @@ export function OrderItemsList({
   }
 
   return (
-    <ScrollArea className={cn("max-h-[60vh] pr-3", className)}>
-      <div className="space-y-2">
+    <div className={cn("min-h-0 flex-1 overflow-y-auto pr-1", className)}>
+      <div className="space-y-2 pb-2">
         {items.map((item) => {
           const unitPrice = getUnitPrice(item)
           const totalPrice = unitPrice * item.quantity
@@ -75,6 +74,6 @@ export function OrderItemsList({
           )
         })}
       </div>
-    </ScrollArea>
+    </div>
   )
 }
