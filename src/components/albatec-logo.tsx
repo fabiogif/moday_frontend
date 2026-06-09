@@ -5,7 +5,7 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 
 const LOGO_FULL = "/brand/logo-alba-tec-sem-fundo.png"
-const LOGO_ICON = "/brand/logo-icon.png"
+const LOGO_SYMBOL = "/brand/logo-simbolo.png"
 
 export type AlbaTecLogoVariant = "horizontal" | "full" | "icon" | "wordmark"
 
@@ -13,38 +13,49 @@ interface AlbaTecLogoProps {
   variant?: AlbaTecLogoVariant
   /** Altura em pixels (largura proporcional) */
   height?: number
+  /** Largura fixa para variant icon (quadrado) */
+  width?: number
   className?: string
   href?: string
   priority?: boolean
-  /** Mantido por compatibilidade — a logo PNG já inclui as cores oficiais */
+  withBackground?: boolean
+  /** @deprecated use withBackground */
   inverted?: boolean
 }
 
 export function AlbaTecLogo({
   variant = "horizontal",
   height = 32,
+  width,
   className,
   href,
   priority = false,
+  withBackground = false,
+  inverted = false,
 }: AlbaTecLogoProps) {
-  const iconSize = Math.round(height)
+  const useBackground = withBackground || inverted
+  const iconSize = Math.round(width ?? height)
 
-  const content = (() => {
+  const image = (() => {
     if (variant === "icon") {
       return (
         <Image
-          src={LOGO_ICON}
+          src={LOGO_SYMBOL}
           alt="Alba Tec"
           width={iconSize}
           height={iconSize}
-          className={cn("object-contain", className)}
-          style={{ width: iconSize, height: iconSize }}
+          className={cn("shrink-0 object-contain", className)}
+          style={{
+            width: iconSize,
+            height: iconSize,
+            minWidth: iconSize,
+            minHeight: iconSize,
+          }}
           priority={priority}
         />
       )
     }
 
-    // full, horizontal e wordmark usam a logo oficial com fundo transparente
     const logoHeight = variant === "full" ? height : Math.round(height * 1.15)
 
     return (
@@ -59,6 +70,19 @@ export function AlbaTecLogo({
       />
     )
   })()
+
+  const content = useBackground ? (
+    <span
+      className={cn(
+        "inline-flex items-center justify-center rounded-2xl bg-white shadow-md border border-white/80",
+        variant === "icon" ? "p-2" : "px-4 py-3"
+      )}
+    >
+      {image}
+    </span>
+  ) : (
+    image
+  )
 
   if (href) {
     return (

@@ -52,10 +52,10 @@ export function LandingNavbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-20 items-center justify-between">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-24 items-center justify-between">
         {/* Logo */}
         <div className="flex items-center space-x-2">
-          <AlbaTecLogo href="/landing" height={56} priority />
+          <AlbaTecLogo href="/landing" height={72} priority />
         </div>
 
         {/* Desktop Navigation */}
@@ -107,7 +107,7 @@ export function LandingNavbar() {
               {/* Header */}
               <SheetHeader className="space-y-0 p-4 pb-2 border-b">
                 <div className="flex items-center gap-2">
-                  <AlbaTecLogo height={44} />
+                  <AlbaTecLogo height={56} />
                   <SheetTitle className="sr-only">Alba Tec</SheetTitle>
                   <div className="ml-auto flex items-center gap-2">
                     <Button

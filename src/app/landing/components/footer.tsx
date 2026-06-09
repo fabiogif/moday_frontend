@@ -85,8 +85,8 @@ export function LandingFooter() {
         <div className="grid gap-8 grid-cols-2 lg:grid-cols-4">
           {/* Brand Column */}
           <div className="col-span-2 max-w-2xl">
-            <div className="mb-4 max-lg:flex max-lg:justify-center">
-              <AlbaTecLogo height={36} />
+            <div className="mb-5 max-lg:flex max-lg:justify-center">
+              <AlbaTecLogo height={64} />
             </div>
             <p className="text-muted-foreground mb-6 max-lg:text-center max-lg:flex max-lg:justify-center text-sm leading-relaxed">
               Sistema completo de gestão para restaurantes. Pedidos, cardápio, financeiro e relatórios em uma única plataforma.

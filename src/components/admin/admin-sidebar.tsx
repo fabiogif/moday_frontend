@@ -16,7 +16,6 @@ import {
   TrendingUp,
   Activity,
   LogOut,
-  Shield,
   Users,
   CreditCard,
   UserCog,
@@ -62,12 +61,17 @@ export function AdminSidebar() {
   return (
     <div className="flex h-full w-64 flex-col border-r bg-background">
       {/* Header */}
-      <div className="flex h-16 items-center border-b px-4 gap-2">
-        <AlbaTecLogo variant="icon" height={32} />
-        <div className="flex flex-col leading-tight">
-          <span className="font-semibold text-sm">Admin</span>
-          <span className="text-xs text-muted-foreground">Alba Tec</span>
-        </div>
+      <div className="flex items-center border-b px-3 py-3">
+        <Link
+          href="/admin/dashboard"
+          className="flex flex-row items-center gap-3 min-w-0 w-full"
+        >
+          <AlbaTecLogo variant="icon" width={80} height={80} className="shrink-0" />
+          <div className="flex flex-col leading-tight min-w-0 flex-1">
+            <span className="font-semibold text-sm truncate">Painel Admin</span>
+            <span className="text-xs text-muted-foreground truncate">Alba Tec</span>
+          </div>
+        </Link>
       </div>
 
       {/* Admin Info */}

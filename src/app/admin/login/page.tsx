@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAdminAuth } from '@/contexts/admin-auth-context'
-import { Shield, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
+import { AlbaTecLogo } from '@/components/albatec-logo'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -44,14 +45,16 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
       <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="space-y-3 text-center">
-          <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-            <Shield className="w-8 h-8 text-primary" />
+        <CardHeader className="space-y-4 text-center pb-2">
+          <div className="mx-auto">
+            <AlbaTecLogo variant="full" height={72} withBackground />
           </div>
-          <CardTitle className="text-2xl font-bold">Painel Administrativo</CardTitle>
-          <CardDescription>
-            Faça login para acessar o gerenciador de empresas
-          </CardDescription>
+          <div>
+            <CardTitle className="text-2xl font-bold">Painel Administrativo</CardTitle>
+            <CardDescription className="mt-1.5">
+              Faça login para acessar o gerenciador de empresas
+            </CardDescription>
+          </div>
         </CardHeader>
         
         <CardContent>

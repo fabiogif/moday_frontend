@@ -44,9 +44,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { AlbaTecLogo } from "@/components/albatec-logo"
 
@@ -202,20 +199,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/dashboard">
-                <AlbaTecLogo variant="icon" height={32} className="shrink-0" />
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{tenantName}</span>
-                  <span className="truncate text-xs text-muted-foreground">Alba Tec</span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarHeader className="border-b px-3 py-3">
+        <Link
+          href="/dashboard"
+          className="flex min-h-20 min-w-0 w-full flex-row items-center gap-3 rounded-md px-1 py-2 transition-colors hover:bg-sidebar-accent"
+        >
+          <AlbaTecLogo variant="icon" width={80} height={80} />
+          <span className="min-w-0 flex-1 truncate text-left text-base font-semibold leading-snug">
+            {tenantName}
+          </span>
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         {navGroups.map((group) => (
