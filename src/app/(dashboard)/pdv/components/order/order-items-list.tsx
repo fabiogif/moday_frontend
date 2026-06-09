@@ -33,7 +33,7 @@ export function OrderItemsList({
     return (
       <div
         className={cn(
-          "flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8 text-center",
+          "flex flex-col items-center justify-center gap-1.5 rounded-md border border-dashed p-5 text-center",
           className
         )}
       >
@@ -47,8 +47,7 @@ export function OrderItemsList({
   }
 
   return (
-    <div className={cn("min-h-0 flex-1 overflow-y-auto pr-1", className)}>
-      <div className="space-y-2 pb-2">
+    <div className={cn("space-y-1", className)}>
         {items.map((item) => {
           const unitPrice = getUnitPrice(item)
           const totalPrice = unitPrice * item.quantity
@@ -73,7 +72,6 @@ export function OrderItemsList({
             />
           )
         })}
-      </div>
     </div>
   )
 }

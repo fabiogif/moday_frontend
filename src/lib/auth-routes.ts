@@ -3,7 +3,7 @@
  * Demais caminhos exigem login e redirecionam para /login.
  */
 
-const PUBLIC_EXACT = new Set(['/', '/login'])
+const PUBLIC_EXACT = new Set(['/', '/login', '/auth/login'])
 
 const PUBLIC_PREFIXES = [
   '/landing',
@@ -37,8 +37,8 @@ export function isAdminRoute(pathname: string): boolean {
 
 export function getLoginRedirectUrl(pathname: string, search = ''): string {
   const target = `${pathname}${search}`
-  if (!target || target === '/login' || isPublicRoute(pathname)) {
-    return '/login'
+  if (!target || target === '/login' || target === '/auth/login' || isPublicRoute(pathname)) {
+    return '/auth/login'
   }
-  return `/login?redirect=${encodeURIComponent(target)}`
+  return `/auth/login?redirect=${encodeURIComponent(target)}`
 }

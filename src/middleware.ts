@@ -8,7 +8,7 @@ function resolvePostLoginPath(redirectParam: string | null): string {
   if (!redirectParam || !redirectParam.startsWith('/') || redirectParam.startsWith('//')) {
     return '/dashboard'
   }
-  if (redirectParam === '/login' || isPublicRoute(redirectParam.split('?')[0])) {
+  if (redirectParam === '/login' || redirectParam === '/auth/login' || isPublicRoute(redirectParam.split('?')[0])) {
     return '/dashboard'
   }
   return redirectParam
@@ -24,7 +24,7 @@ export function middleware(request: NextRequest) {
   }
 
   if (isPublicRoute(pathname)) {
-    if (token && pathname === '/login') {
+    if (token && (pathname === '/login' || pathname === '/auth/login')) {
       const redirectParam = request.nextUrl.searchParams.get('redirect')
       const target = resolvePostLoginPath(redirectParam)
       return NextResponse.redirect(new URL(target, request.url))
@@ -33,9 +33,9 @@ export function middleware(request: NextRequest) {
   }
 
   if (!token) {
-    const loginUrl = new URL('/login', request.url)
+    const loginUrl = new URL('/auth/login', request.url)
     const destination = `${pathname}${search}`
-    if (destination && destination !== '/login') {
+    if (destination && destination !== '/auth/login' && destination !== '/login') {
       loginUrl.searchParams.set('redirect', destination)
     }
     return NextResponse.redirect(loginUrl)

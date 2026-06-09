@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -478,9 +479,9 @@ export function RegisterForm({
 
                 <div className="text-center text-sm">
                   Já tem uma conta?{" "}
-                  <a href="/auth/login" className="underline underline-offset-4 hover:text-primary">
+                  <Link href="/auth/login" className="underline underline-offset-4 hover:text-primary">
                     Fazer login
-                  </a>
+                  </Link>
                 </div>
               </div>
             </form>

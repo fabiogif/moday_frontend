@@ -118,7 +118,6 @@ import { TableSelector } from "./components/tables/table-selector"
 import { DeliveryAddressForm } from "./components/delivery/delivery-address-form"
 import { OrderStatusGuard } from "./components/order/order-status-guard"
 import { ClientFormDialog } from "../clients/components/client-form-dialog"
-import { OrderStatusBadge } from "./components/order/order-status-badge"
 import { PaymentMethodsSelector } from "./components/payment/payment-methods-selector"
 import { PaymentButtonsGrid } from "./components/payment/payment-buttons-grid"
 import { FiscalDocument } from "./components/fiscal/fiscal-document"
@@ -135,7 +134,7 @@ import {
   canEditOrder, 
   canAdvanceStatus, 
   canFinalizeOrder,
-  getNextStatusName as getNextStatusNameUtil,
+  getNextStatusName,
   FINAL_STATUSES 
 } from "./utils/order-status"
 import {
@@ -306,34 +305,6 @@ const extractCollection = <T,>(raw: unknown): T[] => {
 
 
 // Função helper para normalizar nome do status (remover variações como "/ Cozinha")
-const normalizeStatusName = (statusName: string | null | undefined): string => {
-  if (!statusName) return ''
-  const normalized = statusName.trim()
-  // Remover sufixos comuns após "/"
-  if (normalized.includes('/')) {
-    return normalized.split('/')[0].trim()
-  }
-  return normalized
-}
-
-// Função helper para obter o próximo status do fluxo
-const getNextStatusName = (currentStatus: string | null | undefined, isDelivery: boolean): string | null => {
-  if (!currentStatus) return null
-  
-  // Normalizar o status atual para comparação
-  const normalizedCurrent = normalizeStatusName(currentStatus)
-  
-  // Mapear fluxo de status (usando nomes normalizados)
-  const flow: Record<string, string> = {
-    'Pedido Recebido': 'Em Preparação',
-    'Em Preparação': 'Pronto',
-    'Pronto': isDelivery ? 'Em Entrega' : 'Entregue',
-    'Em Entrega': 'Entregue',
-  }
-  
-  return flow[normalizedCurrent] || null
-}
-
 // Funções utilitárias - usando serviços com wrappers locais quando necessário
 function getProductId(product: Product): string {
   return product.uuid || product.identify || product.name
@@ -624,7 +595,7 @@ function renderOrderActionButtons({
           !pdvPermissions.canCreateOrder ||
           orderIsFinal
         }
-        className="h-16 rounded-2xl text-sm sm:text-base font-semibold bg-amber-600 hover:bg-amber-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed w-full"
+        className="h-12 rounded-xl text-xs sm:text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed w-full"
         title={
           orderIsFinal
             ? `Pedido com status final ${orderStatus} não pode ser editado`
@@ -659,7 +630,7 @@ function renderOrderActionButtons({
             !pdvPermissions.canCreateOrder ||
             !cart.length
           }
-          className="h-16 rounded-2xl text-sm sm:text-base font-semibold bg-green-600 hover:bg-green-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed w-full"
+          className="h-12 rounded-xl text-xs sm:text-sm font-semibold bg-green-600 hover:bg-green-700 text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed w-full"
           title={
             !cart.length
               ? "Adicione itens ao pedido antes de finalizar"
@@ -692,7 +663,7 @@ function renderOrderActionButtons({
             orderIsFinal ||
             !canAdvanceStatus
           }
-          className="h-16 rounded-2xl text-sm sm:text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed w-full"
+          className="h-12 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed w-full"
           title={advanceTitle}
         >
           {submittingOrder ? (
@@ -721,7 +692,7 @@ function renderOrderActionButtons({
           !pdvPermissions.canCreateOrder ||
           (orderIsFinal && orderStatus !== 'Cancelado')
         }
-        className="h-16 rounded-2xl text-sm sm:text-base font-semibold bg-red-600 hover:bg-red-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed w-full"
+        className="h-12 rounded-xl text-xs sm:text-sm font-semibold bg-red-600 hover:bg-red-700 text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed w-full"
         title={
           orderIsFinal && orderStatus !== 'Cancelado'
             ? `Pedido com status final ${orderStatus} não pode ser cancelado`
@@ -2736,59 +2707,45 @@ const handleClientChange = (value: string) => {
         }
         rightColumn={
           <aside id="order-summary" className="flex min-h-0 w-full flex-1 flex-col">
-          <Card className="flex h-full min-h-0 flex-1 flex-col lg:min-h-[650px] lg:max-h-[calc(100vh-4rem)]">
-            <CardHeader className="flex-shrink-0 space-y-0 pb-1.5 pt-3">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-sm font-semibold">Carrinho</CardTitle>
-                </div>
-                {/* Badge de Status do Pedido */}
-                {(editingOrder || currentOrder) && (
-                  <OrderStatusBadge
-                    status={editingOrder?.status || editingOrder?.order_status?.name || currentOrder?.status || currentOrder?.order_status?.name}
-                    showIcon={true}
-                  />
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="flex min-h-0 flex-1 flex-col space-y-2 overflow-hidden pt-2 pb-2 sm:pb-3">
-              <Tabs value={cartTab} onValueChange={(value) => setCartTab(value as typeof cartTab)} className="flex flex-col flex-1 min-h-0 h-full">
-                <TabsList className="flex h-auto min-h-[2.75rem] w-full flex-shrink-0 flex-nowrap gap-1 overflow-x-auto rounded-lg bg-muted/50 p-1 scrollbar-hide">
+          <Card className="flex h-full min-h-0 flex-1 flex-col gap-0 py-0 lg:min-h-[650px] lg:max-h-[calc(100vh-4rem)]">
+            <CardContent className="flex min-h-0 flex-1 flex-col space-y-1 overflow-hidden px-2 pt-2 pb-1.5 sm:px-3 sm:pb-2">
+              <Tabs value={cartTab} onValueChange={(value) => setCartTab(value as typeof cartTab)} className="flex flex-col flex-1 min-h-0 h-full gap-1">
+                <TabsList className="flex h-auto min-h-[2.25rem] w-full flex-shrink-0 flex-nowrap gap-0.5 overflow-x-auto rounded-md bg-muted/50 p-0.5 scrollbar-hide">
                   <TabsTrigger
                   value="client"
-                  className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium whitespace-normal transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:gap-2 sm:px-4"
+                  className="flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium whitespace-normal transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:gap-1.5 sm:px-3 sm:text-xs"
                   >
-                    <User className="h-4 w-4 shrink-0" />
+                    <User className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                     <span className="truncate">Cliente</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="service"
-                    className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium whitespace-normal transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:gap-2 sm:px-4"
+                    className="flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium whitespace-normal transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:gap-1.5 sm:px-3 sm:text-xs"
                   >
-                    <Handshake className="h-4 w-4 shrink-0" />
+                    <Handshake className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                     <span className="truncate sm:hidden">Atend.</span>
                     <span className="hidden truncate sm:inline">Atendimento</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="payment"
-                    className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium whitespace-normal transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:gap-2 sm:px-4"
+                    className="flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium whitespace-normal transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:gap-1.5 sm:px-3 sm:text-xs"
                   >
-                    <CreditCardIcon className="h-4 w-4 shrink-0" />
+                    <CreditCardIcon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                     <span className="truncate sm:hidden">Pag.</span>
                     <span className="hidden truncate sm:inline">Pagamento</span>
                   </TabsTrigger>
                   <TabsTrigger
                   value="items"
-                  className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium whitespace-normal transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:gap-2 sm:px-4"
+                  className="flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium whitespace-normal transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:gap-1.5 sm:px-3 sm:text-xs"
                   >
-                    <ShoppingCartIcon className="h-4 w-4 shrink-0" />
+                    <ShoppingCartIcon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                     <span className="truncate sm:hidden">Carr.</span>
                     <span className="hidden truncate sm:inline">Carrinho</span>
                   </TabsTrigger>
                 </TabsList>
-                <div className="mt-2 min-h-0 flex-1 overflow-y-auto pr-1 sm:pr-3">
+                <div className="min-h-0 flex-1 overflow-y-auto pr-0.5 sm:pr-1">
                   {/* Aba: Tipo de Atendimento */}
-                  <TabsContent value="service" className="mt-0 h-full">
+                  <TabsContent value="service" className="space-y-3">
                     <div className="space-y-3 h-full flex flex-col">
                       <OrderStatusGuard
                         status={
@@ -2950,7 +2907,7 @@ const handleClientChange = (value: string) => {
                   </TabsContent>
 
                   {/* Aba: Cliente */}
-                  <TabsContent value="client" className="mt-0 h-full">
+                  <TabsContent value="client" className="space-y-3">
                     <div className="space-y-3 h-full flex flex-col">
                       <OrderStatusGuard
                         status={editingOrder?.status || editingOrder?.order_status?.name || currentOrder?.status || currentOrder?.order_status?.name}
@@ -3051,7 +3008,7 @@ const handleClientChange = (value: string) => {
                   </TabsContent>
 
                   {/* Aba: Forma de Pagamento */}
-                  <TabsContent value="payment" className="mt-0 h-full">
+                  <TabsContent value="payment" className="space-y-3">
                     <div className="space-y-3 h-full flex flex-col">
                       {(() => {
                         // Determinar o status do pedido atual para proteção de edição
@@ -3258,55 +3215,53 @@ const handleClientChange = (value: string) => {
                   </TabsContent>
 
                   {/* Aba: Carrinho (Itens e Notas) */}
-                  <TabsContent value="items" className="mt-0 flex h-full min-h-0 flex-col">
-                    <div className="flex min-h-0 flex-1 flex-col gap-3 rounded-lg p-1 sm:p-2">
-                      {/* Itens do carrinho */}
-                      <OrderStatusGuard
-                        status={
-                          editingOrder?.status ||
-                          editingOrder?.order_status?.name ||
-                          currentOrder?.status ||
-                          currentOrder?.order_status?.name
-                        }
-                        showAlert={false}
-                        allowViewOnly={true}
-                      >
-                        <div className="flex min-h-0 flex-1 flex-col gap-2">
-                          <div className="flex flex-shrink-0 items-center gap-2 pb-1">
-                            <ShoppingCartIcon className="h-4 w-4 text-primary" />
-                            <p className="text-sm font-bold">
-                              Itens selecionados
-                            </p>
-                            {cart.length > 0 && (
-                              <Badge>
-                                {cart.length}
-                              </Badge>
-                            )}
-                          </div>
-                          <OrderItemsList
-                            className="min-h-[120px] flex-1"
-                            items={cart as any}
-                            getUnitPrice={getCartItemUnitPrice as any}
-                            formatCurrency={formatCurrency}
-                            onIncrease={(signature) => updateItemQuantity(signature, 1)}
-                            onDecrease={(signature) => updateItemQuantity(signature, -1)}
-                            onRemove={removeItem}
-                            onObservationChange={updateItemObservation}
-                            addingItem={addingItem}
-                            removingItem={removingItem}
-                          />
+                  <TabsContent value="items" className="space-y-2">
+                    {/* Itens do carrinho */}
+                    <OrderStatusGuard
+                      status={
+                        editingOrder?.status ||
+                        editingOrder?.order_status?.name ||
+                        currentOrder?.status ||
+                        currentOrder?.order_status?.name
+                      }
+                      showAlert={false}
+                      allowViewOnly={true}
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <ShoppingCartIcon className="h-3.5 w-3.5 text-primary" />
+                          <p className="text-xs font-semibold">
+                            Itens selecionados
+                          </p>
+                          {cart.length > 0 && (
+                            <Badge className="h-5 px-1.5 text-[10px]">
+                              {cart.length}
+                            </Badge>
+                          )}
                         </div>
-                      </OrderStatusGuard>
-
-                      {/* Total e Subtotal - dentro da aba Itens */}
-                      <div className="pt-2 border-t">
-                        <OrderTotals
-                          subtotal={orderTotal}
-                          taxes={0}
-                          discounts={0}
+                        <OrderItemsList
+                          items={cart as any}
+                          getUnitPrice={getCartItemUnitPrice as any}
                           formatCurrency={formatCurrency}
+                          onIncrease={(signature) => updateItemQuantity(signature, 1)}
+                          onDecrease={(signature) => updateItemQuantity(signature, -1)}
+                          onRemove={removeItem}
+                          onObservationChange={updateItemObservation}
+                          addingItem={addingItem}
+                          removingItem={removingItem}
                         />
                       </div>
+                    </OrderStatusGuard>
+
+                    {/* Total e Subtotal - dentro da aba Itens */}
+                    <div className="border-t pt-2">
+                      <OrderTotals
+                        subtotal={orderTotal}
+                        taxes={0}
+                        discounts={0}
+                        formatCurrency={formatCurrency}
+                      />
+                    </div>
 
                       {/* Resumo do Pagamento - dentro da aba Itens */}
                       {(() => {
@@ -3341,7 +3296,7 @@ const handleClientChange = (value: string) => {
                         }
 
                         return (
-                          <div className="pt-2 border-t">
+                          <div className="border-t pt-1.5">
                             <PaymentSummary
                               items={paymentItems}
                               orderTotal={orderTotal}
@@ -3362,10 +3317,10 @@ const handleClientChange = (value: string) => {
                         showAlert={false}
                         allowViewOnly={true}
                       >
-                        <div className="space-y-2 pt-2 border-t">
-                          <div className="flex items-center gap-2 pb-1">
-                            <NotebookPen className="h-4 w-4 text-muted-foreground" />
-                            <p className="text-xs font-semibold text-foreground">
+                        <div className="space-y-1 border-t pt-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <NotebookPen className="h-3.5 w-3.5 text-muted-foreground" />
+                            <p className="text-[11px] font-semibold text-foreground">
                               Observações do Pedido
                             </p>
                           </div>
@@ -3376,18 +3331,17 @@ const handleClientChange = (value: string) => {
                           />
                         </div>
                       </OrderStatusGuard>
-                    </div>
                   </TabsContent>
                 </div>
               </Tabs>
               
               {/* Seção fixa - Pagamento, Botões */}
-              <div className="flex-shrink-0 space-y-1.5 pt-1.5 border-t">
+              <div className="flex-shrink-0 space-y-1 border-t pt-1">
               {/* Ações do Pedido */}
               {(orderStarted || editingOrder) && (
                 <>
                   {/* Botão para ocultar/exibir ações */}
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between">
                     <p className="text-xs font-medium text-muted-foreground">Ações do Pedido</p>
                     <Button
                       variant="ghost"
@@ -3466,9 +3420,9 @@ const handleClientChange = (value: string) => {
               )}
 
                 {/* Resumo Financeiro - Quantidade de itens e troco */}
-              <div className="rounded-lg border bg-muted/50 p-3 space-y-2">
+              <div className="space-y-1 rounded-md border bg-muted/50 p-2">
                 {/* Quantidade de itens */}
-                <div className="flex items-center justify-between text-xs text-muted-foreground pb-1.5 border-b">
+                <div className="flex items-center justify-between border-b pb-1 text-[11px] text-muted-foreground">
                   <span>Itens</span>
                   <span className="font-medium">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
                 </div>
@@ -3561,7 +3515,7 @@ const handleClientChange = (value: string) => {
                       showAlert={false}
                       allowViewOnly={true}
                     >
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-2">
                         {/* Botão Iniciar Pedido - aparece apenas quando o pedido não foi iniciado */}
                         {!orderStarted && !editingOrder && (
                           <Button
@@ -3644,13 +3598,13 @@ const handleClientChange = (value: string) => {
                       allowViewOnly={true}
                     >
                       {cart.length > 0 && (
-                          <div className="pt-2 border-t">
+                          <div className="border-t pt-1.5">
                           <Button
                             variant="outline"
                             onClick={clearCart}
-                            className="w-full h-12 rounded-2xl text-base text-destructive hover:text-destructive hover:bg-destructive/10"
+                            className="h-9 w-full rounded-lg text-sm text-destructive hover:bg-destructive/10 hover:text-destructive"
                           >
-                            <Trash2 className="mr-2 h-5 w-5" />
+                            <Trash2 className="mr-1.5 h-4 w-4" />
                             Limpar carrinho
                           </Button>
                         </div>

@@ -98,14 +98,15 @@ export function HeroSection() {
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="text-base sm:text-lg px-8 py-7 border-2 border-border/60 hover:border-primary/40 hover:bg-primary/5 hover:scale-105 transition-all duration-300"
-              asChild
-            >
-              <Link href="/login">Fazer Login</Link>
-            </Button>
+            <Link href="/auth/login" className="cursor-pointer">
+              <Button
+                variant="outline"
+                size="lg"
+                className="text-base sm:text-lg px-8 py-7 border-2 border-border/60 hover:border-primary/40 hover:bg-primary/5 hover:scale-105 transition-all duration-300 cursor-pointer"
+              >
+                Fazer Login
+              </Button>
+            </Link>
           </div>
 
           <p className="mt-4 text-sm text-muted-foreground animate-in fade-in duration-1500">

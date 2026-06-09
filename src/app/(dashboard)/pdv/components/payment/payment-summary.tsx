@@ -27,14 +27,14 @@ export function PaymentSummary({
   const change = totalPaid > orderTotal ? totalPaid - orderTotal : 0
 
   return (
-    <div className={cn("space-y-3", className)}>
-      <div className="space-y-2">
-        <h4 className="text-sm font-semibold">Resumo do Pagamento</h4>
-        <div className="space-y-1.5">
+    <div className={cn("space-y-2", className)}>
+      <div className="space-y-1">
+        <h4 className="text-xs font-semibold">Resumo do Pagamento</h4>
+        <div className="space-y-1">
           {items.map((item, index) => (
             <div
               key={`${item.method.uuid}-${index}`}
-              className="flex items-center justify-between text-sm"
+              className="flex items-center justify-between text-xs"
             >
               <span className="text-muted-foreground">{item.method.name}:</span>
               <span className="font-medium">{formatCurrency(item.amount)}</span>
@@ -45,29 +45,29 @@ export function PaymentSummary({
 
       <Separator />
 
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between text-sm">
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">Total do pedido:</span>
           <span className="font-semibold">{formatCurrency(orderTotal)}</span>
         </div>
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">Total pago:</span>
           <span className="font-semibold">{formatCurrency(totalPaid)}</span>
         </div>
         {remaining > 0 && (
-          <div className="flex items-center justify-between text-sm text-amber-600 dark:text-amber-400">
+          <div className="flex items-center justify-between text-xs text-amber-600 dark:text-amber-400">
             <span>Faltando:</span>
             <span className="font-semibold">{formatCurrency(remaining)}</span>
           </div>
         )}
         {change > 0 && (
-          <div className="flex items-center justify-between text-sm text-green-600 dark:text-green-400">
+          <div className="flex items-center justify-between text-xs text-green-600 dark:text-green-400">
             <span>Troco:</span>
             <span className="font-semibold">{formatCurrency(change)}</span>
           </div>
         )}
         {remaining === 0 && change === 0 && (
-          <div className="flex items-center justify-between text-sm text-green-600 dark:text-green-400">
+          <div className="flex items-center justify-between text-xs text-green-600 dark:text-green-400">
             <span>Status:</span>
             <span className="font-semibold">Pago</span>
           </div>

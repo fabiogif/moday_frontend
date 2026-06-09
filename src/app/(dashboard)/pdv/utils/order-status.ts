@@ -24,6 +24,15 @@ export type IntermediateStatus = (typeof INTERMEDIATE_STATUSES)[number]
 
 export type OrderStatus = FinalStatus | IntermediateStatus | string
 
+function normalizeStatusName(statusName: string | null | undefined): string {
+  if (!statusName) return ""
+  const normalized = statusName.trim()
+  if (normalized.includes("/")) {
+    return normalized.split("/")[0].trim()
+  }
+  return normalized
+}
+
 /**
  * Verifica se um status é final (não pode ser editado)
  */
@@ -62,7 +71,12 @@ export function canFinalizeOrder(
   status: string | null | undefined
 ): boolean {
   if (!status) return false
-  const allowedStatuses: string[] = ["Pronto", "Em Entrega"]
+  const allowedStatuses: string[] = [
+    "Pronto",
+    "Pronto para Expedição",
+    "Aguardando Entregador",
+    "Em Entrega",
+  ]
   return allowedStatuses.includes(status) && !isFinalStatus(status)
 }
 
@@ -87,9 +101,13 @@ export function getStatusColor(status: string | null | undefined): string {
     case "Pendente":
       return "yellow"
     case "Preparando":
+    case "Em Preparação":
       return "blue"
     case "Pronto":
+    case "Pronto para Expedição":
       return "green"
+    case "Aguardando Entregador":
+      return "violet"
     case "Em Entrega":
       return "purple"
     case "Entregue":
@@ -115,7 +133,10 @@ export function getStatusDescription(
   const descriptions: Record<string, string> = {
     Pendente: "Aguardando processamento",
     Preparando: "Em preparação",
+    "Em Preparação": "Em preparação",
     Pronto: "Pronto para entrega/retirada",
+    "Pronto para Expedição": "Pronto para expedição ou retirada",
+    "Aguardando Entregador": "Aguardando coleta pelo entregador",
     "Em Entrega": "Saiu para entrega",
     Entregue: "Pedido entregue",
     Concluído: "Pedido concluído",
@@ -136,14 +157,35 @@ export function getNextStatus(
   if (!currentStatus) return null
   if (isFinalStatus(currentStatus)) return null
 
-  const statusFlow: Record<string, string> = {
+  const normalized = normalizeStatusName(currentStatus)
+
+  const flowPatterns: Record<string, string[]> = {
+    "Pedido Recebido": ["Confirmado", "Em Preparação"],
+    Confirmado: ["Em Preparação"],
+    "Em Preparação": ["Pronto para Expedição", "Pronto"],
+    "Pronto para Expedição": isDelivery
+      ? ["Aguardando Entregador", "Em Entrega"]
+      : ["Entregue"],
+    Pronto: isDelivery
+      ? ["Aguardando Entregador", "Em Entrega"]
+      : ["Entregue"],
+    "Aguardando Entregador": ["Em Entrega"],
+    "Em Entrega": ["Entregue"],
+  }
+
+  const candidates = flowPatterns[normalized]
+  if (candidates?.length) {
+    return candidates[0]
+  }
+
+  const legacyFlow: Record<string, string> = {
     Pendente: "Preparando",
     Preparando: "Pronto",
     Pronto: isDelivery ? "Em Entrega" : "Entregue",
     "Em Entrega": "Entregue",
   }
 
-  return statusFlow[currentStatus] || null
+  return legacyFlow[currentStatus] || legacyFlow[normalized] || null
 }
 
 /**
@@ -154,15 +196,5 @@ export function getNextStatusName(
   isDelivery: boolean = false
 ): string | null {
   const nextStatus = getNextStatus(currentStatus, isDelivery)
-  if (!nextStatus) return null
-
-  const statusNames: Record<string, string> = {
-    Preparando: "Preparando",
-    Pronto: "Pronto",
-    "Em Entrega": "Em Entrega",
-    Entregue: "Entregue",
-  }
-
-  return statusNames[nextStatus] || nextStatus
+  return nextStatus
 }
-

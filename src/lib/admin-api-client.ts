@@ -399,7 +399,9 @@ class AdminApiClient {
   // ============================================================================
 
   async sendBulkEmail(data: {
-    tenant_ids: number[]
+    tenant_ids?: number[]
+    send_to_tenants?: boolean
+    send_to_newsletter?: boolean
     subject: string
     message: string
   }) {
@@ -407,6 +409,10 @@ class AdminApiClient {
       method: 'POST',
       body: JSON.stringify(data),
     })
+  }
+
+  async getNewsletterSubscribers() {
+    return this.request('/email/newsletter-subscribers')
   }
 
   async getEmailHistory(limit = 50) {

@@ -84,9 +84,11 @@ export function LandingNavbar() {
         {/* Desktop CTA */}
         <div className="hidden xl:flex items-center space-x-2">
           <ModeToggle variant="ghost" />
-          <Button variant="ghost" asChild className="cursor-pointer">
-            <Link href="/login">Login</Link>
-          </Button>
+          <Link href="/auth/login" className="cursor-pointer">
+            <Button variant="ghost" className="cursor-pointer">
+              Login
+            </Button>
+          </Link>
           <Button asChild className="cursor-pointer bg-gradient-to-r from-primary to-violet-600 hover:from-primary/90 hover:to-violet-600/90 shadow-md shadow-primary/20">
             <Link href="/auth/register" onClick={() => trackCTA('/auth/register')}>
               {TRIAL_CTA_LABEL}
@@ -153,9 +155,15 @@ export function LandingNavbar() {
                 {/* Primary Actions */}
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <Button variant="outline" size="lg" asChild className="cursor-pointer">
-                      <Link href="/login">Login</Link>
-                    </Button>
+                    <Link
+                      href="/auth/login"
+                      className="cursor-pointer"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <Button variant="outline" size="lg" className="w-full cursor-pointer">
+                        Login
+                      </Button>
+                    </Link>
                     <Button asChild size="lg" className="cursor-pointer bg-gradient-to-r from-primary to-violet-600">
                       <Link href="/auth/register" onClick={() => trackCTA('/auth/register')}>
                         {TRIAL_CTA_LABEL}

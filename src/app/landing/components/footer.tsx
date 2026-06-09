@@ -1,12 +1,15 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AlbaTecLogo } from '@/components/albatec-logo'
+import { toast } from 'sonner'
+import { Loader2 } from 'lucide-react'
 import {
   Form,
   FormControl,
@@ -33,6 +36,8 @@ const footerLinks = {
 }
 
 export function LandingFooter() {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   const form = useForm<z.infer<typeof newsletterSchema>>({
     resolver: zodResolver(newsletterSchema),
     defaultValues: {
@@ -40,11 +45,31 @@ export function LandingFooter() {
     },
   })
 
-  function onSubmit(values: z.infer<typeof newsletterSchema>) {
-    // Here you would typically send the email to your newsletter service
+  async function onSubmit(values: z.infer<typeof newsletterSchema>) {
+    setIsSubmitting(true)
 
-    // Show success message and reset form
-    form.reset()
+    try {
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Erro ao realizar inscrição')
+      }
+
+      toast.success(data.message || 'Inscrição realizada com sucesso!')
+      form.reset()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao realizar inscrição')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -75,7 +100,16 @@ export function LandingFooter() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="cursor-pointer">Inscrever</Button>
+                <Button type="submit" className="cursor-pointer" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    'Inscrever'
+                  )}
+                </Button>
               </form>
             </Form>
           </div>

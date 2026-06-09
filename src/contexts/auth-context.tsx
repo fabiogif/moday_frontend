@@ -114,9 +114,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
 
       const path = window.location.pathname + window.location.search
-      const loginPath = path && !path.startsWith('/login')
-        ? `/login?redirect=${encodeURIComponent(path)}`
-        : '/login'
+      const loginPath = path && !path.startsWith('/auth/login') && !path.startsWith('/login')
+        ? `/auth/login?redirect=${encodeURIComponent(path)}`
+        : '/auth/login'
       window.location.href = loginPath
     }
 
@@ -284,6 +284,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       // Limpar cookie
       document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+
+      window.location.href = '/auth/login'
     }
   }
 

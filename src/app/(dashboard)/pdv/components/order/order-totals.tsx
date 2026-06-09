@@ -23,8 +23,8 @@ export function OrderTotals({
   }, [subtotal, taxes, discounts])
 
   return (
-    <div className={cn("rounded-lg border bg-muted/30 px-4 py-3 space-y-2", className)}>
-      <div className="flex items-center justify-between text-sm">
+    <div className={cn("rounded-md border bg-muted/30 px-2.5 py-2 space-y-1", className)}>
+      <div className="flex items-center justify-between text-xs">
         <span className="text-muted-foreground">Subtotal</span>
         <span className="tabular-nums font-medium text-foreground">
           {formatCurrency(subtotal)}
@@ -49,9 +49,9 @@ export function OrderTotals({
         </div>
       )}
 
-      <div className="flex items-center justify-between border-t pt-2 mt-1">
-        <span className="text-sm font-semibold text-foreground">Total</span>
-        <span className="text-xl font-bold text-primary tabular-nums">
+      <div className="mt-0.5 flex items-center justify-between border-t pt-1.5">
+        <span className="text-xs font-semibold text-foreground">Total</span>
+        <span className="text-base font-bold text-primary tabular-nums sm:text-lg">
           {formatCurrency(finalTotal)}
         </span>
       </div>

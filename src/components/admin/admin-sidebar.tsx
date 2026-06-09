@@ -12,13 +12,13 @@ import {
   Building2,
   BarChart3,
   DollarSign,
-  MessageSquare,
   TrendingUp,
   Activity,
   LogOut,
   Users,
   CreditCard,
   UserCog,
+  Mail,
 } from 'lucide-react'
 
 const menuItems = [
@@ -38,6 +38,11 @@ const menuItems = [
     icon: CreditCard,
   },
   {
+    title: 'Informativo',
+    href: '/admin/informativo',
+    icon: Mail,
+  },
+  {
     title: 'Meu Perfil',
     href: '/admin/perfil',
     icon: UserCog,
@@ -49,7 +54,6 @@ const menuItems = [
       { title: 'Faturamento', href: '/admin/metricas/faturamento', icon: DollarSign },
       { title: 'Uso', href: '/admin/metricas/uso', icon: Activity },
       { title: 'Crescimento', href: '/admin/metricas/crescimento', icon: TrendingUp },
-      { title: 'Mensagens', href: '/admin/metricas/mensagens', icon: MessageSquare },
     ],
   },
 ]

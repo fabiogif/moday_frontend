@@ -24,7 +24,7 @@ export function OrderNotes({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="min-h-[50px] rounded-lg text-sm resize-none"
+        className="min-h-[36px] rounded-md px-2 py-1.5 text-xs resize-none"
       />
     </div>
   )
