@@ -132,8 +132,9 @@ export function AccountPayableFormDialog({
               <div>
                 <Label htmlFor="financial_category_id">Categoria</Label>
                 <Select
+                  value={watch('financial_category_id')?.toString()}
                   onValueChange={(value) => setValue('financial_category_id', parseInt(value))}
-                  defaultValue={account?.category?.id?.toString()}
+                  disabled={categories.length === 0}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma categoria" />

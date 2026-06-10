@@ -278,6 +278,7 @@ export default function AccountsPayablePage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Descrição</TableHead>
+                  <TableHead>Categoria</TableHead>
                   <TableHead>Fornecedor</TableHead>
                   <TableHead>Vencimento</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
@@ -294,6 +295,15 @@ export default function AccountsPayablePage() {
                         <span className="text-xs text-muted-foreground ml-2">
                           ({account.installment_number}/{account.total_installments})
                         </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {account.category ? (
+                        <Badge variant="outline" style={{ borderColor: account.category.color }}>
+                          {account.category.name}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell>

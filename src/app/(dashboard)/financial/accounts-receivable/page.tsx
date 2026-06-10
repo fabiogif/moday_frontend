@@ -259,6 +259,7 @@ export default function AccountsReceivablePage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Descrição</TableHead>
+                  <TableHead>Categoria</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Vencimento</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
@@ -284,6 +285,15 @@ export default function AccountsReceivablePage() {
                           </span>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {account.category ? (
+                        <Badge variant="outline" style={{ borderColor: account.category.color }}>
+                          {account.category.name}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {account.client?.name || '-'}

@@ -192,8 +192,9 @@ export function AccountReceivableFormDialog({
               <div>
                 <Label htmlFor="financial_category_id">Categoria</Label>
                 <Select
+                  value={watch('financial_category_id')?.toString()}
                   onValueChange={(value) => setValue('financial_category_id', parseInt(value))}
-                  defaultValue={account?.category?.id?.toString()}
+                  disabled={categories.length === 0}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma categoria" />
@@ -206,6 +207,11 @@ export function AccountReceivableFormDialog({
                     ))}
                   </SelectContent>
                 </Select>
+                {categories.length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Cadastre categorias do tipo Receita em Financeiro → Categorias.
+                  </p>
+                )}
               </div>
 
               <div>
