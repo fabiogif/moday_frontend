@@ -406,7 +406,7 @@ export function FeaturesSection() {
             <div className="relative group rounded-2xl border border-border/60 bg-card/50 overflow-hidden shadow-md hover:shadow-lg transition-shadow">
               <Image
                 src="/landing/pdv-carrinho.png"
-                alt="PDV Moday — catálogo de produtos, categorias e início de pedido"
+                alt="PDV do Alba Tec com catálogo de produtos, categorias e início de pedido"
                 width={1200}
                 height={800}
                 loading="lazy"
@@ -419,7 +419,7 @@ export function FeaturesSection() {
             <div className="relative group rounded-2xl border border-border/60 bg-card/50 overflow-hidden shadow-md hover:shadow-lg transition-shadow">
               <Image
                 src="/landing/pdv-pedido.png"
-                alt="PDV Moday — pedido em andamento com cliente, produtos e status"
+                alt="PDV do Alba Tec com pedido em andamento, cliente, produtos e status"
                 width={1200}
                 height={800}
                 loading="lazy"

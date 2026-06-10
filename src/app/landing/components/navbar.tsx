@@ -55,7 +55,7 @@ export function LandingNavbar() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-24 items-center justify-between">
         {/* Logo */}
         <div className="flex items-center space-x-2">
-          <AlbaTecLogo href="/landing" height={72} priority adaptive />
+          <AlbaTecLogo href="/" height={72} priority adaptive />
         </div>
 
         {/* Desktop Navigation */}

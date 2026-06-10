@@ -8,11 +8,20 @@ import { inter } from "@/lib/fonts";
 import { ToasterProvider } from "@/components/toaster-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalyticsHead } from "@/components/google-analytics";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: "Alba Tec - Gestão",
-  description: "Sistema de gestão para restaurantes",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME} — Gestão para Restaurantes`,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
   manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/brand/logo-alba-tec-sem-fundo.png",
+  },
 };
 
 export const viewport: Viewport = {

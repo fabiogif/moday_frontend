@@ -34,7 +34,11 @@ export function HeroSection() {
   }, [searchParams])
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-background via-primary/5 to-background pt-20 sm:pt-32 pb-20">
+    <section
+      id="inicio"
+      aria-label="Apresentação do Alba Tec, sistema de gestão para restaurantes"
+      className="relative overflow-hidden bg-gradient-to-b from-background via-primary/5 to-background pt-20 sm:pt-32 pb-20"
+    >
       <div className="absolute inset-0">
         <DotPattern className="opacity-100" size="md" fadeStyle="ellipse" />
       </div>
@@ -135,7 +139,7 @@ export function HeroSection() {
 
               <Image
                 src="/landing/dashboard-painel.png"
-                alt="Painel de Controle Moday — receita, pedidos, clientes e gráficos em tempo real"
+                alt="Painel do Alba Tec com receita, pedidos, clientes e gráficos em tempo real"
                 width={1400}
                 height={900}
                 className="w-full rounded-2xl object-cover object-top"

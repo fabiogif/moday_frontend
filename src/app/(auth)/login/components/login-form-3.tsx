@@ -89,7 +89,7 @@ export function LoginForm3({
           >
             <div className="mx-auto w-full max-w-sm flex flex-col gap-7">
               <div className="flex flex-col items-center gap-4 text-center">
-                <AlbaTecLogo href="/landing" variant="full" height={80} adaptive />
+                <AlbaTecLogo href="/" variant="full" height={80} adaptive />
                 <div>
                   <h1 className="text-2xl font-bold tracking-tight">Bem-vindo de volta</h1>
                   <p className="text-muted-foreground text-sm mt-1.5">

@@ -884,7 +884,7 @@ export default function DemoMenuPage() {
                         Ver carrinho ({cartCount})
                       </Button>
                       <Button variant="outline" className="w-full gap-2" asChild>
-                        <Link href="/landing" onClick={() => setMobileMenuOpen(false)}>
+                        <Link href="/" onClick={() => setMobileMenuOpen(false)}>
                           <ArrowLeft className="h-4 w-4" />
                           Voltar para Landing
                         </Link>
@@ -938,7 +938,7 @@ export default function DemoMenuPage() {
               </Button>
 
               <Button variant="ghost" className="gap-2" asChild>
-                <Link href="/landing">
+                <Link href="/">
                   <ArrowLeft className="h-4 w-4" />
                   Voltar
                 </Link>
