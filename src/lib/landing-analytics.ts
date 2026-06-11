@@ -5,6 +5,8 @@ export type LandingCTAEvent =
   | 'cta_pricing_click'
   | 'cta_final_click'
   | 'cta_features_click'
+  | 'cta_operacao_flow_click'
+  | 'cta_financeiro_flow_click'
 
 type LandingAnalyticsPayload = {
   event: LandingCTAEvent

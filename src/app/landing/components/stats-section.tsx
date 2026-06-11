@@ -64,32 +64,28 @@ const stats = [
 
 export function StatsSection() {
   return (
-    <section className="py-20 sm:py-24 relative overflow-hidden">
-      {/* Background with gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5" />
-      <DotPattern className="opacity-30" size="md" fadeStyle="circle" />
-      
-      {/* Decorative elements */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -z-10" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl -z-10" />
+    <section className="relative overflow-hidden bg-[#0a0a0f] py-20 sm:py-24">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-1/2 top-0 h-[400px] w-[600px] -translate-x-1/2 rounded-full bg-violet-600/10 blur-[100px]" />
+      </div>
+      <DotPattern className="opacity-10" size="md" fadeStyle="circle" />
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
-        {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+      <div className="container relative mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flow-reveal-up mb-12 text-center">
+          <h2 className="mb-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
             Números que Impressionam
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="mx-auto max-w-2xl text-lg text-white/55">
             Resultados reais de restaurantes que transformaram seus negócios com o Alba Tec
           </p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-3">
           {stats.map((stat, idx) => (
             <Card
               key={stat.label}
-              className="group relative overflow-hidden bg-background/60 backdrop-blur-sm border-border/60 hover:border-primary/40 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+              className="group relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-violet-400/30 hover:shadow-xl hover:shadow-violet-950/30 flow-reveal-up"
+              style={{ animationDelay: `${idx * 80}ms` }}
             >
               {/* Gradient overlay on hover */}
               <div className={`absolute inset-0 bg-gradient-to-br ${stat.bgColor} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
@@ -106,8 +102,8 @@ export function StatsSection() {
                     <h3 className={`text-3xl sm:text-4xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
                     {stat.value}
                   </h3>
-                    <p className="font-semibold text-foreground text-base">{stat.label}</p>
-                  <p className="text-sm text-muted-foreground">{stat.description}</p>
+                    <p className="text-base font-semibold text-white">{stat.label}</p>
+                  <p className="text-sm text-white/50">{stat.description}</p>
                   </div>
                 </div>
               </CardContent>

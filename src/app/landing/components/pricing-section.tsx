@@ -203,11 +203,12 @@ export function PricingSection() {
                 <div
                   key={plan.url || `plan-${index}`}
                   className={cn(
-                    'relative flex flex-1 min-w-0 flex-col rounded-2xl border p-5 xl:p-6 transition-all duration-200',
+                    'relative flex flex-1 min-w-0 flex-col rounded-2xl border p-5 xl:p-6 transition-all duration-200 flow-reveal-up hover:-translate-y-1',
                     popular
                       ? 'border-primary/30 bg-gradient-to-b from-primary/10 via-primary/5 to-background shadow-xl shadow-primary/10 ring-1 ring-primary/20'
                       : 'border-border bg-card hover:border-primary/20 hover:shadow-lg'
                   )}
+                  style={{ animationDelay: `${index * 100}ms` }}
                 >
                   {popular && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">

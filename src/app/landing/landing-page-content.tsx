@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import { LandingNavbar } from './components/navbar'
 import { HeroSection } from './components/hero-section'
 import { StatsSection } from './components/stats-section'
+import { OperationFlowSection, FinanceFlowSection } from './components/landing-flow-sections'
 import { FeaturesSection } from './components/features-section'
 import { DemoMenuCTA } from './components/demo-menu-cta'
 import { PricingSection } from './components/pricing-section'
@@ -45,6 +46,8 @@ export function LandingPageContent() {
         </Suspense>
         <TrustBadges />
         <StatsSection />
+        <OperationFlowSection />
+        <FinanceFlowSection />
         <FeaturesSection />
         <DemoMenuCTA />
         <TestimonialsSection />

@@ -41,4 +41,11 @@ describe('HeroSection', () => {
     const registerLink = screen.getByRole('link', { name: /teste grátis por 7 dias/i })
     expect(registerLink).toHaveAttribute('href', '/auth/register')
   })
+
+  it('deve exibir animação do produto com pedidos em tempo real', () => {
+    render(<HeroSection />)
+    expect(screen.getByText('Pedidos em tempo real')).toBeInTheDocument()
+    expect(screen.getByText('Saldo do mês')).toBeInTheDocument()
+    expect(screen.getByText('#2848 confirmado')).toBeInTheDocument()
+  })
 })

@@ -25,11 +25,12 @@ import {
   Wallet,
   Zap
 } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { LandingScreenshot } from '@/app/landing/components/landing-screenshot'
+import { DashboardFlowAnimation } from '@/app/landing/components/dashboard-flow-animation'
+import { FinanceFlowAnimation } from '@/app/landing/components/finance-flow-animation'
+import { PdvFlowAnimation } from '@/app/landing/components/pdv-flow-animation'
 import { TRIAL_CTA_LABEL } from '@/lib/landing-copy'
 import { useLandingCTAClick } from '@/hooks/use-landing-cta-click'
 
@@ -207,11 +208,9 @@ export function FeaturesSection() {
 
         {/* First Feature Section */}
         <div className="grid items-center gap-16 lg:grid-cols-2 lg:gap-12 xl:gap-20 mb-32">
-          {/* Left Image */}
-          <LandingScreenshot
-            src="/landing/dashboard-painel.png"
-            alt="Painel de Controle — receita total, clientes ativos, volume de pedidos e gráficos"
-          />
+          <div className="flow-reveal-up">
+            <DashboardFlowAnimation />
+          </div>
           
           {/* Right Content */}
           <div className="space-y-8">
@@ -377,13 +376,8 @@ export function FeaturesSection() {
             </div>
           </div>
 
-          {/* Right Image */}
-          <div className="order-1 lg:order-2">
-            <LandingScreenshot
-              src="/landing/financeiro-painel.png"
-              alt="Painel Financeiro — contas a receber, a pagar, despesas e fluxo de caixa"
-              glowClassName="from-emerald-500/20 to-green-500/20"
-            />
+          <div className="order-1 lg:order-2 flow-reveal-up">
+            <FinanceFlowAnimation />
           </div>
         </div>
 
@@ -402,33 +396,8 @@ export function FeaturesSection() {
             </p>
           </div>
 
-          <div className="grid gap-6 lg:gap-8 md:grid-cols-2 mb-12">
-            <div className="relative group rounded-2xl border border-border/60 bg-card/50 overflow-hidden shadow-md hover:shadow-lg transition-shadow">
-              <Image
-                src="/landing/pdv-carrinho.png"
-                alt="PDV do Alba Tec com catálogo de produtos, categorias e início de pedido"
-                width={1200}
-                height={800}
-                loading="lazy"
-                className="w-full h-auto object-cover object-top"
-              />
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/95 via-background/80 to-transparent px-4 py-3">
-                <p className="text-sm font-medium text-foreground">Catálogo visual e início rápido de pedido</p>
-              </div>
-            </div>
-            <div className="relative group rounded-2xl border border-border/60 bg-card/50 overflow-hidden shadow-md hover:shadow-lg transition-shadow">
-              <Image
-                src="/landing/pdv-pedido.png"
-                alt="PDV do Alba Tec com pedido em andamento, cliente, produtos e status"
-                width={1200}
-                height={800}
-                loading="lazy"
-                className="w-full h-auto object-cover object-top"
-              />
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/95 via-background/80 to-transparent px-4 py-3">
-                <p className="text-sm font-medium text-foreground">Pedido em andamento com cliente e pagamento</p>
-              </div>
-            </div>
+          <div className="mb-12 flow-reveal-up">
+            <PdvFlowAnimation />
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
