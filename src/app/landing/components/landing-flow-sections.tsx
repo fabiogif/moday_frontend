@@ -1,3 +1,5 @@
+"use client"
+
 import { Mail, ShoppingCart, UserPlus, Wallet, BarChart3, FileText } from 'lucide-react'
 import { LandingFlowSection } from './landing-flow-section'
 import { OperationFlowAnimation } from './operation-flow-animation'
