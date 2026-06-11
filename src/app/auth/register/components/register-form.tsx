@@ -83,7 +83,7 @@ export function RegisterForm({
 }) {
   const router = useRouter()
   const { toast } = useToast()
-  const { login, setTrialStatus } = useAuth()
+  const { setUser, setToken, setTrialStatus } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [plans, setPlans] = useState<Plan[]>([])
   const [loadingPlans, setLoadingPlans] = useState(true)
@@ -174,14 +174,20 @@ export function RegisterForm({
         const { token, user } = response.data
         
         if (token) {
-          apiClient.setToken(token)
+          setToken(token)
+          setUser({
+            id: String(user.id),
+            name: user.name,
+            email: user.email,
+            tenant_id: user.tenant?.id ? String(user.tenant.id) : undefined,
+            tenant: user.tenant
+              ? { uuid: user.tenant.uuid, name: user.tenant.name }
+              : undefined,
+          })
 
           if (response.data.trial_status) {
             setTrialStatus(response.data.trial_status)
           }
-          
-          // Fazer login automático usando o contexto de autenticação
-          await login(user.email, data.password)
 
           toast({
             title: "Cadastro realizado!",
