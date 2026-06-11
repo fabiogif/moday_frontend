@@ -317,6 +317,10 @@ export const endpoints = {
     register: '/api/auth/register',
     logout: '/api/auth/logout',
     me: '/api/auth/me',
+    forgotPassword: '/api/auth/forgot-password',
+    resetPassword: '/api/auth/reset-password',
+    adminForgotPassword: '/api/admin/auth/forgot-password',
+    adminResetPassword: '/api/admin/auth/reset-password',
   },
   
   // Produtos

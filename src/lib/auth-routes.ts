@@ -12,6 +12,8 @@ const PUBLIC_PREFIXES = [
   '/demo/',
   '/auth/',
   '/admin/login',
+  '/admin/forgot-password',
+  '/admin/reset-password',
   '/sign-up',
   '/sign-in',
   '/forgot-password',

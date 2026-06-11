@@ -38,6 +38,10 @@ describe('Admin Login Page', () => {
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/senha/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /esqueceu a senha/i })).toHaveAttribute(
+      'href',
+      '/admin/forgot-password',
+    )
   })
 
   it('should validate required fields', async () => {

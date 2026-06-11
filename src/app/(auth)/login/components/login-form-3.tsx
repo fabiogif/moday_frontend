@@ -19,7 +19,7 @@ import { AlbaTecLogo } from "@/components/albatec-logo"
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
-  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  password: z.string().min(1, "Senha é obrigatória"),
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
@@ -117,7 +117,7 @@ export function LoginForm3({
                 <div className="flex items-center">
                   <Label htmlFor="password">Senha</Label>
                   <Link
-                    href="/forgot-password-3"
+                    href="/auth/forgot-password"
                     className="ml-auto text-sm text-primary underline-offset-2 hover:underline"
                   >
                     Esqueceu a senha?

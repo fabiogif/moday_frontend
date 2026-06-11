@@ -37,6 +37,7 @@ import { Loader2, Check } from "lucide-react"
 import { apiClient } from "@/lib/api-client"
 import { useAuth } from "@/contexts/auth-context"
 import { maskCNPJ, validateCNPJ } from "@/lib/masks"
+import { PASSWORD_MIN_LENGTH } from "@/lib/password-policy"
 import { TRIAL_DAYS } from "@/lib/subscription"
 import type { TrialStatus } from "@/contexts/auth-context"
 
@@ -48,8 +49,8 @@ const registerFormSchema = z.object({
   }),
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("Email inválido"),
-  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
-  password_confirmation: z.string().min(6, "Confirme sua senha"),
+  password: z.string().min(PASSWORD_MIN_LENGTH, `Senha deve ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres`),
+  password_confirmation: z.string().min(PASSWORD_MIN_LENGTH, "Confirme sua senha"),
   phone: z.string().optional(),
   plan_id: z.string().min(1, "Selecione um plano"),
   terms: z.boolean().refine(val => val === true, "Você deve aceitar os termos"),

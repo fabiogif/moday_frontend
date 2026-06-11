@@ -22,6 +22,11 @@ import {
   Tag,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import {
+  computeFinancialDashboardMetrics,
+  formatFinancialCurrency,
+  parseFinancialAmount,
+} from '@/lib/financial-dashboard-metrics'
 import { cn } from '@/lib/utils'
 
 export default function FinancialDashboardPage() {
@@ -30,51 +35,20 @@ export default function FinancialDashboardPage() {
   const { data: payableStats } = useAccountPayableStats()
   const { data: receivableStats } = useAccountReceivableStats()
 
-  const parseAmount = (value: number | string | null | undefined): number => {
-    if (value === null || value === undefined) return 0
-    if (typeof value === 'number') return value
-    const raw = value.toString().trim()
-    if (!raw) return 0
-    const sanitized = raw.replace(/[^\d.,-]/g, '')
-    if (!sanitized) return 0
-    const lastComma = sanitized.lastIndexOf(',')
-    const lastDot = sanitized.lastIndexOf('.')
-    const decimalSeparator = lastComma > lastDot ? ',' : '.'
-    let normalized = sanitized
-    if (decimalSeparator === ',') {
-      normalized = normalized.replace(/\./g, '').replace(/,/g, '.')
-    } else {
-      const firstDot = sanitized.indexOf('.')
-      normalized =
-        firstDot === lastDot
-          ? sanitized.replace(/,/g, '')
-          : sanitized.replace(/,/g, '').replace(/\.(?=.*\.)/g, '')
-    }
-    const parsed = Number(normalized)
-    return Number.isNaN(parsed) ? 0 : parsed
-  }
-
-  const fmt = (value: number) =>
-    value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-
-  const totalReceivable = parseAmount(receivableStats?.total_pending) + parseAmount(receivableStats?.total_received)
-  const totalExpenses = parseAmount(expenseStats?.total_month)
-  const totalPayable = parseAmount(payableStats?.total_pending)
-  const totalOverdue = parseAmount(payableStats?.total_overdue)
-  const totalReceived = parseAmount(receivableStats?.total_received)
-  const balance = parseFloat((totalReceivable - totalExpenses - totalPayable - totalOverdue).toFixed(2))
+  const fmt = formatFinancialCurrency
+  const {
+    totalReceivable,
+    totalReceived,
+    totalExpenses,
+    totalOverdue,
+    payableTotal,
+    balance,
+    receiveProgress,
+    overduePercent,
+  } = computeFinancialDashboardMetrics(receivableStats, payableStats, expenseStats)
 
   const isHealthy = balance >= 0
   const overdueRisk = totalOverdue > 0
-
-  const receiveProgress = totalReceivable > 0
-    ? Math.min(100, Math.round((totalReceived / totalReceivable) * 100))
-    : 0
-
-  const payableTotal = totalPayable + totalOverdue
-  const overduePercent = payableTotal > 0
-    ? Math.min(100, Math.round((totalOverdue / payableTotal) * 100))
-    : 0
 
   return (
     <div className="flex flex-col gap-6 px-4 lg:px-6 pb-6">
@@ -241,7 +215,7 @@ export default function FinancialDashboardPage() {
             {[
               {
                 label: "Contas a Receber",
-                description: `${fmt(parseAmount(receivableStats?.total_pending))} pendente`,
+                description: `${fmt(parseFinancialAmount(receivableStats?.total_pending))} pendente`,
                 icon: TrendingUp,
                 color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30",
                 href: "/financial/accounts-receivable",

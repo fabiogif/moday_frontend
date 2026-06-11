@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAdminAuth } from '@/contexts/admin-auth-context'
+import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 import { AlbaTecLogo } from '@/components/albatec-logo'
 
@@ -80,7 +81,15 @@ export default function AdminLoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <div className="flex items-center">
+                <Label htmlFor="password">Senha</Label>
+                <Link
+                  href="/admin/forgot-password"
+                  className="ml-auto text-sm text-primary underline-offset-2 hover:underline"
+                >
+                  Esqueceu a senha?
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"
