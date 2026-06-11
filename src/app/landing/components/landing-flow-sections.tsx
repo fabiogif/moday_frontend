@@ -1,6 +1,5 @@
 "use client"
 
-import { Mail, ShoppingCart, UserPlus, Wallet, BarChart3, FileText } from 'lucide-react'
 import { LandingFlowSection } from './landing-flow-section'
 import { OperationFlowAnimation } from './operation-flow-animation'
 import { FinanceFlowAnimation } from './finance-flow-animation'
@@ -18,19 +17,19 @@ export function OperationFlowSection() {
       animation={<OperationFlowAnimation />}
       features={[
         {
-          icon: UserPlus,
+          icon: 'user-plus',
           title: 'Captura instantânea de clientes',
           description:
             'Registre clientes no PDV ou pelo cardápio digital. Histórico de pedidos e preferências sempre à mão.',
         },
         {
-          icon: ShoppingCart,
+          icon: 'shopping-cart',
           title: 'Pedidos unificados',
           description:
             'Balcão, mesas, delivery e iFood em um único painel. Menos erros, mais velocidade no pico de movimento.',
         },
         {
-          icon: Mail,
+          icon: 'mail',
           title: 'Comunicação automática',
           description:
             'Status do pedido atualizado em tempo real para equipe e cliente. Cozinha e salão sempre alinhados.',
@@ -54,19 +53,19 @@ export function FinanceFlowSection() {
       animation={<FinanceFlowAnimation />}
       features={[
         {
-          icon: Wallet,
+          icon: 'wallet',
           title: 'Fluxo de caixa em tempo real',
           description:
             'Acompanhe saldo projetado, contas vencidas e receitas do mês em um painel financeiro integrado ao PDV.',
         },
         {
-          icon: FileText,
+          icon: 'file-text',
           title: 'Contas a pagar e receber',
           description:
             'Organize fornecedores, categorias e vencimentos. Saiba exatamente quanto entra e quanto sai.',
         },
         {
-          icon: BarChart3,
+          icon: 'bar-chart-3',
           title: 'Relatórios que orientam',
           description:
             'Gráficos de receita, despesas e margem para tomar decisões com dados — não com achismo.',

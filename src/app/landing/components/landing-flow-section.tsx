@@ -1,15 +1,35 @@
 "use client"
 
 import Link from 'next/link'
-import { ArrowRight, type LucideIcon } from 'lucide-react'
+import {
+  ArrowRight,
+  BarChart3,
+  FileText,
+  Mail,
+  ShoppingCart,
+  UserPlus,
+  Wallet,
+  type LucideIcon,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useLandingCTAClick } from '@/hooks/use-landing-cta-click'
 import type { LandingCTAEvent } from '@/lib/landing-analytics'
 
+const FLOW_FEATURE_ICONS = {
+  'user-plus': UserPlus,
+  'shopping-cart': ShoppingCart,
+  mail: Mail,
+  wallet: Wallet,
+  'file-text': FileText,
+  'bar-chart-3': BarChart3,
+} as const satisfies Record<string, LucideIcon>
+
+export type FlowFeatureIcon = keyof typeof FLOW_FEATURE_ICONS
+
 export type FlowFeature = {
-  icon: LucideIcon
+  icon: FlowFeatureIcon
   title: string
   description: string
 }
@@ -28,13 +48,15 @@ type LandingFlowSectionProps = {
   id?: string
 }
 
-function FlowFeatureCard({ icon: Icon, title, description }: FlowFeature) {
+function FlowFeatureCard({ icon, title, description }: FlowFeature) {
+  const Icon = FLOW_FEATURE_ICONS[icon]
+
   return (
     <div className="flex gap-4 sm:gap-5">
       <div className="relative shrink-0">
         <div className="absolute -inset-1 rounded-xl bg-violet-500/20 blur-md" />
         <div className="relative flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-[#1a1a22]">
-          <Icon className="h-5 w-5 text-white" />
+          <Icon className="h-5 w-5 text-white" aria-hidden="true" />
         </div>
       </div>
       <div className="min-w-0">
