@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAdminAuth } from '@/contexts/admin-auth-context'
 import adminApi from '@/lib/admin-api-client'
 import { Button } from '@/components/ui/button'
@@ -37,6 +37,24 @@ export default function AdminPerfilPage() {
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({})
   const [savingPassword, setSavingPassword] = useState(false)
 
+  useEffect(() => {
+    if (!admin) return
+    setProfileForm({
+      name: admin.name,
+      email: admin.email,
+    })
+  }, [admin?.id, admin?.name, admin?.email])
+
+  const parseApiErrors = (err: unknown): Record<string, string> => {
+    const apiError = err as { data?: { errors?: Record<string, string[] | string> } }
+    const errors = apiError?.data?.errors ?? {}
+    const flat: Record<string, string> = {}
+    Object.entries(errors).forEach(([key, value]) => {
+      flat[key] = Array.isArray(value) ? value[0] : String(value)
+    })
+    return flat
+  }
+
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setProfileErrors({})
@@ -46,18 +64,15 @@ export default function AdminPerfilPage() {
       const response = await adminApi.updateProfile(profileForm)
       updateAdmin(response.data)
       toast({ title: 'Perfil atualizado com sucesso.' })
-    } catch (err: any) {
-      const errors = err?.data?.errors ?? {}
-      if (Object.keys(errors).length > 0) {
-        const flat: Record<string, string> = {}
-        Object.entries(errors).forEach(([k, v]) => {
-          flat[k] = Array.isArray(v) ? (v as string[])[0] : (v as string)
-        })
+    } catch (err: unknown) {
+      const flat = parseApiErrors(err)
+      if (Object.keys(flat).length > 0) {
         setProfileErrors(flat)
       } else {
+        const message = err instanceof Error ? err.message : 'Tente novamente.'
         toast({
           title: 'Erro ao atualizar perfil',
-          description: err?.message ?? 'Tente novamente.',
+          description: message,
           variant: 'destructive',
         })
       }
@@ -79,18 +94,15 @@ export default function AdminPerfilPage() {
       })
       setPasswordForm({ current_password: '', password: '', password_confirmation: '' })
       setTimeout(() => logout(), 2000)
-    } catch (err: any) {
-      const errors = err?.data?.errors ?? {}
-      if (Object.keys(errors).length > 0) {
-        const flat: Record<string, string> = {}
-        Object.entries(errors).forEach(([k, v]) => {
-          flat[k] = Array.isArray(v) ? (v as string[])[0] : (v as string)
-        })
+    } catch (err: unknown) {
+      const flat = parseApiErrors(err)
+      if (Object.keys(flat).length > 0) {
         setPasswordErrors(flat)
       } else {
+        const message = err instanceof Error ? err.message : 'Tente novamente.'
         toast({
           title: 'Erro ao alterar senha',
-          description: err?.message ?? 'Tente novamente.',
+          description: message,
           variant: 'destructive',
         })
       }
