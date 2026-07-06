@@ -30,9 +30,13 @@ export function StoreHoursBanner({ slug, onStatusChange }: StoreHoursBannerProps
 
         if (data.success) {
           setHoursData(data.data)
+          const storeHours = data.data.store_hours ?? {}
+          const hasNoHoursConfigured = Object.keys(storeHours).length === 0
           // Notificar componente pai sobre o status
           if (onStatusChange) {
-            onStatusChange(data.data.is_open || data.data.is_always_open)
+            onStatusChange(
+              Boolean(data.data.is_open || data.data.is_always_open || hasNoHoursConfigured)
+            )
           }
         }
       } catch (error) {

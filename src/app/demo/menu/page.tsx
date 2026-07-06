@@ -27,8 +27,12 @@ import {
   MapPin,
   Check,
   Loader2,
-  Search
+  Search,
+  User,
+  Truck,
+  ClipboardCheck,
 } from 'lucide-react'
+import { OrderStepper } from '@/components/order-stepper'
 import Link from 'next/link'
 import Image from 'next/image'
 import { toast } from 'sonner'
@@ -577,6 +581,17 @@ export default function DemoMenuPage() {
         : 'success'
 
   const currentStepIndex = progressSteps.findIndex((step) => step.key === currentProgressKey)
+  const demoWizardSteps = [
+    { label: 'Produtos', icon: ShoppingCart },
+    { label: 'Dados', icon: User },
+    { label: 'Entrega', icon: Truck },
+    { label: 'Pagamento', icon: CreditCard },
+    { label: 'Revisão', icon: ClipboardCheck },
+  ]
+  const demoCompletedSteps = new Set(
+    Array.from({ length: Math.min(currentStepIndex, 4) }, (_, i) => i)
+  )
+  const demoCurrentStep = Math.min(currentStepIndex, 4)
 
   const handleContactToggle = (type: 'whatsapp' | 'location') => {
     setContactExpanded((prev) => ({
@@ -1012,47 +1027,17 @@ export default function DemoMenuPage() {
           </div>
         </div>
 
+        {checkoutStep !== 'success' && (
         <div className="border-b bg-background/90">
           <div className="container mx-auto px-4 py-2 sm:py-3">
-            <div className="flex items-stretch gap-3 overflow-x-auto pb-2 pt-1 md:gap-4">
-              {progressSteps.map((step, index) => {
-                const isCompleted = index < currentStepIndex
-                const isActive = index === currentStepIndex
-
-                return (
-                  <div
-                    key={step.key}
-                    className={`flex flex-none items-center gap-3 rounded-2xl border border-border/60 bg-background px-3 py-2 text-xs shadow-sm transition md:flex-1 md:px-5 md:py-3 md:text-sm ${
-                      isActive ? 'ring-1 ring-primary/30' : ''
-                    }`}
-                  >
-                    <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-semibold transition-all md:h-10 md:w-10 md:text-sm ${
-                        isActive
-                          ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                          : isCompleted
-                            ? 'border-primary/60 bg-primary/10 text-primary'
-                            : 'border-border text-muted-foreground'
-                      }`}
-                    >
-                      {isCompleted ? <Check className="h-4 w-4 md:h-5 md:w-5" /> : index + 1}
-                    </div>
-                    <div className="min-w-[110px] md:min-w-0">
-                      <span
-                        className={`block font-semibold ${
-                          isActive ? 'text-foreground' : isCompleted ? 'text-primary' : 'text-muted-foreground'
-                        }`}
-                      >
-                        {step.label}
-                      </span>
-                      <span className="hidden text-xs text-muted-foreground sm:block">{step.description}</span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+            <OrderStepper
+              currentStep={demoCurrentStep}
+              steps={demoWizardSteps}
+              completedSteps={demoCompletedSteps}
+            />
           </div>
         </div>
+        )}
       </header>
 
       <main className="flex-1">

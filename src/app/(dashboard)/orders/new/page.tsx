@@ -10,7 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { ComboboxForm, ComboboxOption } from "@/components/ui/combobox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Plus, Trash2, Calculator, UserPlus } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, UserPlus, Calendar, User, ShoppingCart, Truck, ClipboardCheck, ChevronLeft, ChevronRight, Package, Minus, Wallet } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { OrderStepper } from "@/components/order-stepper";
+import { resolveImageUrl } from "@/lib/resolve-image-url";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,6 +45,10 @@ const orderFormSchema = z.object({
   discountType: z.enum(["percentage", "fixed"]).optional(),
   paymentMethodId: z.string().min(1, "Por favor, selecione uma forma de pagamento."),
   
+  // Scheduling fields
+  isScheduled: z.boolean(),
+  scheduledAt: z.string().optional(),
+
   // Delivery fields
   useClientAddress: z.boolean(),
   deliveryAddress: z.string().optional(),
@@ -86,6 +93,8 @@ interface OrderFormValues {
   discountValue?: number;
   discountType?: "percentage" | "fixed";
   paymentMethodId: string;
+  isScheduled: boolean;
+  scheduledAt?: string;
   useClientAddress: boolean;
   deliveryAddress?: string;
   deliveryCity?: string;
@@ -179,7 +188,10 @@ export default function NewOrderPage() {
   const { mutate: createClient } = useMutation();
   const { loading: loadingCEP, searchCEP } = useViaCEP();
   const [creating, setCreating] = useState(false);
-  
+  const [currentStep, setCurrentStep] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [productSearch, setProductSearch] = useState("");
+
   // Hook autenticado para produtos (inicializado após os outros)
   const { data: productsDataAuth, loading: productsLoadingAuth } = useAuthenticatedCatalogProducts();
   
@@ -205,6 +217,8 @@ export default function NewOrderPage() {
       discountValue: 0,
       discountType: "percentage",
       paymentMethodId: "",
+      isScheduled: false,
+      scheduledAt: "",
       useClientAddress: false,
       deliveryAddress: "",
       deliveryCity: "",
@@ -225,6 +239,7 @@ export default function NewOrderPage() {
   const { handleBackendErrors } = useBackendValidation(form.setError);
 
   const isDelivery = form.watch("isDelivery");
+  const isScheduled = form.watch("isScheduled");
   const useClientAddress = form.watch("useClientAddress");
   const selectedClientId = form.watch("clientId");
   const watchProducts = form.watch("products");
@@ -340,7 +355,6 @@ export default function NewOrderPage() {
   const clients = localClients.length > 0 ? localClients : clientsFromApi;
   // Usar dados de qualquer hook que funcionar e filtrar apenas produtos ativos
   const finalProductsData = productsDataAuth || productsData;
-  const finalProductsLoading = productsLoadingAuth && productsLoading;
   const products = getArrayFromData(finalProductsData)
     .filter((p: any) => {
       // Verificar se produto tem os campos necessários e está ativo
@@ -359,33 +373,6 @@ export default function NewOrderPage() {
     value: client.uuid || client.identify || client.id.toString(),
     label: client.phone ? `${client.name} - ${client.phone}` : client.name,
   }));
-
-  const productOptions: ComboboxOption[] = products.map((product: Product) => {
-    // Converter price de string para number se necessário
-    const price = typeof product.price === 'string' 
-      ? parseFloat(product.price) || 0 
-      : product.price || 0;
-    
-    const promotionalPrice = product.promotional_price 
-      ? (typeof product.promotional_price === 'string' 
-          ? parseFloat(product.promotional_price) 
-          : product.promotional_price)
-      : null;
-    
-    const uuid = product.uuid || product.identify;
-    const name = product.name || 'Produto sem nome';
-    
-    // Usar preço promocional se disponível, senão preço normal
-    const displayPrice = promotionalPrice || price;
-    const priceText = promotionalPrice 
-      ? `R$ ${displayPrice.toFixed(2)} (promo)`
-      : `R$ ${displayPrice.toFixed(2)}`;
-    
-    return {
-      value: uuid,
-      label: `${name} - ${priceText}`,
-    };
-  });
 
   const tableOptions: ComboboxOption[] = tables.map((table: Table) => ({
     value: table.uuid || table.identify || table.id.toString(),
@@ -462,22 +449,6 @@ export default function NewOrderPage() {
     const total = Math.max(0, subtotal - discount);
     form.setValue("total", total);
   }, [watchProducts, products, discountValue, discountType, form]);
-
-  const handleProductChange = (index: number, productId: string) => {
-    const product = products.find((p: Product) => 
-      p.uuid === productId || p.identify === productId
-    );
-    if (product) {
-      // Usar preço promocional se disponível, senão preço normal
-      const price = product.promotional_price 
-        ? getPriceAsNumber(product.promotional_price)
-        : getPriceAsNumber(product.price);
-
-      form.setValue(`products.${index}.price`, price);
-    } else {
-      form.setValue(`products.${index}.price`, 0);
-    }
-  };
 
   // Função para adicionar cliente
   const handleAddClient = async (clientData: any) => {
@@ -567,7 +538,9 @@ export default function NewOrderPage() {
         token_company: tenantId,
         client_id: data.clientId || null,
         table: data.isDelivery ? null : data.tableId,
-        payment_method_id: data.paymentMethodId, // ← ADICIONADO
+        payment_method_id: data.paymentMethodId,
+        is_scheduled: data.isScheduled,
+        scheduled_at: data.isScheduled && data.scheduledAt ? data.scheduledAt : null,
         is_delivery: data.isDelivery,
         use_client_address: data.useClientAddress,
         delivery_address: data.deliveryAddress,
@@ -657,11 +630,103 @@ export default function NewOrderPage() {
     return sum + (item.price * item.quantity); // Usar preço do item se produto não encontrado
   }, 0);
 
-  const discount = discountValue && discountValue > 0 ? 
+  const discount = discountValue && discountValue > 0 ?
     (discountType === "percentage" ? (subtotal * discountValue) / 100 : discountValue) : 0;
 
+  const total = Math.max(0, subtotal - discount);
+  const fmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+  const steps = [
+    { label: "Cliente", icon: User },
+    { label: "Produtos", icon: ShoppingCart },
+    { label: "Entrega", icon: Truck },
+    { label: "Financeiro", icon: Wallet },
+    { label: "Revisão", icon: ClipboardCheck },
+  ];
+
+  const validateStep = (step: number): boolean => {
+    switch (step) {
+      case 0:
+        return !!form.getValues("clientId");
+      case 1:
+        return watchProducts.some((p) => p.productId !== "");
+      case 2: {
+        const v = form.getValues();
+        if (!v.isDelivery && !v.tableId) return false;
+        if (v.isDelivery && !v.useClientAddress && (!v.deliveryAddress || !v.deliveryCity)) return false;
+        if (v.isScheduled && !v.scheduledAt) return false;
+        return true;
+      }
+      case 3:
+        return !!form.getValues("paymentMethodId");
+      default:
+        return true;
+    }
+  };
+
+  const goNext = () => {
+    if (!validateStep(currentStep)) {
+      if (currentStep === 0) toast.error("Selecione um cliente.");
+      else if (currentStep === 1) toast.error("Adicione pelo menos um produto.");
+      else if (currentStep === 2) toast.error("Preencha os dados de entrega e agendamento.");
+      else if (currentStep === 3) toast.error("Selecione uma forma de pagamento.");
+      return;
+    }
+    setCompletedSteps((prev) => new Set(prev).add(currentStep));
+    setCurrentStep((s) => Math.min(s + 1, 4));
+  };
+
+  const goBack = () => setCurrentStep((s) => Math.max(s - 1, 0));
+
+  const goToStep = (step: number) => {
+    if (step <= currentStep || completedSteps.has(step)) setCurrentStep(step);
+  };
+
+  const filteredProducts = productSearch
+    ? products.filter((p: Product) => p.name.toLowerCase().includes(productSearch.toLowerCase()))
+    : products;
+
+  const addProductToOrder = (product: Product) => {
+    const productId = product.uuid || product.identify;
+    const existing = watchProducts.findIndex((p) => p.productId === productId);
+    const price = product.promotional_price
+      ? getPriceAsNumber(product.promotional_price)
+      : getPriceAsNumber(product.price);
+    if (existing >= 0) {
+      form.setValue(`products.${existing}.quantity`, watchProducts[existing].quantity + 1);
+    } else {
+      const emptyIndex = watchProducts.findIndex((p) => p.productId === "");
+      if (emptyIndex >= 0) {
+        form.setValue(`products.${emptyIndex}.productId`, productId);
+        form.setValue(`products.${emptyIndex}.quantity`, 1);
+        form.setValue(`products.${emptyIndex}.price`, price);
+      } else {
+        append({ productId, quantity: 1, price });
+      }
+    }
+  };
+
+  const updateQuantity = (index: number, delta: number) => {
+    const current = watchProducts[index].quantity;
+    const next = current + delta;
+    if (next < 1) {
+      if (fields.length > 1) {
+        remove(index);
+      } else {
+        form.setValue(`products.${index}.productId`, "");
+        form.setValue(`products.${index}.quantity`, 1);
+        form.setValue(`products.${index}.price`, 0);
+      }
+    } else {
+      form.setValue(`products.${index}.quantity`, next);
+    }
+  };
+
+  const cartItems = watchProducts.filter((p) => p.productId !== "");
+  const cartCount = cartItems.reduce((sum, p) => sum + p.quantity, 0);
+
   return (
-    <div className="flex flex-col gap-6 py-2 px-6">
+    <div className="flex flex-col min-h-[calc(100vh-4rem)] py-2 px-3 sm:px-6">
       <SuccessAlert
         open={successAlertOpen}
         onOpenChange={(open) => {
@@ -680,546 +745,359 @@ export default function NewOrderPage() {
         title="Pedido criado"
         message={successMessage}
       />
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+      <div className="flex items-center gap-3 mb-4">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="shrink-0">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div>
-          <h1 className="text-3xl font-bold">Novo Pedido</h1>
-          <p className="text-muted-foreground">Adicione um novo pedido ao sistema</p>
-        </div>
+        <h1 className="text-lg sm:text-2xl font-bold">Novo Pedido</h1>
+      </div>
+
+      <div className="mb-6 px-1">
+        <OrderStepper currentStep={currentStep} steps={steps} onStepClick={goToStep} completedSteps={completedSteps} />
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Informações do Cliente */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações do Cliente</CardTitle>
-                <CardDescription>Selecione o cliente para este pedido</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="clientId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cliente *</FormLabel>
-                      <div className="flex gap-2">
-                        <FormControl>
-                          <ComboboxForm
-                            field={field}
-                            options={clientOptions}
-                            placeholder="Selecionar cliente..."
-                            searchPlaceholder="Buscar cliente..."
-                            className="flex-1"
-                          />
-                        </FormControl>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="outline"
-                          onClick={() => setClientDialogOpen(true)}
-                          title="Adicionar novo cliente"
-                        >
-                          <UserPlus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col lg:flex-row gap-4">
+            <div className="flex-1 min-w-0">
 
-                {selectedClient && (
-                  <div className="p-3 bg-muted rounded-lg">
-                    <h4 className="font-semibold">{selectedClient.name}</h4>
-                    {selectedClient.email && (
-                      <p className="text-sm text-muted-foreground">{selectedClient.email}</p>
-                    )}
-                    {selectedClient.phone && (
-                      <p className="text-sm text-muted-foreground">{selectedClient.phone}</p>
-                    )}
-                    {selectedClient.has_complete_address && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Endereço completo disponível
-                      </p>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Tipo de Pedido */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Tipo de Pedido</CardTitle>
-                <CardDescription>Delivery ou consumo no local</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="isDelivery"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">Delivery</FormLabel>
-                        <div className="text-sm text-muted-foreground">
-                          Este pedido é para entrega
-                        </div>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                {!isDelivery && (
-                  <FormField
-                    control={form.control}
-                    name="tableId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mesa *</FormLabel>
-                        <FormControl>
-                          <ComboboxForm
-                            field={field}
-                            options={tableOptions}
-                            placeholder="Selecionar mesa..."
-                            searchPlaceholder="Buscar mesa..."
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status do Pedido</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="h-11 w-full bg-background text-base shadow-none">
-                            <SelectValue placeholder="Selecionar status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Pendente">Pendente</SelectItem>
-                          <SelectItem value="Preparando">Preparando</SelectItem>
-                          <SelectItem value="Pronto">Pronto</SelectItem>
-                          <SelectItem value="Entregue">Entregue</SelectItem>
-                          <SelectItem value="Cancelado">Cancelado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Endereço de Entrega */}
-            {isDelivery && (
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle>Endereço de Entrega</CardTitle>
-                  <CardDescription>Informações para entrega do pedido</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {selectedClient && selectedClient.has_complete_address && (
+              {/* ETAPA 0: CLIENTE */}
+              {currentStep === 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Selecione o Cliente</CardTitle>
+                    <CardDescription>Escolha ou cadastre um novo cliente</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <FormField
                       control={form.control}
-                      name="useClientAddress"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">
-                              Usar endereço do cliente
-                            </FormLabel>
-                            <div className="text-sm text-muted-foreground">
-                              Utilizar o endereço cadastrado do cliente
-                            </div>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  )}
-
-                  {(!useClientAddress || !selectedClient?.has_complete_address) && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="deliveryAddress"
-                        render={({ field }) => (
-                          <FormItem className="md:col-span-2">
-                            <FormLabel>Endereço *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Rua das Flores, 123" {...field} value={field.value || ""} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="deliveryNumber"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Número</FormLabel>
-                              <FormControl>
-                                <Input placeholder="123" {...field} value={field.value || ""} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="deliveryNeighborhood"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Bairro</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Centro" {...field} value={field.value || ""} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      {/* Estado e Cidade */}
-                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 md:items-end">
-                        <StateCityFormFields
-                          control={form.control}
-                          stateFieldName="deliveryState"
-                          cityFieldName="deliveryCity"
-                          stateLabel="Estado"
-                          cityLabel="Cidade"
-                          required
-                          gridCols="equal"
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="deliveryZipCode"
-                          render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>
-                                CEP <span className="text-muted-foreground text-xs font-normal">Ao informar o CEP o preenchimento do endereço será automático</span>
-                              </FormLabel>
-                              <FormControl>
-                                <div className="relative">
-                                  <Input
-                                    placeholder="01000-000"
-                                    value={field.value || ""}
-                                    onChange={(event) => {
-                                      const masked = maskZipCode(event.target.value);
-                                      field.onChange(masked);
-                                    }}
-                                    onBlur={(event) => {
-                                      field.onBlur();
-                                      handleDeliveryCepLookup(event.target.value);
-                                    }}
-                                    maxLength={9}
-                                    disabled={loadingCEP}
-                                  />
-                                  {loadingCEP && (
-                                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                                    </div>
-                                  )}
-                                </div>
-                              </FormControl>
-                              <p className="text-xs text-muted-foreground mt-1 md:hidden">
-                                {loadingCEP ? "Buscando endereço..." : "Preenchimento automático ativo"}
-                              </p>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <FormField
-                        control={form.control}
-                        name="deliveryComplement"
-                        render={({ field }) => (
-                          <FormItem className="md:col-span-2">
-                            <FormLabel>Complemento</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Apartamento 101, Bloco A" {...field} value={field.value || ""} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="deliveryNotes"
-                        render={({ field }) => (
-                          <FormItem className="md:col-span-2">
-                            <FormLabel>Observações de Entrega</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Observações especiais para a entrega..."
-                                {...field}
-                                value={field.value || ""}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Produtos */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Produtos do Pedido</CardTitle>
-                <CardDescription>Adicione os produtos para este pedido</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {fields.map((field, index) => (
-                  <div key={field.id} className="space-y-4 rounded-lg border p-4">
-                    <FormField
-                      control={form.control}
-                      name={`products.${index}.productId`}
+                      name="clientId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Produto</FormLabel>
-                          <FormControl>
-                            <ComboboxForm
-                              field={{
-                                ...field,
-                                onChange: (value: string) => {
-                                  field.onChange(value);
-                                  handleProductChange(index, value);
-                                }
-                              }}
-                              options={finalProductsLoading ? 
-                                [{ value: "loading", label: "Carregando produtos...", disabled: true }] :
-                                productOptions.length > 0 ? 
-                                  productOptions : 
-                                  [{ value: "no-products", label: "Nenhum produto disponível", disabled: true }]
-                              }
-                              placeholder="Selecionar produto..."
-                              searchPlaceholder="Buscar produto..."
-                              className="h-11 text-base"
-                            />
-                          </FormControl>
+                          <FormLabel>Cliente *</FormLabel>
+                          <div className="flex gap-2">
+                            <FormControl>
+                              <ComboboxForm
+                                field={field}
+                                options={clientOptions}
+                                placeholder="Buscar cliente..."
+                                searchPlaceholder="Digite o nome..."
+                                className="flex-1"
+                              />
+                            </FormControl>
+                            <Button type="button" variant="outline" onClick={() => setClientDialogOpen(true)} className="h-10 px-3">
+                              <UserPlus className="h-4 w-4 sm:mr-2" />
+                              <span className="hidden sm:inline">Novo</span>
+                            </Button>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    {selectedClient && (
+                      <div className="p-4 bg-muted rounded-lg space-y-1">
+                        <p className="font-semibold">{selectedClient.name}</p>
+                        {selectedClient.phone && <p className="text-sm text-muted-foreground">Tel: {selectedClient.phone}</p>}
+                        {selectedClient.email && <p className="text-sm text-muted-foreground">{selectedClient.email}</p>}
+                        {selectedClient.has_complete_address && <p className="text-xs text-green-600 mt-1">Endereço completo disponível</p>}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
-                      <FormField
-                        control={form.control}
-                        name={`products.${index}.quantity`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Quantidade</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min="1"
-                                className="h-11 text-base"
-                                {...field}
-                                onChange={(e) => field.onChange(Number(e.target.value))}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name={`products.${index}.price`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Preço</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                className="h-11 text-base"
-                                {...field}
-                                onChange={(e) => field.onChange(Number(e.target.value))}
-                                readOnly
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => remove(index)}
-                        disabled={fields.length === 1}
-                        className="col-span-2 h-11 w-full sm:col-span-1 sm:w-12 sm:px-0"
-                        aria-label="Remover produto"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                        <span className="ml-2 sm:hidden">Remover item</span>
-                      </Button>
-                    </div>
+              {/* ETAPA 1: PRODUTOS */}
+              {currentStep === 1 && (
+                <div className="space-y-4">
+                  <div className="relative">
+                    <ShoppingCart className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar produto..."
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      className="pl-10 h-12 text-base"
+                    />
                   </div>
-                ))}
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => append({ productId: "", quantity: 1, price: 0 })}
-                  className="w-full"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Adicionar Produto
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Resumo e Desconto */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Resumo do Pedido</CardTitle>
-                <CardDescription>Valores e desconto</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="discountType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tipo de Desconto</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="percentage">Percentual (%)</SelectItem>
-                            <SelectItem value="fixed">Valor Fixo (R$)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="discountValue"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Desconto {discountType === "percentage" ? "(%)" : "(R$)"}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step={discountType === "percentage" ? "0.01" : "0.01"}
-                            min="0"
-                            max={discountType === "percentage" ? "100" : undefined}
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="flex flex-col gap-2 justify-end">
-                    <div className="text-sm text-muted-foreground">Resumo</div>
-                    <div className="space-y-1">
-                      <div className="flex justify-between">
-                        <span>Subtotal:</span>
-                        <span>R$ {subtotal.toFixed(2)}</span>
-                      </div>
-                      {discount > 0 && (
-                        <div className="flex justify-between text-red-600">
-                          <span>Desconto:</span>
-                          <span>-R$ {discount.toFixed(2)}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between font-bold text-lg border-t pt-1">
-                        <span>Total:</span>
-                        <span>R$ {(subtotal - discount).toFixed(2)}</span>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="lg:col-span-2">
+                      <p className="text-sm text-muted-foreground mb-3">{filteredProducts.length} produto(s)</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 max-h-[50vh] lg:max-h-[60vh] overflow-y-auto pr-1">
+                        {filteredProducts.map((product: Product) => {
+                          const price = product.promotional_price ? getPriceAsNumber(product.promotional_price) : getPriceAsNumber(product.price);
+                          const inCart = watchProducts.some((p) => p.productId === (product.uuid || product.identify));
+                          return (
+                            <button
+                              key={product.uuid || product.identify}
+                              type="button"
+                              onClick={() => addProductToOrder(product)}
+                              className={`relative flex flex-col rounded-lg border p-2 sm:p-3 text-left transition-colors hover:bg-accent ${inCart ? "border-primary bg-primary/5" : ""}`}
+                            >
+                              <div className="aspect-square w-full rounded-md bg-muted mb-2 overflow-hidden">
+                                {(product as Product & { url?: string; image?: string }).url || (product as Product & { url?: string; image?: string }).image ? (
+                                  <img
+                                    src={resolveImageUrl((product as Product & { url?: string; image?: string }).url || (product as Product & { url?: string; image?: string }).image) || ""}
+                                    alt={product.name}
+                                    className="h-full w-full object-cover"
+                                    onError={(e) => { e.currentTarget.style.display = "none"; }}
+                                  />
+                                ) : (
+                                  <div className="flex h-full items-center justify-center"><Package className="h-8 w-8 text-muted-foreground/30" /></div>
+                                )}
+                              </div>
+                              <p className="text-xs sm:text-sm font-medium line-clamp-2 leading-tight">{product.name}</p>
+                              <p className="text-xs sm:text-sm font-bold text-primary mt-1">{fmt.format(price)}</p>
+                              {inCart && <Badge className="absolute top-1 right-1 text-[10px] px-1.5">No carrinho</Badge>}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
+                    <Card className="lg:sticky lg:top-4 h-fit">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <ShoppingCart className="h-4 w-4" /> Carrinho
+                          {cartCount > 0 && <Badge variant="secondary">{cartCount}</Badge>}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {cartItems.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-4">Nenhum produto adicionado</p>
+                        ) : (
+                          <>
+                            {fields.map((field, index) => {
+                              if (!watchProducts[index]?.productId) return null;
+                              const prod = products.find((p: Product) => (p.uuid || p.identify) === watchProducts[index].productId);
+                              if (!prod) return null;
+                              return (
+                                <div key={field.id} className="flex items-center gap-2 rounded-md border p-2">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs sm:text-sm font-medium truncate">{prod.name}</p>
+                                    <p className="text-xs text-muted-foreground">{fmt.format(watchProducts[index].price)}</p>
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(index, -1)}><Minus className="h-3 w-3" /></Button>
+                                    <Input type="number" min="1" step="1" value={watchProducts[index].quantity} onChange={(e) => { const v = parseInt(e.target.value, 10); form.setValue(`products.${index}.quantity`, Number.isFinite(v) && v > 0 ? v : 1); }} className="h-7 w-14 text-center px-1 text-sm" aria-label="Quantidade" />
+                                    <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(index, 1)}><Plus className="h-3 w-3" /></Button>
+                                  </div>
+                                  <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0" onClick={() => { if (fields.length > 1) remove(index); else { form.setValue(`products.${index}.productId`, ""); form.setValue(`products.${index}.quantity`, 1); form.setValue(`products.${index}.price`, 0); } }}><Trash2 className="h-3 w-3" /></Button>
+                                </div>
+                              );
+                            })}
+                            <div className="flex justify-between font-bold pt-2 border-t"><span>Subtotal</span><span>{fmt.format(subtotal)}</span></div>
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              )}
 
-            {/* Forma de Pagamento */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Forma de Pagamento</CardTitle>
-                <CardDescription>Selecione a forma de pagamento para este pedido</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="paymentMethodId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Forma de Pagamento *</FormLabel>
-                      <FormControl>
-                        <ComboboxForm
-                          field={field}
-                          options={paymentMethodsLoading ? 
-                            [{ value: "loading", label: "Carregando formas de pagamento...", disabled: true }] :
-                            paymentMethodOptions.length > 0 ? 
-                              paymentMethodOptions : 
-                              [{ value: "no-methods", label: "Nenhuma forma de pagamento disponível", disabled: true }]
-                          }
-                          placeholder="Selecionar forma de pagamento..."
-                          searchPlaceholder="Buscar forma de pagamento..."
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+              {/* ETAPA 2: ENTREGA */}
+              {currentStep === 2 && (
+                <div className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Tipo de Pedido</CardTitle>
+                      <CardDescription>Delivery ou consumo no local</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <FormField control={form.control} name="isDelivery" render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div><FormLabel className="text-base">Delivery</FormLabel><p className="text-sm text-muted-foreground">Pedido para entrega</p></div>
+                          <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                        </FormItem>
+                      )} />
+                      {!isDelivery && (
+                        <FormField control={form.control} name="tableId" render={({ field }) => (
+                          <FormItem><FormLabel>Mesa *</FormLabel><FormControl><ComboboxForm field={field} options={tableOptions} placeholder="Selecionar mesa..." searchPlaceholder="Buscar mesa..." /></FormControl><FormMessage /></FormItem>
+                        )} />
+                      )}
+                      <FormField control={form.control} name="status" render={({ field }) => (
+                        <FormItem><FormLabel>Status</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger></FormControl><SelectContent>
+                            <SelectItem value="Pendente">Pendente</SelectItem>
+                            <SelectItem value="Preparando">Preparando</SelectItem>
+                            <SelectItem value="Pronto">Pronto</SelectItem>
+                            <SelectItem value="Entregue">Entregue</SelectItem>
+                            <SelectItem value="Cancelado">Cancelado</SelectItem>
+                          </SelectContent></Select>
+                        </FormItem>
+                      )} />
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base"><Calendar className="h-5 w-5" /> Agendamento</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <FormField control={form.control} name="isScheduled" render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div><FormLabel className="text-base">Pedido Agendado</FormLabel><p className="text-sm text-muted-foreground">Definir data e hora para este pedido</p></div>
+                          <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                        </FormItem>
+                      )} />
+                      {isScheduled && (
+                        <FormField control={form.control} name="scheduledAt" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Data e Hora do Agendamento *</FormLabel>
+                            <FormControl>
+                              <Input type="datetime-local" min={new Date(Date.now() + 60000).toISOString().slice(0, 16)} {...field} value={field.value || ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {isDelivery && (
+                    <Card>
+                      <CardHeader><CardTitle className="text-base">Endereço de Entrega</CardTitle></CardHeader>
+                      <CardContent className="space-y-4">
+                        {selectedClient?.has_complete_address && (
+                          <FormField control={form.control} name="useClientAddress" render={({ field }) => (
+                            <FormItem className="flex items-center justify-between rounded-lg border p-3"><FormLabel>Usar endereço do cliente</FormLabel><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>
+                          )} />
+                        )}
+                        {(!useClientAddress || !selectedClient?.has_complete_address) && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <FormField control={form.control} name="deliveryZipCode" render={({ field }) => (
+                              <FormItem><FormLabel>CEP</FormLabel><FormControl><Input placeholder="01000-000" value={field.value || ""} onChange={(e) => field.onChange(maskZipCode(e.target.value))} onBlur={(e) => { field.onBlur(); handleDeliveryCepLookup(e.target.value); }} maxLength={9} disabled={loadingCEP} /></FormControl></FormItem>
+                            )} />
+                            <FormField control={form.control} name="deliveryAddress" render={({ field }) => (
+                              <FormItem className="sm:col-span-2"><FormLabel>Endereço *</FormLabel><FormControl><Input placeholder="Rua..." {...field} value={field.value || ""} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="deliveryNumber" render={({ field }) => (
+                              <FormItem><FormLabel>Número</FormLabel><FormControl><Input placeholder="123" {...field} value={field.value || ""} /></FormControl></FormItem>
+                            )} />
+                            <FormField control={form.control} name="deliveryNeighborhood" render={({ field }) => (
+                              <FormItem><FormLabel>Bairro</FormLabel><FormControl><Input placeholder="Centro" {...field} value={field.value || ""} /></FormControl></FormItem>
+                            )} />
+                            <StateCityFormFields control={form.control} stateFieldName="deliveryState" cityFieldName="deliveryCity" stateLabel="Estado" cityLabel="Cidade" required gridCols="equal" />
+                            <FormField control={form.control} name="deliveryComplement" render={({ field }) => (
+                              <FormItem className="sm:col-span-2"><FormLabel>Complemento</FormLabel><FormControl><Input placeholder="Apto 101" {...field} value={field.value || ""} /></FormControl></FormItem>
+                            )} />
+                            <FormField control={form.control} name="deliveryNotes" render={({ field }) => (
+                              <FormItem className="sm:col-span-2"><FormLabel>Observações</FormLabel><FormControl><Textarea placeholder="Observações..." {...field} value={field.value || ""} /></FormControl></FormItem>
+                            )} />
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
                   )}
-                />
-              </CardContent>
-            </Card>
+                </div>
+              )}
+
+              {/* ETAPA 3: FINANCEIRO */}
+              {currentStep === 3 && (
+                <Card>
+                  <CardHeader><CardTitle className="text-base">Pagamento e Desconto</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField control={form.control} name="paymentMethodId" render={({ field }) => (
+                      <FormItem><FormLabel>Forma de Pagamento *</FormLabel><FormControl>
+                        <ComboboxForm field={field} options={paymentMethodsLoading ? [{ value: "loading", label: "Carregando...", disabled: true }] : paymentMethodOptions.length > 0 ? paymentMethodOptions : [{ value: "none", label: "Nenhuma disponível", disabled: true }]} placeholder="Selecionar..." searchPlaceholder="Buscar..." />
+                      </FormControl><FormMessage /></FormItem>
+                    )} />
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField control={form.control} name="discountType" render={({ field }) => (
+                        <FormItem><FormLabel>Desconto</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="percentage">% Percentual</SelectItem><SelectItem value="fixed">R$ Fixo</SelectItem></SelectContent></Select></FormItem>
+                      )} />
+                      <FormField control={form.control} name="discountValue" render={({ field }) => (
+                        <FormItem><FormLabel>Valor</FormLabel><FormControl><Input type="number" step="0.01" min="0" {...field} onChange={(e) => field.onChange(Number(e.target.value))} /></FormControl></FormItem>
+                      )} />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* ETAPA 4: REVISÃO */}
+              {currentStep === 4 && (
+                <div className="space-y-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary shrink-0"><User className="h-5 w-5" /></div>
+                        <div>
+                          <p className="font-semibold">{selectedClient?.name || "Cliente não selecionado"}</p>
+                          {selectedClient?.phone && <p className="text-sm text-muted-foreground">{selectedClient.phone}</p>}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-3"><CardTitle className="text-base">Itens ({cartCount})</CardTitle></CardHeader>
+                    <CardContent className="space-y-2">
+                      {fields.map((field, index) => {
+                        if (!watchProducts[index]?.productId) return null;
+                        const prod = products.find((p: Product) => (p.uuid || p.identify) === watchProducts[index].productId);
+                        if (!prod) return null;
+                        const lineTotal = watchProducts[index].price * watchProducts[index].quantity;
+                        return (
+                          <div key={field.id} className="flex justify-between items-center text-sm py-1">
+                            <div className="flex-1 min-w-0"><span className="font-medium">{watchProducts[index].quantity}x</span> {prod.name}</div>
+                            <span className="font-medium shrink-0 ml-2">{fmt.format(lineTotal)}</span>
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6 space-y-2">
+                      <div className="flex justify-between text-sm"><span>Subtotal</span><span>{fmt.format(subtotal)}</span></div>
+                      {discount > 0 && <div className="flex justify-between text-sm text-red-600"><span>Desconto</span><span>-{fmt.format(discount)}</span></div>}
+                      <div className="flex justify-between font-bold text-lg border-t pt-2"><span>Total</span><span className="text-primary">{fmt.format(total)}</span></div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6 space-y-1 text-sm">
+                      <p><strong>Tipo:</strong> {isDelivery ? "Delivery" : "Mesa"}</p>
+                      {!isDelivery && form.getValues("tableId") && <p><strong>Mesa:</strong> {tables.find((t: Table) => (t.uuid || t.identify) === form.getValues("tableId"))?.name || form.getValues("tableId")}</p>}
+                      {isDelivery && <p><strong>Endereço:</strong> {form.getValues("deliveryAddress") || "Endereço do cliente"}</p>}
+                      {isScheduled && form.getValues("scheduledAt") && <p><strong>Agendado:</strong> {form.getValues("scheduledAt")}</p>}
+                      <p><strong>Pagamento:</strong> {paymentMethods.find((pm: PaymentMethod) => pm.uuid === form.getValues("paymentMethodId"))?.name || "—"}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+
+            {/* SIDEBAR RESUMO (DESKTOP) */}
+            <div className="hidden lg:block w-72 shrink-0">
+              <Card className="sticky top-4">
+                <CardHeader className="pb-3"><CardTitle className="text-base">Resumo do Pedido</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between text-sm"><span>Itens</span><span>{cartCount}</span></div>
+                  <div className="flex justify-between text-sm"><span>Subtotal</span><span>{fmt.format(subtotal)}</span></div>
+                  {discount > 0 && <div className="flex justify-between text-sm text-red-600"><span>Desconto</span><span>-{fmt.format(discount)}</span></div>}
+                  <div className="flex justify-between font-bold text-lg border-t pt-2"><span>Total</span><span className="text-primary">{fmt.format(total)}</span></div>
+                  {currentStep === 4 && (
+                    <Button type="submit" disabled={creating} className="w-full h-12">{creating ? "Criando..." : "Confirmar Pedido"}</Button>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
-          <div className="flex justify-end gap-4">
-            <Button type="button" variant="outline" onClick={() => router.back()}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={creating}>
-              {creating ? "Criando..." : "Criar Pedido"}
-            </Button>
+          {/* NAVEGAÇÃO STICKY */}
+          <div className="sticky bottom-0 bg-background border-t pt-3 pb-4 mt-4 -mx-3 px-3 sm:-mx-6 sm:px-6">
+            <div className="flex items-center justify-between mb-2 text-sm font-bold lg:hidden">
+              <span>Total: {fmt.format(total)}</span>
+              <span className="text-muted-foreground">{cartCount} item(ns)</span>
+            </div>
+            {currentStep < 4 ? (
+              <div className="flex gap-3">
+                {currentStep > 0 && (
+                  <Button type="button" variant="outline" onClick={goBack} className="h-12 flex-1 sm:flex-none sm:w-32"><ChevronLeft className="h-4 w-4 mr-1" /> Voltar</Button>
+                )}
+                <Button type="button" onClick={goNext} className="h-12 flex-1">Próximo <ChevronRight className="h-4 w-4 ml-1" /></Button>
+              </div>
+            ) : (
+              <div className="flex gap-3">
+                <Button type="button" variant="outline" onClick={goBack} className="h-12 sm:w-32"><ChevronLeft className="h-4 w-4 mr-1" /> Voltar</Button>
+                <Button type="submit" disabled={creating} className="h-14 flex-1 text-base font-semibold lg:hidden">{creating ? "Criando Pedido..." : "Confirmar Pedido"}</Button>
+              </div>
+            )}
           </div>
         </form>
       </Form>

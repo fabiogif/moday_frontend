@@ -3,7 +3,8 @@
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useState, useCallback, useRef } from "react"
-import { ShoppingCart, Plus, Minus, Store, MapPin, Phone, Image as ImageIcon, Loader2, Search, Package, Menu, X, MessageCircle, Check, Clock, CreditCard } from "lucide-react"
+import { ShoppingCart, Plus, Minus, Store, MapPin, Phone, Image as ImageIcon, Loader2, Search, Package, Menu, X, MessageCircle, Check, Clock, CreditCard, User, Truck, ClipboardCheck, ChevronLeft, ChevronRight } from "lucide-react"
+import { OrderStepper } from "@/components/order-stepper"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -116,7 +117,9 @@ export default function PublicStorePage() {
   const [products, setProducts] = useState<Product[]>([])
   const [cart, setCart] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [checkoutStep, setCheckoutStep] = useState<"cart" | "checkout" | "success">("cart")
+  const [currentStep, setCurrentStep] = useState(0)
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
+  const [orderSuccess, setOrderSuccess] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   
@@ -433,7 +436,7 @@ export default function PublicStorePage() {
 
   useEffect(() => {
     setMobileSummaryOpen(false)
-  }, [checkoutStep])
+  }, [currentStep])
 
   function addToCart(
     product: Product, 
@@ -756,8 +759,8 @@ export default function PublicStorePage() {
         return
       }
 
-      if (!clientData.name.trim() || !clientData.email.trim() || !clientData.phone.trim()) {
-        toast.error('Preencha todos os dados obrigatórios do cliente')
+      if (!clientData.name.trim() || !clientData.phone.trim()) {
+        toast.error('Preencha nome e telefone.')
         setSubmitting(false)
         return
       }
@@ -782,7 +785,10 @@ export default function PublicStorePage() {
           }
 
       const orderData = {
-        client: clientData,
+        client: {
+          ...clientData,
+          email: clientData.email.trim() || undefined,
+        },
         delivery: deliveryDataToSend,
         products: cart.map((item) => ({
           uuid: item.uuid,
@@ -818,7 +824,7 @@ export default function PublicStorePage() {
       if (result.success && result.data?.order_id) {
         setOrderResult(result.data)
         setCompletedOrderId(result.data?.order_id ?? null)
-        setCheckoutStep("success")
+        setOrderSuccess(true)
         setCart([])
         setShowSuccessModal(true)
         toast.success(result.message)
@@ -933,21 +939,88 @@ export default function PublicStorePage() {
   const currentOrderIdentify = orderResult?.order_id || completedOrderId || ''
   const tenantIdForReview = storeInfo?.tenant_id || storeInfo?.id || 0
 
-  const progressSteps = [
-    { key: 'cart', label: 'Seleção de Itens', description: 'Escolha seus produtos favoritos' },
-    { key: 'checkout', label: 'Dados de Entrega', description: 'Informe seus dados e endereço' },
-    { key: 'payment', label: 'Pagamento', description: 'Revise e confirme o pagamento' },
-    { key: 'success', label: 'Confirmação', description: 'Pedido finalizado com sucesso' },
-  ] as const
+  const wizardSteps = [
+    { label: "Produtos", icon: ShoppingCart },
+    { label: "Dados", icon: User },
+    { label: "Entrega", icon: Truck },
+    { label: "Pagamento", icon: CreditCard },
+    { label: "Revisão", icon: ClipboardCheck },
+  ]
 
-  const currentProgressKey =
-    checkoutStep === 'cart'
-      ? 'cart'
-      : checkoutStep === 'checkout'
-        ? (submitting ? 'payment' : 'checkout')
-        : 'success'
+  const requiresDeliveryAddress = () => {
+    const currentType = serviceTypes.find((st: { identify?: string; slug?: string; requires_address?: boolean }) =>
+      (st.identify || st.slug) === selectedServiceType
+    )
+    return currentType?.requires_address || shippingMethod === "delivery"
+  }
 
-  const currentStepIndex = progressSteps.findIndex((step) => step.key === currentProgressKey)
+  const validateWizardStep = (step: number): boolean => {
+    switch (step) {
+      case 0:
+        if (!isStoreOpen) {
+          toast.error('A loja está fechada no momento. Volte durante o horário de funcionamento.')
+          return false
+        }
+        if (cart.length === 0) {
+          toast.error('Adicione ao menos um item ao carrinho para continuar.')
+          return false
+        }
+        return true
+      case 1:
+        if (!clientData.name.trim() || !clientData.phone.trim()) {
+          toast.error('Preencha nome e telefone.')
+          return false
+        }
+        return true
+      case 2: {
+        if (!selectedServiceType && !shippingMethod) {
+          toast.error('Selecione o tipo de atendimento.')
+          return false
+        }
+        if (requiresDeliveryAddress()) {
+          if (!deliveryData.address.trim() || !deliveryData.number.trim() || !deliveryData.neighborhood.trim() || !deliveryData.city.trim() || !deliveryData.state.trim() || !deliveryData.zip_code.trim()) {
+            toast.error('Preencha o endereço de entrega completo.')
+            return false
+          }
+        }
+        return true
+      }
+      case 3:
+        if (!paymentMethod) {
+          toast.error('Selecione uma forma de pagamento.')
+          return false
+        }
+        return true
+      default:
+        return true
+    }
+  }
+
+  const goNext = () => {
+    if (!validateWizardStep(currentStep)) return
+    setCompletedSteps((prev) => new Set(prev).add(currentStep))
+    setCurrentStep((s) => Math.min(s + 1, 4))
+    setMobileSummaryOpen(false)
+  }
+
+  const goBack = () => {
+    setCurrentStep((s) => Math.max(s - 1, 0))
+    setMobileSummaryOpen(false)
+  }
+
+  const goToStep = (step: number) => {
+    if (step <= currentStep || completedSteps.has(step)) {
+      setCurrentStep(step)
+      setMobileSummaryOpen(false)
+    }
+  }
+
+  const handleStartCheckout = () => {
+    if (!validateWizardStep(0)) return
+    setCompletedSteps((prev) => new Set(prev).add(0))
+    setCurrentStep(1)
+    setMobileSummaryOpen(false)
+  }
 
   const whatsappNumber = storeInfo?.whatsapp || storeInfo?.phone || ''
   const sanitizedWhatsapp = whatsappNumber.replace(/\D/g, '')
@@ -983,22 +1056,6 @@ export default function PublicStorePage() {
     }
   }
 
-  const handleStartCheckout = () => {
-    if (!isStoreOpen) {
-      toast.error('A loja está fechada no momento. Volte durante o horário de funcionamento.')
-      return
-    }
-
-    if (cart.length === 0) {
-      toast.error('Adicione ao menos um item ao carrinho para continuar.')
-      return
-    }
-
-    setCheckoutStep('checkout')
-    setMobileSummaryOpen(false)
-    setTimeout(() => handleScrollToSummary(), 150)
-  }
-
   const handleApplyCoupon = () => {
     if (!couponCode.trim()) {
       toast.error('Digite um cupom antes de aplicar.')
@@ -1010,9 +1067,9 @@ export default function PublicStorePage() {
     })
   }
 
-  const showMobileSummaryButton = cart.length > 0 && checkoutStep !== 'success' && !mobileSummaryOpen
+  const showMobileSummaryButton = cart.length > 0 && currentStep === 0 && !orderSuccess && !mobileSummaryOpen && !isStoreOpen
 
-  const renderSummaryContent = (variant: 'cart' | 'checkout') => {
+  const renderSummaryContent = (variant: 'cart' | 'checkout' | 'review', hideActions = false) => {
     if (cart.length === 0) {
       return (
         <div className="space-y-3 text-sm text-muted-foreground">
@@ -1024,13 +1081,20 @@ export default function PublicStorePage() {
 
     const buttonLabel =
       variant === 'cart'
-        ? 'Ir para Dados de Entrega'
-        : submitting
-          ? 'Finalizando...'
-          : 'Confirmar Pedido'
+        ? 'Ir para Dados'
+        : variant === 'review'
+          ? submitting
+            ? 'Finalizando...'
+            : 'Confirmar Pedido'
+          : submitting
+            ? 'Finalizando...'
+            : 'Confirmar Pedido'
 
     const buttonAction = variant === 'cart' ? handleStartCheckout : handleCheckout
-    const buttonDisabled = variant === 'checkout' ? submitting : !isStoreOpen
+    const buttonDisabled =
+      variant === 'cart'
+        ? cart.length === 0 || !isStoreOpen
+        : submitting
 
     return (
       <div className="space-y-4">
@@ -1163,19 +1227,28 @@ export default function PublicStorePage() {
 
         </div>
 
-        <Button
-          className="w-full rounded-full"
-          size="lg"
-          onClick={buttonAction}
-          disabled={buttonDisabled}
-        >
-          {buttonLabel}
-        </Button>
+        {!hideActions && (
+          <>
+            <Button
+              className="w-full rounded-full"
+              size="lg"
+              onClick={buttonAction}
+              disabled={buttonDisabled}
+            >
+              {buttonLabel}
+            </Button>
+            {variant === 'cart' && !isStoreOpen && cart.length > 0 && (
+              <p className="text-center text-xs text-muted-foreground">
+                A loja está fechada no momento. O pedido poderá ser finalizado quando estivermos abertos.
+              </p>
+            )}
 
-        {variant === 'cart' && (
-          <Button variant="ghost" className="w-full" onClick={() => setCart([])}>
-            Limpar carrinho
-          </Button>
+            {variant === 'cart' && (
+              <Button variant="ghost" className="w-full" onClick={() => setCart([])}>
+                Limpar carrinho
+              </Button>
+            )}
+          </>
         )}
       </div>
     )
@@ -1361,11 +1434,23 @@ export default function PublicStorePage() {
           </div>
         </div>
 
+        {!orderSuccess && (
+          <div className="border-b bg-background/90">
+            <div className="container mx-auto px-4 py-2 sm:py-3">
+              <OrderStepper
+                currentStep={currentStep}
+                steps={wizardSteps}
+                onStepClick={goToStep}
+                completedSteps={completedSteps}
+              />
+            </div>
+          </div>
+        )}
       </header>
 
-      <main className="flex-1 pb-24 lg:pb-0">
+      <main className={`flex-1 ${!orderSuccess ? 'pb-28 lg:pb-4' : 'pb-24 lg:pb-0'}`}>
         <div className="w-full">
-          {checkoutStep === "cart" && (
+          {!orderSuccess && currentStep === 0 && (
             <section className="container mx-auto space-y-10 px-4 py-10">
               <div className="flex flex-col gap-10 lg:flex-row">
                 <div className="flex-1 space-y-6">
@@ -1544,15 +1629,13 @@ export default function PublicStorePage() {
                           )}
                         </div>
                 
-                        {checkoutStep === "checkout" && (
-          <section className="container mx-auto px-4 py-10">
-            <Button variant="outline" onClick={() => setCheckoutStep("cart")} className="mb-6">
-              ← Voltar para o carrinho
-            </Button>
+          {!orderSuccess && currentStep >= 1 && currentStep <= 4 && (
+          <section className="container mx-auto px-4 py-6 sm:py-10">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1 min-w-0 space-y-4">
 
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <div className="lg:col-span-2 space-y-4">
-                {/* Client Information */}
+                {/* ETAPA 1: DADOS */}
+                {currentStep === 1 && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Informações Pessoais</CardTitle>
@@ -1573,13 +1656,13 @@ export default function PublicStorePage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="email">Email *</Label>
+                        <Label htmlFor="email">Email</Label>
                         <Input
                           id="email"
                           type="email"
                           value={clientData.email}
                           onChange={(e) => setClientData({ ...clientData, email: e.target.value })}
-                          required
+                          placeholder="Opcional"
                         />
                       </div>
                       <div>
@@ -1620,8 +1703,11 @@ export default function PublicStorePage() {
                     </div>
                   </CardContent>
                 </Card>
+                )}
 
-                {/* Shipping Method */}
+                {/* ETAPA 2: ENTREGA */}
+                {currentStep === 2 && (
+                <>
                 <Card>
                   <CardHeader>
                     <CardTitle>Tipo de Atendimento</CardTitle>
@@ -1792,8 +1878,11 @@ export default function PublicStorePage() {
                   </Card>
                   )
                 })()}
+                </>
+                )}
 
-                {/* Payment Method */}
+                {/* ETAPA 3: PAGAMENTO */}
+                {currentStep === 3 && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Forma de Pagamento</CardTitle>
@@ -1830,24 +1919,76 @@ export default function PublicStorePage() {
                     )}
                   </CardContent>
                 </Card>
+                )}
+
+                {/* ETAPA 4: REVISÃO */}
+                {currentStep === 4 && (
+                <div className="space-y-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary shrink-0"><User className="h-5 w-5" /></div>
+                        <div>
+                          <p className="font-semibold">{clientData.name || "—"}</p>
+                          {clientData.phone && <p className="text-sm text-muted-foreground">{clientData.phone}</p>}
+                          {clientData.email && <p className="text-sm text-muted-foreground">{clientData.email}</p>}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-3"><CardTitle className="text-base">Itens ({cartCount})</CardTitle></CardHeader>
+                    <CardContent className="space-y-2">
+                      {cart.map((item, index) => {
+                        const basePrice = getNumericPrice(item.promotional_price || item.price)
+                        const variationPrice = item.selectedVariation ? item.selectedVariation.price : 0
+                        const optionalsPrice = item.selectedOptionals?.reduce((sum, opt) => sum + (opt.price * opt.quantity), 0) || 0
+                        const unitPrice = basePrice + variationPrice + optionalsPrice
+                        const lineTotal = unitPrice * item.quantity
+                        return (
+                          <div key={`${item.uuid}-${index}`} className="flex justify-between items-center text-sm py-1">
+                            <div className="flex-1 min-w-0"><span className="font-medium">{item.quantity}x</span> {item.name}</div>
+                            <span className="font-medium shrink-0 ml-2">R$ {formatPrice(lineTotal)}</span>
+                          </div>
+                        )
+                      })}
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6 space-y-1 text-sm">
+                      <p><strong>Entrega:</strong> {translateShippingMethod(shippingMethod)}</p>
+                      {requiresDeliveryAddress() && deliveryData.address && (
+                        <p><strong>Endereço:</strong> {deliveryData.address}, {deliveryData.number} — {deliveryData.neighborhood}, {deliveryData.city}/{deliveryData.state}</p>
+                      )}
+                      <p><strong>Pagamento:</strong> {paymentMethodName || "—"}</p>
+                      <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
+                        <span>Total</span>
+                        <span className="text-primary">R$ {formatPrice(cartTotal)}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                )}
               </div>
 
-              {/* Order Summary */}
-              <div className="w-full lg:max-w-sm" id="order-summary">
-                <Card className="sticky top-24 space-y-0 rounded-3xl border border-border/60 shadow-2xl">
+              {/* Order Summary Sidebar (desktop) */}
+              <div className="hidden lg:block w-72 shrink-0" id="order-summary">
+                <Card className="sticky top-24 rounded-3xl border border-border/60 shadow-lg">
                   <CardHeader className="space-y-1 pb-0">
-                    <CardTitle className="flex items-center justify-between text-xl">
+                    <CardTitle className="flex items-center justify-between text-base">
                       <span>Resumo do Pedido</span>
                       <Badge variant="outline" className="rounded-full text-xs">
                         {cartCount} {cartCount === 1 ? 'item' : 'itens'}
                       </Badge>
                     </CardTitle>
-                    <CardDescription className="text-sm">
-                      Confira os valores antes de finalizar.
-                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4 pt-4">
-                    {renderSummaryContent('checkout')}
+                    {renderSummaryContent(currentStep === 4 ? 'review' : 'checkout', true)}
+                    {currentStep === 4 && (
+                      <Button type="button" onClick={handleCheckout} disabled={submitting} className="w-full h-12">
+                        {submitting ? "Finalizando..." : "Confirmar Pedido"}
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -1855,7 +1996,7 @@ export default function PublicStorePage() {
           </section>
         )}
 
-        {checkoutStep === "success" && orderResult && (
+        {orderSuccess && orderResult && (
           <section className="container mx-auto flex justify-center px-4 py-12">
             <Card>
               <CardHeader className="text-center">
@@ -1887,12 +2028,14 @@ export default function PublicStorePage() {
                       </svg>
                       <p className="font-semibold text-gray-900 dark:text-gray-100">{clientData.name}</p>
                     </div>
+                    {clientData.email && (
                     <div className="flex items-center gap-3">
                       <svg className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
                       <p className="text-sm text-gray-700 dark:text-gray-300">{clientData.email}</p>
                     </div>
+                    )}
                     <div className="flex items-center gap-3">
                       <svg className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -2106,7 +2249,9 @@ export default function PublicStorePage() {
                   className="w-full border-2 hover:bg-gray-50 dark:hover:bg-gray-900/50" 
                   size="lg"
                   onClick={() => {
-                    setCheckoutStep("cart")
+                    setOrderSuccess(false)
+                    setCurrentStep(0)
+                    setCompletedSteps(new Set())
                     setOrderResult(null)
                     setCompletedOrderId(null)
                   }}
@@ -2142,6 +2287,60 @@ export default function PublicStorePage() {
         )}
       </main>
 
+      {!orderSuccess && currentStep >= 1 && (
+        <div className="fixed bottom-0 left-0 right-0 z-[55] bg-background border-t pt-3 pb-4 px-4 lg:hidden">
+          <div className="flex items-center justify-between mb-2 text-sm font-bold">
+            <span>Total: R$ {formatPrice(cartTotal)}</span>
+            <span className="text-muted-foreground">{cartCount} item(ns)</span>
+          </div>
+          {currentStep < 4 ? (
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" onClick={goBack} className="h-12 flex-1 sm:flex-none sm:w-32">
+                <ChevronLeft className="h-4 w-4 mr-1" /> Voltar
+              </Button>
+              <Button type="button" onClick={goNext} className="h-12 flex-1">
+                Próximo <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" onClick={goBack} className="h-12 sm:w-32">
+                <ChevronLeft className="h-4 w-4 mr-1" /> Voltar
+              </Button>
+              <Button type="button" onClick={handleCheckout} disabled={submitting} className="h-14 flex-1 text-base font-semibold">
+                {submitting ? "Finalizando..." : "Confirmar Pedido"}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!orderSuccess && currentStep >= 1 && (
+        <div className="hidden lg:block sticky bottom-0 bg-background border-t pt-3 pb-4 mt-4">
+          <div className="container mx-auto px-4">
+            {currentStep < 4 ? (
+              <div className="flex gap-3 justify-end">
+                <Button type="button" variant="outline" onClick={goBack} className="h-12 w-32">
+                  <ChevronLeft className="h-4 w-4 mr-1" /> Voltar
+                </Button>
+                <Button type="button" onClick={goNext} className="h-12 w-40">
+                  Próximo <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-3 justify-end">
+                <Button type="button" variant="outline" onClick={goBack} className="h-12 w-32">
+                  <ChevronLeft className="h-4 w-4 mr-1" /> Voltar
+                </Button>
+                <Button type="button" onClick={handleCheckout} disabled={submitting} className="h-14 w-48 text-base font-semibold">
+                  {submitting ? "Finalizando..." : "Confirmar Pedido"}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {showMobileSummaryButton && (
         <button
           onClick={() => setMobileSummaryOpen(true)}
@@ -2160,13 +2359,39 @@ export default function PublicStorePage() {
         </button>
       )}
 
+      {!orderSuccess && currentStep === 0 && cart.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-[55] bg-background border-t pt-3 pb-4 px-4 hidden lg:block">
+          <div className="container mx-auto flex items-center justify-between gap-4">
+            <div className="text-sm font-bold">
+              <span>Total: R$ {formatPrice(cartTotal)}</span>
+              <span className="text-muted-foreground font-normal ml-2">{cartCount} item(ns)</span>
+            </div>
+            <Button type="button" onClick={handleStartCheckout} disabled={!isStoreOpen} className="h-12 px-8">
+              Ir para Dados <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {!orderSuccess && currentStep === 0 && cart.length > 0 && isStoreOpen && (
+        <div className="fixed bottom-0 left-0 right-0 z-[55] bg-background border-t pt-3 pb-4 px-4 lg:hidden">
+          <div className="flex items-center justify-between mb-2 text-sm font-bold">
+            <span>Total: R$ {formatPrice(cartTotal)}</span>
+            <span className="text-muted-foreground">{cartCount} item(ns)</span>
+          </div>
+          <Button type="button" onClick={handleStartCheckout} className="h-12 w-full">
+            Ir para Dados <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      )}
+
       <Sheet open={mobileSummaryOpen} onOpenChange={setMobileSummaryOpen}>
         <SheetContent side="bottom" className="z-[70] w-full max-h-[85vh] overflow-y-auto px-6 py-6 pb-8 sm:mx-auto sm:max-w-lg">
           <SheetHeader>
             <SheetTitle>Resumo do Pedido</SheetTitle>
           </SheetHeader>
           <div className="mt-4 space-y-4 pb-2">
-            {renderSummaryContent(checkoutStep === 'checkout' ? 'checkout' : 'cart')}
+            {renderSummaryContent(currentStep === 0 ? 'cart' : currentStep === 4 ? 'review' : 'checkout', currentStep >= 1)}
           </div>
         </SheetContent>
       </Sheet>
