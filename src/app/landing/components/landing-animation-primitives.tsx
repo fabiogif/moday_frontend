@@ -10,7 +10,7 @@ export function GlassCard({
   return (
     <div
       className={cn(
-        'rounded-2xl border border-white/15 bg-white/10 backdrop-blur-xl shadow-2xl shadow-violet-950/40',
+        'rounded-2xl border border-zinc-200/90 bg-white/95 shadow-lg shadow-zinc-200/60 backdrop-blur-sm',
         className,
       )}
     >
@@ -31,20 +31,20 @@ export function FlowStage({
 } & React.ComponentPropsWithoutRef<'div'>) {
   return (
     <div className={cn('relative mx-auto w-full max-w-xl lg:max-w-none', className)} {...props}>
-      <div className="hero-glow-drift absolute -inset-6 rounded-[2rem] bg-gradient-to-br from-violet-600/35 via-primary/25 to-fuchsia-600/15 blur-3xl" />
-      <div className="hero-glow-drift absolute left-1/4 top-0 h-32 w-32 rounded-full bg-violet-500/25 blur-2xl [animation-delay:2s]" />
+      <div className="hero-glow-drift absolute -inset-6 rounded-[2rem] bg-gradient-to-br from-orange-200/50 via-primary/20 to-violet-200/40 blur-3xl" />
+      <div className="hero-glow-drift absolute left-1/4 top-0 h-32 w-32 rounded-full bg-orange-200/40 blur-2xl [animation-delay:2s]" />
 
       <div
         className={cn(
-          'relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-[#101018] via-[#16102a] to-[#0c0816] p-5 sm:p-7',
+          'relative overflow-hidden rounded-[1.75rem] border border-zinc-200/90 bg-gradient-to-br from-white via-stone-50 to-orange-50/50 p-5 shadow-xl shadow-orange-100/40 sm:p-7',
           minHeight,
         )}
       >
         <div
-          className="absolute inset-0 opacity-[0.18]"
+          className="absolute inset-0 opacity-[0.35]"
           style={{
             backgroundImage:
-              'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.4) 1px, transparent 0)',
+              'radial-gradient(circle at 2px 2px, rgba(161,161,170,0.25) 1px, transparent 0)',
             backgroundSize: '22px 22px',
           }}
         />

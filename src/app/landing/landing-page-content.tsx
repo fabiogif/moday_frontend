@@ -11,6 +11,7 @@ import { CTASection } from './components/cta-section'
 import { TrustBadges } from './components/trust-badges'
 import { FloatingCTABar } from './components/floating-cta-bar'
 import { LandingFooter } from './components/footer'
+import { LandingLightThemeLock } from './components/landing-light-theme-lock'
 
 const TestimonialsSection = dynamic(
   () => import('./components/testimonials-section').then((m) => ({ default: m.TestimonialsSection })),
@@ -37,7 +38,7 @@ function HeroFallback() {
 
 export function LandingPageContent() {
   return (
-    <div className="min-h-screen bg-background">
+    <LandingLightThemeLock>
       <LandingNavbar />
 
       <main>
@@ -59,6 +60,6 @@ export function LandingPageContent() {
 
       <LandingFooter />
       <FloatingCTABar />
-    </div>
+    </LandingLightThemeLock>
   )
 }

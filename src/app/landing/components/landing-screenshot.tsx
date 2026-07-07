@@ -16,7 +16,7 @@ export function LandingScreenshot({
   alt,
   className,
   priority = false,
-  glowClassName = 'from-primary/20 to-purple-500/20',
+  glowClassName = 'from-orange-200/40 to-violet-200/30',
 }: LandingScreenshotProps) {
   return (
     <div className={cn('relative', className)}>
@@ -26,7 +26,7 @@ export function LandingScreenshot({
           glowClassName
         )}
       />
-      <div className="rounded-2xl border border-border/60 overflow-hidden shadow-lg">
+      <div className="rounded-2xl border border-zinc-200/80 overflow-hidden bg-white shadow-lg shadow-zinc-200/50">
         <Image
           src={src}
           alt={alt}
@@ -34,7 +34,7 @@ export function LandingScreenshot({
           height={900}
           priority={priority}
           loading={priority ? undefined : 'lazy'}
-          className="w-full h-auto block"
+          className="block h-auto w-full bg-white"
         />
       </div>
     </div>

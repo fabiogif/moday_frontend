@@ -3,23 +3,16 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { ArrowRight, Sparkles, Star, Clock, Gift } from 'lucide-react'
+import { ArrowRight, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { DotPattern } from '@/components/dot-pattern'
-import { HeroProductAnimation } from './hero-product-animation'
-import {
-  FREE_PLAN_BADGE,
-  TRIAL_BADGE_LABEL,
-  TRIAL_CTA_LABEL,
-  TRIAL_MICRO_COPY,
-} from '@/lib/landing-copy'
+import { TRIAL_CTA_LABEL, TRIAL_MICRO_COPY } from '@/lib/landing-copy'
 import {
   getVariantFromQuery,
   persistLandingVariant,
   resolveLandingVariant,
 } from '@/lib/landing-variants'
 import { useLandingCTAClick } from '@/hooks/use-landing-cta-click'
+import { HeroProductAnimation } from './hero-product-animation'
 
 export function HeroSection() {
   const searchParams = useSearchParams()
@@ -28,113 +21,87 @@ export function HeroSection() {
 
   useEffect(() => {
     const queryVariant = getVariantFromQuery(searchParams)
-    if (queryVariant) {
-      persistLandingVariant(queryVariant)
-    }
+    if (queryVariant) persistLandingVariant(queryVariant)
   }, [searchParams])
 
   return (
     <section
       id="inicio"
       aria-label="Apresentação do Alba Tec, sistema de gestão para restaurantes"
-      className="relative overflow-hidden bg-gradient-to-b from-background via-primary/5 to-background pt-20 sm:pt-28 pb-16 sm:pb-24"
+      className="bg-stone-50 pt-20 sm:pt-28 pb-16 sm:pb-24 border-b border-zinc-200"
     >
-      <div className="absolute inset-0">
-        <DotPattern className="opacity-100" size="md" fadeStyle="ellipse" />
-      </div>
-
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/25 to-violet-500/25 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-br from-violet-500/15 to-purple-500/15 rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-1/2 right-0 w-[500px] h-[500px] bg-gradient-to-br from-violet-600/15 to-primary/10 rounded-full blur-3xl" />
-      </div>
-
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16 xl:gap-20">
-          {/* Coluna esquerda — proposta de valor */}
-          <div className="text-center lg:text-left">
-            <div className="mb-6 flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <Badge
-                variant="outline"
-                className="px-5 py-2.5 text-sm font-medium border-primary/30 bg-gradient-to-r from-primary/10 via-purple-500/10 to-pink-500/10 hover:from-primary/20 hover:via-purple-500/20 hover:to-pink-500/20 transition-all shadow-lg"
-              >
-                <Clock className="w-3.5 h-3.5 mr-2 text-primary" />
-                <span className="bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent font-semibold">
-                  {TRIAL_BADGE_LABEL}
-                </span>
-              </Badge>
-              <Badge
-                variant="outline"
-                className="px-4 py-2 text-sm font-medium border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-              >
-                <Gift className="w-3.5 h-3.5 mr-2" />
-                {FREE_PLAN_BADGE}
-              </Badge>
+
+          {/* Left column */}
+          <div>
+            <div className="flex items-center gap-2.5 mb-6">
+              <span className="w-7 h-px bg-orange-600 flex-shrink-0" />
+              <p className="text-[11px] uppercase tracking-[0.22em] text-zinc-500 font-medium">
+                Alba Tec · Sistema para Restaurantes
+              </p>
             </div>
 
-            <h1 className="mb-6 text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-bold tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-1000 text-balance">
+            <h1 className="mb-5 text-4xl sm:text-5xl lg:text-5xl xl:text-[3.4rem] font-bold tracking-tight leading-[1.08] text-zinc-900 text-balance">
               {variant.title}
             </h1>
 
-            <p className="mb-8 max-w-xl mx-auto lg:mx-0 text-lg sm:text-xl text-muted-foreground leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1200 text-balance">
+            <p className="mb-7 max-w-lg text-lg text-zinc-500 leading-relaxed">
               {variant.subtitle}
             </p>
 
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 mb-8 animate-in fade-in slide-in-from-bottom-9 duration-1200">
+            <div className="flex flex-wrap gap-2 mb-8">
               {['PDV touch-first', 'Cardápio digital', 'Controle de mesas', 'Relatórios em tempo real'].map((tag) => (
-                <Badge key={tag} variant="secondary" className="text-xs font-normal">
-                  <Sparkles className="w-3 h-3 mr-1 text-primary" />
+                <span
+                  key={tag}
+                  className="text-xs font-medium px-2.5 py-1 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200"
+                >
                   {tag}
-                </Badge>
+                </span>
               ))}
             </div>
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:justify-center lg:justify-start animate-in fade-in slide-in-from-bottom-10 duration-1400">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button
                 size="lg"
-                className="group text-base sm:text-lg px-8 py-7 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/40 hover:scale-105 transition-all duration-300"
+                className="bg-zinc-900 text-white hover:bg-zinc-700 rounded-md h-11 px-7 text-sm font-semibold transition-colors"
                 asChild
               >
-                <Link
-                  href="/auth/register"
-                  className="flex items-center gap-2"
-                  onClick={() => trackCTA('/auth/register')}
-                >
+                <Link href="/auth/register" className="flex items-center gap-2" onClick={() => trackCTA('/auth/register')}>
                   {TRIAL_CTA_LABEL}
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Link href="/auth/login" className="cursor-pointer">
+              <Link href="/auth/login">
                 <Button
                   variant="outline"
                   size="lg"
-                  className="w-full sm:w-auto text-base sm:text-lg px-8 py-7 border-2 border-border/60 hover:border-primary/40 hover:bg-primary/5 hover:scale-105 transition-all duration-300 cursor-pointer"
+                  className="w-full sm:w-auto rounded-md h-11 px-6 text-sm border-zinc-300 text-zinc-700 hover:bg-zinc-100 transition-colors"
                 >
                   Fazer Login
                 </Button>
               </Link>
             </div>
 
-            <p className="mt-4 text-sm text-muted-foreground animate-in fade-in duration-1500">
-              {TRIAL_MICRO_COPY}
-            </p>
+            <p className="mt-3.5 text-xs text-zinc-400">{TRIAL_MICRO_COPY}</p>
 
-            <div className="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-6 sm:gap-8 text-sm text-muted-foreground animate-in fade-in duration-1600">
-              <div className="flex items-center gap-2">
+            <div className="mt-8 flex flex-wrap items-center gap-5 text-sm text-zinc-500 pt-6 border-t border-zinc-200">
+              <div className="flex items-center gap-1.5">
                 <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                <span className="font-medium">4.8 de 5 estrelas</span>
+                <span className="font-medium text-zinc-700">4.8 de 5 estrelas</span>
               </div>
-              <div className="hidden sm:block w-1 h-1 rounded-full bg-muted-foreground/30" />
-              <div className="font-medium">500+ restaurantes ativos</div>
-              <div className="hidden sm:block w-1 h-1 rounded-full bg-muted-foreground/30" />
-              <div className="font-medium">1M+ pedidos processados</div>
+              <span className="w-px h-4 bg-zinc-300 hidden sm:block" />
+              <span>500+ restaurantes ativos</span>
+              <span className="w-px h-4 bg-zinc-300 hidden sm:block" />
+              <span>1M+ pedidos processados</span>
             </div>
           </div>
 
-          {/* Coluna direita — micro-animação do produto */}
+          {/* Right column — product animation */}
           <div className="flow-reveal-up [animation-delay:200ms]">
             <HeroProductAnimation />
           </div>
+
         </div>
       </div>
     </section>

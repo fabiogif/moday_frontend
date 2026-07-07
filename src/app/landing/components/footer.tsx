@@ -100,7 +100,7 @@ export function LandingFooter() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="cursor-pointer" disabled={isSubmitting}>
+                <Button type="submit" className="cursor-pointer rounded-md bg-zinc-900 text-white hover:bg-zinc-700 transition-colors" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -120,7 +120,7 @@ export function LandingFooter() {
           {/* Brand Column */}
           <div className="col-span-2 max-w-2xl">
             <div className="mb-5 max-lg:flex max-lg:justify-center">
-              <AlbaTecLogo height={64} adaptive />
+              <AlbaTecLogo height={64} />
             </div>
             <p className="text-muted-foreground mb-6 max-lg:text-center max-lg:flex max-lg:justify-center text-sm leading-relaxed">
               Sistema completo de gestão para restaurantes. Pedidos, cardápio, financeiro e relatórios em uma única plataforma.

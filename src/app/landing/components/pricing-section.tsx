@@ -2,7 +2,6 @@
 
 import { Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -127,11 +126,11 @@ export function PricingSection() {
 
   if (loading) {
     return (
-      <section id="pricing" className="py-24 sm:py-32 bg-muted/40">
+      <section id="pricing" className="py-24 sm:py-32 bg-stone-50 border-t border-zinc-200">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground mt-2">Carregando planos...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-400 mx-auto"></div>
+            <p className="text-zinc-500 mt-2">Carregando planos...</p>
           </div>
         </div>
       </section>
@@ -139,24 +138,19 @@ export function PricingSection() {
   }
 
   return (
-    <section id="pricing" className="py-24 sm:py-32 relative overflow-hidden bg-gradient-to-b from-muted/30 via-background to-muted/30">
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-primary/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
+    <section id="pricing" className="py-24 sm:py-32 bg-stone-50 border-t border-zinc-200">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center mb-12">
-          <Badge variant="outline" className="mb-4 border-primary/20 bg-primary/5 text-primary">
-            <Zap className="h-3 w-3 mr-1" />
+          <p className="text-[11px] uppercase tracking-[0.22em] text-orange-600 font-medium mb-4">
             Planos e Preços
-          </Badge>
+          </p>
           <h2 className="text-3xl font-bold tracking-tight sm:text-5xl mb-4">
             Simples, transparente e sem surpresas
           </h2>
           <p className="text-lg text-muted-foreground mb-3">
             Escolha o plano ideal para o seu negócio. Comece grátis e escale quando precisar.
           </p>
-          <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 mb-8">
+          <p className="text-sm font-medium text-emerald-600 mb-8">
             Planos Básico e Premium incluem {TRIAL_DAYS} dias de teste grátis com acesso completo. Sem cartão de crédito.
           </p>
 
@@ -183,12 +177,12 @@ export function PricingSection() {
           </div>
 
           {isYearly ? (
-            <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+            <p className="text-sm font-medium text-emerald-600">
               Economize 20% com o plano anual
             </p>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              Troque para anual e <span className="text-primary font-semibold">economize 20%</span>
+            <p className="text-sm text-zinc-500">
+              Troque para anual e <span className="text-orange-600 font-semibold">economize 20%</span>
             </p>
           )}
         </div>
@@ -203,27 +197,27 @@ export function PricingSection() {
                 <div
                   key={plan.url || `plan-${index}`}
                   className={cn(
-                    'relative flex flex-1 min-w-0 flex-col rounded-2xl border p-5 xl:p-6 transition-all duration-200 flow-reveal-up hover:-translate-y-1',
+                    'relative flex flex-1 min-w-0 flex-col rounded-2xl border p-5 xl:p-6 transition-colors flow-reveal-up',
                     popular
-                      ? 'border-primary/30 bg-gradient-to-b from-primary/10 via-primary/5 to-background shadow-xl shadow-primary/10 ring-1 ring-primary/20'
-                      : 'border-border bg-card hover:border-primary/20 hover:shadow-lg'
+                      ? 'border-zinc-900 bg-white ring-1 ring-zinc-900 shadow-md'
+                      : 'border-zinc-200 bg-white'
                   )}
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   {popular && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-primary text-primary-foreground shadow-lg px-4 py-1">
-                        <Zap className="h-3 w-3 mr-1" />
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white border border-zinc-200 px-4 py-1 text-xs font-semibold text-zinc-900 shadow-sm">
+                        <Zap className="h-3 w-3" />
                         Mais popular
-                      </Badge>
+                      </span>
                     </div>
                   )}
 
                   <div className="mb-6">
-                    <div className={cn('text-lg font-bold tracking-tight mb-1', popular && 'text-primary')}>
+                    <div className="text-lg font-bold tracking-tight mb-1 text-zinc-900">
                       {plan.name}
                     </div>
-                    <div className="text-muted-foreground text-sm">
+                    <div className="text-sm text-zinc-500">
                       {plan.description || 'Plano completo para seu negócio'}
                     </div>
                   </div>
@@ -231,29 +225,29 @@ export function PricingSection() {
                   <div className="mb-5">
                     <div className="flex items-end gap-1">
                       {isFree ? (
-                        <span className="text-3xl xl:text-4xl font-bold">Grátis</span>
+                        <span className="text-3xl xl:text-4xl font-bold text-zinc-900">Grátis</span>
                       ) : (
                         <>
-                          <span className="text-sm text-muted-foreground self-start mt-2">R$</span>
-                          <span className="text-3xl xl:text-4xl font-bold tabular-nums">
+                          <span className="text-sm self-start mt-2 text-zinc-500">R$</span>
+                          <span className="text-3xl xl:text-4xl font-bold tabular-nums text-zinc-900">
                             {isYearly
                               ? (Number(plan.price) * 0.8).toFixed(2)
                               : Number(plan.price).toFixed(2)}
                           </span>
-                          <span className="text-muted-foreground text-sm mb-1">/mês</span>
+                          <span className="text-sm mb-1 text-zinc-500">/mês</span>
                         </>
                       )}
                     </div>
                     {!isFree && isYearly && (
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs mt-1 text-zinc-500">
                         Cobrado anualmente · R$ {(Number(plan.price) * 12 * 0.8).toFixed(2)}/ano
                       </p>
                     )}
                     {isFree && (
-                      <p className="text-xs text-muted-foreground mt-1">Para sempre, sem cartão</p>
+                      <p className="text-xs mt-1 text-zinc-500">Para sempre, sem cartão</p>
                     )}
                     {!isFree && (
-                      <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mt-1">
+                      <p className="text-xs font-medium text-emerald-500 mt-1">
                         {TRIAL_DAYS} dias de teste grátis
                       </p>
                     )}
@@ -262,10 +256,10 @@ export function PricingSection() {
                   <Button
                     onClick={() => handleSelectPlan(plan.id)}
                     className={cn(
-                      'w-full cursor-pointer mb-6',
+                      'w-full cursor-pointer mb-6 rounded-md h-11 text-sm font-semibold transition-colors',
                       popular
-                        ? 'bg-gradient-to-r from-primary to-violet-600 hover:from-primary/90 hover:to-violet-600/90 shadow-lg shadow-primary/25 text-white'
-                        : ''
+                        ? 'bg-zinc-900 text-white hover:bg-zinc-700'
+                        : 'border-zinc-300 text-zinc-700 hover:bg-zinc-100'
                     )}
                     variant={popular ? 'default' : 'outline'}
                     size="lg"
@@ -281,11 +275,11 @@ export function PricingSection() {
         </div>
 
         <div className="mt-16 text-center">
-          <p className="text-muted-foreground">
+          <p className="text-zinc-500">
             Precisa de recursos personalizados?{' '}
-            <Button variant="link" className="p-0 h-auto cursor-pointer text-primary" asChild>
-              <a href="#contact">Entre em contato com nossa equipe</a>
-            </Button>
+            <a href="#contact" className="text-zinc-900 underline decoration-zinc-300 hover:decoration-zinc-600 transition-colors">
+              Entre em contato com nossa equipe
+            </a>
           </p>
         </div>
       </div>
