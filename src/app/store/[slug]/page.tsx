@@ -940,12 +940,39 @@ export default function PublicStorePage() {
   const tenantIdForReview = storeInfo?.tenant_id || storeInfo?.id || 0
 
   const wizardSteps = [
-    { label: "Produtos", icon: ShoppingCart },
-    { label: "Dados", icon: User },
+    { label: "Cardápio", icon: ShoppingCart },
+    { label: "Seus dados", icon: User },
     { label: "Entrega", icon: Truck },
     { label: "Pagamento", icon: CreditCard },
     { label: "Revisão", icon: ClipboardCheck },
   ]
+
+  const storeFormCardClass = "gap-3 py-3 sm:gap-6 sm:py-6"
+  const storeFormHeaderClass = "px-3 sm:px-6"
+  const storeFormContentClass = "space-y-3 px-3 sm:space-y-4 sm:px-6"
+  const storeFormGridClass = "grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4"
+  const storeFormFieldClass = "space-y-1.5 sm:space-y-2"
+  const storeFormInputClass = "h-10 sm:h-11"
+  const storeFormLabelClass = "text-xs font-medium sm:text-sm"
+  const storeFormTextareaClass = "min-h-[72px] resize-none sm:min-h-[90px]"
+
+  const getNextStepLabel = (step: number) => {
+    switch (step) {
+      case 0:
+        return "Continuar pedido"
+      case 1:
+        return "Escolher entrega"
+      case 2:
+        return "Forma de pagamento"
+      case 3:
+        return "Revisar pedido"
+      default:
+        return "Continuar"
+    }
+  }
+
+  const getSubmitLabel = (submitting: boolean) =>
+    submitting ? "Enviando pedido..." : "Finalizar pedido"
 
   const requiresDeliveryAddress = () => {
     const currentType = serviceTypes.find((st: { identify?: string; slug?: string; requires_address?: boolean }) =>
@@ -968,18 +995,18 @@ export default function PublicStorePage() {
         return true
       case 1:
         if (!clientData.name.trim() || !clientData.phone.trim()) {
-          toast.error('Preencha nome e telefone.')
+          toast.error('Informe seu nome e celular para continuar.')
           return false
         }
         return true
       case 2: {
         if (!selectedServiceType && !shippingMethod) {
-          toast.error('Selecione o tipo de atendimento.')
+          toast.error('Escolha como prefere receber o pedido.')
           return false
         }
         if (requiresDeliveryAddress()) {
           if (!deliveryData.address.trim() || !deliveryData.number.trim() || !deliveryData.neighborhood.trim() || !deliveryData.city.trim() || !deliveryData.state.trim() || !deliveryData.zip_code.trim()) {
-            toast.error('Preencha o endereço de entrega completo.')
+            toast.error('Complete o endereço de entrega para continuar.')
             return false
           }
         }
@@ -987,7 +1014,7 @@ export default function PublicStorePage() {
       }
       case 3:
         if (!paymentMethod) {
-          toast.error('Selecione uma forma de pagamento.')
+          toast.error('Escolha como deseja pagar.')
           return false
         }
         return true
@@ -1081,14 +1108,8 @@ export default function PublicStorePage() {
 
     const buttonLabel =
       variant === 'cart'
-        ? 'Ir para Dados'
-        : variant === 'review'
-          ? submitting
-            ? 'Finalizando...'
-            : 'Confirmar Pedido'
-          : submitting
-            ? 'Finalizando...'
-            : 'Confirmar Pedido'
+        ? 'Continuar pedido'
+        : getSubmitLabel(submitting)
 
     const buttonAction = variant === 'cart' ? handleStartCheckout : handleCheckout
     const buttonDisabled =
@@ -1163,29 +1184,29 @@ export default function PublicStorePage() {
         <Separator />
 
         {variant === 'cart' && (
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <Label htmlFor="order-notes" className="text-sm font-medium">Observações do pedido</Label>
+          <div className="space-y-2.5 sm:space-y-3">
+            <div className={storeFormFieldClass}>
+              <Label htmlFor="order-notes" className={storeFormLabelClass}>Alguma observação no pedido?</Label>
               <Textarea
                 id="order-notes"
                 value={deliveryData.notes}
                 onChange={(e) => setDeliveryData((prev) => ({ ...prev, notes: e.target.value }))}
-                placeholder="Ex: Retirar ingredientes, ponto da carne, instruções especiais..."
-                className="min-h-[90px] resize-none"
+                placeholder="Ex.: sem cebola, ponto da carne, retirar ingredientes..."
+                className={storeFormTextareaClass}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="coupon-code" className="text-sm font-medium">Cupom de desconto</Label>
+            <div className={storeFormFieldClass}>
+              <Label htmlFor="coupon-code" className={storeFormLabelClass}>Tem cupom de desconto?</Label>
               <div className="flex items-center gap-2">
                 <Input
                   id="coupon-code"
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                  placeholder="DIGITE AQUI"
-                  className="uppercase"
+                  placeholder="Digite o código"
+                  className={`uppercase ${storeFormInputClass}`}
                 />
-                <Button type="button" variant="secondary" onClick={handleApplyCoupon} className="whitespace-nowrap">
-                  Aplicar
+                <Button type="button" variant="secondary" onClick={handleApplyCoupon} className="h-10 shrink-0 whitespace-nowrap px-3 text-sm sm:h-11 sm:px-4">
+                  Usar cupom
                 </Button>
               </div>
             </div>
@@ -1244,8 +1265,8 @@ export default function PublicStorePage() {
             )}
 
             {variant === 'cart' && (
-              <Button variant="ghost" className="w-full" onClick={() => setCart([])}>
-                Limpar carrinho
+              <Button variant="ghost" className="w-full text-sm" onClick={() => setCart([])}>
+                Esvaziar carrinho
               </Button>
             )}
           </>
@@ -1616,7 +1637,7 @@ export default function PublicStorePage() {
                   <Card className="sticky top-32 space-y-0 rounded-3xl border border-border/60 shadow-2xl">
                     <CardHeader className="space-y-1 pb-0">
                       <CardTitle className="flex items-center justify-between text-xl">
-                        <span>Resumo do Pedido</span>
+                        <span>Seu pedido</span>
                         <Badge variant="outline" className="rounded-full text-xs">
                           {cartCount} {cartCount === 1 ? 'item' : 'itens'}
                         </Badge>
@@ -1636,43 +1657,45 @@ export default function PublicStorePage() {
                         </div>
                 
           {!orderSuccess && currentStep >= 1 && currentStep <= 4 && (
-          <section className={`container mx-auto px-3 sm:px-4 ${currentStep === 4 ? 'py-3 sm:py-6 lg:py-10' : 'py-6 sm:py-10'}`}>
+          <section className="container mx-auto px-3 py-3 sm:px-4 sm:py-6 lg:py-10">
             <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
-              <div className={`flex-1 min-w-0 ${currentStep === 4 ? 'space-y-3 sm:space-y-4' : 'space-y-4'}`}>
+              <div className="flex-1 min-w-0 space-y-3 sm:space-y-4">
 
                 {/* ETAPA 1: DADOS */}
                 {currentStep === 1 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Informações Pessoais</CardTitle>
-                    <CardDescription>
-                      Já comprou aqui antes? Informe seu telefone ou CPF e preenchemos seus dados e endereço de entrega automaticamente.
+                <Card className={storeFormCardClass}>
+                  <CardHeader className={storeFormHeaderClass}>
+                    <CardTitle className="text-base sm:text-lg">Seus dados</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">
+                      Já pediu aqui antes? Informe celular ou CPF e preenchemos tudo automaticamente.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div>
-                        <Label htmlFor="name">Nome Completo *</Label>
+                  <CardContent className={storeFormContentClass}>
+                    <div className={storeFormGridClass}>
+                      <div className={storeFormFieldClass}>
+                        <Label htmlFor="name" className={storeFormLabelClass}>Como podemos te chamar? *</Label>
                         <Input
                           id="name"
                           value={clientData.name}
                           onChange={(e) => setClientData({ ...clientData, name: e.target.value })}
+                          placeholder="Seu nome completo"
                           required
-                          className="h-12"
+                          className={storeFormInputClass}
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="email">Email</Label>
+                      <div className={storeFormFieldClass}>
+                        <Label htmlFor="email" className={storeFormLabelClass}>E-mail (opcional)</Label>
                         <Input
                           id="email"
                           type="email"
                           value={clientData.email}
                           onChange={(e) => setClientData({ ...clientData, email: e.target.value })}
-                          placeholder="Opcional"
+                          placeholder="seu@email.com"
+                          className={storeFormInputClass}
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="phone">Telefone *</Label>
+                      <div className={storeFormFieldClass}>
+                        <Label htmlFor="phone" className={storeFormLabelClass}>Celular com WhatsApp *</Label>
                         <Input
                           id="phone"
                           value={clientData.phone}
@@ -1687,10 +1710,11 @@ export default function PublicStorePage() {
                           onBlur={() => scheduleClientLookup(clientData.cpf, clientData.phone)}
                           placeholder="(11) 99999-9999"
                           required
+                          className={storeFormInputClass}
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="cpf">CPF</Label>
+                      <div className={storeFormFieldClass}>
+                        <Label htmlFor="cpf" className={storeFormLabelClass}>CPF (opcional)</Label>
                         <Input
                           id="cpf"
                           value={clientData.cpf}
@@ -1704,6 +1728,7 @@ export default function PublicStorePage() {
                           }}
                           onBlur={() => scheduleClientLookup(clientData.cpf, clientData.phone)}
                           placeholder="000.000.000-00"
+                          className={storeFormInputClass}
                         />
                       </div>
                     </div>
@@ -1714,11 +1739,14 @@ export default function PublicStorePage() {
                 {/* ETAPA 2: ENTREGA */}
                 {currentStep === 2 && (
                 <>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Tipo de Atendimento</CardTitle>
+                <Card className={storeFormCardClass}>
+                  <CardHeader className={storeFormHeaderClass}>
+                    <CardTitle className="text-base sm:text-lg">Como prefere receber?</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">
+                      Escolha entre entrega em casa ou retirada no local.
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className={`${storeFormContentClass} pt-0`}>
                     <RadioGroup 
                       value={selectedServiceType || shippingMethod} 
                       onValueChange={(value) => {
@@ -1733,27 +1761,27 @@ export default function PublicStorePage() {
                           setShippingMethod(value)
                         }
                       }}
+                      className="space-y-2.5 sm:space-y-3"
                     >
                       {serviceTypes.length > 0 ? (
                         serviceTypes.map((st: any) => {
                           const typeValue = st.identify || st.slug
-                          const typeSlug = (st.slug || st.identify || '').toLowerCase()
                           return (
-                            <div key={typeValue} className="flex items-center space-x-2">
+                            <div key={typeValue} className="flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
                               <RadioGroupItem value={typeValue} id={typeValue} />
-                              <Label htmlFor={typeValue}>{st.name}</Label>
+                              <Label htmlFor={typeValue} className={`${storeFormLabelClass} cursor-pointer font-normal`}>{st.name}</Label>
                             </div>
                           )
                         })
                       ) : (
                         <>
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
                             <RadioGroupItem value="delivery" id="delivery" />
-                            <Label htmlFor="delivery">Entrega no endereço</Label>
+                            <Label htmlFor="delivery" className={`${storeFormLabelClass} cursor-pointer font-normal`}>Receber em casa</Label>
                           </div>
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
                             <RadioGroupItem value="pickup" id="pickup" />
-                            <Label htmlFor="pickup">Retirar no local</Label>
+                            <Label htmlFor="pickup" className={`${storeFormLabelClass} cursor-pointer font-normal`}>Buscar no restaurante</Label>
                           </div>
                         </>
                       )}
@@ -1768,54 +1796,57 @@ export default function PublicStorePage() {
                   )
                   const requiresAddress = currentType?.requires_address || shippingMethod === "delivery"
                   return requiresAddress && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Endereço de Entrega</CardTitle>
+                  <Card className={storeFormCardClass}>
+                    <CardHeader className={storeFormHeaderClass}>
+                      <CardTitle className="text-base sm:text-lg">Onde entregar?</CardTitle>
+                      <CardDescription className="text-xs sm:text-sm">
+                        Informe o endereço completo para receber seu pedido.
+                      </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="md:col-span-2">
-                          <Label htmlFor="address">Endereço *</Label>
+                    <CardContent className={storeFormContentClass}>
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-3 sm:gap-4">
+                        <div className={`md:col-span-2 ${storeFormFieldClass}`}>
+                          <Label htmlFor="address" className={storeFormLabelClass}>Rua ou avenida *</Label>
                           <Input
                             id="address"
                             value={deliveryData.address}
                             onChange={(e) => setDeliveryData({ ...deliveryData, address: e.target.value })}
                             required={shippingMethod === "delivery"}
-                            placeholder="Rua, Avenida, etc."
-                            className={validationErrors['delivery.address'] ? 'border-red-500' : ''}
+                            placeholder="Ex.: Rua das Flores"
+                            className={`${storeFormInputClass} ${validationErrors['delivery.address'] ? 'border-red-500' : ''}`}
                           />
                           {validationErrors['delivery.address'] && (
-                            <p className="text-sm text-red-500 mt-1">{validationErrors['delivery.address']}</p>
+                            <p className="text-xs text-red-500 mt-1 sm:text-sm">{validationErrors['delivery.address']}</p>
                           )}
                         </div>
-                        <div>
-                          <Label htmlFor="number">Número *</Label>
+                        <div className={storeFormFieldClass}>
+                          <Label htmlFor="number" className={storeFormLabelClass}>Número *</Label>
                           <Input
                             id="number"
                             value={deliveryData.number}
                             onChange={(e) => setDeliveryData({ ...deliveryData, number: e.target.value })}
                             required={shippingMethod === "delivery"}
-                            placeholder="123"
-                            className={validationErrors['delivery.number'] ? 'border-red-500' : ''}
+                            placeholder="Ex.: 123"
+                            className={`${storeFormInputClass} ${validationErrors['delivery.number'] ? 'border-red-500' : ''}`}
                           />
                           {validationErrors['delivery.number'] && (
-                            <p className="text-sm text-red-500 mt-1">{validationErrors['delivery.number']}</p>
+                            <p className="text-xs text-red-500 mt-1 sm:text-sm">{validationErrors['delivery.number']}</p>
                           )}
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="neighborhood">Bairro *</Label>
+                      <div className={storeFormGridClass}>
+                        <div className={storeFormFieldClass}>
+                          <Label htmlFor="neighborhood" className={storeFormLabelClass}>Bairro *</Label>
                           <Input
                             id="neighborhood"
                             value={deliveryData.neighborhood}
                             onChange={(e) => setDeliveryData({ ...deliveryData, neighborhood: e.target.value })}
                             required={shippingMethod === "delivery"}
-                            placeholder="Centro, Jardins, etc."
-                            className={validationErrors['delivery.neighborhood'] ? 'border-red-500' : ''}
+                            placeholder="Ex.: Centro"
+                            className={`${storeFormInputClass} ${validationErrors['delivery.neighborhood'] ? 'border-red-500' : ''}`}
                           />
                           {validationErrors['delivery.neighborhood'] && (
-                            <p className="text-sm text-red-500 mt-1">{validationErrors['delivery.neighborhood']}</p>
+                            <p className="text-xs text-red-500 mt-1 sm:text-sm">{validationErrors['delivery.neighborhood']}</p>
                           )}
                         </div>
                       </div>
@@ -1831,9 +1862,9 @@ export default function PublicStorePage() {
                         required={shippingMethod === "delivery"}
                       />
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="zip_code">CEP *</Label>
+                      <div className={storeFormGridClass}>
+                        <div className={storeFormFieldClass}>
+                          <Label htmlFor="zip_code" className={storeFormLabelClass}>CEP *</Label>
                           <div className="flex gap-2">
                             <Input
                               id="zip_code"
@@ -1842,42 +1873,47 @@ export default function PublicStorePage() {
                               onBlur={handleSearchCEP}
                               maxLength={9}
                               required={shippingMethod === "delivery"}
-                              placeholder="01234-567"
-                              className={validationErrors['delivery.zip_code'] ? 'border-red-500' : ''}
+                              placeholder="00000-000"
+                              className={`${storeFormInputClass} ${validationErrors['delivery.zip_code'] ? 'border-red-500' : ''}`}
                             />
                             <Button
                               type="button"
                               variant="outline"
                               size="icon"
+                              className="h-10 w-10 shrink-0 sm:h-11 sm:w-11"
                               onClick={handleSearchCEP}
                               disabled={cepLoading || deliveryData.zip_code.replace(/\D/g, '').length !== 8}
+                              title="Buscar endereço pelo CEP"
                             >
                               {cepLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                             </Button>
                           </div>
                           {validationErrors['delivery.zip_code'] && (
-                            <p className="text-sm text-red-500 mt-1">{validationErrors['delivery.zip_code']}</p>
+                            <p className="text-xs text-red-500 mt-1 sm:text-sm">{validationErrors['delivery.zip_code']}</p>
                           )}
                           {cepLoading && (
-                            <p className="text-sm text-muted-foreground mt-1">Buscando CEP...</p>
+                            <p className="text-xs text-muted-foreground mt-1 sm:text-sm">Buscando endereço...</p>
                           )}
                         </div>
                       </div>
-                      <div>
-                        <Label htmlFor="complement">Complemento</Label>
+                      <div className={storeFormFieldClass}>
+                        <Label htmlFor="complement" className={storeFormLabelClass}>Complemento (opcional)</Label>
                         <Input
                           id="complement"
                           value={deliveryData.complement}
                           onChange={(e) => setDeliveryData({ ...deliveryData, complement: e.target.value })}
+                          placeholder="Apto, bloco, casa..."
+                          className={storeFormInputClass}
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="notes">Observações</Label>
+                      <div className={storeFormFieldClass}>
+                        <Label htmlFor="notes" className={storeFormLabelClass}>Instruções para entrega (opcional)</Label>
                         <Textarea
                           id="notes"
                           value={deliveryData.notes}
                           onChange={(e) => setDeliveryData({ ...deliveryData, notes: e.target.value })}
-                          placeholder="Ex: Ponto de referência, instruções de entrega..."
+                          placeholder="Ex.: portão azul, interfone 12, ponto de referência..."
+                          className={storeFormTextareaClass}
                         />
                       </div>
                     </CardContent>
@@ -1889,11 +1925,14 @@ export default function PublicStorePage() {
 
                 {/* ETAPA 3: PAGAMENTO */}
                 {currentStep === 3 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Forma de Pagamento</CardTitle>
+                <Card className={storeFormCardClass}>
+                  <CardHeader className={storeFormHeaderClass}>
+                    <CardTitle className="text-base sm:text-lg">Como vai pagar?</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">
+                      Selecione a forma de pagamento que preferir.
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className={`${storeFormContentClass} pt-0`}>
                     {paymentMethods.length > 0 ? (
                       <RadioGroup 
                         value={paymentMethod} 
@@ -1902,14 +1941,15 @@ export default function PublicStorePage() {
                           const selected = paymentMethods.find(m => m.uuid === uuid)
                           setPaymentMethodName(selected?.name || uuid)
                         }}
+                        className="space-y-2.5 sm:space-y-3"
                       >
                         {paymentMethods.map((method) => (
-                          <div key={method.uuid} className="flex items-center space-x-2">
+                          <div key={method.uuid} className="flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
                             <RadioGroupItem value={method.uuid} id={method.uuid} />
-                            <Label htmlFor={method.uuid} className="flex items-center gap-2 cursor-pointer">
+                            <Label htmlFor={method.uuid} className={`${storeFormLabelClass} flex cursor-pointer items-center gap-2 font-normal`}>
                               {method.name}
                               {method.description && (
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant="outline" className="text-[10px] sm:text-xs">
                                   {method.description}
                                 </Badge>
                               )}
@@ -1918,9 +1958,9 @@ export default function PublicStorePage() {
                         ))}
                       </RadioGroup>
                     ) : (
-                      <div className="text-center py-4 text-muted-foreground">
-                        <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-                        <p className="text-sm">Carregando formas de pagamento...</p>
+                      <div className="py-3 text-center text-muted-foreground sm:py-4">
+                        <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin" />
+                        <p className="text-xs sm:text-sm">Carregando opções de pagamento...</p>
                       </div>
                     )}
                   </CardContent>
@@ -1982,7 +2022,7 @@ export default function PublicStorePage() {
                 <Card className="sticky top-24 rounded-3xl border border-border/60 shadow-lg">
                   <CardHeader className="space-y-1 pb-0">
                     <CardTitle className="flex items-center justify-between text-base">
-                      <span>Resumo do Pedido</span>
+                      <span>Seu pedido</span>
                       <Badge variant="outline" className="rounded-full text-xs">
                         {cartCount} {cartCount === 1 ? 'item' : 'itens'}
                       </Badge>
@@ -1991,8 +2031,8 @@ export default function PublicStorePage() {
                   <CardContent className="space-y-4 pt-4">
                     {renderSummaryContent(currentStep === 4 ? 'review' : 'checkout', true)}
                     {currentStep === 4 && (
-                      <Button type="button" onClick={handleCheckout} disabled={submitting} className="w-full h-12">
-                        {submitting ? "Finalizando..." : "Confirmar Pedido"}
+                      <Button type="button" onClick={handleCheckout} disabled={submitting} className="w-full h-11 sm:h-12">
+                        {getSubmitLabel(submitting)}
                       </Button>
                     )}
                   </CardContent>
@@ -2107,7 +2147,7 @@ export default function PublicStorePage() {
                       <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                       </svg>
-                      <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Forma de Pagamento</p>
+                      <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Pagamento</p>
                     </div>
                     <p className="font-semibold text-gray-900 dark:text-gray-100">{paymentMethodName || 'Não selecionado'}</p>
                   </div>
@@ -2265,7 +2305,7 @@ export default function PublicStorePage() {
                   <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  Fazer Novo Pedido
+                  Fazer outro pedido
                 </Button>
 
                 {/* Botão de Avaliação */}
@@ -2300,12 +2340,12 @@ export default function PublicStorePage() {
             <span className="text-muted-foreground">{cartCount} item(ns)</span>
           </div>
           {currentStep < 4 ? (
-            <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={goBack} className="h-12 flex-1 sm:flex-none sm:w-32">
+            <div className="flex gap-2 sm:gap-3">
+              <Button type="button" variant="outline" onClick={goBack} className="h-11 flex-1 sm:h-12 sm:flex-none sm:w-32">
                 <ChevronLeft className="h-4 w-4 mr-1" /> Voltar
               </Button>
-              <Button type="button" onClick={goNext} className="h-12 flex-1">
-                Próximo <ChevronRight className="h-4 w-4 ml-1" />
+              <Button type="button" onClick={goNext} className="h-11 flex-1 sm:h-12">
+                {getNextStepLabel(currentStep)} <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </div>
           ) : (
@@ -2314,7 +2354,7 @@ export default function PublicStorePage() {
                 <ChevronLeft className="h-4 w-4 mr-1" /> Voltar
               </Button>
               <Button type="button" onClick={handleCheckout} disabled={submitting} className="h-11 flex-1 text-sm font-semibold sm:h-14 sm:text-base">
-                {submitting ? "Finalizando..." : "Confirmar Pedido"}
+                {getSubmitLabel(submitting)}
               </Button>
             </div>
           )}
@@ -2329,8 +2369,8 @@ export default function PublicStorePage() {
                 <Button type="button" variant="outline" onClick={goBack} className="h-12 w-32">
                   <ChevronLeft className="h-4 w-4 mr-1" /> Voltar
                 </Button>
-                <Button type="button" onClick={goNext} className="h-12 w-40">
-                  Próximo <ChevronRight className="h-4 w-4 ml-1" />
+                <Button type="button" onClick={goNext} className="h-12 w-48">
+                  {getNextStepLabel(currentStep)} <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>
             ) : (
@@ -2338,8 +2378,8 @@ export default function PublicStorePage() {
                 <Button type="button" variant="outline" onClick={goBack} className="h-12 w-32">
                   <ChevronLeft className="h-4 w-4 mr-1" /> Voltar
                 </Button>
-                <Button type="button" onClick={handleCheckout} disabled={submitting} className="h-14 w-48 text-base font-semibold">
-                  {submitting ? "Finalizando..." : "Confirmar Pedido"}
+                <Button type="button" onClick={handleCheckout} disabled={submitting} className="h-14 w-52 text-base font-semibold">
+                  {getSubmitLabel(submitting)}
                 </Button>
               </div>
             )}
@@ -2372,29 +2412,29 @@ export default function PublicStorePage() {
               <span>Total: R$ {formatPrice(cartTotal)}</span>
               <span className="text-muted-foreground font-normal ml-2">{cartCount} item(ns)</span>
             </div>
-            <Button type="button" onClick={handleStartCheckout} disabled={!isStoreOpen} className="h-12 px-8">
-              Ir para Dados <ChevronRight className="h-4 w-4 ml-1" />
+            <Button type="button" onClick={handleStartCheckout} disabled={!isStoreOpen} className="h-11 px-6 sm:h-12 sm:px-8">
+              Continuar pedido <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
         </div>
       )}
 
       {!orderSuccess && currentStep === 0 && cart.length > 0 && isStoreOpen && (
-        <div className="fixed bottom-0 left-0 right-0 z-[55] bg-background border-t pt-3 pb-4 px-4 lg:hidden">
-          <div className="flex items-center justify-between mb-2 text-sm font-bold">
+        <div className="fixed bottom-0 left-0 right-0 z-[55] border-t bg-background px-3 pt-2.5 pb-3 lg:hidden">
+          <div className="mb-1.5 flex items-center justify-between text-sm font-bold">
             <span>Total: R$ {formatPrice(cartTotal)}</span>
             <span className="text-muted-foreground">{cartCount} item(ns)</span>
           </div>
-          <Button type="button" onClick={handleStartCheckout} className="h-12 w-full">
-            Ir para Dados <ChevronRight className="h-4 w-4 ml-1" />
+          <Button type="button" onClick={handleStartCheckout} className="h-11 w-full sm:h-12">
+            Continuar pedido <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
       )}
 
       <Sheet open={mobileSummaryOpen} onOpenChange={setMobileSummaryOpen}>
-        <SheetContent side="bottom" className="z-[70] w-full max-h-[85vh] overflow-y-auto px-6 py-6 pb-8 sm:mx-auto sm:max-w-lg">
+        <SheetContent side="bottom" className="z-[70] w-full max-h-[85vh] overflow-y-auto px-4 py-4 pb-6 sm:mx-auto sm:max-w-lg sm:px-6 sm:py-6 sm:pb-8">
           <SheetHeader>
-            <SheetTitle>Resumo do Pedido</SheetTitle>
+            <SheetTitle>Seu pedido</SheetTitle>
           </SheetHeader>
           <div className="mt-4 space-y-4 pb-2">
             {renderSummaryContent(currentStep === 0 ? 'cart' : currentStep === 4 ? 'review' : 'checkout', currentStep >= 1)}
@@ -2419,7 +2459,7 @@ export default function PublicStorePage() {
                 <DialogHeader className="space-y-0.5 text-left mb-3">
                   <DialogTitle className="text-lg font-semibold leading-tight">{selectedProduct.name}</DialogTitle>
                   <DialogDescription className="text-sm text-muted-foreground">
-                    Personalize o pedido antes de adicionar ao carrinho.
+                    Escolha as opções e adicione ao seu pedido.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex items-center gap-3">
@@ -2542,7 +2582,7 @@ export default function PublicStorePage() {
                     className="text-muted-foreground hover:text-foreground"
                     onClick={() => { setShowSelectionDialog(false); resetSelectionState() }}
                   >
-                    Cancelar
+                    Fechar
                   </Button>
                 </div>
                 <Button
@@ -2552,7 +2592,7 @@ export default function PublicStorePage() {
                   onClick={confirmAddToCart}
                   disabled={!!(selectedProduct.variations && selectedProduct.variations.length > 0 && !selectedVariation)}
                 >
-                  Adicionar ao carrinho · R$ {formatPrice(calculateSelectionTotal())}
+                  Adicionar · R$ {formatPrice(calculateSelectionTotal())}
                 </Button>
               </div>
             </>
