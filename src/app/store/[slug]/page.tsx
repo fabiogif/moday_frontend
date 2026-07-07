@@ -947,14 +947,14 @@ export default function PublicStorePage() {
     { label: "Revisão", icon: ClipboardCheck },
   ]
 
-  const storeFormCardClass = "gap-3 py-3 sm:gap-6 sm:py-6"
-  const storeFormHeaderClass = "px-3 sm:px-6"
-  const storeFormContentClass = "space-y-3 px-3 sm:space-y-4 sm:px-6"
-  const storeFormGridClass = "grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4"
-  const storeFormFieldClass = "space-y-1.5 sm:space-y-2"
-  const storeFormInputClass = "h-10 sm:h-11"
-  const storeFormLabelClass = "text-xs font-medium sm:text-sm"
-  const storeFormTextareaClass = "min-h-[72px] resize-none sm:min-h-[90px]"
+  const storeFormCardClass = "gap-4 py-4 sm:gap-6 sm:py-6"
+  const storeFormHeaderClass = "space-y-1 px-4 pb-2 sm:px-6 sm:pb-3"
+  const storeFormContentClass = "space-y-4 px-4 sm:space-y-5 sm:px-6"
+  const storeFormGridClass = "grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5"
+  const storeFormFieldClass = "space-y-2"
+  const storeFormInputClass = "h-10 px-3 py-2 sm:h-11"
+  const storeFormLabelClass = "mb-0.5 block text-xs font-medium sm:text-sm"
+  const storeFormTextareaClass = "min-h-[80px] resize-none px-3 py-2.5 sm:min-h-[96px]"
 
   const getNextStepLabel = (step: number) => {
     switch (step) {
@@ -1657,7 +1657,7 @@ export default function PublicStorePage() {
                         </div>
                 
           {!orderSuccess && currentStep >= 1 && currentStep <= 4 && (
-          <section className="container mx-auto px-3 py-3 sm:px-4 sm:py-6 lg:py-10">
+          <section className="container mx-auto px-4 py-4 sm:px-4 sm:py-6 lg:py-10">
             <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
               <div className="flex-1 min-w-0 space-y-3 sm:space-y-4">
 
@@ -1767,7 +1767,7 @@ export default function PublicStorePage() {
                         serviceTypes.map((st: any) => {
                           const typeValue = st.identify || st.slug
                           return (
-                            <div key={typeValue} className="flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
+                            <div key={typeValue} className="flex items-center gap-3 rounded-lg border border-border/60 px-4 py-3 sm:px-4 sm:py-3.5">
                               <RadioGroupItem value={typeValue} id={typeValue} />
                               <Label htmlFor={typeValue} className={`${storeFormLabelClass} cursor-pointer font-normal`}>{st.name}</Label>
                             </div>
@@ -1775,11 +1775,11 @@ export default function PublicStorePage() {
                         })
                       ) : (
                         <>
-                          <div className="flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
+                          <div className="flex items-center gap-3 rounded-lg border border-border/60 px-4 py-3 sm:px-4 sm:py-3.5">
                             <RadioGroupItem value="delivery" id="delivery" />
                             <Label htmlFor="delivery" className={`${storeFormLabelClass} cursor-pointer font-normal`}>Receber em casa</Label>
                           </div>
-                          <div className="flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
+                          <div className="flex items-center gap-3 rounded-lg border border-border/60 px-4 py-3 sm:px-4 sm:py-3.5">
                             <RadioGroupItem value="pickup" id="pickup" />
                             <Label htmlFor="pickup" className={`${storeFormLabelClass} cursor-pointer font-normal`}>Buscar no restaurante</Label>
                           </div>
@@ -1860,6 +1860,10 @@ export default function PublicStorePage() {
                         stateError={validationErrors['delivery.state']}
                         cityError={validationErrors['delivery.city']}
                         required={shippingMethod === "delivery"}
+                        className={storeFormGridClass}
+                        fieldClassName={storeFormFieldClass}
+                        labelClassName={storeFormLabelClass}
+                        triggerClassName={storeFormInputClass}
                       />
 
                       <div className={storeFormGridClass}>
@@ -1944,7 +1948,7 @@ export default function PublicStorePage() {
                         className="space-y-2.5 sm:space-y-3"
                       >
                         {paymentMethods.map((method) => (
-                          <div key={method.uuid} className="flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
+                          <div key={method.uuid} className="flex items-center gap-3 rounded-lg border border-border/60 px-4 py-3 sm:px-4 sm:py-3.5">
                             <RadioGroupItem value={method.uuid} id={method.uuid} />
                             <Label htmlFor={method.uuid} className={`${storeFormLabelClass} flex cursor-pointer items-center gap-2 font-normal`}>
                               {method.name}
@@ -1971,7 +1975,7 @@ export default function PublicStorePage() {
                 {currentStep === 4 && (
                 <div className="space-y-3 sm:space-y-4">
                   <Card className="gap-3 py-3 sm:gap-6 sm:py-6">
-                    <CardContent className="px-3 pt-3 sm:px-6 sm:pt-6">
+                    <CardContent className="px-4 pt-4 sm:px-6 sm:pt-6">
                       <div className="flex items-center gap-2.5 sm:gap-3">
                         <div className="flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-primary/10 text-primary shrink-0"><User className="h-4 w-4 sm:h-5 sm:w-5" /></div>
                         <div>
@@ -1983,8 +1987,8 @@ export default function PublicStorePage() {
                     </CardContent>
                   </Card>
                   <Card className="gap-3 py-3 sm:gap-6 sm:py-6">
-                    <CardHeader className="px-3 pb-2 sm:px-6 sm:pb-3"><CardTitle className="text-base">Itens ({cartCount})</CardTitle></CardHeader>
-                    <CardContent className="space-y-1.5 px-3 sm:space-y-2 sm:px-6">
+                    <CardHeader className="px-4 pb-2 sm:px-6 sm:pb-3"><CardTitle className="text-base">Itens ({cartCount})</CardTitle></CardHeader>
+                    <CardContent className="space-y-2 px-4 sm:space-y-2 sm:px-6">
                       {cart.map((item, index) => {
                         const basePrice = getNumericPrice(item.promotional_price || item.price)
                         const variationPrice = item.selectedVariation ? item.selectedVariation.price : 0
@@ -2001,7 +2005,7 @@ export default function PublicStorePage() {
                     </CardContent>
                   </Card>
                   <Card className="gap-3 py-3 sm:gap-6 sm:py-6">
-                    <CardContent className="space-y-1 px-3 pt-3 text-sm sm:px-6 sm:pt-6">
+                    <CardContent className="space-y-2 px-4 pt-4 text-sm sm:px-6 sm:pt-6">
                       <p><strong>Entrega:</strong> {translateShippingMethod(shippingMethod)}</p>
                       {requiresDeliveryAddress() && deliveryData.address && (
                         <p><strong>Endereço:</strong> {deliveryData.address}, {deliveryData.number} — {deliveryData.neighborhood}, {deliveryData.city}/{deliveryData.state}</p>

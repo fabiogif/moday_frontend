@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 
 interface StateCitySelectProps {
   stateValue?: string
@@ -20,6 +21,10 @@ interface StateCitySelectProps {
   cityError?: string
   disabled?: boolean
   required?: boolean
+  className?: string
+  fieldClassName?: string
+  labelClassName?: string
+  triggerClassName?: string
 }
 
 export function StateCitySelect({
@@ -31,6 +36,10 @@ export function StateCitySelect({
   cityError,
   disabled = false,
   required = false,
+  className,
+  fieldClassName,
+  labelClassName,
+  triggerClassName,
 }: StateCitySelectProps) {
   const { states, loading: loadingStates } = useStates()
   const { cities, loading: loadingCities } = useCitiesByState(stateValue || null)
@@ -53,10 +62,10 @@ export function StateCitySelect({
   }, [stateValue, cities])
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className={cn("grid grid-cols-1 gap-4 md:grid-cols-3", className)}>
       {/* Select de Estado */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium">
+      <div className={cn("space-y-2", fieldClassName)}>
+        <label className={cn("text-sm font-medium", labelClassName)}>
           Estado {required && <span className="text-red-500">*</span>}
         </label>
         {loadingStates ? (
@@ -67,7 +76,7 @@ export function StateCitySelect({
             onValueChange={onStateChange}
             disabled={disabled || loadingStates}
           >
-            <SelectTrigger className={stateError ? "border-red-500" : ""}>
+            <SelectTrigger className={cn(triggerClassName, stateError && "border-red-500")}>
               <SelectValue placeholder="Selecione o estado" />
             </SelectTrigger>
             <SelectContent>
@@ -91,8 +100,8 @@ export function StateCitySelect({
       </div>
 
       {/* Select de Cidade */}
-      <div className="md:col-span-2 space-y-2">
-        <label className="text-sm font-medium">
+      <div className={cn("space-y-2 md:col-span-2", fieldClassName)}>
+        <label className={cn("text-sm font-medium", labelClassName)}>
           Cidade {required && <span className="text-red-500">*</span>}
         </label>
         {loadingCities ? (
@@ -103,7 +112,7 @@ export function StateCitySelect({
             onValueChange={onCityChange}
             disabled={disabled || !stateValue || loadingCities}
           >
-            <SelectTrigger className={cityError ? "border-red-500" : ""}>
+            <SelectTrigger className={cn(triggerClassName, cityError && "border-red-500")}>
               <SelectValue 
                 placeholder={
                   !stateValue 
