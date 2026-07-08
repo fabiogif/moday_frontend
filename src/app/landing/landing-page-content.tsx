@@ -2,7 +2,6 @@ import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
 import { LandingNavbar } from './components/navbar'
 import { HeroSection } from './components/hero-section'
-import { StatsSection } from './components/stats-section'
 import {
   AppMobileFlowSection,
   FinanceFlowSection,
@@ -50,7 +49,6 @@ export function LandingPageContent() {
           <HeroSection />
         </Suspense>
         <TrustBadges />
-        <StatsSection />
         <OperationFlowSection />
         <FinanceFlowSection />
         <AppMobileFlowSection />
