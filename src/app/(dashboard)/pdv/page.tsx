@@ -2199,20 +2199,29 @@ const handleClientChange = (value: string) => {
     try {
       const result = await mutateOrder(endpoints.orders.advanceStatus(orderIdentify), "POST", {})
       if (result) {
-        toast.success("Status do pedido atualizado com sucesso!")
-        
-        // Atualizar estado do pedido
-        if (editingOrder) {
-          setEditingOrder(result as Order)
-        } else if (currentOrder) {
-          setCurrentOrder(result as Order)
-        }
-        
-        // Recarregar pedidos
+        const updatedOrder = result as Order
+        const newStatus =
+          updatedOrder.status || updatedOrder.order_status?.name
+
         if (selectedTable && !isDelivery) {
           refetchTableOrders()
         }
         refetchTodayOrders()
+
+        if (isFinalStatus(newStatus)) {
+          toast.success("Pedido finalizado com sucesso!")
+          resetPDVState()
+          return
+        }
+
+        toast.success("Status do pedido atualizado com sucesso!")
+
+        // Atualizar estado do pedido
+        if (editingOrder) {
+          setEditingOrder(updatedOrder)
+        } else if (currentOrder) {
+          setCurrentOrder(updatedOrder)
+        }
       }
     } catch (error: any) {
       toast.error(error?.message || "Erro ao avançar status do pedido")
