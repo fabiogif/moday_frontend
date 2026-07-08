@@ -54,6 +54,12 @@ export const LANDING_FAQ_ITEMS: LandingFaqItem[] = [
       'Sim. O sistema é em nuvem e funciona em computador, tablet e smartphone, com dados sincronizados em tempo real.',
   },
   {
+    id: 'app-mobile',
+    question: 'Existe app mobile para gerenciar pedidos?',
+    answer:
+      'Sim. O Alba Tec Restaurante permite receber push com som quando chega um pedido, aceitar e avançar o status no mesmo fluxo do painel, consultar histórico e ajustar os horários de funcionamento pelo celular.',
+  },
+  {
     id: 'relatorios',
     question: 'Quais relatórios o sistema oferece?',
     answer:

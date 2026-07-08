@@ -13,6 +13,7 @@ describe('FaqSection', () => {
     expect(screen.getByText(/Como funciona o sistema de gestão de pedidos/i)).toBeInTheDocument()
     expect(screen.getByText(/Como funcionam as variações e opcionais dos produtos/i)).toBeInTheDocument()
     expect(screen.getByText(/Como funciona o controle de estoque/i)).toBeInTheDocument()
+    expect(screen.getByText(/Existe app mobile para gerenciar pedidos/i)).toBeInTheDocument()
   })
 
   it('deve expandir e colapsar perguntas ao clicar', async () => {

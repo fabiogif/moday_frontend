@@ -41,7 +41,13 @@ const secondaryFeatures = [
   { icon: ShoppingCart, title: 'Pedidos Omnichannel', description: 'Centralize balcão, delivery e cardápio digital em um só painel.' },
   { icon: Package, title: 'Controle de Estoque', description: 'Alertas de baixo estoque e controle de custos. Reduza desperdícios em 30%.' },
   { icon: BarChart3, title: 'Relatórios em Tempo Real', description: 'Desempenho por produto, canal e operador com poucos cliques.' },
-  { icon: Smartphone, title: 'Acesso Mobile', description: 'Interface responsiva que funciona offline quando necessário.' },
+  {
+    icon: Smartphone,
+    title: 'App Alba Tec Restaurante',
+    description:
+      'Push com som, aceite e avanço de status no celular — o mesmo fluxo do painel, no bolso.',
+    badge: 'NOVO',
+  },
 ]
 
 const advancedFeatures = [
@@ -208,8 +214,15 @@ export function FeaturesSection() {
                     key={f.title}
                     className="rounded-xl border border-zinc-200 bg-white p-4"
                   >
-                    <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100">
-                      <f.icon className="h-4 w-4 text-zinc-600" />
+                    <div className="mb-2 flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100">
+                        <f.icon className="h-4 w-4 text-zinc-600" />
+                      </div>
+                      {'badge' in f && f.badge ? (
+                        <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-700">
+                          {f.badge}
+                        </span>
+                      ) : null}
                     </div>
                     <h3 className="text-sm font-semibold text-zinc-900 mb-1">{f.title}</h3>
                     <p className="text-xs text-zinc-500 leading-relaxed">{f.description}</p>

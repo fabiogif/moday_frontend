@@ -4,9 +4,12 @@ import Link from 'next/link'
 import {
   ArrowRight,
   BarChart3,
+  Bell,
+  CheckCircle2,
   FileText,
   Mail,
   ShoppingCart,
+  Smartphone,
   UserPlus,
   Wallet,
   type LucideIcon,
@@ -23,6 +26,9 @@ const FLOW_FEATURE_ICONS = {
   wallet: Wallet,
   'file-text': FileText,
   'bar-chart-3': BarChart3,
+  smartphone: Smartphone,
+  bell: Bell,
+  'check-circle': CheckCircle2,
 } as const satisfies Record<string, LucideIcon>
 
 export type FlowFeatureIcon = keyof typeof FLOW_FEATURE_ICONS
@@ -67,6 +73,7 @@ function FlowFeatureCard({ icon, title, description }: FlowFeature) {
 
 export function LandingFlowSection({
   eyebrow,
+  badge,
   title,
   description,
   ctaLabel,
@@ -94,9 +101,16 @@ export function LandingFlowSection({
           <div className="flow-reveal-up">{animation}</div>
 
           <div className="flow-reveal-up [animation-delay:150ms]">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-orange-600 font-medium mb-4">
-              {eyebrow}
-            </p>
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-orange-600 font-medium">
+                {eyebrow}
+              </p>
+              {badge ? (
+                <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-700">
+                  {badge}
+                </span>
+              ) : null}
+            </div>
 
             <h2 className="text-3xl sm:text-4xl font-bold tracking-[-0.02em] text-zinc-900 text-balance leading-[1.1] mb-5">
               {title}

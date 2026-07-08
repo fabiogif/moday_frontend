@@ -51,7 +51,7 @@ export function HeroSection() {
             </p>
 
             <div className="flex flex-wrap gap-2 mb-8">
-              {['PDV touch-first', 'Cardápio digital', 'Controle de mesas', 'Relatórios em tempo real'].map((tag) => (
+              {['PDV touch-first', 'App mobile de pedidos', 'Cardápio digital', 'Relatórios em tempo real'].map((tag) => (
                 <span
                   key={tag}
                   className="text-xs font-medium px-2.5 py-1 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200"

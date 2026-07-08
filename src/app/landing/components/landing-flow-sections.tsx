@@ -3,6 +3,7 @@
 import { LandingFlowSection } from './landing-flow-section'
 import { OperationFlowAnimation } from './operation-flow-animation'
 import { FinanceFlowAnimation } from './finance-flow-animation'
+import { AppMobileFlowAnimation } from './app-mobile-flow-animation'
 
 export function OperationFlowSection() {
   return (
@@ -69,6 +70,42 @@ export function FinanceFlowSection() {
           title: 'Relatórios que orientam',
           description:
             'Gráficos de receita, despesas e margem para tomar decisões com dados — não com achismo.',
+        },
+      ]}
+    />
+  )
+}
+
+export function AppMobileFlowSection() {
+  return (
+    <LandingFlowSection
+      id="app-mobile"
+      eyebrow="App Mobile"
+      badge="NOVO"
+      title="Aceite pedidos pelo celular, com o mesmo fluxo do painel"
+      description="O Alba Tec Restaurante leva a operação para o bolso: push com som quando chega pedido, aceite e avance de status como no PDV, histórico completo e horários do salão editáveis no app."
+      ctaLabel="Começar grátis"
+      ctaHref="/auth/register"
+      ctaEvent="cta_app_mobile_flow_click"
+      animation={<AppMobileFlowAnimation />}
+      features={[
+        {
+          icon: 'bell',
+          title: 'Push com som, mesmo com app fechado',
+          description:
+            'Novo pedido gera alerta no celular via Expo Push / FCM. Toque na notificação e abra o detalhe na hora.',
+        },
+        {
+          icon: 'check-circle',
+          title: 'Aceitar e avançar status',
+          description:
+            'Do Pedido Recebido ao Entregue — o mesmo fluxo do painel: aceitar, preparar, expedir, entregar ou cancelar.',
+        },
+        {
+          icon: 'smartphone',
+          title: 'Histórico e horários no bolso',
+          description:
+            'Consulte pedidos, detalhes do cliente e itens, e ajuste o horário de funcionamento sem abrir o computador.',
         },
       ]}
     />

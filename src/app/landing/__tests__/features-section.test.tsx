@@ -33,7 +33,7 @@ describe('FeaturesSection', () => {
       /Gestão Omnichannel de Pedidos/i,
       /Controle de Estoque Inteligente/i,
       /Relatórios em Tempo Real/i,
-      /Acesso Mobile Total/i,
+      /App Alba Tec Restaurante/i,
     ]
 
     expectedFeatures.forEach((pattern) => {

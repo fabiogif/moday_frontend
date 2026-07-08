@@ -1,5 +1,9 @@
 import { render, screen } from '@testing-library/react'
-import { OperationFlowSection, FinanceFlowSection } from '../components/landing-flow-sections'
+import {
+  AppMobileFlowSection,
+  FinanceFlowSection,
+  OperationFlowSection,
+} from '../components/landing-flow-sections'
 
 jest.mock('next/link', () => {
   return ({ children, href }: { children: React.ReactNode; href: string }) => {
@@ -35,5 +39,14 @@ describe('LandingFlowSections', () => {
       '/auth/register',
     )
     expect(screen.getByText(/Fluxo de caixa em tempo real/i)).toBeInTheDocument()
+  })
+
+  it('deve renderizar seção App Mobile com push e fluxo de status', () => {
+    render(<AppMobileFlowSection />)
+
+    expect(screen.getByText(/App Mobile/i)).toBeInTheDocument()
+    expect(screen.getByText(/Aceite pedidos pelo celular/i)).toBeInTheDocument()
+    expect(screen.getByText(/Push com som, mesmo com app fechado/i)).toBeInTheDocument()
+    expect(screen.getByText(/Aceitar e avançar status/i)).toBeInTheDocument()
   })
 })
