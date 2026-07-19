@@ -72,8 +72,9 @@ describe('DeliverySettingsPage - Configurações de Delivery e Retirada', () => 
 
     await waitFor(() => {
       expect(screen.getByText('Delivery e Retirada')).toBeInTheDocument()
-      expect(screen.getByText('Retirada no Local')).toBeInTheDocument()
-      expect(screen.getByText('Delivery (Entrega)')).toBeInTheDocument()
+      // "Retirada no Local" e "Delivery (Entrega)" aparecem tanto no título do card quanto no resumo
+      expect(screen.getAllByText('Retirada no Local').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('Delivery (Entrega)').length).toBeGreaterThan(0)
     })
   })
 
