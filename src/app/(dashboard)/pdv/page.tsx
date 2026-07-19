@@ -236,7 +236,7 @@ interface CartItem {
   selectedOptionals?: Array<(ProductOptional & { quantity: number })>
 }
 
-type OrderStatus = 'Pendente' | 'Preparando' | 'Pronto' | 'Em Entrega' | 'Entregue' | 'Concluído' | 'Cancelado' | 'Arquivado'
+type OrderStatus = 'Pendente' | 'Aceito' | 'Preparo' | 'Entrega' | 'Concluído' | 'Cancelado' | 'Arquivado' | string
 
 interface Order {
   id?: string | number
@@ -565,8 +565,8 @@ function renderOrderActionButtons({
   // Verificar se o pedido tem status final
   const orderStatus = editingOrder?.status || editingOrder?.order_status?.name || currentOrder?.status || currentOrder?.order_status?.name
   const orderIsFinal = isFinalStatus(orderStatus)
-  const canAdvanceStatus = !orderIsFinal && orderStatus !== 'Entregue'
-  const finalizeStatuses = ['Pronto', 'Em Entrega']
+  const canAdvanceStatus = !orderIsFinal && orderStatus !== 'Concluído' && orderStatus !== 'Entregue'
+  const finalizeStatuses = ['Entrega', 'Em Entrega', 'Pronto', 'Pronto para Expedição']
   const canFinalize = !orderIsFinal && orderStatus && finalizeStatuses.includes(orderStatus)
   const nextStatusNameForAdvance = getNextStatusName(orderStatus, isDelivery)
   const advanceTitle =
@@ -2311,7 +2311,7 @@ const handleClientChange = (value: string) => {
     setShowFeedbackDialog(false)
   }
 
-  // Finalizar pedido - atualiza para status "Entregue" (chamado após confirmação)
+  // Finalizar pedido - atualiza para status "Concluído" (chamado após confirmação)
   const confirmFinalizeOrder = async () => {
     if (!currentOrder && !editingOrder) {
       toast.error("Nenhum pedido encontrado para finalizar.")
@@ -2332,32 +2332,33 @@ const handleClientChange = (value: string) => {
     }
 
     // Verificar se está em status que permite finalizar
-    const allowedStatuses = ['Pronto', 'Em Entrega']
+    const allowedStatuses = ['Entrega', 'Em Entrega', 'Pronto', 'Pronto para Expedição']
     if (!allowedStatuses.includes(orderStatus || '')) {
-      toast.error(`Pedido deve estar em "Pronto" ou "Em Entrega" para ser finalizado. Status atual: ${orderStatus}`)
+      toast.error(`Pedido deve estar em "Entrega" para ser finalizado. Status atual: ${orderStatus}`)
       return
     }
 
     try {
-      // Buscar status "Entregue" primeiro por nome
-      let deliveredStatus = null
+      // Buscar status "Concluído" (com fallback para "Entregue" legado)
+      let completedStatus = null
       try {
         const response = await apiClient.get(endpoints.orderStatuses.list(true))
         if (response.success && response.data && Array.isArray(response.data)) {
-          deliveredStatus = response.data.find((s: any) => s.name === 'Entregue')
+          completedStatus = response.data.find((s: any) => s.name === 'Concluído')
+            || response.data.find((s: any) => s.name === 'Entregue')
         }
       } catch (error) {
 
       }
 
-      if (!deliveredStatus) {
-        toast.error("Não foi possível encontrar o status 'Entregue'.")
+      if (!completedStatus) {
+        toast.error("Não foi possível encontrar o status 'Concluído'.")
         return
       }
 
       // Usar o nome do status diretamente
       const payload: Record<string, any> = {
-        status: 'Entregue',
+        status: completedStatus.name,
       }
 
       // Se houver alterações no carrinho, incluir produtos

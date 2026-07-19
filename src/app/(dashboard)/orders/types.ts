@@ -1,4 +1,4 @@
-export type OrderStatus = 'Em Preparo' | 'Pronto' | 'Saiu para entrega' | 'A Caminho' | 'Entregue' | 'Concluído' | 'Cancelado'
+export type OrderStatus = 'Pendente' | 'Aceito' | 'Preparo' | 'Entrega' | 'Concluído' | 'Cancelado'
 
 export interface Order {
   id?: number
@@ -50,6 +50,10 @@ export interface Order {
   delivery_complement?: string
   delivery_notes?: string
   full_delivery_address?: string
+
+  // Scheduling fields
+  is_scheduled?: boolean
+  scheduled_at?: string | null
 
   // Legacy fields for backward compatibility
   orderNumber?: string
@@ -132,6 +136,10 @@ export interface OrderDetails {
   delivery_complement?: string
   delivery_notes?: string
   full_delivery_address?: string
+
+  // Scheduling fields
+  is_scheduled?: boolean
+  scheduled_at?: string | null
 
   // Legacy compatibility fields
   id?: number

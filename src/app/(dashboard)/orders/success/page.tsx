@@ -112,7 +112,7 @@ function OrderSuccessContent() {
     const companyName = orderForReceipt.tenant?.name || 'Alba Tec'
     const printed = printOrderReceipt(orderForReceipt, companyName)
     if (!printed) {
-      toast.error('Não foi possível abrir a janela de impressão. Verifique se pop-ups estão bloqueados.')
+      toast.error('Não foi possível imprimir o comprovante. Tente novamente ou use Ctrl+P nesta página.')
       return
     }
     toast.success('Comprovante enviado para impressão')

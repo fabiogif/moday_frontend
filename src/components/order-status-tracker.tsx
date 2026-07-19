@@ -27,38 +27,38 @@ interface Step {
 const DELIVERY_STEPS: Step[] = [
   {
     id: 1,
-    status: 'Em Preparo',
-    label: 'Em Preparo',
+    status: 'Pendente',
+    label: 'Pendente',
     icon: <Clock className="h-5 w-5" />,
-    description: 'Seu pedido está sendo preparado com carinho'
+    description: 'Seu pedido foi recebido e aguarda aceite'
   },
   {
     id: 2,
-    status: 'Pronto',
-    label: 'Pronto',
+    status: 'Aceito',
+    label: 'Aceito',
     icon: <Package className="h-5 w-5" />,
-    description: 'Pedido finalizado e pronto para envio'
+    description: 'O restaurante aceitou o seu pedido'
   },
   {
     id: 3,
-    status: 'Saiu para entrega',
-    label: 'Saiu para entrega',
-    icon: <Truck className="h-5 w-5" />,
-    description: 'Pedido saiu para entrega'
+    status: 'Preparo',
+    label: 'Preparo',
+    icon: <Clock className="h-5 w-5" />,
+    description: 'Seu pedido está sendo preparado'
   },
   {
     id: 4,
-    status: 'A Caminho',
-    label: 'A Caminho',
+    status: 'Entrega',
+    label: 'Entrega',
     icon: <Truck className="h-5 w-5" />,
-    description: 'Seu pedido está a caminho'
+    description: 'Pedido saiu para entrega ou aguarda retirada'
   },
   {
     id: 5,
-    status: 'Entregue',
-    label: 'Entregue',
+    status: 'Concluído',
+    label: 'Concluído',
     icon: <CheckCircle2 className="h-5 w-5" />,
-    description: 'Pedido entregue com sucesso!'
+    description: 'Pedido concluído com sucesso!'
   },
 ]
 

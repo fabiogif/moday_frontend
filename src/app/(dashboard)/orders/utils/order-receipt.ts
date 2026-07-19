@@ -190,21 +190,107 @@ export function generateOrderReceiptHtml(order: Order, companyName = 'Alba Tec')
 }
 
 export function printOrderReceipt(order: Order, companyName?: string): boolean {
-  const printWindow = window.open('', '_blank', 'noopener,noreferrer')
-  if (!printWindow) {
+  const html = generateOrderReceiptHtml(order, companyName)
+
+  // Não usar "noopener" aqui: com esse flag, window.open retorna null
+  // em navegadores modernos e a impressão falha mesmo com pop-up liberado.
+  const printWindow = window.open('', '_blank')
+
+  if (printWindow) {
+    try {
+      printWindow.opener = null
+      printWindow.document.open()
+      printWindow.document.write(html)
+      printWindow.document.close()
+
+      const triggerPrint = () => {
+        try {
+          printWindow.focus()
+          printWindow.print()
+        } finally {
+          // Alguns navegadores fecham cedo demais se close() for imediato
+          setTimeout(() => {
+            try {
+              printWindow.close()
+            } catch {
+              // ignore
+            }
+          }, 300)
+        }
+      }
+
+      // document.write nem sempre dispara onload de forma confiável
+      if (printWindow.document.readyState === 'complete') {
+        setTimeout(triggerPrint, 50)
+      } else {
+        printWindow.onload = () => setTimeout(triggerPrint, 50)
+        setTimeout(triggerPrint, 250)
+      }
+
+      return true
+    } catch {
+      try {
+        printWindow.close()
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  // Fallback sem pop-up: iframe oculto
+  return printReceiptViaIframe(html)
+}
+
+function printReceiptViaIframe(html: string): boolean {
+  try {
+    const iframe = document.createElement('iframe')
+    iframe.setAttribute('aria-hidden', 'true')
+    iframe.style.position = 'fixed'
+    iframe.style.right = '0'
+    iframe.style.bottom = '0'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = '0'
+    iframe.style.visibility = 'hidden'
+    document.body.appendChild(iframe)
+
+    const frameWindow = iframe.contentWindow
+    const frameDocument = frameWindow?.document
+    if (!frameWindow || !frameDocument) {
+      iframe.remove()
+      return false
+    }
+
+    frameDocument.open()
+    frameDocument.write(html)
+    frameDocument.close()
+
+    const cleanup = () => {
+      setTimeout(() => {
+        iframe.remove()
+      }, 1000)
+    }
+
+    const triggerPrint = () => {
+      try {
+        frameWindow.focus()
+        frameWindow.print()
+      } finally {
+        cleanup()
+      }
+    }
+
+    if (frameDocument.readyState === 'complete') {
+      setTimeout(triggerPrint, 50)
+    } else {
+      iframe.onload = () => setTimeout(triggerPrint, 50)
+      setTimeout(triggerPrint, 250)
+    }
+
+    return true
+  } catch {
     return false
   }
-
-  printWindow.document.write(generateOrderReceiptHtml(order, companyName))
-  printWindow.document.close()
-
-  printWindow.onload = () => {
-    printWindow.focus()
-    printWindow.print()
-    printWindow.close()
-  }
-
-  return true
 }
 
 function formatWhatsAppPhone(phone: string): string {

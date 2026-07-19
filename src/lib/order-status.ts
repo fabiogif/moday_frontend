@@ -1,26 +1,31 @@
 export type OrderTrackerStatus =
-  | 'Em Preparo'
-  | 'Pronto'
-  | 'Saiu para entrega'
-  | 'A Caminho'
-  | 'Entregue'
+  | 'Pendente'
+  | 'Aceito'
+  | 'Preparo'
+  | 'Entrega'
   | 'Concluído'
   | 'Cancelado'
   | string
 
+/** Índices alinhados ao tracker: Pendente → Aceito → Preparo → Entrega → Concluído */
 const STATUS_STEP_INDEX: Record<string, number> = {
+  Pendente: 0,
   'Pedido Recebido': 0,
-  Confirmado: 0,
-  'Em Preparo': 0,
-  'Em Preparação': 0,
-  Pronto: 1,
-  'Pronto para Expedição': 1,
-  'Saiu para entrega': 2,
-  'Aguardando Entregador': 2,
+  Aceito: 1,
+  Confirmado: 1,
+  Preparo: 2,
+  'Em Preparo': 2,
+  'Em Preparação': 2,
+  Preparando: 2,
+  Entrega: 3,
+  Pronto: 3,
+  'Pronto para Expedição': 3,
+  'Saiu para entrega': 3,
+  'Aguardando Entregador': 3,
   'A Caminho': 3,
   'Em Entrega': 3,
-  Entregue: 4,
   Concluído: 4,
+  Entregue: 4,
 }
 
 export function resolveOrderStatusStepIndex(status: string): number {
@@ -34,19 +39,26 @@ export function resolveOrderStatusStepIndex(status: string): number {
   if (normalized.includes('cancel')) {
     return -1
   }
-  if (normalized.includes('entreg') || normalized.includes('conclu')) {
+  if (normalized.includes('conclu') || normalized === 'entregue') {
     return 4
   }
-  if (normalized.includes('caminho') || normalized.includes('rota') || normalized.includes('expedi')) {
+  if (
+    normalized.includes('entrega') ||
+    normalized.includes('caminho') ||
+    normalized.includes('rota') ||
+    normalized.includes('expedi') ||
+    normalized.includes('pronto') ||
+    normalized.includes('aguardando')
+  ) {
     return 3
   }
-  if (normalized.includes('aguardando')) {
+  if (normalized.includes('prepar')) {
     return 2
   }
-  if (normalized.includes('pronto')) {
+  if (normalized.includes('aceit') || normalized.includes('confirm')) {
     return 1
   }
-  if (normalized.includes('prepar') || normalized.includes('receb') || normalized.includes('confirm')) {
+  if (normalized.includes('pendente') || normalized.includes('receb')) {
     return 0
   }
 
@@ -54,5 +66,15 @@ export function resolveOrderStatusStepIndex(status: string): number {
 }
 
 export function isCancelledOrderStatus(status: string): boolean {
-  return resolveOrderStatusStepIndex(status) === -1
+  return status.toLowerCase().includes('cancel')
+}
+
+export function isTerminalOrderStatus(status: string): boolean {
+  const normalized = status.toLowerCase()
+  return (
+    normalized.includes('conclu') ||
+    normalized === 'entregue' ||
+    normalized.includes('cancel') ||
+    normalized.includes('arquiv')
+  )
 }

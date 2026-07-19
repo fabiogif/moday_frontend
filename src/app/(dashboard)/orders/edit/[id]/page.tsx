@@ -70,17 +70,16 @@ const orderEditSchema = z.object({
 type OrderEditFormValues = z.infer<typeof orderEditSchema>
 
 const statusOptions = [
-  { value: "Em Preparo", label: "Em Preparo" },
-  { value: "Pronto", label: "Pronto" },
-  { value: "Saiu para entrega", label: "Saiu para entrega" },
-  { value: "A Caminho", label: "A Caminho" },
-  { value: "Entregue", label: "Entregue" },
+  { value: "Pendente", label: "Pendente" },
+  { value: "Aceito", label: "Aceito" },
+  { value: "Preparo", label: "Preparo" },
+  { value: "Entrega", label: "Entrega" },
   { value: "Concluído", label: "Concluído" },
   { value: "Cancelado", label: "Cancelado" },
 ]
 
 // Status finais que não podem ser editados
-const FINAL_STATUSES = ['Entregue', 'Cancelado', 'Concluído', 'Arquivado']
+const FINAL_STATUSES = ['Concluído', 'Cancelado', 'Entregue', 'Arquivado']
 
 // Função helper para verificar se um status é final
 const isFinalStatus = (status: string | null | undefined): boolean => {

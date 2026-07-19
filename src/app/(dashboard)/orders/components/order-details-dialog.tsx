@@ -16,7 +16,10 @@ import {
   Home,
   FileText,
   X,
+  CalendarPlus,
 } from "lucide-react"
+import { getApiBaseUrl } from "@/lib/api-config"
+import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -37,16 +40,49 @@ interface OrderDetailsDialogProps {
 }
 
 export function OrderDetailsDialog({ order, open, onOpenChange }: OrderDetailsDialogProps) {
+  const [downloadingCalendar, setDownloadingCalendar] = useState(false)
+
+  const handleDownloadCalendar = async () => {
+    if (!order) return
+    setDownloadingCalendar(true)
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null
+      const baseUrl = getApiBaseUrl()
+      const res = await fetch(`${baseUrl}/api/order/${order.identify}/calendar`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (!res.ok) throw new Error("Falha ao gerar arquivo de calendário")
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `pedido-${order.identify}.ics`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      toast.error("Não foi possível gerar o arquivo de calendário")
+    } finally {
+      setDownloadingCalendar(false)
+    }
+  }
+
   if (!order) return null
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case "Concluído":
       case "Entregue":
         return "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20"
       case "Pendente":
         return "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/20"
+      case "Aceito":
+        return "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-900/20"
+      case "Preparo":
       case "Em Preparo":
         return "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20"
+      case "Entrega":
+      case "Em Entrega":
+        return "text-violet-600 bg-violet-50 dark:text-violet-400 dark:bg-violet-900/20"
       case "Cancelado":
         return "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20"
       default:
@@ -212,6 +248,40 @@ export function OrderDetailsDialog({ order, open, onOpenChange }: OrderDetailsDi
                 )}
               </div>
             </div>
+
+            {/* Agendamento */}
+            {order.is_scheduled && order.scheduled_at && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CalendarPlus className="h-5 w-5 text-primary" />
+                      <h3 className="text-lg font-medium">Pedido Agendado</h3>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadCalendar}
+                      disabled={downloadingCalendar}
+                      className="flex items-center gap-2"
+                    >
+                      <CalendarPlus className="h-4 w-4" />
+                      {downloadingCalendar ? "Gerando..." : "Adicionar à Agenda"}
+                    </Button>
+                  </div>
+                  <div className="pl-7">
+                    <p className="text-sm text-muted-foreground">Data e hora agendada</p>
+                    <p className="font-medium text-primary">
+                      {new Date(order.scheduled_at).toLocaleString("pt-BR", {
+                        dateStyle: "full",
+                        timeStyle: "short",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Endereço de Entrega */}
             {order.is_delivery && (

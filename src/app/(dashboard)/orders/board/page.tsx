@@ -95,7 +95,7 @@ interface Order {
   comment?: string
 }
 
-type OrderStatus = "Em Preparo" | "Pronto" | "Saiu para entrega" | "A Caminho" | "Entregue" | "Concluído" | "Cancelado"
+type OrderStatus = "Pendente" | "Aceito" | "Preparo" | "Entrega" | "Concluído" | "Cancelado"
 
 const COLUMNS: Array<{ 
   id: OrderStatus
@@ -105,46 +105,39 @@ const COLUMNS: Array<{
   icon: React.ReactNode
 }> = [
   { 
-    id: "Em Preparo", 
-    title: "Em Preparo", 
+    id: "Pendente", 
+    title: "Pendente", 
     badgeColor: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800",
     headerGradient: "from-amber-50 to-amber-100/50 dark:from-amber-950/50 dark:to-amber-900/30",
     icon: <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
   },
   { 
-    id: "Pronto", 
-    title: "Pronto", 
-    badgeColor: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800",
-    headerGradient: "from-blue-50 to-blue-100/50 dark:from-blue-950/50 dark:to-blue-900/30",
-    icon: <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-  },
-  { 
-    id: "Saiu para entrega", 
-    title: "Saiu para entrega", 
-    badgeColor: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800",
-    headerGradient: "from-purple-50 to-purple-100/50 dark:from-purple-950/50 dark:to-purple-900/30",
-    icon: <Truck className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-  },
-  { 
-    id: "A Caminho", 
-    title: "A Caminho", 
+    id: "Aceito", 
+    title: "Aceito", 
     badgeColor: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800",
     headerGradient: "from-indigo-50 to-indigo-100/50 dark:from-indigo-950/50 dark:to-indigo-900/30",
-    icon: <Truck className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+    icon: <Package className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
   },
   { 
-    id: "Entregue", 
-    title: "Entregue", 
-    badgeColor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
-    headerGradient: "from-emerald-50 to-emerald-100/50 dark:from-emerald-950/50 dark:to-emerald-900/30",
-    icon: <Truck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+    id: "Preparo", 
+    title: "Preparo", 
+    badgeColor: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+    headerGradient: "from-blue-50 to-blue-100/50 dark:from-blue-950/50 dark:to-blue-900/30",
+    icon: <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+  },
+  { 
+    id: "Entrega", 
+    title: "Entrega", 
+    badgeColor: "bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800",
+    headerGradient: "from-violet-50 to-violet-100/50 dark:from-violet-950/50 dark:to-violet-900/30",
+    icon: <Truck className="h-4 w-4 text-violet-600 dark:text-violet-400" />
   },
   { 
     id: "Concluído", 
     title: "Concluído", 
-    badgeColor: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800",
-    headerGradient: "from-green-50 to-green-100/50 dark:from-green-950/50 dark:to-green-900/30",
-    icon: <Package className="h-4 w-4 text-green-600 dark:text-green-400" />
+    badgeColor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
+    headerGradient: "from-emerald-50 to-emerald-100/50 dark:from-emerald-950/50 dark:to-emerald-900/30",
+    icon: <Package className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
   },
   { 
     id: "Cancelado", 

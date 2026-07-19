@@ -916,9 +916,10 @@ export default function NewOrderPage() {
                         <FormItem><FormLabel>Status</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger></FormControl><SelectContent>
                             <SelectItem value="Pendente">Pendente</SelectItem>
-                            <SelectItem value="Preparando">Preparando</SelectItem>
-                            <SelectItem value="Pronto">Pronto</SelectItem>
-                            <SelectItem value="Entregue">Entregue</SelectItem>
+                            <SelectItem value="Aceito">Aceito</SelectItem>
+                            <SelectItem value="Preparo">Preparo</SelectItem>
+                            <SelectItem value="Entrega">Entrega</SelectItem>
+                            <SelectItem value="Concluído">Concluído</SelectItem>
                             <SelectItem value="Cancelado">Cancelado</SelectItem>
                           </SelectContent></Select>
                         </FormItem>

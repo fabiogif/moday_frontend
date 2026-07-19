@@ -172,7 +172,7 @@ export function DataTable({
 
     setBulkActionLoading(true)
     try {
-      await onBulkUpdateStatus(selectedIds, 'Entregue')
+      await onBulkUpdateStatus(selectedIds, 'Concluído')
       setRowSelection({}) // Limpar seleção após atualização
     } finally {
       setBulkActionLoading(false)
@@ -183,6 +183,8 @@ export function DataTable({
   const getStatusColor = (status: string) => {
     const lowerStatus = status?.toLowerCase()
     switch (lowerStatus) {
+      case "concluído":
+      case "concluido":
       case "entregue":
       case "completed":
       case "completo":
@@ -190,10 +192,15 @@ export function DataTable({
       case "pendente":
       case "pending":
         return "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/20"
-      case "em preparo":
+      case "aceito":
+        return "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-900/20"
       case "preparo":
+      case "em preparo":
       case "processing":
         return "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20"
+      case "entrega":
+      case "em entrega":
+        return "text-violet-600 bg-violet-50 dark:text-violet-400 dark:bg-violet-900/20"
       case "cancelado":
       case "cancelled":
       case "rejected":
@@ -407,10 +414,10 @@ export function DataTable({
               <SelectContent>
                 <SelectItem value="all">Todos os status</SelectItem>
                 <SelectItem value="Pendente">Pendente</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="Em Preparo">Em Preparo</SelectItem>
-                <SelectItem value="Entregue">Entregue</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="Aceito">Aceito</SelectItem>
+                <SelectItem value="Preparo">Preparo</SelectItem>
+                <SelectItem value="Entrega">Entrega</SelectItem>
+                <SelectItem value="Concluído">Concluído</SelectItem>
                 <SelectItem value="Cancelado">Cancelado</SelectItem>
               </SelectContent>
             </Select>
@@ -468,7 +475,7 @@ export function DataTable({
                 className="bg-green-600 hover:bg-green-700"
               >
                 <CheckCircle2 className="mr-2 h-4 w-4" />
-                Mover para Entregue
+                Mover para Concluído
               </Button>
             )}
             {onBulkDelete && (
@@ -634,7 +641,7 @@ export function DataTable({
             <AlertDialogDescription>
               Deseja realmente realizar esta operação?<br />
               <span className="font-semibold">
-                {selectedCount} pedido(s) serão movido(s) para o status "Entregue".
+                {selectedCount} pedido(s) serão movido(s) para o status "Concluído".
               </span>
             </AlertDialogDescription>
           </AlertDialogHeader>

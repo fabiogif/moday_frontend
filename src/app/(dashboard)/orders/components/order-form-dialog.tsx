@@ -526,10 +526,10 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
                 field={field}
                 options={[
                   { value: "Pendente", label: "Pendente" },
-                  { value: "Em Preparo", label: "Em Preparo" },
-                  { value: "Pronto", label: "Pronto" },
-                  { value: "Em Entrega", label: "Em Entrega" },
-                  { value: "Entregue", label: "Entregue" },
+                  { value: "Aceito", label: "Aceito" },
+                  { value: "Preparo", label: "Preparo" },
+                  { value: "Entrega", label: "Entrega" },
+                  { value: "Concluído", label: "Concluído" },
                   { value: "Cancelado", label: "Cancelado" },
                 ]}
                 placeholder="Selecione o status"
@@ -1153,10 +1153,10 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
                         field={field}
                         options={[
                           { value: "Pendente", label: "Pendente" },
-                          { value: "Em Preparo", label: "Em Preparo" },
-                          { value: "Pronto", label: "Pronto" },
-                          { value: "Em Entrega", label: "Em Entrega" },
-                          { value: "Entregue", label: "Entregue" },
+                          { value: "Aceito", label: "Aceito" },
+                          { value: "Preparo", label: "Preparo" },
+                          { value: "Entrega", label: "Entrega" },
+                          { value: "Concluído", label: "Concluído" },
                           { value: "Cancelado", label: "Cancelado" },
                         ]}
                         placeholder="Selecione o status"

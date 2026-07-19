@@ -15,9 +15,9 @@ export type FinalStatus = (typeof FINAL_STATUSES)[number]
 // Status intermediários
 export const INTERMEDIATE_STATUSES = [
   "Pendente",
-  "Preparando",
-  "Pronto",
-  "Em Entrega",
+  "Aceito",
+  "Preparo",
+  "Entrega",
 ] as const
 
 export type IntermediateStatus = (typeof INTERMEDIATE_STATUSES)[number]
@@ -72,10 +72,11 @@ export function canFinalizeOrder(
 ): boolean {
   if (!status) return false
   const allowedStatuses: string[] = [
+    "Entrega",
+    "Em Entrega",
     "Pronto",
     "Pronto para Expedição",
     "Aguardando Entregador",
-    "Em Entrega",
   ]
   return allowedStatuses.includes(status) && !isFinalStatus(status)
 }
@@ -100,16 +101,18 @@ export function getStatusColor(status: string | null | undefined): string {
   switch (status) {
     case "Pendente":
       return "yellow"
+    case "Aceito":
+      return "indigo"
+    case "Preparo":
     case "Preparando":
     case "Em Preparação":
       return "blue"
+    case "Entrega":
     case "Pronto":
     case "Pronto para Expedição":
-      return "green"
     case "Aguardando Entregador":
-      return "violet"
     case "Em Entrega":
-      return "purple"
+      return "violet"
     case "Entregue":
     case "Concluído":
       return "emerald"
@@ -131,7 +134,10 @@ export function getStatusDescription(
   if (!status) return "Status desconhecido"
 
   const descriptions: Record<string, string> = {
-    Pendente: "Aguardando processamento",
+    Pendente: "Aguardando aceite",
+    Aceito: "Pedido aceito",
+    Preparo: "Em preparação",
+    Entrega: "Em entrega ou aguardando retirada",
     Preparando: "Em preparação",
     "Em Preparação": "Em preparação",
     Pronto: "Pronto para entrega/retirada",
@@ -160,17 +166,21 @@ export function getNextStatus(
   const normalized = normalizeStatusName(currentStatus)
 
   const flowPatterns: Record<string, string[]> = {
-    "Pedido Recebido": ["Confirmado", "Em Preparação"],
-    Confirmado: ["Em Preparação"],
-    "Em Preparação": ["Pronto para Expedição", "Pronto"],
+    Pendente: ["Aceito"],
+    Aceito: ["Preparo"],
+    Preparo: ["Entrega"],
+    Entrega: ["Concluído"],
+    "Pedido Recebido": ["Aceito", "Confirmado"],
+    Confirmado: ["Preparo", "Em Preparação"],
+    "Em Preparação": ["Entrega", "Pronto para Expedição"],
     "Pronto para Expedição": isDelivery
-      ? ["Aguardando Entregador", "Em Entrega"]
-      : ["Entregue"],
+      ? ["Entrega", "Aguardando Entregador"]
+      : ["Concluído"],
     Pronto: isDelivery
-      ? ["Aguardando Entregador", "Em Entrega"]
-      : ["Entregue"],
-    "Aguardando Entregador": ["Em Entrega"],
-    "Em Entrega": ["Entregue"],
+      ? ["Entrega", "Em Entrega"]
+      : ["Concluído"],
+    "Aguardando Entregador": ["Entrega", "Em Entrega"],
+    "Em Entrega": ["Concluído"],
   }
 
   const candidates = flowPatterns[normalized]
@@ -179,10 +189,13 @@ export function getNextStatus(
   }
 
   const legacyFlow: Record<string, string> = {
-    Pendente: "Preparando",
-    Preparando: "Pronto",
-    Pronto: isDelivery ? "Em Entrega" : "Entregue",
-    "Em Entrega": "Entregue",
+    Pendente: "Aceito",
+    Aceito: "Preparo",
+    Preparo: "Entrega",
+    Entrega: "Concluído",
+    Preparando: "Preparo",
+    Pronto: isDelivery ? "Entrega" : "Concluído",
+    "Em Entrega": "Concluído",
   }
 
   return legacyFlow[currentStatus] || legacyFlow[normalized] || null
