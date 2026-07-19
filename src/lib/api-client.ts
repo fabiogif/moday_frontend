@@ -365,6 +365,7 @@ export const endpoints = {
     completeStale: '/api/orders/complete-stale',
     getDetails: (orderId: number) => `/api/order/${orderId}/details`,
     create: '/api/order',
+    validate: '/api/order/validate',
     show: (id: string) => `/api/order/${id}`,
     update: (id: string) => `/api/order/${id}`,
     advanceStatus: (id: string) => `/api/order/${id}/advance-status`,

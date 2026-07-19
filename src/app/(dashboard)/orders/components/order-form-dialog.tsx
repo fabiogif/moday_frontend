@@ -528,7 +528,6 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
                   { value: "Pendente", label: "Pendente" },
                   { value: "Aceito", label: "Aceito" },
                   { value: "Preparo", label: "Preparo" },
-                  { value: "Entrega", label: "Entrega" },
                   { value: "Concluído", label: "Concluído" },
                   { value: "Cancelado", label: "Cancelado" },
                 ]}
@@ -1155,7 +1154,6 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
                           { value: "Pendente", label: "Pendente" },
                           { value: "Aceito", label: "Aceito" },
                           { value: "Preparo", label: "Preparo" },
-                          { value: "Entrega", label: "Entrega" },
                           { value: "Concluído", label: "Concluído" },
                           { value: "Cancelado", label: "Cancelado" },
                         ]}

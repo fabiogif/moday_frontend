@@ -185,26 +185,14 @@ export function DataTable({
     switch (lowerStatus) {
       case "concluído":
       case "concluido":
-      case "entregue":
-      case "completed":
-      case "completo":
         return "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20"
       case "pendente":
-      case "pending":
         return "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/20"
       case "aceito":
         return "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-900/20"
       case "preparo":
-      case "em preparo":
-      case "processing":
         return "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20"
-      case "entrega":
-      case "em entrega":
-        return "text-violet-600 bg-violet-50 dark:text-violet-400 dark:bg-violet-900/20"
       case "cancelado":
-      case "cancelled":
-      case "rejected":
-      case "rejeitado":
         return "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20"
       default:
         return "text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-900/20"
@@ -332,7 +320,7 @@ export function DataTable({
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => onEditOrder(order)}
-                disabled={['Entregue', 'Cancelado', 'Concluído', 'Arquivado'].includes(order.status || '')}
+                disabled={['Cancelado', 'Concluído'].includes(order.status || '')}
               >
                 <Pencil className="mr-2 h-4 w-4" />
                 Editar

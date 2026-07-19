@@ -130,13 +130,12 @@ import { ProductGrid } from "./components/catalog/product-grid"
 import { ProductFilters } from "./components/catalog/product-filters"
 import { ProductSearch } from "./components/catalog/product-search"
 import { 
-  isFinalStatus, 
-  canEditOrder, 
-  canAdvanceStatus, 
-  canFinalizeOrder,
+  isFinalStatus,
+  canEditOrder,
+  canAdvanceStatus,
   getNextStatusName,
-  FINAL_STATUSES 
-} from "./utils/order-status"
+  FINAL_STATUSES
+} from "@/lib/order-status"
 import {
   parsePrice as parsePriceUtil,
   getProductPrice as getProductPriceUtil,
@@ -236,7 +235,7 @@ interface CartItem {
   selectedOptionals?: Array<(ProductOptional & { quantity: number })>
 }
 
-type OrderStatus = 'Pendente' | 'Aceito' | 'Preparo' | 'Entrega' | 'Concluído' | 'Cancelado' | 'Arquivado' | string
+type OrderStatus = 'Pendente' | 'Aceito' | 'Preparo' | 'Concluído' | 'Cancelado' | string
 
 interface Order {
   id?: string | number
@@ -370,7 +369,7 @@ function PDVQuickDashboard({
     // Contar mesas ocupadas
     const occupiedTables = new Set()
     todayOrders.forEach((order: Order) => {
-      if (order.table?.uuid && !['Entregue', 'Concluído', 'Cancelado'].includes(order.status)) {
+      if (order.table?.uuid && !['Concluído', 'Cancelado'].includes(order.status)) {
         occupiedTables.add(order.table.uuid)
       }
     })
@@ -537,7 +536,6 @@ function renderOrderActionButtons({
   orderStarted,
   editingOrder,
   currentOrder,
-  isDelivery,
   submittingOrder,
   cart,
   pdvPermissions,
@@ -551,7 +549,6 @@ function renderOrderActionButtons({
   orderStarted: boolean
   editingOrder: Order | null
   currentOrder: Order | null
-  isDelivery: boolean
   submittingOrder: boolean
   cart: CartItem[]
   pdvPermissions: { canCreateOrder: boolean }
@@ -559,16 +556,16 @@ function renderOrderActionButtons({
   handleAdvanceStatus: () => void
   handleFinalizeOrder: () => void
   handleCancelOrder: () => void
-  getNextStatusName: (status: string | null | undefined, isDelivery: boolean) => string | null
+  getNextStatusName: (status: string | null | undefined) => string | null
   isFinalStatus: (status: string | null | undefined) => boolean
 }) {
   // Verificar se o pedido tem status final
   const orderStatus = editingOrder?.status || editingOrder?.order_status?.name || currentOrder?.status || currentOrder?.order_status?.name
   const orderIsFinal = isFinalStatus(orderStatus)
-  const canAdvanceStatus = !orderIsFinal && orderStatus !== 'Concluído' && orderStatus !== 'Entregue'
-  const finalizeStatuses = ['Entrega', 'Em Entrega', 'Pronto', 'Pronto para Expedição']
-  const canFinalize = !orderIsFinal && orderStatus && finalizeStatuses.includes(orderStatus)
-  const nextStatusNameForAdvance = getNextStatusName(orderStatus, isDelivery)
+  const canAdvanceStatus = !orderIsFinal && orderStatus !== 'Concluído'
+  // "Concluir Pedido" aparece no último passo antes de Concluído.
+  const canFinalize = !orderIsFinal && orderStatus === 'Preparo'
+  const nextStatusNameForAdvance = getNextStatusName(orderStatus)
   const advanceTitle =
     !canAdvanceStatus
       ? "Status atual não permite avançar"
@@ -989,7 +986,7 @@ export default function POSPage() {
     todayOrders.forEach((order: Order) => {
       // Verificar se o pedido está em aberto (não entregue, não concluído, não cancelado)
       const status = order.status || ''
-      if (!['Entregue', 'Concluído', 'Cancelado', 'Arquivado'].includes(status)) {
+      if (!['Concluído', 'Cancelado'].includes(status)) {
         if (order.table?.uuid || order.table?.identify || order.table?.name) {
           const tableKey = order.table.uuid || order.table.identify || order.table.name
           occupiedTables.add(tableKey)
@@ -1014,7 +1011,7 @@ export default function POSPage() {
       const hasOtherOrders = todayOrders.some((order: Order) => {
         const orderTableKey = order.table?.uuid || order.table?.identify || order.table?.name
         const status = order.status || ''
-        const isOpen = !['Entregue', 'Concluído', 'Cancelado', 'Arquivado'].includes(status)
+        const isOpen = !['Concluído', 'Cancelado'].includes(status)
         return isOpen && orderTableKey === selectedTable
       })
       return hasOtherOrders
@@ -1035,7 +1032,7 @@ export default function POSPage() {
       const orderId = order.identify || order.uuid || order.id
       const currentOrderId = currentOrderData.identify || currentOrderData.uuid || currentOrderData.id
       const status = order.status || ''
-      const isOpen = !['Entregue', 'Concluído', 'Cancelado', 'Arquivado'].includes(status)
+      const isOpen = !['Concluído', 'Cancelado'].includes(status)
       
       // Verificar se é outro pedido (diferente do atual) na mesma mesa
       return isOpen && orderTableKey === selectedTableKey && orderId !== currentOrderId
@@ -2332,20 +2329,18 @@ const handleClientChange = (value: string) => {
     }
 
     // Verificar se está em status que permite finalizar
-    const allowedStatuses = ['Entrega', 'Em Entrega', 'Pronto', 'Pronto para Expedição']
-    if (!allowedStatuses.includes(orderStatus || '')) {
-      toast.error(`Pedido deve estar em "Entrega" para ser finalizado. Status atual: ${orderStatus}`)
+    if (orderStatus !== 'Preparo') {
+      toast.error(`Pedido deve estar em "Preparo" para ser finalizado. Status atual: ${orderStatus}`)
       return
     }
 
     try {
-      // Buscar status "Concluído" (com fallback para "Entregue" legado)
+      // Buscar status "Concluído"
       let completedStatus = null
       try {
         const response = await apiClient.get(endpoints.orderStatuses.list(true))
         if (response.success && response.data && Array.isArray(response.data)) {
           completedStatus = response.data.find((s: any) => s.name === 'Concluído')
-            || response.data.find((s: any) => s.name === 'Entregue')
         }
       } catch (error) {
 
@@ -2616,7 +2611,7 @@ const handleClientChange = (value: string) => {
           orderCount: todayOrders.filter((order: Order) => {
             const orderTableKey = order.table?.uuid || order.table?.identify || order.table?.name
             const tableKey = table.uuid || table.identify || table.name
-            return orderTableKey === tableKey && !['Entregue', 'Concluído', 'Cancelado', 'Arquivado'].includes(order.status || '')
+            return orderTableKey === tableKey && !['Concluído', 'Cancelado'].includes(order.status || '')
           }).length,
         }))}
         onTableSelect={(table) => {
@@ -3585,7 +3580,6 @@ const handleClientChange = (value: string) => {
                           orderStarted,
                           editingOrder,
                           currentOrder,
-                          isDelivery,
                           submittingOrder,
                           cart,
                           pdvPermissions,
@@ -3769,7 +3763,7 @@ const handleClientChange = (value: string) => {
                                   )}
                                 </div>
                                 <Badge 
-                                  variant={orderStatus === 'Entregue' || orderStatus === 'Concluído' ? 'default' : 'secondary'}
+                                  variant={orderStatus === 'Concluído' ? 'default' : 'secondary'}
                                   className="text-[10px] px-1 py-0 w-fit"
                                 >
                                   {orderStatus}

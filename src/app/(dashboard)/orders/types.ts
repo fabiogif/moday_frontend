@@ -1,4 +1,4 @@
-export type OrderStatus = 'Pendente' | 'Aceito' | 'Preparo' | 'Entrega' | 'Concluído' | 'Cancelado'
+export type OrderStatus = 'Pendente' | 'Aceito' | 'Preparo' | 'Concluído' | 'Cancelado'
 
 export interface Order {
   id?: number
@@ -54,6 +54,8 @@ export interface Order {
   // Scheduling fields
   is_scheduled?: boolean
   scheduled_at?: string | null
+
+  archived_at?: string | null
 
   // Legacy fields for backward compatibility
   orderNumber?: string
@@ -140,6 +142,8 @@ export interface OrderDetails {
   // Scheduling fields
   is_scheduled?: boolean
   scheduled_at?: string | null
+
+  archived_at?: string | null
 
   // Legacy compatibility fields
   id?: number

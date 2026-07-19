@@ -1,6 +1,6 @@
 'use client'
 
-import { Clock, Package, Truck, CheckCircle2 } from 'lucide-react'
+import { Clock, Package, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   isCancelledOrderStatus,
@@ -48,13 +48,6 @@ const DELIVERY_STEPS: Step[] = [
   },
   {
     id: 4,
-    status: 'Entrega',
-    label: 'Entrega',
-    icon: <Truck className="h-5 w-5" />,
-    description: 'Pedido saiu para entrega ou aguarda retirada'
-  },
-  {
-    id: 5,
     status: 'Concluído',
     label: 'Concluído',
     icon: <CheckCircle2 className="h-5 w-5" />,
@@ -115,7 +108,7 @@ export function OrderStatusTracker({
             <span className="font-medium text-muted-foreground">Status atual</span>
             <span className="font-semibold">{currentStatus}</span>
           </div>
-          <div className="grid grid-cols-5 gap-1">
+          <div className="grid grid-cols-4 gap-1">
             {DELIVERY_STEPS.map((step, index) => {
               const state = getStepState(index)
               return (
@@ -145,7 +138,7 @@ export function OrderStatusTracker({
               })}
             </p>
           )}
-          {estimatedDelivery && currentStepIndex < 4 && (
+          {estimatedDelivery && currentStepIndex < 3 && (
             <p className="text-xs">
               <span className="font-medium">Previsão de entrega:</span> {estimatedDelivery}
             </p>

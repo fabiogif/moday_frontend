@@ -1,8 +1,9 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-import { Lock, CheckCircle2, XCircle, Archive } from "lucide-react"
+import { Lock, CheckCircle2, XCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { isFinalStatus, getStatusColor, getStatusDescription } from "@/lib/order-status"
 
 interface OrderStatusBadgeProps {
   status: string | null | undefined
@@ -33,13 +34,10 @@ export function OrderStatusBadge({
     if (!showIcon) return null
 
     switch (status) {
-      case "Entregue":
       case "Concluído":
         return <CheckCircle2 className="h-3 w-3" />
       case "Cancelado":
         return <XCircle className="h-3 w-3" />
-      case "Arquivado":
-        return <Archive className="h-3 w-3" />
       default:
         if (isFinal) {
           return <Lock className="h-3 w-3" />
@@ -51,13 +49,10 @@ export function OrderStatusBadge({
   const getVariant = () => {
     if (isFinal) {
       switch (status) {
-        case "Entregue":
         case "Concluído":
           return "default"
         case "Cancelado":
           return "destructive"
-        case "Arquivado":
-          return "secondary"
         default:
           return "secondary"
       }
@@ -68,9 +63,7 @@ export function OrderStatusBadge({
         return "outline"
       case "blue":
         return "default"
-      case "green":
-        return "default"
-      case "purple":
+      case "indigo":
         return "default"
       default:
         return "outline"
@@ -96,53 +89,5 @@ export function OrderStatusBadge({
       )}
     </div>
   )
-}
-
-// Re-exportar funções do utilitário para uso no componente
-function getStatusColor(status: string | null | undefined): string {
-  if (!status) return "default"
-
-  switch (status) {
-    case "Pendente":
-      return "yellow"
-    case "Preparando":
-      return "blue"
-    case "Pronto":
-      return "green"
-    case "Em Entrega":
-      return "purple"
-    case "Entregue":
-    case "Concluído":
-      return "emerald"
-    case "Cancelado":
-      return "red"
-    case "Arquivado":
-      return "gray"
-    default:
-      return "default"
-  }
-}
-
-function isFinalStatus(status: string | null | undefined): boolean {
-  if (!status) return false
-  const FINAL_STATUSES = ["Entregue", "Cancelado", "Concluído", "Arquivado"]
-  return FINAL_STATUSES.includes(status)
-}
-
-function getStatusDescription(status: string | null | undefined): string {
-  if (!status) return "Status desconhecido"
-
-  const descriptions: Record<string, string> = {
-    Pendente: "Aguardando processamento",
-    Preparando: "Em preparação",
-    Pronto: "Pronto para entrega/retirada",
-    "Em Entrega": "Saiu para entrega",
-    Entregue: "Pedido entregue",
-    Concluído: "Pedido concluído",
-    Cancelado: "Pedido cancelado",
-    Arquivado: "Pedido arquivado",
-  }
-
-  return descriptions[status] || status
 }
 

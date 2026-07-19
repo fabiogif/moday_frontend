@@ -116,7 +116,7 @@ export default function OrdersPage() {
   }
 
   const handleEditOrder = (order: Order) => {
-    const finalStatuses = ["Concluído", "Cancelado", "Entregue", "Arquivado"]
+    const finalStatuses = ["Concluído", "Cancelado"]
     if (finalStatuses.includes(order.status || "")) {
       toast.error("Este pedido está finalizado e não pode ser editado.")
       return
@@ -268,8 +268,8 @@ export default function OrdersPage() {
             <AlertTitle>Pedidos antigos em aberto</AlertTitle>
             <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <span>
-                Há {staleCount} pedido(s) com mais de {STALE_DAYS} dias em Pendente, Aceito, Preparo
-                ou Entrega. Você pode marcar todos como Concluído.
+                Há {staleCount} pedido(s) com mais de {STALE_DAYS} dias em Pendente, Aceito ou
+                Preparo. Você pode marcar todos como Concluído.
               </span>
               <Button
                 size="sm"
@@ -311,8 +311,8 @@ export default function OrdersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Concluir pedidos antigos</AlertDialogTitle>
             <AlertDialogDescription>
-              {staleCount} pedido(s) com mais de {STALE_DAYS} dias em Pendente, Aceito, Preparo ou
-              Entrega serão marcados como Concluído. Deseja continuar?
+              {staleCount} pedido(s) com mais de {STALE_DAYS} dias em Pendente, Aceito ou Preparo
+              serão marcados como Concluído. Deseja continuar?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

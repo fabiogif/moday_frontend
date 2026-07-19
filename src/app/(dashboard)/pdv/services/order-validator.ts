@@ -4,7 +4,7 @@
  */
 
 import { CartItem } from "./order-calculator"
-import { isFinalStatus } from "../utils/order-status"
+import { isFinalStatus } from "@/lib/order-status"
 
 export interface ValidationError {
   field?: string
@@ -132,7 +132,6 @@ export function validateOrderEditable(orderStatus?: string | null): ValidationEr
  * Valida se o pedido pode ser finalizado baseado no status
  */
 export function validateOrderCanBeFinalized(orderStatus?: string | null): ValidationError | null {
-  const allowedStatuses = ["Pronto", "Em Entrega"]
   if (!orderStatus) {
     return {
       message: "Status do pedido não identificado",
@@ -147,9 +146,9 @@ export function validateOrderCanBeFinalized(orderStatus?: string | null): Valida
     }
   }
 
-  if (!allowedStatuses.includes(orderStatus)) {
+  if (orderStatus !== "Preparo") {
     return {
-      message: `Pedido deve estar em "Pronto" ou "Em Entrega" para ser finalizado. Status atual: ${orderStatus}`,
+      message: `Pedido deve estar em "Preparo" para ser finalizado. Status atual: ${orderStatus}`,
       type: "error",
     }
   }

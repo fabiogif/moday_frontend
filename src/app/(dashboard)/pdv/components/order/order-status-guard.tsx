@@ -4,7 +4,7 @@ import { ReactNode } from "react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Lock, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { isFinalStatus, getStatusDescription } from "../../utils/order-status"
+import { isFinalStatus, getStatusDescription } from "@/lib/order-status"
 import { OrderStatusBadge } from "./order-status-badge"
 
 interface OrderStatusGuardProps {

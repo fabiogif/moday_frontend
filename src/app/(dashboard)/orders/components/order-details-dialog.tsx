@@ -71,18 +71,13 @@ export function OrderDetailsDialog({ order, open, onOpenChange }: OrderDetailsDi
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Concluído":
-      case "Entregue":
         return "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20"
       case "Pendente":
         return "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/20"
       case "Aceito":
         return "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-900/20"
       case "Preparo":
-      case "Em Preparo":
         return "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20"
-      case "Entrega":
-      case "Em Entrega":
-        return "text-violet-600 bg-violet-50 dark:text-violet-400 dark:bg-violet-900/20"
       case "Cancelado":
         return "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20"
       default:

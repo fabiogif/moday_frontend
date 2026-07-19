@@ -95,7 +95,7 @@ interface Order {
   comment?: string
 }
 
-type OrderStatus = "Pendente" | "Aceito" | "Preparo" | "Entrega" | "Concluído" | "Cancelado"
+type OrderStatus = "Pendente" | "Aceito" | "Preparo" | "Concluído" | "Cancelado"
 
 const COLUMNS: Array<{ 
   id: OrderStatus
@@ -125,15 +125,8 @@ const COLUMNS: Array<{
     headerGradient: "from-blue-50 to-blue-100/50 dark:from-blue-950/50 dark:to-blue-900/30",
     icon: <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
   },
-  { 
-    id: "Entrega", 
-    title: "Entrega", 
-    badgeColor: "bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800",
-    headerGradient: "from-violet-50 to-violet-100/50 dark:from-violet-950/50 dark:to-violet-900/30",
-    icon: <Truck className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-  },
-  { 
-    id: "Concluído", 
+  {
+    id: "Concluído",
     title: "Concluído", 
     badgeColor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
     headerGradient: "from-emerald-50 to-emerald-100/50 dark:from-emerald-950/50 dark:to-emerald-900/30",
@@ -214,11 +207,9 @@ function OrderCard({
       {/* Barra de cor superior */}
       <div className={cn(
         "h-1 rounded-t-lg",
-        order.status === "Em Preparo" && "bg-gradient-to-r from-amber-400 to-amber-600",
-        order.status === "Pronto" && "bg-gradient-to-r from-blue-400 to-blue-600",
-        order.status === "Saiu para entrega" && "bg-gradient-to-r from-purple-400 to-purple-600",
-        order.status === "A Caminho" && "bg-gradient-to-r from-indigo-400 to-indigo-600",
-        order.status === "Entregue" && "bg-gradient-to-r from-emerald-400 to-emerald-600",
+        order.status === "Pendente" && "bg-gradient-to-r from-amber-400 to-amber-600",
+        order.status === "Aceito" && "bg-gradient-to-r from-indigo-400 to-indigo-600",
+        order.status === "Preparo" && "bg-gradient-to-r from-blue-400 to-blue-600",
         order.status === "Concluído" && "bg-gradient-to-r from-green-400 to-green-600",
         order.status === "Cancelado" && "bg-gradient-to-r from-rose-400 to-rose-600"
       )} />
@@ -547,7 +538,7 @@ export default function OrdersBoardPage() {
       client_email: rawOrder.client?.email || rawOrder.client_email,
       client_phone: rawOrder.client?.phone || rawOrder.client_phone,
       table: rawOrder.table,
-      status: rawOrder.status || "Em Preparo",
+      status: rawOrder.status || "Preparo",
       date: rawOrder.date || rawOrder.created_at,
       created_at: rawOrder.created_at,
       products: Array.isArray(rawOrder.products) 
@@ -698,7 +689,7 @@ export default function OrdersBoardPage() {
     })
     
     for (const order of orders) {
-      const status = dynamicColumns.find((c) => c.id === order.status)?.id || dynamicColumns[0]?.id || "Em Preparo"
+      const status = dynamicColumns.find((c) => c.id === order.status)?.id || dynamicColumns[0]?.id || "Preparo"
       if (map[status]) {
         map[status].push(order)
       }
@@ -790,7 +781,6 @@ export default function OrdersBoardPage() {
 
   const totalOrders = orders.length
   const pendingOrders = groupedOrders["Preparo"]?.length || 0
-  const readyOrders = groupedOrders["Entrega"]?.length || 0
 
   return (
     <div className="flex flex-col gap-6 p-4 lg:p-6 h-full">
@@ -830,13 +820,6 @@ export default function OrdersBoardPage() {
             <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400 px-3 py-1.5">
               <Clock className="h-3.5 w-3.5 mr-1" />
               {pendingOrders} em preparo
-            </Badge>
-          )}
-          
-          {readyOrders > 0 && (
-            <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400 px-3 py-1.5">
-              <Package className="h-3.5 w-3.5 mr-1" />
-              {readyOrders} pronto{readyOrders > 1 && 's'}
             </Badge>
           )}
           

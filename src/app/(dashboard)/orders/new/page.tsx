@@ -188,6 +188,7 @@ export default function NewOrderPage() {
   const { mutate: createClient } = useMutation();
   const { loading: loadingCEP, searchCEP } = useViaCEP();
   const [creating, setCreating] = useState(false);
+  const [validatingStep, setValidatingStep] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [productSearch, setProductSearch] = useState("");
@@ -374,10 +375,12 @@ export default function NewOrderPage() {
     label: client.phone ? `${client.name} - ${client.phone}` : client.name,
   }));
 
-  const tableOptions: ComboboxOption[] = tables.map((table: Table) => ({
-    value: table.uuid || table.identify || table.id.toString(),
-    label: `${table.name} (${table.capacity} pessoas)`,
-  }));
+  const tableOptions: ComboboxOption[] = tables
+    .filter((table: Table) => Boolean(table.uuid || table.identify))
+    .map((table: Table) => ({
+      value: table.uuid || table.identify,
+      label: `${table.name} (${table.capacity} pessoas)`,
+    }));
 
   const paymentMethodOptions: ComboboxOption[] = paymentMethods.map((paymentMethod: PaymentMethod) => ({
     value: paymentMethod.uuid,
@@ -518,6 +521,95 @@ export default function NewOrderPage() {
     }
   };
 
+  const orderFieldMappings: Record<string, keyof OrderFormValues | string> = {
+    client_id: "clientId",
+    table: "tableId",
+    products: "products",
+    "products.*.qty": "products",
+    "products.*.identify": "products",
+    delivery_address: "deliveryAddress",
+    delivery_city: "deliveryCity",
+    delivery_state: "deliveryState",
+    delivery_zip_code: "deliveryZipCode",
+    delivery_neighborhood: "deliveryNeighborhood",
+    delivery_number: "deliveryNumber",
+    payment_method_id: "paymentMethodId",
+    is_delivery: "isDelivery",
+    scheduled_at: "scheduledAt",
+  };
+
+  const FIELD_STEP: Partial<Record<keyof OrderFormValues | string, number>> = {
+    clientId: 0,
+    products: 1,
+    isDelivery: 2,
+    tableId: 2,
+    useClientAddress: 2,
+    deliveryAddress: 2,
+    deliveryCity: 2,
+    deliveryState: 2,
+    deliveryZipCode: 2,
+    deliveryNeighborhood: 2,
+    deliveryNumber: 2,
+    isScheduled: 2,
+    scheduledAt: 2,
+    status: 2,
+    paymentMethodId: 3,
+  };
+
+  const buildStepPayload = (step: number) => {
+    const values = form.getValues();
+    const tenantId = auth.user?.tenant?.uuid || auth.user?.tenant_id;
+    const base = {
+      step,
+      token_company: tenantId ? String(tenantId) : undefined,
+    };
+
+    switch (step) {
+      case 0:
+        return { ...base, client_id: values.clientId || null };
+      case 1:
+        return {
+          ...base,
+          products: values.products
+            .filter((p) => p.productId)
+            .map((product) => ({
+              identify: product.productId,
+              qty: product.quantity,
+              price: product.price,
+            })),
+        };
+      case 2:
+        return {
+          ...base,
+          is_delivery: values.isDelivery,
+          table: values.isDelivery ? null : values.tableId || null,
+          use_client_address: values.useClientAddress,
+          delivery_address: values.deliveryAddress,
+          delivery_city: values.deliveryCity,
+          is_scheduled: values.isScheduled,
+          scheduled_at: values.isScheduled && values.scheduledAt ? values.scheduledAt : null,
+        };
+      case 3:
+        return { ...base, payment_method_id: values.paymentMethodId };
+      default:
+        return base;
+    }
+  };
+
+  const navigateToFirstErrorStep = () => {
+    const erroredFields = Object.keys(form.formState.errors);
+    const steps = erroredFields
+      .map((field) => FIELD_STEP[field])
+      .filter((step): step is number => step !== undefined);
+    if (steps.length === 0) return;
+    setCurrentStep(Math.min(...steps));
+  };
+
+  useEffect(() => {
+    navigateToFirstErrorStep();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.formState.errors]);
+
   const onSubmit = async (data: OrderFormValues) => {
     try {
       setCreating(true);
@@ -578,37 +670,32 @@ export default function NewOrderPage() {
         toast.error(response.message || 'Erro ao criar pedido');
       }
     } catch (error: any) {
-
-      // Se houver erros de validação, mostrar no console
-      if (error.data?.data) {
-
-        Object.entries(error.data.data).forEach(([field, messages]) => {
-
-        });
-      }
-      
-      // Mapeamento de campos específicos para pedidos
-      const orderFieldMappings: Record<string, string> = {
-        'client_id': 'clientId',
-        'table': 'tableId',
-        'products': 'products',
-        'products.*.qty': 'products',
-        'products.*.identify': 'products',
-        'delivery_address': 'deliveryAddress',
-        'delivery_city': 'deliveryCity',
-        'delivery_state': 'deliveryState',
-        'delivery_zip_code': 'deliveryZipCode',
-        'delivery_neighborhood': 'deliveryNeighborhood',
-        'delivery_number': 'deliveryNumber',
-        'payment_method_id': 'paymentMethodId',
-        'is_delivery': 'isDelivery',
-      };
-      
       const handled = handleBackendErrors(error, orderFieldMappings as any);
-      
-      if (!handled) {
-        const errorMsg = error.data?.message || error.message || 'Erro ao criar pedido';
-        toast.error(errorMsg);
+      const firstBackendError =
+        error?.errors && typeof error.errors === "object"
+          ? (Object.values(error.errors)[0] as string[] | string | undefined)
+          : undefined;
+      const firstMessage = Array.isArray(firstBackendError)
+        ? firstBackendError[0]
+        : firstBackendError;
+
+      if (firstMessage) {
+        toast.error(String(firstMessage));
+      } else if (!handled) {
+        toast.error(error?.data?.message || error?.message || "Erro ao criar pedido");
+      } else {
+        toast.error(error?.message || "Corrija os campos destacados e tente novamente.");
+      }
+
+      // Volta para a etapa do primeiro campo com erro (mesa => Entrega, etc.)
+      const backendFields = error?.errors ? Object.keys(error.errors) : [];
+      const mappedSteps = backendFields
+        .map((field) => FIELD_STEP[orderFieldMappings[field] || field])
+        .filter((step): step is number => step !== undefined);
+      if (mappedSteps.length > 0) {
+        setCurrentStep(Math.min(...mappedSteps));
+      } else {
+        navigateToFirstErrorStep();
       }
     } finally {
       setCreating(false);
@@ -644,36 +731,82 @@ export default function NewOrderPage() {
     { label: "Revisão", icon: ClipboardCheck },
   ];
 
-  const validateStep = (step: number): boolean => {
+  const validateStepFrontend = async (step: number): Promise<boolean> => {
     switch (step) {
       case 0:
-        return !!form.getValues("clientId");
+        return form.trigger(["clientId"]);
       case 1:
-        return watchProducts.some((p) => p.productId !== "");
+        return form.trigger(["products"]);
       case 2: {
+        const fields: (keyof OrderFormValues)[] = ["isDelivery", "tableId", "isScheduled", "scheduledAt"];
         const v = form.getValues();
-        if (!v.isDelivery && !v.tableId) return false;
-        if (v.isDelivery && !v.useClientAddress && (!v.deliveryAddress || !v.deliveryCity)) return false;
-        if (v.isScheduled && !v.scheduledAt) return false;
+        if (v.isDelivery && !v.useClientAddress) {
+          fields.push("deliveryAddress", "deliveryCity");
+        }
+        const ok = await form.trigger(fields);
+        if (!ok) return false;
+        if (!v.isDelivery && !v.tableId) {
+          form.setError("tableId", { type: "manual", message: "Por favor, selecione uma mesa." });
+          return false;
+        }
+        if (v.isDelivery && !v.useClientAddress && (!v.deliveryAddress || !v.deliveryCity)) {
+          form.setError("deliveryAddress", { type: "manual", message: "Endereço e cidade são obrigatórios para delivery." });
+          return false;
+        }
+        if (v.isScheduled && !v.scheduledAt) {
+          form.setError("scheduledAt", { type: "manual", message: "Informe a data e hora do agendamento." });
+          return false;
+        }
         return true;
       }
       case 3:
-        return !!form.getValues("paymentMethodId");
+        return form.trigger(["paymentMethodId"]);
       default:
         return true;
     }
   };
 
-  const goNext = () => {
-    if (!validateStep(currentStep)) {
+  const goNext = async () => {
+    const frontendOk = await validateStepFrontend(currentStep);
+    if (!frontendOk) {
       if (currentStep === 0) toast.error("Selecione um cliente.");
       else if (currentStep === 1) toast.error("Adicione pelo menos um produto.");
       else if (currentStep === 2) toast.error("Preencha os dados de entrega e agendamento.");
       else if (currentStep === 3) toast.error("Selecione uma forma de pagamento.");
       return;
     }
-    setCompletedSteps((prev) => new Set(prev).add(currentStep));
-    setCurrentStep((s) => Math.min(s + 1, 4));
+
+    try {
+      setValidatingStep(true);
+      await apiClient.post(endpoints.orders.validate, buildStepPayload(currentStep));
+      setCompletedSteps((prev) => new Set(prev).add(currentStep));
+      setCurrentStep((s) => Math.min(s + 1, 4));
+    } catch (error: any) {
+      const handled = handleBackendErrors(error, orderFieldMappings as any);
+      const firstBackendError =
+        error?.errors && typeof error.errors === "object"
+          ? (Object.values(error.errors)[0] as string[] | string | undefined)
+          : undefined;
+      const firstMessage = Array.isArray(firstBackendError)
+        ? firstBackendError[0]
+        : firstBackendError;
+
+      if (firstMessage) {
+        toast.error(String(firstMessage));
+      } else if (!handled) {
+        toast.error(error?.message || "Não foi possível validar esta etapa.");
+      }
+
+      const backendFields = error?.errors ? Object.keys(error.errors) : [];
+      const mappedSteps = backendFields
+        .map((field) => FIELD_STEP[orderFieldMappings[field] || field])
+        .filter((step): step is number => step !== undefined);
+      if (mappedSteps.length > 0) {
+        setCurrentStep(Math.min(...mappedSteps));
+      }
+    } finally {
+      setValidatingStep(false);
+    }
   };
 
   const goBack = () => setCurrentStep((s) => Math.max(s - 1, 0));
@@ -918,7 +1051,6 @@ export default function NewOrderPage() {
                             <SelectItem value="Pendente">Pendente</SelectItem>
                             <SelectItem value="Aceito">Aceito</SelectItem>
                             <SelectItem value="Preparo">Preparo</SelectItem>
-                            <SelectItem value="Entrega">Entrega</SelectItem>
                             <SelectItem value="Concluído">Concluído</SelectItem>
                             <SelectItem value="Cancelado">Cancelado</SelectItem>
                           </SelectContent></Select>
@@ -1091,7 +1223,9 @@ export default function NewOrderPage() {
                 {currentStep > 0 && (
                   <Button type="button" variant="outline" onClick={goBack} className="h-12 flex-1 sm:flex-none sm:w-32"><ChevronLeft className="h-4 w-4 mr-1" /> Voltar</Button>
                 )}
-                <Button type="button" onClick={goNext} className="h-12 flex-1">Próximo <ChevronRight className="h-4 w-4 ml-1" /></Button>
+                <Button type="button" onClick={goNext} disabled={validatingStep || creating} className="h-12 flex-1">
+                  {validatingStep ? "Validando..." : "Próximo"} <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
             ) : (
               <div className="flex gap-3">

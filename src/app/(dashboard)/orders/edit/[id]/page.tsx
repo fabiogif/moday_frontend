@@ -73,13 +73,12 @@ const statusOptions = [
   { value: "Pendente", label: "Pendente" },
   { value: "Aceito", label: "Aceito" },
   { value: "Preparo", label: "Preparo" },
-  { value: "Entrega", label: "Entrega" },
   { value: "Concluído", label: "Concluído" },
   { value: "Cancelado", label: "Cancelado" },
 ]
 
 // Status finais que não podem ser editados
-const FINAL_STATUSES = ['Concluído', 'Cancelado', 'Entregue', 'Arquivado']
+const FINAL_STATUSES = ['Concluído', 'Cancelado']
 
 // Função helper para verificar se um status é final
 const isFinalStatus = (status: string | null | undefined): boolean => {
@@ -261,14 +260,14 @@ export default function EditOrderPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Entregue":
+      case "Concluído":
         return "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20"
       case "Pendente":
         return "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/20"
-      case "Em Preparo":
+      case "Aceito":
+        return "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-900/20"
+      case "Preparo":
         return "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20"
-      case "Pronto":
-        return "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20"
       case "Cancelado":
         return "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20"
       default:
