@@ -26,6 +26,12 @@ jest.mock('@/hooks/use-toast', () => ({
   }),
 }))
 
+// Mock das zonas de taxa por bairro (CRUD próprio, testado separadamente)
+jest.mock('@/hooks/use-delivery-fee-zones', () => ({
+  useDeliveryFeeZones: () => ({ data: [], refetch: jest.fn() }),
+  useDeliveryFeeZoneMutation: () => ({ mutate: jest.fn(), loading: false }),
+}))
+
 const mockUserData = {
   success: true,
   data: {
@@ -299,6 +305,93 @@ describe('DeliverySettingsPage - Configurações de Delivery e Retirada', () => 
     // Verificar alerta
     await waitFor(() => {
       expect(screen.getByText(/Você tem alterações não salvas/i)).toBeInTheDocument()
+    })
+  })
+
+  /**
+   * TESTE 13: Card de documento na nota (CPF/CNPJ)
+   */
+  test('should render invoice document card with ask and required toggles', async () => {
+    render(<DeliverySettingsPage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Documento na Nota')).toBeInTheDocument()
+    })
+
+    const askSwitch = screen.getByRole('switch', { name: /Perguntar CPF ou CNPJ na Nota/i })
+    const requiredSwitch = screen.getByRole('switch', { name: /CPF ou CNPJ Obrigatório/i })
+
+    expect(askSwitch).not.toBeChecked()
+    expect(requiredSwitch).toBeDisabled()
+  })
+
+  /**
+   * TESTE 14: Habilitar obrigatoriedade de documento apenas quando "perguntar" está ativo
+   */
+  test('should enable required document switch only when ask is enabled', async () => {
+    const user = userEvent.setup()
+    render(<DeliverySettingsPage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Documento na Nota')).toBeInTheDocument()
+    })
+
+    const askSwitch = screen.getByRole('switch', { name: /Perguntar CPF ou CNPJ na Nota/i })
+    await user.click(askSwitch)
+
+    const requiredSwitch = screen.getByRole('switch', { name: /CPF ou CNPJ Obrigatório/i })
+    expect(requiredSwitch).not.toBeDisabled()
+  })
+
+  /**
+   * TESTE 15: Card de taxa de entrega com modo padrão "Taxa Única"
+   */
+  test('should render delivery fee card defaulting to single fee mode', async () => {
+    render(<DeliverySettingsPage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Taxa de Entrega')).toBeInTheDocument()
+    })
+
+    expect(screen.getByText('Modelo de Cobrança')).toBeInTheDocument()
+    expect(screen.getByText('Valor da Taxa (R$)')).toBeInTheDocument()
+  })
+
+  /**
+   * TESTE 16: Salvar inclui invoice_document e delivery_fee no payload
+   */
+  test('should include invoice_document and delivery_fee in save payload', async () => {
+    const user = userEvent.setup()
+
+    ;(apiClient.put as jest.Mock).mockResolvedValue({
+      success: true,
+      message: 'Configurações salvas',
+    })
+
+    render(<DeliverySettingsPage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Delivery e Retirada')).toBeInTheDocument()
+    })
+
+    const askSwitch = screen.getByRole('switch', { name: /Perguntar CPF ou CNPJ na Nota/i })
+    await user.click(askSwitch)
+
+    const saveButton = screen.getByRole('button', { name: /Salvar/i })
+    await user.click(saveButton)
+
+    await waitFor(() => {
+      expect(apiClient.put).toHaveBeenCalledWith(
+        '/api/tenant/test-uuid-123',
+        expect.objectContaining({
+          settings: expect.objectContaining({
+            invoice_document: expect.objectContaining({ ask_enabled: true }),
+            delivery_pickup: expect.objectContaining({
+              delivery_fee: expect.objectContaining({ mode: 'unica' }),
+            }),
+          })
+        })
+      )
     })
   })
 })

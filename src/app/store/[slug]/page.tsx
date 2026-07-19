@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { toast } from "sonner"
 import Image from "next/image"
-import { maskCPF, maskPhone, maskZipCode } from '@/lib/masks'
+import { maskCPF, maskCNPJ, maskPhone, maskZipCode } from '@/lib/masks'
 import { useViaCEP } from '@/hooks/use-viacep'
 import { StateCitySelect } from '@/components/location/state-city-select'
 import { StoreHoursBanner } from './components/store-hours-banner'
@@ -77,6 +77,10 @@ interface StoreInfo {
       delivery_enabled?: boolean
       delivery_minimum_order_value?: number
       delivery_free_above_value?: number
+    }
+    invoice_document?: {
+      ask_enabled?: boolean
+      required?: boolean
     }
   }
 }
@@ -139,7 +143,15 @@ export default function PublicStorePage() {
     email: "",
     phone: "",
     cpf: "",
+    cnpj: "",
   })
+
+  const [deliveryFeeInfo, setDeliveryFeeInfo] = useState<{
+    fee_type: string
+    fee_value: number
+    estimated_delivery_minutes: number
+    note: string | null
+  } | null>(null)
 
   const [deliveryData, setDeliveryData] = useState({
     is_delivery: true,
@@ -164,6 +176,9 @@ export default function PublicStorePage() {
     total: string
     whatsapp_message: string
     whatsapp_link?: string | null
+    delivery_fee?: string
+    delivery_fee_type?: string | null
+    estimated_delivery_minutes?: number | null
   } | null>(null)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
@@ -765,6 +780,12 @@ export default function PublicStorePage() {
         return
       }
 
+      if (invoiceDocumentAskEnabled && invoiceDocumentRequired && !clientData.cpf.trim() && !clientData.cnpj.trim()) {
+        toast.error('Informe CPF ou CNPJ para emissão da nota.')
+        setSubmitting(false)
+        return
+      }
+
       // Prepare delivery data based on shipping method
       const deliveryDataToSend = shippingMethod === "delivery" 
         ? {
@@ -939,6 +960,58 @@ export default function PublicStorePage() {
   const currentOrderIdentify = orderResult?.order_id || completedOrderId || ''
   const tenantIdForReview = storeInfo?.tenant_id || storeInfo?.id || 0
 
+  // Preview da taxa de entrega estimada (apenas informativo — o valor final é sempre recalculado no servidor ao confirmar o pedido)
+  useEffect(() => {
+    if (shippingMethod !== 'delivery' || !slug) {
+      setDeliveryFeeInfo(null)
+      return
+    }
+
+    if (!deliveryData.city.trim() || !deliveryData.neighborhood.trim()) {
+      setDeliveryFeeInfo(null)
+      return
+    }
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({
+          address: deliveryData.address,
+          number: deliveryData.number,
+          neighborhood: deliveryData.neighborhood,
+          city: deliveryData.city,
+          state: deliveryData.state,
+          zip_code: deliveryData.zip_code,
+          subtotal: String(cartTotal),
+        })
+
+        const response = await fetch(
+          buildApiUrl(`/api/store/${slug}/delivery-fee/preview?${params.toString()}`),
+          { mode: 'cors' }
+        )
+        const result = await response.json()
+
+        if (result.success && result.data) {
+          setDeliveryFeeInfo(result.data)
+        }
+      } catch {
+        // Silencioso — preview é apenas informativo
+        setDeliveryFeeInfo(null)
+      }
+    }, 600)
+
+    return () => clearTimeout(timeoutId)
+  }, [
+    shippingMethod,
+    slug,
+    deliveryData.address,
+    deliveryData.number,
+    deliveryData.neighborhood,
+    deliveryData.city,
+    deliveryData.state,
+    deliveryData.zip_code,
+    cartTotal,
+  ])
+
   const wizardSteps = [
     { label: "Cardápio", icon: ShoppingCart },
     { label: "Seus dados", icon: User },
@@ -1067,6 +1140,10 @@ export default function PublicStorePage() {
   const estimatedTime = storeInfo?.settings?.delivery_pickup?.pickup_time_minutes
   const estimatedTimeLabel = estimatedTime ? `${estimatedTime} min` : '30-45 min'
   const acceptedPayments = paymentMethods.length > 0 ? paymentMethods : [{ uuid: 'default', name: 'Verificar na loja' }]
+
+  // "Perguntar CPF/CNPJ" é opt-in por tenant; assume true (comportamento atual) até o tenant configurar explicitamente
+  const invoiceDocumentAskEnabled = storeInfo?.settings?.invoice_document?.ask_enabled ?? true
+  const invoiceDocumentRequired = storeInfo?.settings?.invoice_document?.required ?? false
 
   const handleContactToggle = (type: 'whatsapp' | 'location') => {
     setContactExpanded((prev) => ({
@@ -1713,24 +1790,47 @@ export default function PublicStorePage() {
                           className={storeFormInputClass}
                         />
                       </div>
-                      <div className={storeFormFieldClass}>
-                        <Label htmlFor="cpf" className={storeFormLabelClass}>CPF (opcional)</Label>
-                        <Input
-                          id="cpf"
-                          value={clientData.cpf}
-                          onChange={(e) => {
-                            const masked = maskCPF(e.target.value)
-                            setClientData({ ...clientData, cpf: masked })
-                            const digits = masked.replace(/\D/g, "")
-                            if (digits.length === 11) {
-                              scheduleClientLookup(digits, clientData.phone)
-                            }
-                          }}
-                          onBlur={() => scheduleClientLookup(clientData.cpf, clientData.phone)}
-                          placeholder="000.000.000-00"
-                          className={storeFormInputClass}
-                        />
-                      </div>
+                      {invoiceDocumentAskEnabled && (
+                        <>
+                          <div className={storeFormFieldClass}>
+                            <Label htmlFor="cpf" className={storeFormLabelClass}>
+                              CPF {invoiceDocumentRequired ? '*' : '(opcional)'}
+                            </Label>
+                            <Input
+                              id="cpf"
+                              value={clientData.cpf}
+                              onChange={(e) => {
+                                const masked = maskCPF(e.target.value)
+                                setClientData({ ...clientData, cpf: masked })
+                                const digits = masked.replace(/\D/g, "")
+                                if (digits.length === 11) {
+                                  scheduleClientLookup(digits, clientData.phone)
+                                }
+                              }}
+                              onBlur={() => scheduleClientLookup(clientData.cpf, clientData.phone)}
+                              placeholder="000.000.000-00"
+                              className={storeFormInputClass}
+                            />
+                          </div>
+                          <div className={storeFormFieldClass}>
+                            <Label htmlFor="cnpj" className={storeFormLabelClass}>
+                              CNPJ {invoiceDocumentRequired ? '*' : '(opcional)'}
+                            </Label>
+                            <Input
+                              id="cnpj"
+                              value={clientData.cnpj}
+                              onChange={(e) => setClientData({ ...clientData, cnpj: maskCNPJ(e.target.value) })}
+                              placeholder="00.000.000/0000-00"
+                              className={storeFormInputClass}
+                            />
+                          </div>
+                          {invoiceDocumentRequired && (
+                            <p className="text-xs text-muted-foreground col-span-full">
+                              Informe CPF ou CNPJ para emissão da nota
+                            </p>
+                          )}
+                        </>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -2011,9 +2111,23 @@ export default function PublicStorePage() {
                         <p><strong>Endereço:</strong> {deliveryData.address}, {deliveryData.number} — {deliveryData.neighborhood}, {deliveryData.city}/{deliveryData.state}</p>
                       )}
                       <p><strong>Pagamento:</strong> {paymentMethodName || "—"}</p>
+                      {shippingMethod === 'delivery' && deliveryFeeInfo && (
+                        <p>
+                          <strong>Taxa de entrega:</strong>{' '}
+                          {deliveryFeeInfo.fee_type === 'fixed' && `R$ ${formatPrice(deliveryFeeInfo.fee_value)}`}
+                          {deliveryFeeInfo.fee_type === 'free' && 'Grátis'}
+                          {deliveryFeeInfo.fee_type === 'negotiable' && (deliveryFeeInfo.note || 'A combinar')}
+                          {deliveryFeeInfo.estimated_delivery_minutes > 0 && ` · ~${deliveryFeeInfo.estimated_delivery_minutes} min`}
+                        </p>
+                      )}
+                      {shippingMethod === 'pickup' && estimatedTime && (
+                        <p><strong>Tempo estimado:</strong> ~{estimatedTime} min</p>
+                      )}
                       <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
                         <span>Total</span>
-                        <span className="text-primary">R$ {formatPrice(cartTotal)}</span>
+                        <span className="text-primary">
+                          R$ {formatPrice(cartTotal + (shippingMethod === 'delivery' && deliveryFeeInfo?.fee_type === 'fixed' ? deliveryFeeInfo.fee_value : 0))}
+                        </span>
                       </div>
                     </CardContent>
                   </Card>
@@ -2620,6 +2734,12 @@ export default function PublicStorePage() {
           </DialogHeader>
 
           <div className="space-y-3 text-sm text-muted-foreground text-center">
+            {orderResult?.estimated_delivery_minutes ? (
+              <p>Tempo estimado: ~{orderResult.estimated_delivery_minutes} minutos</p>
+            ) : null}
+            {orderResult?.delivery_fee_type === 'negotiable' && (
+              <p>A taxa de entrega será confirmada pelo restaurante.</p>
+            )}
             <p>Você receberá atualizações assim que o restaurante começar a preparar seu pedido.</p>
             <p>Guarde o número acima para acompanhar pelo WhatsApp ou diretamente na loja.</p>
           </div>

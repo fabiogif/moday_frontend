@@ -361,6 +361,8 @@ export const endpoints = {
     },
     bulkDelete: '/api/orders/bulk-delete',
     bulkUpdateStatus: '/api/orders/bulk-update-status',
+    staleOpen: (days = 15) => `/api/orders/stale-open?days=${days}`,
+    completeStale: '/api/orders/complete-stale',
     getDetails: (orderId: number) => `/api/order/${orderId}/details`,
     create: '/api/order',
     show: (id: string) => `/api/order/${id}`,
@@ -371,6 +373,7 @@ export const endpoints = {
     invoice: (id: string) => `/api/order/${id}/invoice`,
     receipt: (id: string) => `/api/order/${id}/receipt`,
     sendReceiptEmail: (id: string) => `/api/order/${id}/receipt/email`,
+    calendarLink: (id: string) => `/api/order/${id}/calendar`,
   },
   
   // Mesas
@@ -542,6 +545,16 @@ export const endpoints = {
     createOrder: (slug: string) => `/api/store/${slug}/orders`,
     trackOrder: (slug: string) => `/api/store/${slug}/orders/track`,
     isOpen: (slug: string) => `/api/store/${slug}/is-open`,
+    deliveryFeePreview: (slug: string) => `/api/store/${slug}/delivery-fee/preview`,
+  },
+
+  // Zonas de Taxa de Entrega (taxa por bairro)
+  deliveryFeeZones: {
+    list: '/api/delivery-fee-zones',
+    create: '/api/delivery-fee-zones',
+    show: (uuid: string) => `/api/delivery-fee-zones/${uuid}`,
+    update: (uuid: string) => `/api/delivery-fee-zones/${uuid}`,
+    delete: (uuid: string) => `/api/delivery-fee-zones/${uuid}`,
   },
 
   // Status de Pedidos
@@ -715,6 +728,19 @@ export const endpoints = {
       return `/api/sales-performance/export${queryString ? `?${queryString}` : ''}`
     },
     refresh: '/api/sales-performance/refresh',
+  },
+
+  // Assinatura
+  subscription: {
+    trialStatus: '/api/subscription/trial-status',
+    plans:       '/api/subscription/plans',
+    payment:     '/api/subscription/payment',
+    activate:    '/api/subscription/activate',
+    cancel:      '/api/subscription/cancel',
+    reactivate:  '/api/subscription/reactivate',
+    upgrade:     '/api/subscription/upgrade',
+    downgrade:   '/api/subscription/downgrade',
+    invoices:    '/api/subscription/invoices',
   },
 
   // PDV Feedback
