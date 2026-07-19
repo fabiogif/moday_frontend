@@ -796,8 +796,8 @@ export default function OrdersBoardPage() {
   }
 
   const totalOrders = orders.length
-  const pendingOrders = groupedOrders["Em Preparo"]?.length || 0
-  const readyOrders = groupedOrders["Pronto"]?.length || 0
+  const pendingOrders = groupedOrders["Preparo"]?.length || 0
+  const readyOrders = groupedOrders["Entrega"]?.length || 0
 
   return (
     <div className="flex flex-col gap-6 p-4 lg:p-6 h-full">
