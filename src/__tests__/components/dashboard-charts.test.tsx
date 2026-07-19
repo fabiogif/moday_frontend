@@ -35,9 +35,9 @@ describe('OrdersVolumeChart', () => {
 
   it('deve renderizar gráfico com dados de pedidos', async () => {
     const mockOrders = [
-      { id: 1, created_at: new Date().toISOString(), status: 'Entregue' },
-      { id: 2, created_at: new Date().toISOString(), status: 'Em Preparo' },
-      { id: 3, created_at: new Date(Date.now() - 86400000).toISOString(), status: 'Entregue' }
+      { id: 1, created_at: new Date().toISOString(), status: 'Concluído' },
+      { id: 2, created_at: new Date().toISOString(), status: 'Preparo' },
+      { id: 3, created_at: new Date(Date.now() - 86400000).toISOString(), status: 'Concluído' }
     ]
 
     useAuthenticatedApi.mockReturnValue({
@@ -55,9 +55,9 @@ describe('OrdersVolumeChart', () => {
 
   it('deve tratar datas inválidas sem crashar', async () => {
     const mockOrders = [
-      { id: 1, created_at: 'invalid-date', status: 'Entregue' },
-      { id: 2, created_at: null, status: 'Em Preparo' },
-      { id: 3, created_at: undefined, status: 'Entregue' }
+      { id: 1, created_at: 'invalid-date', status: 'Concluído' },
+      { id: 2, created_at: null, status: 'Preparo' },
+      { id: 3, created_at: undefined, status: 'Concluído' }
     ]
 
     useAuthenticatedApi.mockReturnValue({

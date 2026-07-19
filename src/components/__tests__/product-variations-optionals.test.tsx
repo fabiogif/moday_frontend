@@ -41,16 +41,12 @@ describe('ProductVariationsManager', () => {
     
     const nameInput = screen.getByPlaceholderText(/nome \(ex: pequeno/i)
     const priceInput = screen.getByPlaceholderText(/0,00/i)
-    const addButton = screen.getAllByRole('button').find(btn => 
-      btn.querySelector('svg') && !btn.className.includes('destructive')
-    )
 
     fireEvent.change(nameInput, { target: { value: 'Média' } })
     fireEvent.change(priceInput, { target: { value: '0' } })
-    
-    if (addButton) {
-      fireEvent.click(addButton)
-    }
+
+    const addButton = screen.getByRole('button')
+    fireEvent.click(addButton)
 
     await waitFor(() => {
       expect(mockOnChange).toHaveBeenCalledWith(
@@ -69,16 +65,12 @@ describe('ProductVariationsManager', () => {
     
     const nameInput = screen.getByPlaceholderText(/nome \(ex: pequeno/i)
     const priceInput = screen.getByPlaceholderText(/0,00/i)
-    const addButton = screen.getAllByRole('button').find(btn => 
-      btn.querySelector('svg') && !btn.className.includes('destructive')
-    )
 
     fireEvent.change(nameInput, { target: { value: 'Pequena' } })
     fireEvent.change(priceInput, { target: { value: '-5.00' } })
-    
-    if (addButton) {
-      fireEvent.click(addButton)
-    }
+
+    const addButton = screen.getByRole('button')
+    fireEvent.click(addButton)
 
     await waitFor(() => {
       expect(mockOnChange).toHaveBeenCalledWith(

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import FinancialDashboardPage from '../page'
 import { useExpenseStats } from '@/hooks/use-expenses'
 import { useAccountPayableStats } from '@/hooks/use-accounts-payable'
@@ -45,12 +45,17 @@ function hasCurrency(value: number) {
     normalizeCurrencyText(element?.textContent ?? text).includes(expected)
 }
 
-function getKpiCardValue(label: string): string {
+function getKpiCard(label: string): HTMLElement {
   const description = screen.getByText(label)
   const card = description.closest('[data-slot="card"]')
   if (!card) {
     throw new Error(`Card não encontrado para o KPI "${label}"`)
   }
+  return card as HTMLElement
+}
+
+function getKpiCardValue(label: string): string {
+  const card = getKpiCard(label)
   const title = card.querySelector('[data-slot="card-title"]')
   return title?.textContent ?? ''
 }
@@ -90,8 +95,11 @@ describe('FinancialDashboardPage', () => {
   it('exibe detalhes do KPI Total a Receber com total_received', () => {
     render(<FinancialDashboardPage />)
 
-    expect(screen.getByText(hasCurrency(2000))).toBeInTheDocument()
-    expect(screen.getByText(/40\s*%/)).toBeInTheDocument()
+    const receivableCard = getKpiCard('Total a Receber')
+    expect(
+      within(receivableCard).getByText((text) => text.includes('Recebido:') && hasCurrency(2000)(text))
+    ).toBeInTheDocument()
+    expect(within(receivableCard).getByText(/40\s*%/)).toBeInTheDocument()
   })
 
   it('exibe detalhes do KPI Total a Pagar com total_overdue', () => {
@@ -117,7 +125,7 @@ describe('FinancialDashboardPage', () => {
     render(<FinancialDashboardPage />)
 
     expect(screen.getByText(/Você tem .+ em contas vencidas/)).toBeInTheDocument()
-    expect(screen.getByText(hasCurrency(500))).toBeInTheDocument()
+    expect(screen.getAllByText(hasCurrency(500)).length).toBeGreaterThan(0)
   })
 
   it('exibe zeros nos KPIs quando os hooks não retornam dados', () => {

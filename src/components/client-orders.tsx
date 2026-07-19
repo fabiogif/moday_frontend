@@ -90,9 +90,9 @@ export function ClientOrders({ slug }: ClientOrdersProps) {
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       'Pendente': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
-      'Em Preparo': 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
-      'Pronto': 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
-      'Entregue': 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
+      'Aceito': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400',
+      'Preparo': 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
+      'Concluído': 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
       'Cancelado': 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
     }
     return colors[status] || 'bg-gray-100 text-gray-800'

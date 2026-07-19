@@ -141,8 +141,8 @@ describe('Ações em Massa - DataTable', () => {
       )
 
       // Selecionar primeiro pedido
-      const checkboxes = screen.getAllByRole('checkbox')
-      await userEvent.click(checkboxes[1]) // Primeiro checkbox de linha (índice 0 é o "select all")
+      const rowCheckboxes = screen.getAllByRole('checkbox', { name: 'Select row' })
+      await userEvent.click(rowCheckboxes[0])
 
       await waitFor(() => {
         expect(screen.getByText(/pedido\(s\) selecionado\(s\)/i)).toBeInTheDocument()
@@ -163,9 +163,9 @@ describe('Ações em Massa - DataTable', () => {
       )
 
       // Selecionar pedidos
-      const checkboxes = screen.getAllByRole('checkbox')
-      await userEvent.click(checkboxes[1])
-      await userEvent.click(checkboxes[2])
+      const rowCheckboxes = screen.getAllByRole('checkbox', { name: 'Select row' })
+      await userEvent.click(rowCheckboxes[0])
+      await userEvent.click(rowCheckboxes[1])
 
       await waitFor(() => {
         expect(screen.getByText(/Excluir Selecionados/i)).toBeInTheDocument()
@@ -186,17 +186,15 @@ describe('Ações em Massa - DataTable', () => {
       )
 
       // Selecionar pedidos
-      const checkboxes = screen.getAllByRole('checkbox')
-      await userEvent.click(checkboxes[1])
+      const rowCheckboxes = screen.getAllByRole('checkbox', { name: 'Select row' })
+      await userEvent.click(rowCheckboxes[0])
 
       // Clicar em "Excluir Selecionados"
       await waitFor(() => {
-        const deleteButton = screen.getByText(/Excluir Selecionados/i)
-        expect(deleteButton).toBeInTheDocument()
+        expect(screen.getByText(/Excluir Selecionados/i)).toBeInTheDocument()
       })
 
-      const deleteButton = screen.getByText(/Excluir Selecionados/i)
-      await userEvent.click(deleteButton)
+      await userEvent.click(screen.getByText(/Excluir Selecionados/i))
 
       // Verificar que o modal foi aberto
       await waitFor(() => {
@@ -219,20 +217,17 @@ describe('Ações em Massa - DataTable', () => {
       )
 
       // Selecionar pedidos
-      const checkboxes = screen.getAllByRole('checkbox')
-      await userEvent.click(checkboxes[1])
+      const rowCheckboxes = screen.getAllByRole('checkbox', { name: 'Select row' })
+      await userEvent.click(rowCheckboxes[0])
 
       // Abrir modal
-      const deleteButton = screen.getByText(/Excluir Selecionados/i)
-      await userEvent.click(deleteButton)
+      await waitFor(() => {
+        expect(screen.getByText(/Excluir Selecionados/i)).toBeInTheDocument()
+      })
+      await userEvent.click(screen.getByText(/Excluir Selecionados/i))
 
       // Confirmar exclusão
-      await waitFor(() => {
-        const confirmButton = screen.getByRole('button', { name: /Excluir/i })
-        expect(confirmButton).toBeInTheDocument()
-      })
-
-      const confirmButton = screen.getByRole('button', { name: /Excluir/i })
+      const confirmButton = await screen.findByRole('button', { name: /^Excluir$/i })
       await userEvent.click(confirmButton)
 
       // Verificar que a função foi chamada
@@ -255,14 +250,16 @@ describe('Ações em Massa - DataTable', () => {
       )
 
       // Selecionar pedidos
-      const checkboxes = screen.getAllByRole('checkbox')
-      await userEvent.click(checkboxes[1])
+      const rowCheckboxes = screen.getAllByRole('checkbox', { name: 'Select row' })
+      await userEvent.click(rowCheckboxes[0])
 
       // Executar exclusão
-      const deleteButton = screen.getByText(/Excluir Selecionados/i)
-      await userEvent.click(deleteButton)
+      await waitFor(() => {
+        expect(screen.getByText(/Excluir Selecionados/i)).toBeInTheDocument()
+      })
+      await userEvent.click(screen.getByText(/Excluir Selecionados/i))
 
-      const confirmButton = screen.getByRole('button', { name: /Excluir/i })
+      const confirmButton = await screen.findByRole('button', { name: /^Excluir$/i })
       await userEvent.click(confirmButton)
 
       // Verificar que a barra de ações desapareceu
@@ -287,8 +284,8 @@ describe('Ações em Massa - DataTable', () => {
       )
 
       // Selecionar pedidos
-      const checkboxes = screen.getAllByRole('checkbox')
-      await userEvent.click(checkboxes[1])
+      const rowCheckboxes = screen.getAllByRole('checkbox', { name: 'Select row' })
+      await userEvent.click(rowCheckboxes[0])
 
       await waitFor(() => {
         expect(screen.getByText(/Mover para Concluído/i)).toBeInTheDocument()
@@ -309,12 +306,14 @@ describe('Ações em Massa - DataTable', () => {
       )
 
       // Selecionar pedidos
-      const checkboxes = screen.getAllByRole('checkbox')
-      await userEvent.click(checkboxes[1])
+      const rowCheckboxes = screen.getAllByRole('checkbox', { name: 'Select row' })
+      await userEvent.click(rowCheckboxes[0])
 
       // Clicar em "Mover para Concluído"
-      const updateButton = screen.getByText(/Mover para Concluído/i)
-      await userEvent.click(updateButton)
+      await waitFor(() => {
+        expect(screen.getByText(/Mover para Concluído/i)).toBeInTheDocument()
+      })
+      await userEvent.click(screen.getByText(/Mover para Concluído/i))
 
       // Verificar que o modal foi aberto
       await waitFor(() => {
@@ -336,21 +335,17 @@ describe('Ações em Massa - DataTable', () => {
         />
       )
 
-      // Selecionar pedidos
-      const checkboxes = screen.getAllByRole('checkbox')
-      await userEvent.click(checkboxes[0])
+      // Selecionar todos os pedidos da página
+      await userEvent.click(screen.getByRole('checkbox', { name: 'Select all' }))
 
       // Abrir modal
-      const updateButton = screen.getByText(/Mover para Concluído/i)
-      await userEvent.click(updateButton)
+      await waitFor(() => {
+        expect(screen.getByText(/Mover para Concluído/i)).toBeInTheDocument()
+      })
+      await userEvent.click(screen.getByText(/Mover para Concluído/i))
 
       // Confirmar atualização
-      await waitFor(() => {
-        const confirmButton = screen.getByRole('button', { name: /Confirmar/i })
-        expect(confirmButton).toBeInTheDocument()
-      })
-
-      const confirmButton = screen.getByRole('button', { name: /Confirmar/i })
+      const confirmButton = await screen.findByRole('button', { name: /^Confirmar$/i })
       await userEvent.click(confirmButton)
 
       // Verificar que a função foi chamada com os IDs corretos e status
@@ -394,8 +389,7 @@ describe('Ações em Massa - DataTable', () => {
       )
 
       // Selecionar todos os pedidos
-      const checkboxes = screen.getAllByRole('checkbox')
-      await userEvent.click(checkboxes[0])
+      await userEvent.click(screen.getByRole('checkbox', { name: 'Select all' }))
 
       await waitFor(() => {
         expect(
@@ -425,13 +419,15 @@ describe('Ações em Massa - DataTable', () => {
         />
       )
 
-      const checkboxes = screen.getAllByRole('checkbox')
-      await userEvent.click(checkboxes[1])
+      const rowCheckboxes = screen.getAllByRole('checkbox', { name: 'Select row' })
+      await userEvent.click(rowCheckboxes[0])
 
-      const deleteButton = screen.getByText(/Excluir Selecionados/i)
-      await userEvent.click(deleteButton)
+      await waitFor(() => {
+        expect(screen.getByText(/Excluir Selecionados/i)).toBeInTheDocument()
+      })
+      await userEvent.click(screen.getByText(/Excluir Selecionados/i))
 
-      const confirmButton = screen.getByRole('button', { name: /^Excluir$/i })
+      const confirmButton = await screen.findByRole('button', { name: /^Excluir$/i })
       await userEvent.click(confirmButton)
 
       await waitFor(() => {

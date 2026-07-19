@@ -2,23 +2,21 @@
  * Testes para o hook usePlanLimits
  */
 
-import { renderHook, waitFor } from '@testing-library/react'
+import { renderHook, waitFor, act } from '@testing-library/react'
 import { usePlanLimits, useCurrentUsage } from '@/hooks/use-plan-limits'
 import { apiClient } from '@/lib/api-client'
+import { useAuth } from '@/contexts/auth-context'
 
-// Mock do auth context
 jest.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({
-    token: 'mock-token',
-    isAuthenticated: true,
-    isLoading: false,
-  }),
+  useAuth: jest.fn(),
 }))
 
 // Mock do apiClient
 jest.mock('@/lib/api-client', () => ({
   apiClient: {
     get: jest.fn(),
+    setToken: jest.fn(),
+    reloadToken: jest.fn(),
   },
   endpoints: {
     planLimits: {
@@ -31,15 +29,21 @@ jest.mock('@/lib/api-client', () => ({
 describe('usePlanLimits', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    jest.useFakeTimers()
-  })
-
-  afterEach(() => {
-    jest.useRealTimers()
+    ;(useAuth as jest.Mock).mockReturnValue({
+      token: 'mock-token',
+      isAuthenticated: true,
+      isLoading: false,
+    })
   })
 
   it('deve retornar dados iniciais vazios', () => {
-    (apiClient.get as jest.Mock).mockResolvedValue({
+    ;(useAuth as jest.Mock).mockReturnValue({
+      token: 'mock-token',
+      isAuthenticated: true,
+      isLoading: true,
+    })
+
+    ;(apiClient.get as jest.Mock).mockResolvedValue({
       success: true,
       data: {
         has_limit_reached: false,
@@ -64,7 +68,7 @@ describe('usePlanLimits', () => {
 
     expect(result.current.hasLimitReached).toBe(false)
     expect(result.current.reachedLimits).toEqual([])
-    expect(result.current.loading).toBe(true) // Ainda carregando
+    expect(result.current.loading).toBe(false)
   })
 
   it('deve buscar limites ao montar o componente', async () => {
@@ -98,9 +102,9 @@ describe('usePlanLimits', () => {
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
+      expect(result.current.hasLimitReached).toBe(true)
     })
 
-    expect(result.current.hasLimitReached).toBe(true)
     expect(result.current.reachedLimits).toEqual(['users', 'products'])
     expect(result.current.currentUsage.users).toBe(5)
     expect(result.current.planName).toBe('Básico')
@@ -114,13 +118,15 @@ describe('usePlanLimits', () => {
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
+      expect(result.current.error).toBe('Erro na requisição')
     })
 
-    expect(result.current.error).toBe('Erro na requisição')
     expect(result.current.hasLimitReached).toBe(false)
   })
 
   it('deve atualizar limites periodicamente', async () => {
+    jest.useFakeTimers()
+
     ;(apiClient.get as jest.Mock).mockResolvedValue({
       success: true,
       data: {
@@ -142,12 +148,15 @@ describe('usePlanLimits', () => {
 
     expect(apiClient.get).toHaveBeenCalledTimes(1)
 
-    // Avançar 5 minutos
-    jest.advanceTimersByTime(5 * 60 * 1000)
+    await act(async () => {
+      jest.advanceTimersByTime(5 * 60 * 1000)
+    })
 
     await waitFor(() => {
       expect(apiClient.get).toHaveBeenCalledTimes(2)
     })
+
+    jest.useRealTimers()
   })
 
   it('deve permitir refetch manual', async () => {
@@ -172,7 +181,9 @@ describe('usePlanLimits', () => {
 
     expect(apiClient.get).toHaveBeenCalledTimes(1)
 
-    await result.current.refetch()
+    await act(async () => {
+      await result.current.refetch()
+    })
 
     expect(apiClient.get).toHaveBeenCalledTimes(2)
   })
@@ -212,9 +223,9 @@ describe('useCurrentUsage', () => {
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
+      expect(result.current.error).toBe('Erro na requisição')
     })
 
-    expect(result.current.error).toBe('Erro na requisição')
     expect(result.current.usage).toBeNull()
   })
 
@@ -238,9 +249,10 @@ describe('useCurrentUsage', () => {
 
     expect(apiClient.get).toHaveBeenCalledTimes(1)
 
-    await result.current.refetch()
+    await act(async () => {
+      await result.current.refetch()
+    })
 
     expect(apiClient.get).toHaveBeenCalledTimes(2)
   })
 })
-

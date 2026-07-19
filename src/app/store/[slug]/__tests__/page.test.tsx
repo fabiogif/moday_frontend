@@ -14,7 +14,35 @@ jest.mock('next/navigation', () => ({
 
 // Mock next/image
 jest.mock('next/image', () => ({
-  default: ({ src, alt }: any) => <img src={src} alt={alt} />,
+  __esModule: true,
+  default: (props: any) => {
+    const { fill, priority, sizes, unoptimized, ...rest } = props
+    return <img {...rest} />
+  },
+}))
+
+jest.mock('next/link', () => ({
+  __esModule: true,
+  default: ({ children, href }: any) => <a href={href}>{children}</a>,
+}))
+
+jest.mock('../components/reviews-section', () => ({
+  ReviewsSection: () => null,
+}))
+
+jest.mock('../components/store-hours-banner', () => ({
+  StoreHoursBanner: () => null,
+}))
+
+jest.mock('@/components/site-footer', () => ({
+  SiteFooter: () => null,
+}))
+
+jest.mock('sonner', () => ({
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+  },
 }))
 
 // Mock hooks
@@ -73,38 +101,54 @@ const mockProducts = [
   },
 ]
 
+const mockStoreInfo = {
+  name: 'Loja Teste',
+  slug: 'test-store',
+  email: 'test@test.com',
+  phone: '1234567890',
+  address: 'Rua Teste',
+  city: 'São Paulo',
+  state: 'SP',
+  zipcode: '12345678',
+  logo: '/logo.jpg',
+  whatsapp: '1234567890',
+}
+
+function createJsonFetchResponse(data: unknown) {
+  return Promise.resolve({
+    ok: true,
+    headers: {
+      get: (key: string) => (key === 'content-type' ? 'application/json' : null),
+    },
+    json: () => Promise.resolve(data),
+  })
+}
+
+function setupStoreFetchMock(products = mockProducts, storeInfo = mockStoreInfo) {
+  ;(global.fetch as jest.Mock).mockImplementation((url: string) => {
+    if (url.includes('/info')) {
+      return createJsonFetchResponse({ success: true, data: storeInfo })
+    }
+    if (url.includes('/products')) {
+      return createJsonFetchResponse({ success: true, data: products })
+    }
+    if (url.includes('/payment-methods')) {
+      return createJsonFetchResponse({ success: true, data: [{ uuid: 'pm-1', name: 'Dinheiro' }] })
+    }
+    if (url.includes('/service-type/menu')) {
+      return createJsonFetchResponse({ success: true, data: [] })
+    }
+    return createJsonFetchResponse({ success: true, data: [] })
+  })
+}
+
 // Mock fetch
 global.fetch = jest.fn() as any
 
 describe('PublicStorePage - Categorias', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    ;(global.fetch as any).mockImplementation((url: string) => {
-      if (url.includes('/store/')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            success: true,
-            data: {
-              store: {
-                name: 'Loja Teste',
-                slug: 'test-store',
-                email: 'test@test.com',
-                phone: '1234567890',
-                address: 'Rua Teste',
-                city: 'São Paulo',
-                state: 'SP',
-                zipcode: '12345678',
-                logo: '/logo.jpg',
-                whatsapp: '1234567890',
-              },
-              products: mockProducts,
-            },
-          }),
-        })
-      }
-      return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true, data: [] }) })
-    })
+    setupStoreFetchMock()
   })
 
   it('deve renderizar a aba "Todos" por padrão', async () => {
@@ -126,13 +170,12 @@ describe('PublicStorePage - Categorias', () => {
     })
   })
 
-  it('deve mostrar contador correto de produtos por categoria', async () => {
+  it('deve mostrar filtros de categoria dos produtos', async () => {
     render(<PublicStorePage />)
     
     await waitFor(() => {
-      // Cada categoria tem 1 produto
-      expect(screen.getByText(/Pizzas \(1\)/i)).toBeInTheDocument()
-      expect(screen.getByText(/Bebidas \(1\)/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Pizzas' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Bebidas' })).toBeInTheDocument()
     })
   })
 
@@ -144,7 +187,7 @@ describe('PublicStorePage - Categorias', () => {
     })
 
     // Clicar na aba de Bebidas
-    const bebidasTab = screen.getByText(/Bebidas \(1\)/i)
+    const bebidasTab = screen.getByRole('button', { name: 'Bebidas' })
     fireEvent.click(bebidasTab)
 
     await waitFor(() => {
@@ -170,32 +213,7 @@ describe('PublicStorePage - Categorias', () => {
 describe('PublicStorePage - Ofertas', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    ;(global.fetch as any).mockImplementation((url: string) => {
-      if (url.includes('/store/')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            success: true,
-            data: {
-              store: {
-                name: 'Loja Teste',
-                slug: 'test-store',
-                email: 'test@test.com',
-                phone: '1234567890',
-                address: 'Rua Teste',
-                city: 'São Paulo',
-                state: 'SP',
-                zipcode: '12345678',
-                logo: '/logo.jpg',
-                whatsapp: '1234567890',
-              },
-              products: mockProducts,
-            },
-          }),
-        })
-      }
-      return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true, data: [] }) })
-    })
+    setupStoreFetchMock()
   })
 
   it('deve identificar produtos com ofertas', async () => {
@@ -203,7 +221,7 @@ describe('PublicStorePage - Ofertas', () => {
     
     await waitFor(() => {
       // Pizza, Hambúrguer e Pudim têm ofertas
-      const offerBadges = screen.getAllByText(/% OFF/i)
+      const offerBadges = screen.getAllByText(/-\d+%/)
       expect(offerBadges.length).toBeGreaterThan(0)
     })
   })
@@ -213,10 +231,8 @@ describe('PublicStorePage - Ofertas', () => {
     
     await waitFor(() => {
       // Pudim: de 10 para 5 = 50% OFF
-      expect(screen.getByText(/50% OFF/i)).toBeInTheDocument()
-      
-      // Pizza: de 30 para 25 = 17% OFF (arredondado)
-      expect(screen.getByText(/17% OFF/i)).toBeInTheDocument()
+      expect(screen.getByText(/-50%/)).toBeInTheDocument()
+      expect(screen.getByText(/-17%/)).toBeInTheDocument()
     })
   })
 
@@ -240,21 +256,7 @@ describe('PublicStorePage - Ofertas', () => {
       promotional_price: 20 - i,
     }))
 
-    ;(global.fetch as any).mockImplementation((url: string) => {
-      if (url.includes('/store/')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            success: true,
-            data: {
-              store: mockProducts[0],
-              products: manyProducts,
-            },
-          }),
-        })
-      }
-      return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true, data: [] }) })
-    })
+    setupStoreFetchMock(manyProducts)
 
     const bestOffers = manyProducts
       .filter(p => p.promotional_price && p.promotional_price < p.price)
@@ -280,40 +282,15 @@ describe('PublicStorePage - Mais Vendidos', () => {
 describe('PublicStorePage - Badge de Categoria', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    ;(global.fetch as any).mockImplementation((url: string) => {
-      if (url.includes('/store/')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            success: true,
-            data: {
-              store: {
-                name: 'Loja Teste',
-                slug: 'test-store',
-                email: 'test@test.com',
-                phone: '1234567890',
-                address: 'Rua Teste',
-                city: 'São Paulo',
-                state: 'SP',
-                zipcode: '12345678',
-                logo: '/logo.jpg',
-                whatsapp: '1234567890',
-              },
-              products: mockProducts,
-            },
-          }),
-        })
-      }
-      return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true, data: [] }) })
-    })
+    setupStoreFetchMock()
   })
 
-  it('deve exibir badge com nome da categoria no card do produto', async () => {
+  it('deve exibir categorias nos filtros da loja', async () => {
     render(<PublicStorePage />)
     
     await waitFor(() => {
-      expect(screen.getByText('Pizzas')).toBeInTheDocument()
-      expect(screen.getByText('Bebidas')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Pizzas' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Bebidas' })).toBeInTheDocument()
     })
   })
 
@@ -323,21 +300,7 @@ describe('PublicStorePage - Badge de Categoria', () => {
       categories: [],
     }
 
-    ;(global.fetch as any).mockImplementation((url: string) => {
-      if (url.includes('/store/')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            success: true,
-            data: {
-              store: mockProducts[0],
-              products: [productWithoutCategory],
-            },
-          }),
-        })
-      }
-      return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true, data: [] }) })
-    })
+    setupStoreFetchMock([productWithoutCategory])
 
     render(<PublicStorePage />)
     
@@ -350,32 +313,24 @@ describe('PublicStorePage - Badge de Categoria', () => {
 })
 
 describe('PublicStorePage - Casos Especiais', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    setupStoreFetchMock()
+  })
+
   it('deve lidar com produtos sem preço promocional', async () => {
     const product = mockProducts[1] // Coca-Cola sem promoção
     expect(product.promotional_price).toBeNull()
   })
 
   it('deve lidar com categorias vazias', async () => {
-    ;(global.fetch as any).mockImplementation((url: string) => {
-      if (url.includes('/store/')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            success: true,
-            data: {
-              store: mockProducts[0],
-              products: [],
-            },
-          }),
-        })
-      }
-      return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true, data: [] }) })
-    })
+    setupStoreFetchMock([])
 
     render(<PublicStorePage />)
     
     await waitFor(() => {
-      expect(screen.getByText(/Todos \(0\)/i)).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Todos' })).not.toBeInTheDocument()
+      expect(screen.getByText(/Nenhum produto encontrado/i)).toBeInTheDocument()
     })
   })
 
@@ -383,7 +338,7 @@ describe('PublicStorePage - Casos Especiais', () => {
     render(<PublicStorePage />)
     
     await waitFor(() => {
-      const bebidasTab = screen.getByText(/Bebidas \(1\)/i)
+      const bebidasTab = screen.getByRole('button', { name: 'Bebidas' })
       fireEvent.click(bebidasTab)
     })
 

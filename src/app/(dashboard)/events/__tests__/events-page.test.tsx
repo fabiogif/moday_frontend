@@ -151,8 +151,9 @@ describe('EventsPage', () => {
   it('should display calendar component', () => {
     render(<EventsPage />)
     
-    expect(screen.getByText('Calendário')).toBeInTheDocument()
-    expect(screen.getByText('Clique em uma data para ver os eventos do dia')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /hoje/i })).toBeInTheDocument()
+    expect(screen.getByText('Clique em um dia para adicionar evento ou em um evento para ver detalhes')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/buscar eventos por nome/i)).toBeInTheDocument()
   })
 
   it('should show loading state when events are loading', () => {
@@ -170,10 +171,12 @@ describe('EventsPage', () => {
     expect(spinner).toBeInTheDocument()
   })
 
-  it('should display message when no date is selected', () => {
+  it('should display week day headers in calendar grid', () => {
     render(<EventsPage />)
     
-    expect(screen.getByText('Selecione uma data no calendário')).toBeInTheDocument()
+    expect(screen.getByText('Dom')).toBeInTheDocument()
+    expect(screen.getByText('Seg')).toBeInTheDocument()
+    expect(screen.getByText('Sáb')).toBeInTheDocument()
   })
 
   it('should call refetch after creating event', async () => {

@@ -106,9 +106,12 @@ describe('EventFormDialog', () => {
       />
     )
 
-    expect(screen.getByText('Cliente A - clientea@example.com')).toBeInTheDocument()
-    expect(screen.getByText('Cliente B - clienteb@example.com')).toBeInTheDocument()
-    expect(screen.getByText('Cliente C - clientec@example.com')).toBeInTheDocument()
+    expect(screen.getByText('Cliente A')).toBeInTheDocument()
+    expect(screen.getByText('clientea@example.com')).toBeInTheDocument()
+    expect(screen.getByText('Cliente B')).toBeInTheDocument()
+    expect(screen.getByText('clienteb@example.com')).toBeInTheDocument()
+    expect(screen.getByText('Cliente C')).toBeInTheDocument()
+    expect(screen.getByText('clientec@example.com')).toBeInTheDocument()
   })
 
   it('should display notification channel options', () => {
@@ -126,7 +129,7 @@ describe('EventFormDialog', () => {
     expect(screen.getByLabelText(/sms/i)).toBeInTheDocument()
   })
 
-  it('should show validation error when no client is selected', () => {
+  it('should indicate client selection is required when none selected', () => {
     render(
       <EventFormDialog
         open={true}
@@ -136,7 +139,8 @@ describe('EventFormDialog', () => {
       />
     )
 
-    expect(screen.getByText('Selecione pelo menos 1 cliente')).toBeInTheDocument()
+    expect(screen.getByText(/Selecione pelo menos 1/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /criar evento/i })).toBeDisabled()
   })
 
   it('should disable submit button when no clients selected', () => {

@@ -2,7 +2,7 @@
  * Testes para o hook usePlanMigration
  */
 
-import { renderHook, waitFor } from '@testing-library/react'
+import { renderHook, waitFor, act } from '@testing-library/react'
 import { usePlanMigration } from '@/hooks/use-plan-migration'
 import { apiClient } from '@/lib/api-client'
 
@@ -49,14 +49,19 @@ describe('usePlanMigration', () => {
 
     const { result } = renderHook(() => usePlanMigration())
 
-    const success = await result.current.migratePlan({
-      plan_id: 2,
-      notes: 'Migração de teste',
+    let success = false
+    await act(async () => {
+      success = await result.current.migratePlan({
+        plan_id: 2,
+        notes: 'Migração de teste',
+      })
     })
 
     expect(success).toBe(true)
-    expect(result.current.isMigrating).toBe(false)
-    expect(result.current.error).toBeNull()
+    await waitFor(() => {
+      expect(result.current.isMigrating).toBe(false)
+      expect(result.current.error).toBeNull()
+    })
     expect(apiClient.post).toHaveBeenCalledWith('/api/plan/migrate', {
       plan_id: 2,
       notes: 'Migração de teste',
@@ -71,13 +76,18 @@ describe('usePlanMigration', () => {
 
     const { result } = renderHook(() => usePlanMigration())
 
-    const success = await result.current.migratePlan({
-      plan_id: 2,
+    let success = true
+    await act(async () => {
+      success = await result.current.migratePlan({
+        plan_id: 2,
+      })
     })
 
     expect(success).toBe(false)
-    expect(result.current.error).toBe('Erro ao migrar plano')
-    expect(result.current.isMigrating).toBe(false)
+    await waitFor(() => {
+      expect(result.current.error).toBe('Erro ao migrar plano')
+      expect(result.current.isMigrating).toBe(false)
+    })
   })
 
   it('deve tratar exceção na migração', async () => {
@@ -85,13 +95,18 @@ describe('usePlanMigration', () => {
 
     const { result } = renderHook(() => usePlanMigration())
 
-    const success = await result.current.migratePlan({
-      plan_id: 2,
+    let success = true
+    await act(async () => {
+      success = await result.current.migratePlan({
+        plan_id: 2,
+      })
     })
 
     expect(success).toBe(false)
-    expect(result.current.error).toBe('Erro na requisição')
-    expect(result.current.isMigrating).toBe(false)
+    await waitFor(() => {
+      expect(result.current.error).toBe('Erro na requisição')
+      expect(result.current.isMigrating).toBe(false)
+    })
   })
 
   it('deve buscar histórico de migrações', async () => {
@@ -121,12 +136,17 @@ describe('usePlanMigration', () => {
 
     const { result } = renderHook(() => usePlanMigration())
 
-    const history = await result.current.getHistory()
+    let history: typeof mockHistory = []
+    await act(async () => {
+      history = await result.current.getHistory()
+    })
 
     expect(history).toEqual(mockHistory)
-    expect(result.current.history).toEqual(mockHistory)
-    expect(result.current.isLoadingHistory).toBe(false)
-    expect(result.current.error).toBeNull()
+    await waitFor(() => {
+      expect(result.current.history).toEqual(mockHistory)
+      expect(result.current.isLoadingHistory).toBe(false)
+      expect(result.current.error).toBeNull()
+    })
     expect(apiClient.get).toHaveBeenCalledWith('/api/plan/migrations/history')
   })
 
@@ -135,16 +155,21 @@ describe('usePlanMigration', () => {
 
     const { result } = renderHook(() => usePlanMigration())
 
-    const history = await result.current.getHistory()
+    let history: unknown[] = [{ id: 1 }]
+    await act(async () => {
+      history = await result.current.getHistory()
+    })
 
     expect(history).toEqual([])
-    expect(result.current.history).toEqual([])
-    expect(result.current.error).toBe('Erro na requisição')
-    expect(result.current.isLoadingHistory).toBe(false)
+    await waitFor(() => {
+      expect(result.current.history).toEqual([])
+      expect(result.current.error).toBe('Erro na requisição')
+      expect(result.current.isLoadingHistory).toBe(false)
+    })
   })
 
   it('deve atualizar estado de loading durante migração', async () => {
-    let resolvePromise: (value: any) => void
+    let resolvePromise: (value: unknown) => void
     const promise = new Promise((resolve) => {
       resolvePromise = resolve
     })
@@ -153,28 +178,33 @@ describe('usePlanMigration', () => {
 
     const { result } = renderHook(() => usePlanMigration())
 
-    const migratePromise = result.current.migratePlan({
-      plan_id: 2,
+    let migratePromise: Promise<boolean>
+    act(() => {
+      migratePromise = result.current.migratePlan({
+        plan_id: 2,
+      })
     })
 
-    // Verificar que está carregando
-    expect(result.current.isMigrating).toBe(true)
-
-    // Resolver a promise
-    resolvePromise!({
-      success: true,
-      message: 'Plano migrado com sucesso.',
-      data: {},
+    await waitFor(() => {
+      expect(result.current.isMigrating).toBe(true)
     })
 
-    await migratePromise
+    await act(async () => {
+      resolvePromise!({
+        success: true,
+        message: 'Plano migrado com sucesso.',
+        data: {},
+      })
+      await migratePromise!
+    })
 
-    // Verificar que não está mais carregando
-    expect(result.current.isMigrating).toBe(false)
+    await waitFor(() => {
+      expect(result.current.isMigrating).toBe(false)
+    })
   })
 
   it('deve atualizar estado de loading durante busca de histórico', async () => {
-    let resolvePromise: (value: any) => void
+    let resolvePromise: (value: unknown) => void
     const promise = new Promise((resolve) => {
       resolvePromise = resolve
     })
@@ -183,21 +213,25 @@ describe('usePlanMigration', () => {
 
     const { result } = renderHook(() => usePlanMigration())
 
-    const historyPromise = result.current.getHistory()
-
-    // Verificar que está carregando
-    expect(result.current.isLoadingHistory).toBe(true)
-
-    // Resolver a promise
-    resolvePromise!({
-      success: true,
-      data: [],
+    let historyPromise: Promise<unknown[]>
+    act(() => {
+      historyPromise = result.current.getHistory()
     })
 
-    await historyPromise
+    await waitFor(() => {
+      expect(result.current.isLoadingHistory).toBe(true)
+    })
 
-    // Verificar que não está mais carregando
-    expect(result.current.isLoadingHistory).toBe(false)
+    await act(async () => {
+      resolvePromise!({
+        success: true,
+        data: [],
+      })
+      await historyPromise!
+    })
+
+    await waitFor(() => {
+      expect(result.current.isLoadingHistory).toBe(false)
+    })
   })
 })
-

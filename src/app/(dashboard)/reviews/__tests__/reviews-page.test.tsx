@@ -1,6 +1,10 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import ReviewsPage from '../page'
-import { apiClient } from '@/lib/api-client'
+import {
+  useAuthenticatedReviews,
+  useAuthenticatedReviewStats,
+  useMutation,
+} from '@/hooks/use-authenticated-api'
 import { toast } from 'sonner'
 import '@testing-library/jest-dom'
 
@@ -13,35 +17,14 @@ jest.mock('@/contexts/auth-context', () => ({
   }),
 }))
 
-// Mock do apiClient
-jest.mock('@/lib/api-client', () => ({
-  apiClient: {
-    get: jest.fn(),
-    post: jest.fn(),
-    delete: jest.fn(),
-  },
-  endpoints: {
-    reviews: {
-      list: (status?: string) => `/api/reviews${status ? `?status=${status}` : ''}`,
-      stats: '/api/reviews/stats',
-      approve: (uuid: string) => `/api/reviews/${uuid}/approve`,
-      reject: (uuid: string) => `/api/reviews/${uuid}/reject`,
-      toggleFeatured: (uuid: string) => `/api/reviews/${uuid}/toggle-featured`,
-      delete: (uuid: string) => `/api/reviews/${uuid}`,
-    }
-  }
-}))
+jest.mock('@/hooks/use-authenticated-api')
 
-// Mock do toast
 jest.mock('sonner', () => ({
   toast: {
     error: jest.fn(),
     success: jest.fn(),
   },
 }))
-
-// Mock do window.confirm
-global.confirm = jest.fn(() => true)
 
 describe('ReviewsPage', () => {
   const mockStats = {
@@ -84,13 +67,31 @@ describe('ReviewsPage', () => {
     }
   ]
 
+  const mockRefetch = jest.fn()
+  const mockMutate = jest.fn().mockResolvedValue({})
+
   beforeEach(() => {
     jest.clearAllMocks()
-    ;(apiClient.get as jest.Mock).mockImplementation((url: string) => {
-      if (url.includes('/stats')) {
-        return Promise.resolve({ success: true, data: mockStats, message: '' })
-      }
-      return Promise.resolve({ success: true, data: mockReviews, message: '' })
+
+    ;(useAuthenticatedReviews as jest.Mock).mockImplementation((status?: string) => ({
+      data: status === 'pending' ? [mockReviews[0]] : mockReviews,
+      loading: false,
+      error: null,
+      refetch: mockRefetch,
+      isAuthenticated: true,
+    }))
+
+    ;(useAuthenticatedReviewStats as jest.Mock).mockReturnValue({
+      data: mockStats,
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
+      isAuthenticated: true,
+    })
+
+    ;(useMutation as jest.Mock).mockReturnValue({
+      mutate: mockMutate,
+      loading: false,
     })
   })
 
@@ -106,10 +107,10 @@ describe('ReviewsPage', () => {
     render(<ReviewsPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('150')).toBeInTheDocument() // Total
-      expect(screen.getByText('5')).toBeInTheDocument() // Pendentes
-      expect(screen.getByText('140')).toBeInTheDocument() // Aprovadas
-      expect(screen.getByText('8')).toBeInTheDocument() // Destaque
+      expect(screen.getByText('150')).toBeInTheDocument()
+      expect(screen.getByText('140')).toBeInTheDocument()
+      expect(screen.getByText('8')).toBeInTheDocument()
+      expect(screen.getAllByText('5').length).toBeGreaterThan(0)
     })
   })
 
@@ -123,27 +124,26 @@ describe('ReviewsPage', () => {
   })
 
   it('deve aprovar avaliação pendente', async () => {
-    ;(apiClient.post as jest.Mock).mockResolvedValue({
-      success: true,
-      message: 'Avaliação aprovada!',
-      data: { ...mockReviews[0], status: 'approved' }
-    })
-
     render(<ReviewsPage />)
 
     await waitFor(() => {
       expect(screen.getByText('João Silva')).toBeInTheDocument()
     })
 
-    // Encontrar e clicar no botão de aprovar (ícone Check verde)
     const approveButtons = screen.getAllByTitle('Aprovar')
     fireEvent.click(approveButtons[0])
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Aprovar Avaliação').length).toBeGreaterThan(0)
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Aprovar Avaliação' }))
 
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('Avaliação aprovada!')
     })
 
-    expect(apiClient.post).toHaveBeenCalledWith('/api/reviews/review-1/approve', {})
+    expect(mockMutate).toHaveBeenCalledWith('/api/reviews/review-1/approve', 'POST', {})
   })
 
   it('deve abrir modal ao rejeitar avaliação', async () => {
@@ -153,47 +153,36 @@ describe('ReviewsPage', () => {
       expect(screen.getByText('João Silva')).toBeInTheDocument()
     })
 
-    // Clicar em rejeitar
     const rejectButtons = screen.getAllByTitle('Rejeitar')
     fireEvent.click(rejectButtons[0])
 
     await waitFor(() => {
-      expect(screen.getByText('Rejeitar Avaliação')).toBeInTheDocument()
-      expect(screen.getByText('Informe o motivo da rejeição')).toBeInTheDocument()
+      expect(screen.getAllByText('Rejeitar Avaliação').length).toBeGreaterThan(0)
+      expect(screen.getByText(/Informe o motivo da rejeição/i)).toBeInTheDocument()
     })
   })
 
   it('deve rejeitar avaliação com motivo', async () => {
-    ;(apiClient.post as jest.Mock).mockResolvedValue({
-      success: true,
-      message: 'Avaliação rejeitada',
-      data: { ...mockReviews[0], status: 'rejected' }
-    })
-
     render(<ReviewsPage />)
 
     await waitFor(() => {
       expect(screen.getByText('João Silva')).toBeInTheDocument()
     })
 
-    // Abrir modal de rejeição
     const rejectButtons = screen.getAllByTitle('Rejeitar')
     fireEvent.click(rejectButtons[0])
 
     await waitFor(() => {
-      expect(screen.getByText('Rejeitar Avaliação')).toBeInTheDocument()
+      expect(screen.getAllByText('Rejeitar Avaliação').length).toBeGreaterThan(0)
     })
 
-    // Digitar motivo
     const textarea = screen.getByPlaceholderText(/Ex: Conteúdo inadequado/)
     fireEvent.change(textarea, { target: { value: 'Linguagem ofensiva' } })
 
-    // Confirmar
-    const confirmButton = screen.getByText('Rejeitar Avaliação')
-    fireEvent.click(confirmButton)
+    fireEvent.click(screen.getByRole('button', { name: 'Rejeitar Avaliação' }))
 
     await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith('/api/reviews/review-1/reject', {
+      expect(mockMutate).toHaveBeenCalledWith('/api/reviews/review-1/reject', 'POST', {
         reason: 'Linguagem ofensiva'
       })
     })
@@ -204,46 +193,38 @@ describe('ReviewsPage', () => {
   })
 
   it('deve toggle featured em avaliação aprovada', async () => {
-    ;(apiClient.post as jest.Mock).mockResolvedValue({
-      success: true,
-      message: 'Status de destaque atualizado',
-      data: { ...mockReviews[1], is_featured: true }
-    })
-
     render(<ReviewsPage />)
 
     await waitFor(() => {
       expect(screen.getByText('Maria Santos')).toBeInTheDocument()
     })
 
-    // Clicar em destaque (segunda linha - aprovada)
     const featuredButtons = screen.getAllByTitle(/Destacar|Remover destaque/)
     fireEvent.click(featuredButtons[0])
 
     await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith('/api/reviews/review-2/toggle-featured', {})
+      expect(mockMutate).toHaveBeenCalledWith('/api/reviews/review-2/toggle-featured', 'POST', {})
     })
   })
 
   it('deve deletar avaliação após confirmação', async () => {
-    ;(apiClient.delete as jest.Mock).mockResolvedValue({
-      success: true,
-      message: 'Avaliação removida',
-      data: null
-    })
-
     render(<ReviewsPage />)
 
     await waitFor(() => {
       expect(screen.getByText('João Silva')).toBeInTheDocument()
     })
 
-    // Clicar em deletar
     const deleteButtons = screen.getAllByTitle('Deletar')
     fireEvent.click(deleteButtons[0])
 
     await waitFor(() => {
-      expect(apiClient.delete).toHaveBeenCalledWith('/api/reviews/review-1')
+      expect(screen.getAllByText('Excluir Avaliação').length).toBeGreaterThan(0)
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir Avaliação' }))
+
+    await waitFor(() => {
+      expect(mockMutate).toHaveBeenCalledWith('/api/reviews/review-1', 'DELETE')
     })
 
     await waitFor(() => {
@@ -252,25 +233,19 @@ describe('ReviewsPage', () => {
   })
 
   it('deve filtrar por status', async () => {
-    ;(apiClient.get as jest.Mock)
-      .mockResolvedValueOnce({ success: true, data: mockReviews, message: '' })
-      .mockResolvedValueOnce({ success: true, data: mockStats, message: '' })
-
     render(<ReviewsPage />)
 
     await waitFor(() => {
       expect(screen.getByText('João Silva')).toBeInTheDocument()
     })
 
-    // Alterar filtro de status
-    const statusSelect = screen.getByRole('combobox', { name: /status/i })
+    const statusSelect = screen.getAllByRole('combobox')[0]
     fireEvent.click(statusSelect)
 
-    const pendingOption = screen.getByText('Pendentes')
-    fireEvent.click(pendingOption)
+    const pendingOptions = screen.getAllByText('Pendentes')
+    fireEvent.click(pendingOptions[pendingOptions.length - 1])
 
     await waitFor(() => {
-      // Deve mostrar apenas pendentes
       expect(screen.getByText('João Silva')).toBeInTheDocument()
       expect(screen.queryByText('Maria Santos')).not.toBeInTheDocument()
     })
@@ -283,12 +258,10 @@ describe('ReviewsPage', () => {
       expect(screen.getByText('João Silva')).toBeInTheDocument()
     })
 
-    // Digitar na busca
-    const searchInput = screen.getByPlaceholderText('Cliente, comentário ou pedido...')
+    const searchInput = screen.getByPlaceholderText('Buscar por cliente, comentário...')
     fireEvent.change(searchInput, { target: { value: 'João' } })
 
     await waitFor(() => {
-      // Deve mostrar apenas João
       expect(screen.getByText('João Silva')).toBeInTheDocument()
       expect(screen.queryByText('Maria Santos')).not.toBeInTheDocument()
     })
@@ -301,37 +274,33 @@ describe('ReviewsPage', () => {
       expect(screen.getByText('João Silva')).toBeInTheDocument()
     })
 
-    // Encontrar todos os comboboxes
     const comboboxes = screen.getAllByRole('combobox')
-    const ratingSelect = comboboxes.find(cb => 
-      cb.getAttribute('aria-label')?.includes('Avaliação') || 
-      cb.textContent?.includes('Todas') ||
-      cb.parentElement?.previousElementSibling?.textContent === 'Avaliação'
-    )
+    const ratingSelect = comboboxes[1]
 
-    if (ratingSelect) {
-      fireEvent.click(ratingSelect)
+    fireEvent.click(ratingSelect)
 
-      const option = screen.getByText('5 estrelas')
-      fireEvent.click(option)
+    const option = screen.getByText('5 estrelas')
+    fireEvent.click(option)
 
-      await waitFor(() => {
-        // Deve mostrar apenas 5 estrelas
-        expect(screen.getByText('João Silva')).toBeInTheDocument()
-        expect(screen.queryByText('Maria Santos')).not.toBeInTheDocument()
-      })
-    }
+    await waitFor(() => {
+      expect(screen.getByText('João Silva')).toBeInTheDocument()
+      expect(screen.queryByText('Maria Santos')).not.toBeInTheDocument()
+    })
   })
 
   it('deve mostrar mensagem quando não houver avaliações', async () => {
-    ;(apiClient.get as jest.Mock)
-      .mockResolvedValueOnce({ success: true, data: [], message: '' })
-      .mockResolvedValueOnce({ success: true, data: mockStats, message: '' })
+    ;(useAuthenticatedReviews as jest.Mock).mockReturnValue({
+      data: [],
+      loading: false,
+      error: null,
+      refetch: mockRefetch,
+      isAuthenticated: true,
+    })
 
     render(<ReviewsPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('Nenhuma avaliação encontrada')).toBeInTheDocument()
+      expect(screen.getByText('Nenhuma avaliação encontrada.')).toBeInTheDocument()
     })
   })
 
@@ -339,7 +308,6 @@ describe('ReviewsPage', () => {
     render(<ReviewsPage />)
 
     await waitFor(() => {
-      // Deve ter estrelas renderizadas
       const stars = document.querySelectorAll('svg')
       expect(stars.length).toBeGreaterThan(0)
     })
@@ -350,14 +318,17 @@ describe('ReviewsPage', () => {
       { ...mockReviews[1], is_featured: true }
     ]
 
-    ;(apiClient.get as jest.Mock)
-      .mockResolvedValueOnce({ success: true, data: reviewWithFeatured, message: '' })
-      .mockResolvedValueOnce({ success: true, data: mockStats, message: '' })
+    ;(useAuthenticatedReviews as jest.Mock).mockReturnValue({
+      data: reviewWithFeatured,
+      loading: false,
+      error: null,
+      refetch: mockRefetch,
+      isAuthenticated: true,
+    })
 
     render(<ReviewsPage />)
 
     await waitFor(() => {
-      // Deve ter ícone Award (troféu)
       const awards = document.querySelectorAll('svg.lucide-award')
       expect(awards.length).toBeGreaterThan(0)
     })
@@ -370,17 +341,13 @@ describe('ReviewsPage', () => {
       expect(screen.getByText('João Silva')).toBeInTheDocument()
     })
 
-    // Pendente deve ter Aprovar e Rejeitar
     expect(screen.getByTitle('Aprovar')).toBeInTheDocument()
     expect(screen.getByTitle('Rejeitar')).toBeInTheDocument()
 
-    // Aprovada deve ter Toggle Destaque
     const featuredButtons = screen.queryAllByTitle(/Destacar|Remover destaque/)
     expect(featuredButtons.length).toBeGreaterThan(0)
 
-    // Todas devem ter Deletar
     const deleteButtons = screen.getAllByTitle('Deletar')
-    expect(deleteButtons.length).toBe(2) // Uma para cada review
+    expect(deleteButtons.length).toBe(2)
   })
 })
-

@@ -76,8 +76,8 @@ export function OrdersVolumeChart() {
           }
         }) : []
         
-        const completed = dateOrders.filter((order: any) => 
-          order.status === 'Entregue' || order.status === 'completed'
+        const completed = dateOrders.filter((order: any) =>
+          order.status === 'Concluído'
         ).length
         
         //// :`, dateOrders.length, 'orders,', completed, 'completed')

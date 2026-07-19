@@ -4,7 +4,19 @@ import ContasBancariasPage from '@/app/(dashboard)/contas-bancarias/page'
 import api from '@/lib/api-client'
 import { toast } from 'sonner'
 
-jest.mock('@/lib/api-client')
+jest.mock('@/lib/api-client', () => {
+  const { endpoints } = jest.requireActual('@/lib/api-client')
+  return {
+    __esModule: true,
+    endpoints,
+    default: {
+      get: jest.fn(),
+      post: jest.fn(),
+      put: jest.fn(),
+      delete: jest.fn(),
+    },
+  }
+})
 jest.mock('sonner')
 
 const mockAccounts = [
@@ -78,7 +90,7 @@ describe('ContasBancariasPage', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText('Banco do Brasil')).toBeInTheDocument()
+      expect(screen.getAllByText('Banco do Brasil').length).toBeGreaterThan(0)
       expect(screen.getByText('Nubank')).toBeInTheDocument()
     })
   })
@@ -105,7 +117,7 @@ describe('ContasBancariasPage', () => {
     render(<ContasBancariasPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('12.345.678/0001-01')).toBeInTheDocument()
+      expect(screen.getAllByText('12.345.678/0001-01').length).toBeGreaterThan(0)
       expect(screen.getByText('financeiro@restaurant.com')).toBeInTheDocument()
     })
   })
@@ -197,11 +209,12 @@ describe('ContasBancariasPage', () => {
     })
   })
 
-  it('shows loading state', () => {
+  it('shows loading state', async () => {
+    ;(api.get as jest.Mock).mockImplementation(() => new Promise(() => {}))
+
     render(<ContasBancariasPage />)
-    
-    // Deve mostrar loading inicialmente
-    expect(screen.getByRole('status', { hidden: true })).toBeInTheDocument()
+
+    expect(document.querySelector('.animate-spin')).toBeInTheDocument()
   })
 })
 

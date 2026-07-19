@@ -20,18 +20,20 @@ jest.mock('@/hooks/use-landing-cta-click', () => ({
 describe('FeaturesSection', () => {
   it('deve renderizar o título da seção', () => {
     render(<FeaturesSection />)
-    expect(screen.getByText(/Tudo que você precisa para gerenciar seu restaurante/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Métricas e gráficos que mostram o pulso do negócio/i)
+    ).toBeInTheDocument()
   })
 
   it('deve renderizar cards principais de features', () => {
     render(<FeaturesSection />)
     const expectedFeatures = [
       /PDV Touch-First/i,
-      /Sistema de Avaliações Moderado/i,
-      /Controle de Mesas Inteligente/i,
-      /Cardápio Digital com Variações/i,
-      /Gestão Omnichannel de Pedidos/i,
-      /Controle de Estoque Inteligente/i,
+      /Avaliações Moderadas/i,
+      /Controle de Mesas/i,
+      /Cardápio com Variações/i,
+      /Pedidos Omnichannel/i,
+      /Controle de Estoque/i,
       /Relatórios em Tempo Real/i,
       /App Alba Tec Restaurante/i,
     ]
@@ -49,7 +51,7 @@ describe('FeaturesSection', () => {
 
   it('deve renderizar métricas de benefício', () => {
     render(<FeaturesSection />)
-    expect(screen.getByText(/Aumenta produtividade em até 3x/i)).toBeInTheDocument()
-    expect(screen.getByText(/Aumenta conversão em até 35%/i)).toBeInTheDocument()
+    expect(screen.getByText(/taxa de conversão em tempo real/i)).toBeInTheDocument()
+    expect(screen.getByText(/Variações e opcionais em tempo real/i)).toBeInTheDocument()
   })
 })

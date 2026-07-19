@@ -45,14 +45,12 @@ interface StoreInfoData {
 
 const getStatusIcon = (status: string) => {
   switch (status) {
-    case 'Em Preparo':
+    case 'Pendente':
       return <Clock className="h-5 w-5 text-yellow-600" />
-    case 'Pronto':
-      return <CheckCircle2 className="h-5 w-5 text-green-600" />
-    case 'Saiu para entrega':
-    case 'A Caminho':
-      return <Truck className="h-5 w-5 text-blue-600" />
-    case 'Entregue':
+    case 'Aceito':
+      return <Package className="h-5 w-5 text-indigo-600" />
+    case 'Preparo':
+      return <Clock className="h-5 w-5 text-blue-600" />
     case 'Concluído':
       return <CheckCircle2 className="h-5 w-5 text-green-600" />
     case 'Cancelado':
@@ -64,14 +62,12 @@ const getStatusIcon = (status: string) => {
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'Em Preparo':
+    case 'Pendente':
       return 'bg-yellow-100 text-yellow-800'
-    case 'Pronto':
-      return 'bg-green-100 text-green-800'
-    case 'Saiu para entrega':
-    case 'A Caminho':
+    case 'Aceito':
+      return 'bg-indigo-100 text-indigo-800'
+    case 'Preparo':
       return 'bg-blue-100 text-blue-800'
-    case 'Entregue':
     case 'Concluído':
       return 'bg-green-100 text-green-800'
     case 'Cancelado':
@@ -309,15 +305,16 @@ export function OrderTrack({ slug }: OrderTrackProps) {
                 <div className="p-4 bg-muted rounded-lg">
                   <p className="text-sm text-muted-foreground mb-2">Status atual</p>
                   <p className="text-base">
-                    {orderData.status === 'Em Preparo' && 
-                      'Seu pedido está sendo preparado com todo carinho!'}
-                    {orderData.status === 'Pronto' && 
-                      'Seu pedido está pronto! ' + (orderData.is_delivery ? 'Em breve sairá para entrega.' : 'Pode vir buscar!')}
-                    {(orderData.status === 'Saiu para entrega' || orderData.status === 'A Caminho') && 
-                      'Seu pedido está a caminho! Logo chegará até você.'}
-                    {(orderData.status === 'Entregue' || orderData.status === 'Concluído') && 
+                    {orderData.status === 'Pendente' &&
+                      'Seu pedido foi recebido e aguarda aceite da loja!'}
+                    {orderData.status === 'Aceito' &&
+                      'Seu pedido foi aceito e logo entrará em preparo!'}
+                    {orderData.status === 'Preparo' &&
+                      'Seu pedido está sendo preparado com todo carinho e ' +
+                      (orderData.is_delivery ? 'será entregue em breve!' : 'logo estará pronto para retirada!')}
+                    {orderData.status === 'Concluído' &&
                       'Seu pedido foi concluído! Esperamos que tenha gostado!'}
-                    {orderData.status === 'Cancelado' && 
+                    {orderData.status === 'Cancelado' &&
                       'Este pedido foi cancelado.'}
                   </p>
                 </div>

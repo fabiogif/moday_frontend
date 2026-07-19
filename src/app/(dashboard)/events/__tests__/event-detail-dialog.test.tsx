@@ -54,7 +54,7 @@ describe('EventDetailDialog', () => {
     )
 
     expect(screen.getByText('Data e Hora')).toBeInTheDocument()
-    expect(screen.getByText('25/11/2025 09:00')).toBeInTheDocument()
+    expect(screen.getByText(/de 2025/i)).toBeInTheDocument()
   })
 
   it('should display event duration', () => {
@@ -104,9 +104,10 @@ describe('EventDetailDialog', () => {
     )
 
     expect(screen.getByText('Clientes (3)')).toBeInTheDocument()
-    expect(screen.getByText('• Cliente A')).toBeInTheDocument()
-    expect(screen.getByText('• Cliente B')).toBeInTheDocument()
-    expect(screen.getByText('• Cliente C')).toBeInTheDocument()
+    expect(screen.getByText('Cliente A')).toBeInTheDocument()
+    expect(screen.getByText('Cliente B')).toBeInTheDocument()
+    expect(screen.getByText('Cliente C')).toBeInTheDocument()
+    expect(screen.getByText('clientea@example.com')).toBeInTheDocument()
   })
 
   it('should show "Enviadas" badge when notifications sent', () => {
@@ -114,8 +115,8 @@ describe('EventDetailDialog', () => {
       <EventDetailDialog open={true} onOpenChange={mockOnOpenChange} event={mockEvent} />
     )
 
-    expect(screen.getByText('Notificações')).toBeInTheDocument()
-    expect(screen.getByText('✓ Enviadas')).toBeInTheDocument()
+    expect(screen.getByText('Status de Notificações')).toBeInTheDocument()
+    expect(screen.getByText('✓ Notificações Enviadas')).toBeInTheDocument()
   })
 
   it('should show "Não enviadas" badge when notifications not sent', () => {
@@ -129,7 +130,7 @@ describe('EventDetailDialog', () => {
       />
     )
 
-    expect(screen.getByText('Não enviadas')).toBeInTheDocument()
+    expect(screen.getByText('Nenhuma notificação enviada')).toBeInTheDocument()
   })
 
   it('should show "Inativo" badge when event is not active', () => {
@@ -146,10 +147,10 @@ describe('EventDetailDialog', () => {
     expect(screen.getByText('Inativo')).toBeInTheDocument()
   })
 
-  it('should truncate client list when more than 5 clients', () => {
+  it('should list all clients when more than 5 clients', () => {
     const eventWithManyClients = {
       ...mockEvent,
-      clients_count: 10,
+      clients_count: 7,
       clients: [
         ...mockEvent.clients!,
         { id: 4, name: 'Cliente D', email: 'd@example.com' },
@@ -167,7 +168,8 @@ describe('EventDetailDialog', () => {
       />
     )
 
-    expect(screen.getByText(/\+ \d+ mais.../)).toBeInTheDocument()
+    expect(screen.getByText('Clientes (7)')).toBeInTheDocument()
+    expect(screen.getByText('Cliente G')).toBeInTheDocument()
   })
 })
 

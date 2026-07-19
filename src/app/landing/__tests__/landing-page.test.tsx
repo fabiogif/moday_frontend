@@ -34,7 +34,9 @@ describe('LandingPageContent', () => {
     expect(
       screen.getByText(/Venda mais e cometa menos erros no seu restaurante/i)
     ).toBeInTheDocument()
-    expect(screen.getByText(/Tudo que você precisa para gerenciar/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Métricas e gráficos que mostram o pulso do negócio/i)
+    ).toBeInTheDocument()
 
     await waitFor(() => {
       expect(screen.getByText(/Simples, transparente e sem surpresas/i)).toBeInTheDocument()
@@ -43,8 +45,8 @@ describe('LandingPageContent', () => {
 
   it('deve renderizar seção de stats', () => {
     render(<LandingPageContent />)
-    expect(screen.getByText(/Aumento de Vendas/i)).toBeInTheDocument()
-    expect(screen.getAllByText(/Restaurantes Ativos/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/500\+ restaurantes ativos/i)).toBeInTheDocument()
+    expect(screen.getByText(/1M\+ pedidos processados/i)).toBeInTheDocument()
   })
 
   it('deve renderizar trust badges', () => {

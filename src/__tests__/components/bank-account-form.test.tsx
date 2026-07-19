@@ -1,10 +1,22 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BankAccountForm } from '@/app/(dashboard)/contas-bancarias/components/bank-account-form'
 import api from '@/lib/api-client'
 import { toast } from 'sonner'
 
-jest.mock('@/lib/api-client')
+jest.mock('@/lib/api-client', () => {
+  const { endpoints } = jest.requireActual('@/lib/api-client')
+  return {
+    __esModule: true,
+    endpoints,
+    default: {
+      get: jest.fn(),
+      post: jest.fn(),
+      put: jest.fn(),
+      delete: jest.fn(),
+    },
+  }
+})
 jest.mock('sonner')
 
 const mockBanks = [
@@ -37,6 +49,26 @@ const mockAccounts = [
 describe('BankAccountForm', () => {
   const mockOnClose = jest.fn()
   const mockOnSuccess = jest.fn()
+
+  const waitForBanksToLoad = async () => {
+    await waitFor(() => {
+      expect(screen.getByText('Selecione o banco')).toBeInTheDocument()
+    })
+  }
+
+  const getBankSelect = () =>
+    screen.getByText('Selecione o banco').closest('button')!
+
+  const fillNewAccountForm = async (user: ReturnType<typeof userEvent.setup>) => {
+    await waitForBanksToLoad()
+    fireEvent.click(getBankSelect())
+    fireEvent.click(screen.getByRole('option', { name: '001 - Banco do Brasil' }))
+    fireEvent.change(screen.getByPlaceholderText('0001'), { target: { value: '1234' } })
+    fireEvent.change(screen.getByPlaceholderText('12345678'), { target: { value: '87654321' } })
+    fireEvent.change(screen.getAllByPlaceholderText('0')[1], { target: { value: '9' } })
+    fireEvent.change(screen.getByPlaceholderText(/Nome completo/), { target: { value: 'Restaurant ABC' } })
+    fireEvent.change(screen.getByPlaceholderText(/00.000/), { target: { value: '12345678000101' } })
+  }
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -93,7 +125,6 @@ describe('BankAccountForm', () => {
   })
 
   it('validates required fields', async () => {
-    const user = userEvent.setup()
     render(
       <BankAccountForm
         open={true}
@@ -106,11 +137,10 @@ describe('BankAccountForm', () => {
       expect(screen.getByText('Cadastrar')).toBeInTheDocument()
     })
 
-    const submitButton = screen.getByText('Cadastrar')
-    await user.click(submitButton)
+    fireEvent.submit(screen.getByRole('button', { name: 'Cadastrar' }).closest('form')!)
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalled()
+      expect(toast.error).toHaveBeenCalledWith('Selecione um banco')
     })
   })
 
@@ -126,51 +156,28 @@ describe('BankAccountForm', () => {
       />
     )
 
-    await waitFor(() => {
-      expect(screen.getByLabelText(/Banco/)).toBeInTheDocument()
-    })
+    await fillNewAccountForm(user)
+    await user.click(screen.getByText('Cadastrar'))
 
-    // Preencher formulário
-    const bankSelect = screen.getByRole('combobox', { name: /Banco/ })
-    await user.click(bankSelect)
-    await user.click(screen.getByText('001 - Banco do Brasil'))
-
-    const agencyInput = screen.getByPlaceholderText('0001')
-    await user.type(agencyInput, '1234')
-
-    const accountInput = screen.getByPlaceholderText('12345678')
-    await user.type(accountInput, '87654321')
-
-    const digitInput = screen.getByPlaceholderText('0')
-    await user.type(digitInput, '9')
-
-    const holderInput = screen.getByPlaceholderText(/Nome completo/)
-    await user.type(holderInput, 'Restaurant ABC')
-
-    const docInput = screen.getByPlaceholderText(/00.000/)
-    await user.type(docInput, '12345678000101')
-
-    // Submeter
-    const submitButton = screen.getByText('Cadastrar')
-    await user.click(submitButton)
-
-    await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith(
-        '/api/bank-accounts',
-        expect.objectContaining({
-          bank_code: '001',
-          agency: '1234',
-          account_number: '87654321',
-          account_digit: '9',
-        })
-      )
-      expect(toast.success).toHaveBeenCalledWith('Conta bancária cadastrada com sucesso!')
-      expect(mockOnSuccess).toHaveBeenCalled()
-    })
-  })
+    await waitFor(
+      () => {
+        expect(api.post).toHaveBeenCalledWith(
+          '/api/bank-accounts',
+          expect.objectContaining({
+            bank_code: '001',
+            agency: '1234',
+            account_number: '87654321',
+            account_digit: '9',
+          })
+        )
+        expect(toast.success).toHaveBeenCalledWith('Conta bancária cadastrada com sucesso!')
+        expect(mockOnSuccess).toHaveBeenCalled()
+      },
+      { timeout: 10000 }
+    )
+  }, 15000)
 
   it('formats CPF/CNPJ with mask', async () => {
-    const user = userEvent.setup()
     render(
       <BankAccountForm
         open={true}
@@ -184,7 +191,7 @@ describe('BankAccountForm', () => {
     })
 
     const docInput = screen.getByPlaceholderText(/00.000/)
-    await user.type(docInput, '12345678000101')
+    fireEvent.change(docInput, { target: { value: '12345678000101' } })
 
     expect(docInput).toHaveValue('12.345.678/0001-01')
   })
@@ -232,19 +239,17 @@ describe('BankAccountForm', () => {
       />
     )
 
-    await waitFor(() => {
-      expect(screen.getByText('Cadastrar')).toBeInTheDocument()
-    })
+    await fillNewAccountForm(user)
+    await user.click(screen.getByText('Cadastrar'))
 
-    // Preencher e submeter
-    const submitButton = screen.getByText('Cadastrar')
-    await user.click(submitButton)
-
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalled()
-      expect(mockOnSuccess).not.toHaveBeenCalled()
-    })
-  })
+    await waitFor(
+      () => {
+        expect(toast.error).toHaveBeenCalledWith('Erro de validação')
+        expect(mockOnSuccess).not.toHaveBeenCalled()
+      },
+      { timeout: 10000 }
+    )
+  }, 15000)
 
   it('shows primary checkbox for new accounts only', () => {
     const { rerender } = render(
@@ -257,7 +262,6 @@ describe('BankAccountForm', () => {
 
     expect(screen.getByLabelText(/Definir como conta principal/)).toBeInTheDocument()
 
-    // Rerender com account (edição)
     rerender(
       <BankAccountForm
         open={true}
@@ -271,13 +275,13 @@ describe('BankAccountForm', () => {
   })
 
   it('disables bank/account fields when editing', async () => {
-    (api.get as jest.Mock).mockImplementation((url: string) => {
+    ;(api.get as jest.Mock).mockImplementation((url: string) => {
       if (url === '/api/bank-accounts/banks') {
         return Promise.resolve({ success: true, data: mockBanks })
       }
       if (url.includes('/api/bank-accounts/123-456')) {
-        return Promise.resolve({ 
-          success: true, 
+        return Promise.resolve({
+          success: true,
           data: {
             ...mockAccounts[0],
             account_number: '12345678',
@@ -304,4 +308,3 @@ describe('BankAccountForm', () => {
     })
   })
 })
-

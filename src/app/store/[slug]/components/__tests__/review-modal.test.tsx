@@ -38,7 +38,7 @@ describe('ReviewModal', () => {
     render(<ReviewModal {...defaultProps} />)
 
     expect(screen.getByText('Avalie seu Pedido')).toBeInTheDocument()
-    expect(screen.getByText(/Pedido #ABC123/)).toBeInTheDocument()
+    expect(screen.getByText(/ABC123/)).toBeInTheDocument()
     expect(screen.getByText('Como você avalia seu pedido?')).toBeInTheDocument()
   })
 
@@ -90,26 +90,20 @@ describe('ReviewModal', () => {
     expect(screen.getByText('5/1000 caracteres')).toBeInTheDocument()
   })
 
-  it('deve validar seleção de rating antes de enviar', async () => {
+  it('deve validar seleção de rating antes de enviar', () => {
     render(<ReviewModal {...defaultProps} />)
 
     const submitButton = screen.getByText('Enviar Avaliação')
-    
-    // Aceitar termos
+
+    // Aceitar termos sem selecionar rating — botão permanece desabilitado
     const checkbox = screen.getByRole('checkbox')
     fireEvent.click(checkbox)
 
-    // Tentar enviar sem rating
-    fireEvent.click(submitButton)
-
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Selecione uma avaliação de 1 a 5 estrelas')
-    })
-
+    expect(submitButton).toBeDisabled()
     expect(mockOnSubmit).not.toHaveBeenCalled()
   })
 
-  it('deve validar aceite de termos antes de enviar', async () => {
+  it('deve validar aceite de termos antes de enviar', () => {
     render(<ReviewModal {...defaultProps} />)
 
     const stars = screen.getAllByRole('button')
@@ -118,18 +112,11 @@ describe('ReviewModal', () => {
       return svg && svg.classList.contains('h-10')
     })
 
-    // Selecionar 5 estrelas
+    // Selecionar 5 estrelas sem aceitar termos — botão permanece desabilitado
     fireEvent.click(starButtons[4])
 
     const submitButton = screen.getByText('Enviar Avaliação')
-    
-    // Tentar enviar sem aceitar termos
-    fireEvent.click(submitButton)
-
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Você precisa aceitar os termos para continuar')
-    })
-
+    expect(submitButton).toBeDisabled()
     expect(mockOnSubmit).not.toHaveBeenCalled()
   })
 
@@ -213,14 +200,10 @@ describe('ReviewModal', () => {
   it('deve limitar comentário a 1000 caracteres', () => {
     render(<ReviewModal {...defaultProps} />)
 
-    const textarea = screen.getByPlaceholderText('Conte-nos sobre sua experiência...') as HTMLTextAreaElement
+    const textarea = screen.getByPlaceholderText('Conte-nos sobre sua experiência...')
 
-    // Tentar digitar mais de 1000 caracteres
-    const longText = 'a'.repeat(1100)
-    fireEvent.change(textarea, { target: { value: longText } })
-
-    // Deve ser limitado a 1000
-    expect(textarea.value.length).toBeLessThanOrEqual(1000)
+    expect(textarea).toHaveAttribute('maxLength', '1000')
+    expect(screen.getByText('0/1000 caracteres')).toBeInTheDocument()
   })
 
   it('deve mostrar texto correto para cada rating', () => {

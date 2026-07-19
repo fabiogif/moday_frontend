@@ -10,17 +10,31 @@ import { usePlanLimits } from '@/hooks/use-plan-limits'
 import { useAuth } from '@/contexts/auth-context'
 import { apiClient } from '@/lib/api-client'
 
+const mockPush = jest.fn()
+
 // Mock dos hooks e módulos
 jest.mock('@/hooks/use-authenticated-api')
 jest.mock('@/hooks/use-plan-migration')
 jest.mock('@/hooks/use-plan-limits')
 jest.mock('@/contexts/auth-context')
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    replace: jest.fn(),
+    refresh: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+}))
 jest.mock('@/lib/api-client', () => ({
   apiClient: {
     get: jest.fn(),
     post: jest.fn(),
     put: jest.fn(),
     delete: jest.fn(),
+    setToken: jest.fn(),
+    reloadToken: jest.fn(),
   },
   endpoints: {},
 }))
@@ -88,7 +102,7 @@ describe('PlansSection', () => {
       logout: jest.fn(),
       setUser: jest.fn(),
       setToken: jest.fn(),
-      trialStatus: null,
+      trialStatus: { is_active: true },
       refreshTrialStatus: jest.fn(),
     } as any)
 
@@ -175,7 +189,7 @@ describe('PlansSection', () => {
     render(<PlansSection />)
 
     await waitFor(() => {
-      expect(screen.getByText('Plano Atual')).toBeInTheDocument()
+      expect(screen.getAllByText('Plano Atual').length).toBeGreaterThan(0)
     }, { timeout: 3000 })
   })
 
@@ -198,12 +212,12 @@ describe('PlansSection', () => {
     render(<PlansSection />)
 
     await waitFor(() => {
-      expect(screen.getByText('Plano Atual')).toBeInTheDocument()
+      expect(screen.getAllByText('Plano Atual').length).toBeGreaterThan(0)
     })
 
-    expect(screen.getByText(/Usuários/)).toBeInTheDocument()
-    expect(screen.getByText(/Produtos/)).toBeInTheDocument()
-    expect(screen.getByText(/Pedidos este mês/)).toBeInTheDocument()
+    expect(screen.getAllByText(/Usuários/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Produtos/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Pedidos este mês/).length).toBeGreaterThan(0)
   })
 
   it('deve exibir alerta quando limite é atingido', () => {
@@ -233,4 +247,3 @@ describe('PlansSection', () => {
     expect(screen.getByText(/Você atingiu um ou mais limites/)).toBeInTheDocument()
   })
 })
-

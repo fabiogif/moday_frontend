@@ -45,7 +45,7 @@ describe('Orders CRUD', () => {
       id: 2,
       identify: 'ORD-002',
       client: { id: 2, name: 'Jane Smith', email: 'jane@example.com', phone: '11888888888' },
-      status: 'Entregue',
+      status: 'Concluído',
     }),
   ]
 

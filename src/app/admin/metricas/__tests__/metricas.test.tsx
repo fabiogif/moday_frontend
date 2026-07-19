@@ -7,8 +7,11 @@ import MensagensPage from '../mensagens/page'
 import CrescimentoPage from '../crescimento/page'
 import adminApi from '@/lib/admin-api-client'
 
+const mockRedirect = jest.fn()
+
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn() }),
+  redirect: (...args: unknown[]) => mockRedirect(...args),
 }))
 
 jest.mock('@/contexts/admin-auth-context', () => ({
@@ -75,17 +78,10 @@ describe('Admin Métricas Pages', () => {
     expect(adminApi.getUsageMetrics).toHaveBeenCalled()
   })
 
-  test('mensagens carrega lista de empresas', async () => {
-    ;(adminApi.getTenants as jest.Mock).mockResolvedValue({
-      data: [{ id: 1, name: 'Empresa A', email: 'a@test.com' }],
-    })
-
+  test('mensagens redireciona para informativo', () => {
     render(<MensagensPage />)
 
-    await waitFor(() => {
-      expect(screen.getByText('Envio de Mensagens')).toBeInTheDocument()
-    })
-    expect(adminApi.getTenants).toHaveBeenCalledWith({ per_page: 100 })
+    expect(mockRedirect).toHaveBeenCalledWith('/admin/informativo')
   })
 
   test('crescimento carrega métricas de crescimento', async () => {

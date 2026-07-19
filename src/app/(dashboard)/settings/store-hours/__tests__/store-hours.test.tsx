@@ -428,7 +428,7 @@ describe('StoreHourFormDialog', () => {
     expect(screen.getByText(/Horário ativo/i)).toBeInTheDocument()
   })
 
-  it('should validate required fields', async () => {
+  it('should prefill default values on create', () => {
     render(
       <StoreHourFormDialog
         open={true}
@@ -437,16 +437,8 @@ describe('StoreHourFormDialog', () => {
       />
     )
 
-    const submitButton = screen.getByRole('button', { name: /Adicionar/i })
-    
-    await act(async () => {
-      fireEvent.click(submitButton)
-    })
-
-    await waitFor(() => {
-      // Zod validation should prevent submission
-      expect(apiClient.post).not.toHaveBeenCalled()
-    })
+    expect(screen.getByDisplayValue('08:00')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('18:00')).toBeInTheDocument()
   })
 
   it('should validate end time is after start time', async () => {

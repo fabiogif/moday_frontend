@@ -29,9 +29,10 @@ interface Transaction {
 }
 
 const statusConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
-  "Em Preparo": { variant: "secondary", label: "Em Preparo" },
-  "Pronto": { variant: "default", label: "Pronto" },
-  "Entregue": { variant: "outline", label: "Entregue" },
+  "Pendente": { variant: "secondary", label: "Pendente" },
+  "Aceito": { variant: "secondary", label: "Aceito" },
+  "Preparo": { variant: "secondary", label: "Preparo" },
+  "Concluído": { variant: "default", label: "Concluído" },
   "Cancelado": { variant: "destructive", label: "Cancelado" },
 }
 

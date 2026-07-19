@@ -220,15 +220,13 @@ describe('ProductVariationsManager - CRUD Completo', () => {
 
   describe('Editar Variações', () => {
     it('pode editar nome de variação existente', async () => {
-      const user = userEvent.setup();
       const initialVariations: ProductVariation[] = [
         { id: '1', name: 'Pequeno', price: -5 },
       ];
       render(<ProductVariationsManager variations={initialVariations} onChange={mockOnChange} />);
 
       const nameInput = screen.getByDisplayValue('Pequeno');
-      await user.clear(nameInput);
-      await user.type(nameInput, 'Extra Pequeno');
+      fireEvent.change(nameInput, { target: { value: 'Extra Pequeno' } });
 
       await waitFor(() => {
         expect(mockOnChange).toHaveBeenCalledWith([
@@ -238,15 +236,13 @@ describe('ProductVariationsManager - CRUD Completo', () => {
     });
 
     it('pode editar preço de variação existente', async () => {
-      const user = userEvent.setup();
       const initialVariations: ProductVariation[] = [
         { id: '1', name: 'Pequeno', price: -5 },
       ];
       render(<ProductVariationsManager variations={initialVariations} onChange={mockOnChange} />);
 
       const priceInput = screen.getByDisplayValue('-5');
-      await user.clear(priceInput);
-      await user.type(priceInput, '-8');
+      fireEvent.change(priceInput, { target: { value: '-8' } });
 
       await waitFor(() => {
         expect(mockOnChange).toHaveBeenCalledWith([
@@ -411,15 +407,13 @@ describe('ProductOptionalsManager - CRUD Completo', () => {
 
   describe('Editar Opcionais', () => {
     it('pode editar nome de opcional existente', async () => {
-      const user = userEvent.setup();
       const initialOptionals: ProductOptional[] = [
         { id: '1', name: 'Bacon', price: 5 },
       ];
       render(<ProductOptionalsManager optionals={initialOptionals} onChange={mockOnChange} />);
 
       const nameInput = screen.getByDisplayValue('Bacon');
-      await user.clear(nameInput);
-      await user.type(nameInput, 'Bacon Premium');
+      fireEvent.change(nameInput, { target: { value: 'Bacon Premium' } });
 
       await waitFor(() => {
         expect(mockOnChange).toHaveBeenCalledWith([
@@ -429,15 +423,13 @@ describe('ProductOptionalsManager - CRUD Completo', () => {
     });
 
     it('pode editar preço de opcional existente', async () => {
-      const user = userEvent.setup();
       const initialOptionals: ProductOptional[] = [
         { id: '1', name: 'Bacon', price: 5 },
       ];
       render(<ProductOptionalsManager optionals={initialOptionals} onChange={mockOnChange} />);
 
       const priceInput = screen.getByDisplayValue('5');
-      await user.clear(priceInput);
-      await user.type(priceInput, '7');
+      fireEvent.change(priceInput, { target: { value: '7' } });
 
       await waitFor(() => {
         expect(mockOnChange).toHaveBeenCalledWith([

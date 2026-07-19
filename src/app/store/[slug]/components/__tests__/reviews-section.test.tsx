@@ -110,7 +110,7 @@ describe('ReviewsSection', () => {
     await waitFor(() => {
       expect(screen.getByText('João Silva')).toBeInTheDocument()
       expect(screen.getByText('Maria Santos')).toBeInTheDocument()
-      expect(screen.getByText('Excelente comida! Muito saborosa.')).toBeInTheDocument()
+      expect(screen.getByText(/Excelente comida! Muito saborosa/)).toBeInTheDocument()
     })
   })
 

@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { HeroSection } from '../components/hero-section'
+import { TRIAL_CTA_LABEL, TRIAL_MICRO_COPY } from '@/lib/landing-copy'
 
 jest.mock('next/link', () => {
   return ({ children, href }: { children: React.ReactNode; href: string }) => {
@@ -27,8 +28,8 @@ describe('HeroSection', () => {
 
   it('deve renderizar informação do teste de 7 dias', () => {
     render(<HeroSection />)
-    expect(screen.getByText(/7 dias grátis nos planos Básico e Premium/i)).toBeInTheDocument()
-    expect(screen.getByText(/Teste grátis por 7 dias/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: new RegExp(TRIAL_CTA_LABEL, 'i') })).toBeInTheDocument()
+    expect(screen.getByText(TRIAL_MICRO_COPY)).toBeInTheDocument()
   })
 
   it('deve renderizar micro-copy de cadastro', () => {
@@ -38,7 +39,7 @@ describe('HeroSection', () => {
 
   it('deve ter link de cadastro com teste grátis', () => {
     render(<HeroSection />)
-    const registerLink = screen.getByRole('link', { name: /teste grátis por 7 dias/i })
+    const registerLink = screen.getByRole('link', { name: new RegExp(TRIAL_CTA_LABEL, 'i') })
     expect(registerLink).toHaveAttribute('href', '/auth/register')
   })
 

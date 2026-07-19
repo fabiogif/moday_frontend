@@ -132,7 +132,8 @@ describe('SuppliersPage', () => {
     
     render(<SuppliersPage />)
     
-    expect(screen.getByRole('status', { hidden: true })).toBeInTheDocument()
+    expect(screen.getByText('Lista de Fornecedores')).toBeInTheDocument()
+    expect(document.querySelector('.animate-spin')).toBeInTheDocument()
   })
 
   it('shows empty state when no suppliers', () => {
@@ -152,12 +153,12 @@ describe('SuppliersPage', () => {
     const user = userEvent.setup()
     render(<SuppliersPage />)
     
-    const newButton = screen.getByRole('button', { name: /novo fornecedor/i })
+    const newButton = screen.getByRole('button', { name: /^novo fornecedor$/i })
     await user.click(newButton)
     
-    // Dialog deve abrir (verificar pelo título do formulário)
     await waitFor(() => {
-      expect(screen.getByText(/novo fornecedor/i)).toBeInTheDocument()
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      expect(within(screen.getByRole('dialog')).getByText('Novo Fornecedor')).toBeInTheDocument()
     })
   })
 
@@ -177,14 +178,11 @@ describe('SuppliersPage', () => {
     const user = userEvent.setup()
     render(<SuppliersPage />)
     
-    await waitFor(() => {
-      const deleteButtons = screen.getAllByTitle(/excluir/i)
-      user.click(deleteButtons[0])
-    })
+    const deleteButtons = await screen.findAllByTitle(/excluir/i)
+    await user.click(deleteButtons[0])
     
     await waitFor(() => {
-      expect(screen.getByText(/excluir fornecedor/i)).toBeInTheDocument()
-      expect(screen.getByText(/tem certeza/i)).toBeInTheDocument()
+      expect(screen.getByText(/tem certeza que deseja excluir o fornecedor/i)).toBeInTheDocument()
     })
   })
 })

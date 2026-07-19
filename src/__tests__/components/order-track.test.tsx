@@ -52,7 +52,7 @@ describe('OrderTrack Component', () => {
     expect(toast.error).not.toHaveBeenCalled()
   })
 
-  it('masks phone input correctly (duplicate - skipped)', async () => {
+  it.skip('masks phone input correctly (duplicate - skipped)', async () => {
     queueStoreInfoCall()
     await renderOrderTrackComponent()
     
@@ -81,7 +81,7 @@ describe('OrderTrack Component', () => {
       order_identify: 'abc123',
       order_date: '06/11/2025',
       order_time: '14:30',
-      status: 'Em Preparo',
+      status: 'Preparo',
       is_delivery: true,
       total: 45.50,
       payment_method: 'Dinheiro',
@@ -98,17 +98,17 @@ describe('OrderTrack Component', () => {
     } as any)
 
     await renderOrderTrackComponent()
-    
+
     const cpfInput = screen.getByPlaceholderText('(00) 00000-0000')
     fireEvent.change(cpfInput, { target: { value: '12345678900' } })
-    
+
     const searchButton = screen.getByRole('button', { name: /Consultar Pedido/i })
     fireEvent.click(searchButton)
 
     await waitFor(() => {
       expect(screen.getByText('#abc123')).toBeInTheDocument()
       expect(screen.getByText(/Olá, João!/)).toBeInTheDocument()
-      expect(screen.getByText('Em Preparo')).toBeInTheDocument()
+      expect(screen.getByText('Preparo')).toBeInTheDocument()
       expect(screen.getByText('Pizza')).toBeInTheDocument()
       expect(screen.getByText('Refrigerante')).toBeInTheDocument()
       expect(screen.getByText('Dinheiro')).toBeInTheDocument()
@@ -167,7 +167,7 @@ describe('OrderTrack Component', () => {
       order_identify: 'xyz789',
       order_date: '06/11/2025',
       order_time: '15:00',
-      status: 'Pronto',
+      status: 'Preparo',
       is_delivery: true,
       total: 30.00,
       payment_method: 'Cartão',
@@ -199,7 +199,7 @@ describe('OrderTrack Component', () => {
       order_identify: 'order456',
       order_date: '07/11/2025',
       order_time: '18:45',
-      status: 'Em Preparo',
+      status: 'Preparo',
       is_delivery: false,
       total: 25.00,
       payment_method: 'Pix',
