@@ -16,9 +16,9 @@ import {
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
-import { apiClient } from "@/lib/api-client"
+import { apiClient, endpoints } from "@/lib/api-client"
 import { toast } from "sonner"
-import { Loader2, Building2, Upload, X, ExternalLink, Copy } from "lucide-react"
+import { Loader2, Building2, Upload, X, ExternalLink, Copy, MapPin, ChevronLeft, ChevronRight } from "lucide-react"
 import Image from "next/image"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
@@ -31,6 +31,8 @@ import { AlertCircle, CheckCircle2 } from "lucide-react"
 import { StateCityFormFields } from "@/components/location/state-city-form-fields"
 import { PlansSection } from "./components/plans-section"
 import { resolveImageUrl } from "@/lib/resolve-image-url"
+import { OrderStepper } from "@/components/order-stepper"
+import { extractValidationErrors } from "@/lib/error-formatter"
 
 const companyFormSchema = z.object({
   name: z.string().min(1, "Nome da empresa é obrigatório"),
@@ -57,6 +59,40 @@ const companyFormSchema = z.object({
 })
 
 type CompanyFormValues = z.infer<typeof companyFormSchema>
+
+const STEPS = [
+  { label: "Logo", icon: Upload },
+  { label: "Dados da Empresa", icon: Building2 },
+  { label: "Endereço", icon: MapPin },
+]
+
+const STEP_FIELDS: (keyof CompanyFormValues)[][] = [
+  [],
+  ["name", "email", "cnpj", "phone"],
+  ["address", "city", "state", "zipcode", "country"],
+]
+
+const STEP_PAYLOAD_FIELDS: (keyof CompanyFormValues)[][] = [
+  [],
+  ["name", "email", "cnpj", "phone"],
+  ["address", "city", "state", "zipcode", "country"],
+]
+
+const FIELD_STEP: Partial<Record<keyof CompanyFormValues, number>> = {
+  name: 1,
+  email: 1,
+  cnpj: 1,
+  phone: 1,
+  address: 2,
+  city: 2,
+  state: 2,
+  zipcode: 2,
+  country: 2,
+}
+
+function isFilled(value: unknown) {
+  return typeof value === "string" ? value.trim().length > 0 : value != null && value !== ""
+}
 
 interface TenantData {
   id: number
@@ -85,6 +121,10 @@ export default function CompanySettings() {
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [removeLogo, setRemoveLogo] = useState(false)
+  const [currentStep, setCurrentStep] = useState(0)
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
+  const [validatingStep, setValidatingStep] = useState(false)
+  const [backendErrors, setBackendErrors] = useState<Record<string, string>>({})
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
@@ -102,6 +142,81 @@ export default function CompanySettings() {
   })
 
   const { handleBackendErrors } = useBackendValidation(form.setError)
+
+  const name = form.watch("name")
+  const email = form.watch("email")
+
+  const canContinue =
+    currentStep === 1 ? isFilled(name) && isFilled(email) : true
+
+  const applyBackendErrors = (error: unknown) => {
+    const validationErrors = extractValidationErrors(error)
+    setBackendErrors(validationErrors)
+
+    Object.entries(validationErrors).forEach(([field, message]) => {
+      if (field === "_general") return
+      if (field in FIELD_STEP) {
+        form.setError(field as keyof CompanyFormValues, {
+          type: "server",
+          message,
+        })
+      }
+    })
+
+    const errorCount = Object.keys(validationErrors).filter((k) => k !== "_general").length
+    if (validationErrors._general) {
+      toast.error(validationErrors._general)
+    } else if (errorCount > 0) {
+      const firstError = Object.values(validationErrors)[0]
+      toast.error(firstError, {
+        description: errorCount > 1 ? `${errorCount - 1} outro(s) erro(s)` : undefined,
+      })
+    }
+
+    return validationErrors
+  }
+
+  const validateStepOnBackend = async (step: number) => {
+    const values = form.getValues()
+    const payload: Record<string, unknown> = {
+      step,
+      uuid: tenantData?.uuid,
+    }
+
+    STEP_PAYLOAD_FIELDS[step].forEach((field) => {
+      payload[field] = values[field] ?? ""
+    })
+
+    await apiClient.post(endpoints.tenant.validate, payload)
+  }
+
+  const goNext = async () => {
+    setBackendErrors({})
+    form.clearErrors()
+
+    const fields = STEP_FIELDS[currentStep]
+    const frontValid = fields.length === 0 || (await form.trigger(fields))
+    if (!frontValid) return
+
+    setValidatingStep(true)
+    try {
+      await validateStepOnBackend(currentStep)
+      setCompletedSteps((prev) => new Set(prev).add(currentStep))
+      setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1))
+    } catch (error: any) {
+      applyBackendErrors(error)
+    } finally {
+      setValidatingStep(false)
+    }
+  }
+
+  const goBack = () => setCurrentStep((s) => Math.max(s - 1, 0))
+
+  const goToStep = (step: number) => {
+    if (step <= currentStep || completedSteps.has(step)) {
+      setCurrentStep(step)
+    }
+  }
   const { loading: loadingCEP, searchCEP } = useViaCEP()
   const { loading: loadingCNPJ, companyData, searchCNPJ } = useReceitaWS()
   
@@ -276,9 +391,31 @@ export default function CompanySettings() {
       return
     }
 
+    setBackendErrors({})
+    form.clearErrors()
+
+    // Valida o último passo no backend antes de salvar
+    try {
+      setValidatingStep(true)
+      await validateStepOnBackend(STEPS.length - 1)
+      setCompletedSteps((prev) => new Set(prev).add(STEPS.length - 1))
+    } catch (error: any) {
+      const validationErrors = applyBackendErrors(error)
+      const firstErrorField = Object.keys(validationErrors).find(
+        (k) => k !== '_general'
+      ) as keyof CompanyFormValues | undefined
+      const stepWithError = firstErrorField ? FIELD_STEP[firstErrorField] : undefined
+      if (stepWithError !== undefined) {
+        setCurrentStep(stepWithError)
+      }
+      setValidatingStep(false)
+      return
+    }
+    setValidatingStep(false)
+
     try {
       setSaving(true)
-      
+
       // Preparar FormData se houver arquivo
       let response
       if (logoFile || removeLogo) {
@@ -346,7 +483,16 @@ export default function CompanySettings() {
       }
       
       const handled = handleBackendErrors(error, companyFieldMappings as any)
-      
+
+      const validationErrors = extractValidationErrors(error)
+      const firstErrorField = Object.keys(validationErrors).find(
+        (k) => k !== '_general'
+      ) as keyof CompanyFormValues | undefined
+      const stepWithError = firstErrorField ? FIELD_STEP[firstErrorField] : undefined
+      if (stepWithError !== undefined) {
+        setCurrentStep(stepWithError)
+      }
+
       if (!handled) {
         const errorMsg = error.data?.message || error.message || 'Erro ao atualizar empresa'
         toast.error(errorMsg)
@@ -491,9 +637,26 @@ export default function CompanySettings() {
         </Card>
       )}
 
+      <div className="px-1">
+        <OrderStepper
+          currentStep={currentStep}
+          steps={STEPS}
+          onStepClick={goToStep}
+          completedSteps={completedSteps}
+        />
+      </div>
+
+      {backendErrors._general && (
+        <div className="flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {backendErrors._general}
+        </div>
+      )}
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* Card de Upload de Logo */}
+          {currentStep === 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Logo da Empresa</CardTitle>
@@ -599,7 +762,9 @@ export default function CompanySettings() {
               </div>
             </CardContent>
           </Card>
+          )}
 
+          {currentStep === 1 && (
           <Card>
             <CardHeader>
               <CardTitle>Informações da Empresa</CardTitle>
@@ -712,7 +877,9 @@ export default function CompanySettings() {
               </div>
             </CardContent>
           </Card>
+          )}
 
+          {currentStep === 2 && (
           <Card>
             <CardHeader>
               <CardTitle>Endereço</CardTitle>
@@ -801,43 +968,84 @@ export default function CompanySettings() {
               />
             </CardContent>
           </Card>
+          )}
 
-          {/* Seção de Planos */}
-          <Card id="planos" className="scroll-mt-20">
-            <CardHeader>
-              <CardTitle>Planos e Limites</CardTitle>
-              <CardDescription>
-                Gerencie seu plano atual e migre para planos superiores quando necessário.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PlansSection />
-            </CardContent>
-          </Card>
+          <div className="sticky bottom-0 bg-background border-t pt-3 pb-4 mt-4 -mx-4 px-4 lg:-mx-6 lg:px-6 flex items-center justify-between gap-2">
+            {currentStep > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="cursor-pointer"
+                onClick={goBack}
+                disabled={saving || validatingStep}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Voltar
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                type="button"
+                className="cursor-pointer"
+                disabled={saving || validatingStep}
+                onClick={() => {
+                  form.reset()
+                  setCurrentStep(0)
+                  setCompletedSteps(new Set())
+                  setBackendErrors({})
+                }}
+              >
+                Cancelar
+              </Button>
+            )}
 
-          <div className="flex space-x-2">
-            <Button type="submit" className="cursor-pointer" disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                'Salvar alterações'
-              )}
-            </Button>
-            <Button 
-              variant="outline" 
-              type="button" 
-              className="cursor-pointer" 
-              disabled={saving}
-              onClick={() => form.reset()}
-            >
-              Cancelar
-            </Button>
+            {currentStep === STEPS.length - 1 ? (
+              <Button type="submit" className="cursor-pointer" disabled={saving || validatingStep}>
+                {saving || validatingStep ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {validatingStep ? 'Validando...' : 'Salvando...'}
+                  </>
+                ) : (
+                  'Salvar alterações'
+                )}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                className="cursor-pointer"
+                onClick={goNext}
+                disabled={saving || validatingStep || !canContinue}
+              >
+                {validatingStep ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Validando...
+                  </>
+                ) : (
+                  <>
+                    Continuar
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </form>
       </Form>
+
+      {/* Seção de Planos */}
+      <Card id="planos" className="scroll-mt-20">
+        <CardHeader>
+          <CardTitle>Planos e Limites</CardTitle>
+          <CardDescription>
+            Gerencie seu plano atual e migre para planos superiores quando necessário.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PlansSection />
+        </CardContent>
+      </Card>
     </div>
   )
 }

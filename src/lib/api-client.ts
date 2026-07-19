@@ -571,6 +571,7 @@ export const endpoints = {
   tenant: {
     current: '/api/tenant/current',
     update: '/api/tenant/update',
+    validate: '/api/tenant/validate',
   },
   
   // Relatórios

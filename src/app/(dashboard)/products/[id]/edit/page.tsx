@@ -3,13 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { ComboboxForm, ComboboxOption } from "@/components/ui/combobox";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Trash2, Loader2 } from "lucide-react";
+import { ComboboxOption } from "@/components/ui/combobox";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { resolveImageUrl } from "@/lib/resolve-image-url";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -18,10 +13,8 @@ import { useAuthenticatedCategories, useMutation, useAuthenticatedApi } from "@/
 import { useBackendValidation, commonFieldMappings } from "@/hooks/use-backend-validation";
 import { endpoints } from "@/lib/api-client";
 import { toast } from "sonner";
-import { Switch } from "@/components/ui/switch";
-import { ProductVariationsManager } from "@/components/product-variations-manager";
-import { ProductOptionalsManager } from "@/components/product-optionals-manager";
 import { ProductVariation, ProductOptional } from "@/types/product-variations";
+import { ProductFormWizard, ProductFormValues } from "../../components/product-form-wizard";
 
 const productFormSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres."),
@@ -42,26 +35,6 @@ const productFormSchema = z.object({
   image: z.any().optional(),
   is_active: z.boolean().optional(),
 });
-
-interface ProductFormValues {
-  name: string;
-  description: string;
-  price: number;
-  price_cost: number;
-  promotional_price?: number;
-  brand?: string;
-  sku?: string;
-  weight?: number;
-  height?: number;
-  width?: number;
-  depth?: number;
-  shipping_info?: string;
-  warehouse_location?: string;
-  categories: string[];
-  qtd_stock: number;
-  image?: File;
-  is_active?: boolean;
-}
 
 interface Product {
   id: number;
@@ -89,15 +62,15 @@ interface Product {
   isActive?: boolean;
   url?: string;
   image?: string;
-  variations?: ProductVariation[];  // Formato novo
-  optionals?: ProductOptional[];     // Novo campo
+  variations?: ProductVariation[];
+  optionals?: ProductOptional[];
 }
 
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
   const productId = params.id as string;
-  
+
   const [variations, setVariations] = useState<ProductVariation[]>([]);
   const [optionals, setOptionals] = useState<ProductOptional[]>([]);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
@@ -154,36 +127,14 @@ export default function EditProductPage() {
         qtd_stock: product.qtd_stock ? (typeof product.qtd_stock === 'string' ? parseFloat(product.qtd_stock) : Number(product.qtd_stock)) : (product.stock ? (typeof product.stock === 'string' ? parseFloat(product.stock) : Number(product.stock)) : 0),
         is_active: product.is_active ?? product.isActive ?? true,
       };
-      
+
       form.reset(productData);
+      setVariations(Array.isArray(product.variations) ? product.variations : []);
+      setOptionals(Array.isArray(product.optionals) ? product.optionals : []);
 
-      // DEBUG: Ver o que está chegando do backend
-
-      // Carregar variações se existirem
-      if (product.variations && Array.isArray(product.variations)) {
-
-        setVariations(product.variations);
-      } else {
-
-        setVariations([]);
-      }
-      
-      // Carregar opcionais se existirem
-      if (product.optionals && Array.isArray(product.optionals)) {
-
-        setOptionals(product.optionals);
-      } else {
-
-        setOptionals([]);
-      }
-
-      // Carregar imagem atual
       if (product.url || product.image) {
-        const imageUrl = resolveImageUrl(product.url || product.image);
-
-        setCurrentImage(imageUrl || null);
+        setCurrentImage(resolveImageUrl(product.url || product.image) || null);
       } else {
-
         setCurrentImage(null);
       }
     }
@@ -202,7 +153,7 @@ export default function EditProductPage() {
         e.returnValue = '';
       }
     };
-    
+
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
@@ -214,14 +165,20 @@ export default function EditProductPage() {
       }))
     : [];
 
+  const handleImageChange = (file: File) => {
+    form.setValue("image", file, { shouldDirty: true });
+    const reader = new FileReader();
+    reader.onload = (e) => setCurrentImage(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
   const onSubmit = async (data: ProductFormValues) => {
     try {
-
       const formData = new FormData();
-      
+
       // Adicionar _method para Laravel reconhecer como PUT
       formData.append('_method', 'PUT');
-      
+
       // Campos obrigatórios
       formData.append('name', data.name);
       formData.append('description', data.description);
@@ -230,11 +187,7 @@ export default function EditProductPage() {
       formData.append('qtd_stock', data.qtd_stock.toString());
 
       // Status ativo
-      if (data.is_active !== undefined) {
-        formData.append('is_active', data.is_active ? '1' : '0');
-      } else {
-        formData.append('is_active', '1'); // Default ativo
-      }
+      formData.append('is_active', data.is_active !== undefined ? (data.is_active ? '1' : '0') : '1');
 
       // Campos opcionais - só envia se tiver valor
       if (data.promotional_price && data.promotional_price > 0) {
@@ -265,75 +218,36 @@ export default function EditProductPage() {
         formData.append('warehouse_location', data.warehouse_location.trim());
       }
 
-      // Variações como JSON
+      formData.append('variations', JSON.stringify(variations));
+      formData.append('optionals', JSON.stringify(optionals));
 
-      if (variations.length > 0) {
-        formData.append('variations', JSON.stringify(variations));
-      } else {
-        formData.append('variations', JSON.stringify([]));
-      }
-      
-      // Opcionais como JSON
-
-      if (optionals.length > 0) {
-        formData.append('optionals', JSON.stringify(optionals));
-      } else {
-        formData.append('optionals', JSON.stringify([]));
-      }
-
-      // Categorias
       data.categories.forEach((categoryId, index) => {
         formData.append(`categories[${index}]`, categoryId);
       });
 
-      // Nova imagem (se selecionada)
       if (data.image && data.image instanceof File) {
         formData.append('image', data.image);
-
-      } else {
-
       }
 
-      // Debug: Log de tudo que está sendo enviado
-
-      for (const [key, value] of formData.entries()) {
-
-      }
-
-      // IMPORTANTE: Usar POST ao invés de PUT quando enviando FormData com _method
-      // Isso é necessário porque FormData com arquivos precisa ser POST no Laravel
       const result = await updateProduct(endpoints.products.update(productId), 'POST', formData);
-      
+
       if (result) {
         toast.success('Produto atualizado com sucesso!');
         setIsDirty(false);
         router.push('/products');
       }
     } catch (error: any) {
-
-      // Se houver erros de validação, mostrar no console
-      if (error.data?.data) {
-
-        Object.entries(error.data.data).forEach(([field, messages]) => {
-
-        });
-      }
-      
-      // Tratamento especial para erro de upload de imagem
       if (error.data?.errors?.image) {
-        const imageErrors = Array.isArray(error.data.errors.image) 
-          ? error.data.errors.image.join(' ') 
+        const imageErrors = Array.isArray(error.data.errors.image)
+          ? error.data.errors.image.join(' ')
           : error.data.errors.image;
         toast.error(`Erro no upload da imagem: ${imageErrors}`);
-        form.setError('image', {
-          type: 'server',
-          message: imageErrors
-        });
-        return; // Retornar aqui para não processar mais erros
+        form.setError('image', { type: 'server', message: imageErrors });
+        return;
       }
-      
+
       const handled = handleBackendErrors(error, commonFieldMappings as any);
-      
+
       if (!handled) {
         const errorMsg = error.data?.message || error.message || 'Erro ao atualizar produto';
         toast.error(errorMsg);
@@ -343,13 +257,12 @@ export default function EditProductPage() {
 
   const handleCancel = () => {
     if (isDirty) {
-      const confirm = window.confirm('Você tem alterações não salvas. Deseja realmente sair?');
-      if (!confirm) return;
+      const confirmLeave = window.confirm('Você tem alterações não salvas. Deseja realmente sair?');
+      if (!confirmLeave) return;
     }
     router.back();
   };
 
-  // Loading state
   if (loadingProduct) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
@@ -359,7 +272,6 @@ export default function EditProductPage() {
     );
   }
 
-  // Error state
   if (productError || !product) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
@@ -373,542 +285,35 @@ export default function EditProductPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 py-2 px-6">
-      {/* Header com breadcrumbs */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <button 
-            onClick={() => router.push('/products')}
-            className="hover:text-foreground transition-colors"
-          >
+    <ProductFormWizard
+      mode="edit"
+      title="Editar Produto"
+      description="Atualize as informações do produto"
+      breadcrumb={
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+          <button onClick={() => router.push('/products')} className="hover:text-foreground transition-colors">
             Produtos
           </button>
           <span>/</span>
-          <button 
-            onClick={() => router.push(`/products/${productId}`)}
-            className="hover:text-foreground transition-colors"
-          >
+          <button onClick={() => router.push(`/products/${productId}`)} className="hover:text-foreground transition-colors">
             {product.name}
           </button>
           <span>/</span>
           <span className="text-foreground">Editar</span>
         </div>
-        
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={handleCancel}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Editar Produto</h1>
-            <p className="text-muted-foreground">Atualize as informações do produto</p>
-          </div>
-        </div>
-      </div>
-
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Informações Básicas */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações Básicas</CardTitle>
-                <CardDescription>Dados principais do produto</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Produto *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Pizza Margherita" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrição *</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Descrição detalhada do produto"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="brand"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Marca/Fabricante</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nike, Samsung, etc." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sku"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>SKU/Código</FormLabel>
-                      <FormControl>
-                        <Input placeholder="PRD-001, ABC123, etc." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="categories"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Categorias *</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap gap-2">
-                            {field.value?.map((categoryId: string) => {
-                              const category = Array.isArray(categories) 
-                                ? categories.find((cat: any) => cat.identify === categoryId)
-                                : null;
-                              return (
-                                <div
-                                  key={categoryId}
-                                  className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
-                                >
-                                  <span>{category?.name || categoryId}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newCategories = field.value?.filter(id => id !== categoryId) || [];
-                                      field.onChange(newCategories);
-                                    }}
-                                    className="text-primary hover:text-primary/80"
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          <ComboboxForm
-                            field={{
-                              value: "",
-                              onChange: (value: string) => {
-                                if (value && !field.value?.includes(value)) {
-                                  const newCategories = [...(field.value || []), value];
-                                  field.onChange(newCategories);
-                                }
-                              },
-                              onBlur: field.onBlur,
-                              name: field.name,
-                            }}
-                            options={categoryOptions}
-                            placeholder="Adicionar categoria"
-                            searchPlaceholder="Buscar categoria..."
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="is_active"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">Produto Ativo</FormLabel>
-                        <div className="text-sm text-muted-foreground">
-                          Desmarque para desativar o produto
-                        </div>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Preços e Estoque */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Preços e Estoque</CardTitle>
-                <CardDescription>Informações financeiras e de estoque</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="price_cost"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Preço de Custo (R$) *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Preço de Venda (R$) *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="promotional_price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Preço Promocional (R$)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00 (opcional)"
-                          {...field}
-                          value={field.value ?? ''}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            field.onChange(value === '' ? undefined : Number(value));
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="qtd_stock"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Quantidade em Estoque *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Logística */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Logística</CardTitle>
-                <CardDescription>Peso, dimensões e localização</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="weight"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Peso (kg)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.001"
-                          placeholder="0.000 (opcional)"
-                          value={field.value ?? ''}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            field.onChange(value === '' ? undefined : Number(value));
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="height"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Altura (cm)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={field.value ?? ''}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              field.onChange(value === '' ? undefined : Number(value));
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="width"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Largura (cm)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={field.value ?? ''}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              field.onChange(value === '' ? undefined : Number(value));
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="depth"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Profundidade (cm)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={field.value ?? ''}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              field.onChange(value === '' ? undefined : Number(value));
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="warehouse_location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Localização no Estoque</FormLabel>
-                      <FormControl>
-                        <Input placeholder="A1-B2, Setor A, etc. (opcional)" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="shipping_info"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Informações de Envio</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Prazo de entrega, restrições, métodos de envio, etc. (opcional)"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Imagem */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Imagem</CardTitle>
-                <CardDescription>Foto do produto</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Preview da imagem atual */}
-                {currentImage && (
-                  <div className="relative w-full h-48 rounded-lg overflow-hidden border">
-                    <img
-                      src={currentImage}
-                      alt="Imagem atual do produto"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-
-                        e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3ESem imagem%3C/text%3E%3C/svg%3E';
-                      }}
-                    />
-                    <div className="absolute top-2 left-2">
-                      <Badge>Imagem Atual</Badge>
-                    </div>
-                  </div>
-                )}
-                
-                {!currentImage && (
-                  <div className="relative w-full h-48 rounded-lg overflow-hidden border bg-muted flex items-center justify-center">
-                    <div className="text-center text-muted-foreground">
-                      <p>Sem imagem cadastrada</p>
-                    </div>
-                  </div>
-                )}
-
-                <FormField
-                  control={form.control}
-                  name="image"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {currentImage ? 'Selecionar Nova Imagem' : 'Imagem do Produto'}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="file"
-                          accept="image/jpeg,image/jpg,image/png,image/gif,image/svg+xml"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              // Validar tamanho (máx 2MB)
-                              const maxSize = 2 * 1024 * 1024; // 2MB em bytes
-                              if (file.size > maxSize) {
-                                toast.error('Imagem muito grande! Tamanho máximo: 2MB');
-                                e.target.value = ''; // Limpar input
-                                return;
-                              }
-
-                              // Validar tipo de arquivo
-                              const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/svg+xml'];
-                              if (!validTypes.includes(file.type)) {
-                                toast.error('Tipo de arquivo inválido! Use: JPG, PNG, GIF ou SVG');
-                                e.target.value = ''; // Limpar input
-                                return;
-                              }
-
-                              // .toFixed(2)} KB`,
-                              //   type: file.type
-                              // });
-
-                              field.onChange(file);
-                              // Preview da nova imagem
-                              const reader = new FileReader();
-                              reader.onload = (e) => {
-                                setCurrentImage(e.target?.result as string);
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <p className="text-sm text-muted-foreground">
-                        {currentImage 
-                          ? 'Selecione uma nova imagem para substituir a atual' 
-                          : 'Nenhuma imagem cadastrada'}
-                        <br />
-                        <span className="text-xs">
-                          Formatos aceitos: JPG, PNG, GIF, SVG • Tamanho máximo: 2MB
-                        </span>
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Variações e Opcionais - Full Width */}
-          <div className="space-y-6">
-            <ProductVariationsManager
-              variations={variations}
-              onChange={setVariations}
-            />
-
-            <ProductOptionalsManager
-              optionals={optionals}
-              onChange={setOptionals}
-            />
-          </div>
-
-          {/* Botões de ação */}
-          <div className="flex justify-end gap-4">
-            <Button type="button" variant="outline" onClick={handleCancel}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={updating}>
-              {updating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                'Salvar Alterações'
-              )}
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </div>
+      }
+      form={form}
+      categoryOptions={categoryOptions}
+      variations={variations}
+      onVariationsChange={setVariations}
+      optionals={optionals}
+      onOptionalsChange={setOptionals}
+      currentImage={currentImage}
+      onImageChange={handleImageChange}
+      submitting={updating}
+      submitLabel="Salvar Alterações"
+      onSubmit={onSubmit}
+      onCancel={handleCancel}
+    />
   );
 }
-
