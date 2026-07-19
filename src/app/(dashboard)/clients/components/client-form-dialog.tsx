@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Plus, Loader2 } from "lucide-react"
+import { Plus, Loader2, User, MapPin, ChevronLeft, ChevronRight } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -32,6 +32,7 @@ import { useViaCEP } from "@/hooks/use-viacep"
 import { StateCityFormFields } from "@/components/location/state-city-form-fields"
 import { useBackendValidation } from "@/hooks/use-backend-validation"
 import { showErrorToast, showSuccessToast } from "@/components/ui/error-toast"
+import { OrderStepper } from "@/components/order-stepper"
 
 const clientFormSchema = z.object({
   name: z.string().min(3, {
@@ -81,6 +82,33 @@ interface ClientFormValues {
   isActive: boolean
 }
 
+const STEPS = [
+  { label: "Dados Básicos", icon: User },
+  { label: "Endereço e Status", icon: MapPin },
+]
+
+// Campos validados ao avançar de cada passo (os demais são opcionais)
+const STEP_FIELDS: (keyof ClientFormValues)[][] = [
+  ["name", "cpf", "email", "phone"],
+  [],
+]
+
+// Passo em que cada campo aparece — usado para levar o usuário até o erro retornado pelo backend
+const FIELD_STEP: Partial<Record<keyof ClientFormValues, number>> = {
+  name: 0,
+  cpf: 0,
+  email: 0,
+  phone: 0,
+  address: 1,
+  number: 1,
+  complement: 1,
+  neighborhood: 1,
+  state: 1,
+  city: 1,
+  zip_code: 1,
+  isActive: 1,
+}
+
 interface ClientFormDialogProps {
   onAddClient: (clientData: ClientFormValues) => void | Promise<void>
   onEditClient?: (id: number, clientData: ClientFormValues) => void | Promise<void>
@@ -102,6 +130,8 @@ export function ClientFormDialog({
   const { loading: loadingCEP, searchCEP } = useViaCEP();
   const [submitting, setSubmitting] = React.useState(false);
   const [pendingCity, setPendingCity] = React.useState<string | null>(null);
+  const [currentStep, setCurrentStep] = React.useState(0);
+  const [completedSteps, setCompletedSteps] = React.useState<Set<number>>(new Set());
 
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
@@ -122,7 +152,35 @@ export function ClientFormDialog({
   })
 
   const { handleBackendErrors } = useBackendValidation(form.setError)
-  
+
+  const goNext = async () => {
+    const fields = STEP_FIELDS[currentStep]
+    const valid = fields.length === 0 || (await form.trigger(fields))
+    if (!valid) return
+    setCompletedSteps((prev) => new Set(prev).add(currentStep))
+    setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1))
+  }
+
+  const goBack = () => setCurrentStep((s) => Math.max(s - 1, 0))
+
+  const goToStep = (step: number) => {
+    if (step <= currentStep || completedSteps.has(step)) {
+      setCurrentStep(step)
+    }
+  }
+
+  // Se um erro (frontend ou backend) surgir num campo de um passo anterior, leva o usuário até lá
+  React.useEffect(() => {
+    const erroredFields = Object.keys(form.formState.errors) as (keyof ClientFormValues)[]
+    if (erroredFields.length === 0) return
+    const steps = erroredFields
+      .map((f) => FIELD_STEP[f])
+      .filter((s): s is number => s !== undefined)
+    if (steps.length === 0) return
+    const earliest = Math.min(...steps)
+    setCurrentStep((current) => (earliest < current ? earliest : current))
+  }, [form.formState.errors])
+
   // Monitorar quando o estado mudar e há uma cidade pendente para ser setada
   const currentState = form.watch('state');
   React.useEffect(() => {
@@ -185,11 +243,13 @@ export function ClientFormDialog({
     }
   }
 
-  // Preencher o formulário quando editingClient mudar
+  // Preencher o formulário quando editingClient mudar (ou o modal reabrir)
   React.useEffect(() => {
     // Limpar cidade pendente ao resetar formulário
     setPendingCity(null);
-    
+    setCurrentStep(0);
+    setCompletedSteps(new Set());
+
     if (editingClient) {
       form.reset({
         name: editingClient.name || "",
@@ -221,7 +281,7 @@ export function ClientFormDialog({
         isActive: true,
       })
     }
-  }, [editingClient, form])
+  }, [editingClient, form, open])
 
   const onSubmit = async (data: ClientFormValues) => {
     try {
@@ -292,9 +352,18 @@ export function ClientFormDialog({
             }
           </DialogDescription>
         </DialogHeader>
+
+        <OrderStepper
+          currentStep={currentStep}
+          steps={STEPS}
+          onStepClick={goToStep}
+          completedSteps={completedSteps}
+        />
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Dados básicos */}
+            {/* Passo 1: Dados básicos */}
+            {currentStep === 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -374,8 +443,11 @@ export function ClientFormDialog({
                 }}
               />
             </div>
+            )}
 
-            {/* Endereço */}
+            {/* Passo 2: Endereço e Status */}
+            {currentStep === 1 && (
+            <>
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Endereço (Opcional)</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -509,21 +581,40 @@ export function ClientFormDialog({
                 </FormItem>
               )}
             />
-            
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isEditing ? 'Salvando...' : 'Criando...'}
-                  </>
+            </>
+            )}
+
+            <DialogFooter className="flex-row items-center justify-between sm:justify-between gap-2">
+              <div>
+                {currentStep > 0 ? (
+                  <Button type="button" variant="outline" onClick={goBack} disabled={submitting}>
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Voltar
+                  </Button>
                 ) : (
-                  isEditing ? 'Salvar Alterações' : 'Criar Cliente'
+                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+                    Cancelar
+                  </Button>
                 )}
-              </Button>
+              </div>
+
+              {currentStep < STEPS.length - 1 ? (
+                <Button type="button" onClick={goNext} disabled={submitting}>
+                  Continuar
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              ) : (
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {isEditing ? 'Salvando...' : 'Criando...'}
+                    </>
+                  ) : (
+                    isEditing ? 'Salvar Alterações' : 'Criar Cliente'
+                  )}
+                </Button>
+              )}
             </DialogFooter>
           </form>
         </Form>
