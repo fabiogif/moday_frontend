@@ -270,7 +270,7 @@ describe('Ações em Massa - DataTable', () => {
   })
 
   describe('Atualização de Status em Massa', () => {
-    it('deve exibir botão "Mover para Concluído" quando há seleção', async () => {
+    it('deve exibir botão "Mover para Aceito" quando há seleção no mesmo status', async () => {
       render(
         <DataTable
           orders={mockOrders}
@@ -288,11 +288,41 @@ describe('Ações em Massa - DataTable', () => {
       await userEvent.click(rowCheckboxes[0])
 
       await waitFor(() => {
-        expect(screen.getByText(/Mover para Concluído/i)).toBeInTheDocument()
+        expect(screen.getByText(/Mover para Aceito/i)).toBeInTheDocument()
+        expect(screen.getByText(/Status atual:/i)).toBeInTheDocument()
+        expect(screen.getAllByText('Pendente').length).toBeGreaterThan(0)
       })
     })
 
-    it('deve abrir modal de confirmação ao clicar em "Mover para Concluído"', async () => {
+    it('deve desabilitar avanço quando status selecionados forem distintos', async () => {
+      const mixedOrders: Order[] = [
+        generateOrder({ id: 1, identify: 'ORD001', status: 'Pendente' }),
+        generateOrder({ id: 2, identify: 'ORD002', status: 'Aceito' }),
+      ]
+
+      render(
+        <DataTable
+          orders={mixedOrders}
+          onDeleteOrder={mockOnDeleteOrder}
+          onEditOrder={mockOnEditOrder}
+          onViewOrder={mockOnViewOrder}
+          onReceiptOrder={mockOnReceiptOrder}
+          onBulkDelete={mockOnBulkDelete}
+          onBulkUpdateStatus={mockOnBulkUpdateStatus}
+        />
+      )
+
+      await userEvent.click(screen.getByRole('checkbox', { name: 'Select all' }))
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Os pedidos possuem status distintos/i)
+        ).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /Mover para próximo status/i })).toBeDisabled()
+      })
+    })
+
+    it('deve abrir modal de confirmação ao clicar em "Mover para Aceito"', async () => {
       render(
         <DataTable
           orders={mockOrders}
@@ -309,11 +339,11 @@ describe('Ações em Massa - DataTable', () => {
       const rowCheckboxes = screen.getAllByRole('checkbox', { name: 'Select row' })
       await userEvent.click(rowCheckboxes[0])
 
-      // Clicar em "Mover para Concluído"
+      // Clicar em "Mover para Aceito"
       await waitFor(() => {
-        expect(screen.getByText(/Mover para Concluído/i)).toBeInTheDocument()
+        expect(screen.getByText(/Mover para Aceito/i)).toBeInTheDocument()
       })
-      await userEvent.click(screen.getByText(/Mover para Concluído/i))
+      await userEvent.click(screen.getByText(/Mover para Aceito/i))
 
       // Verificar que o modal foi aberto
       await waitFor(() => {
@@ -340,20 +370,41 @@ describe('Ações em Massa - DataTable', () => {
 
       // Abrir modal
       await waitFor(() => {
-        expect(screen.getByText(/Mover para Concluído/i)).toBeInTheDocument()
+        expect(screen.getByText(/Mover para Aceito/i)).toBeInTheDocument()
       })
-      await userEvent.click(screen.getByText(/Mover para Concluído/i))
+      await userEvent.click(screen.getByText(/Mover para Aceito/i))
 
       // Confirmar atualização
       const confirmButton = await screen.findByRole('button', { name: /^Confirmar$/i })
       await userEvent.click(confirmButton)
 
-      // Verificar que a função foi chamada com os IDs corretos e status
+      // Verificar que a função foi chamada com os IDs corretos e próximo status do fluxo
       await waitFor(() => {
         expect(mockOnBulkUpdateStatus).toHaveBeenCalledWith(
           expect.arrayContaining(['ORD001', 'ORD002']),
-          'Concluído'
+          'Aceito'
         )
+      })
+    })
+
+    it('deve exibir "Mover para <próximo status>" no menu de ações da linha', async () => {
+      render(
+        <DataTable
+          orders={mockOrders}
+          onDeleteOrder={mockOnDeleteOrder}
+          onEditOrder={mockOnEditOrder}
+          onViewOrder={mockOnViewOrder}
+          onReceiptOrder={mockOnReceiptOrder}
+          onBulkDelete={mockOnBulkDelete}
+          onBulkUpdateStatus={mockOnBulkUpdateStatus}
+        />
+      )
+
+      const menus = screen.getAllByRole('button', { name: /Abrir menu/i })
+      await userEvent.click(menus[0])
+
+      await waitFor(() => {
+        expect(screen.getByText(/Mover para Aceito/i)).toBeInTheDocument()
       })
     })
   })

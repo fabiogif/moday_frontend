@@ -162,23 +162,45 @@ export function getStatusDescription(status: string | null | undefined): string 
   return descriptions[status] || status
 }
 
+const CANONICAL_BY_STEP = ['Pendente', 'Aceito', 'Preparo', 'Concluído'] as const
+
+const STATUS_FLOW: Record<string, string> = {
+  Pendente: 'Aceito',
+  Aceito: 'Preparo',
+  Preparo: 'Concluído',
+}
+
+/**
+ * Normaliza qualquer status (incluindo legados) para o nome canônico do fluxo.
+ */
+export function toCanonicalStatus(status: string | null | undefined): string | null {
+  if (!status) return null
+
+  const normalized = normalizeStatusName(status)
+  if (!normalized) return null
+
+  if (isCancelledOrderStatus(normalized)) return 'Cancelado'
+  if ((FINAL_STATUSES as readonly string[]).includes(normalized)) return normalized
+
+  const step = resolveOrderStatusStepIndex(normalized)
+  if (step < 0) return 'Cancelado'
+  if (step >= CANONICAL_BY_STEP.length) return 'Concluído'
+
+  return CANONICAL_BY_STEP[step]
+}
+
 /**
  * Obtém o próximo status possível baseado no status atual.
  * Fluxo canônico: Pendente → Aceito → Preparo → Concluído.
+ * Aceita sinônimos legados (ex.: Entrega → Preparo → Concluído).
  */
 export function getNextStatus(currentStatus: string | null | undefined): string | null {
   if (!currentStatus) return null
-  if (isFinalStatus(currentStatus)) return null
 
-  const normalized = normalizeStatusName(currentStatus)
+  const canonical = toCanonicalStatus(currentStatus)
+  if (!canonical || canonical === 'Cancelado' || isFinalStatus(canonical)) return null
 
-  const flow: Record<string, string> = {
-    Pendente: 'Aceito',
-    Aceito: 'Preparo',
-    Preparo: 'Concluído',
-  }
-
-  return flow[normalized] ?? flow[currentStatus] ?? null
+  return STATUS_FLOW[canonical] ?? null
 }
 
 /**
@@ -186,4 +208,35 @@ export function getNextStatus(currentStatus: string | null | undefined): string 
  */
 export function getNextStatusName(currentStatus: string | null | undefined): string | null {
   return getNextStatus(currentStatus)
+}
+
+export type BulkAdvanceSelection =
+  | { kind: 'ready'; currentStatus: string; nextStatus: string }
+  | { kind: 'mixed' }
+  | { kind: 'final'; currentStatus: string }
+  | { kind: 'empty' }
+
+/**
+ * Resolve o avanço em massa a partir dos status selecionados.
+ * Só permite avançar se todos estiverem no mesmo status canônico.
+ */
+export function resolveBulkAdvanceSelection(
+  statuses: Array<string | null | undefined>
+): BulkAdvanceSelection {
+  if (statuses.length === 0) return { kind: 'empty' }
+
+  const canonicals = statuses.map((status) => toCanonicalStatus(status) ?? '')
+  const unique = new Set(canonicals.filter(Boolean))
+
+  if (unique.size === 0) return { kind: 'empty' }
+  if (unique.size > 1) return { kind: 'mixed' }
+
+  const currentStatus = [...unique][0]
+  const nextStatus = getNextStatus(currentStatus)
+
+  if (!nextStatus) {
+    return { kind: 'final', currentStatus }
+  }
+
+  return { kind: 'ready', currentStatus, nextStatus }
 }

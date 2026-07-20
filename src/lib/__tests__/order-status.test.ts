@@ -5,6 +5,8 @@ import {
   resolveOrderStatusStepIndex,
   getNextStatus,
   getNextStatusName,
+  toCanonicalStatus,
+  resolveBulkAdvanceSelection,
 } from '../order-status'
 
 describe('order-status', () => {
@@ -58,6 +60,40 @@ describe('order-status', () => {
     expect(getNextStatus('Preparo')).toBe('Concluído')
     expect(getNextStatus('Concluído')).toBeNull()
     expect(getNextStatus('Cancelado')).toBeNull()
+  })
+
+  it('getNextStatus avança a partir de status legados', () => {
+    expect(getNextStatus('Entrega')).toBe('Concluído')
+    expect(getNextStatus('Em Preparo')).toBe('Concluído')
+    expect(getNextStatus('Confirmado')).toBe('Preparo')
+    expect(getNextStatus('Pedido Recebido')).toBe('Aceito')
+    expect(getNextStatus('Entregue')).toBeNull()
+  })
+
+  it('toCanonicalStatus normaliza sinônimos', () => {
+    expect(toCanonicalStatus('Entrega')).toBe('Preparo')
+    expect(toCanonicalStatus('Confirmado')).toBe('Aceito')
+    expect(toCanonicalStatus('Entregue')).toBe('Concluído')
+  })
+
+  it('resolveBulkAdvanceSelection exige status iguais', () => {
+    expect(resolveBulkAdvanceSelection(['Pendente', 'Pendente'])).toEqual({
+      kind: 'ready',
+      currentStatus: 'Pendente',
+      nextStatus: 'Aceito',
+    })
+    expect(resolveBulkAdvanceSelection(['Pendente', 'Aceito'])).toEqual({
+      kind: 'mixed',
+    })
+    expect(resolveBulkAdvanceSelection(['Concluído', 'Concluído'])).toEqual({
+      kind: 'final',
+      currentStatus: 'Concluído',
+    })
+    expect(resolveBulkAdvanceSelection(['Entrega', 'Preparo'])).toEqual({
+      kind: 'ready',
+      currentStatus: 'Preparo',
+      nextStatus: 'Concluído',
+    })
   })
 
   it('getNextStatusName espelha getNextStatus', () => {

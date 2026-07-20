@@ -16,6 +16,7 @@ import { Plus, CheckCircle2 } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
+import { canEditOrder } from "@/lib/order-status"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -116,8 +117,7 @@ export default function OrdersPage() {
   }
 
   const handleEditOrder = (order: Order) => {
-    const finalStatuses = ["Concluído", "Cancelado"]
-    if (finalStatuses.includes(order.status || "")) {
+    if (!canEditOrder(order.status)) {
       toast.error("Este pedido está finalizado e não pode ser editado.")
       return
     }
@@ -251,12 +251,15 @@ export default function OrdersPage() {
       </div>
 
       <div className="@container/main px-4 lg:px-6">
-        <div className="flex justify-between items-center mb-4">
-          <div>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <h2 className="text-2xl font-bold">Pedidos</h2>
             <p className="text-muted-foreground">Gerencie todos os pedidos</p>
           </div>
-          <Button onClick={() => router.push("/orders/new")}>
+          <Button
+            className="h-9 w-full shrink-0 sm:w-auto"
+            onClick={() => router.push("/orders/new")}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Novo Pedido
           </Button>
