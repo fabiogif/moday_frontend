@@ -17,8 +17,9 @@ import { extractValidationErrors } from '@/lib/error-formatter'
 import { OrderStepper } from '@/components/order-stepper'
 import { useViaCEP } from '@/hooks/use-viacep'
 import { useReceitaWS } from '@/hooks/use-receitaws'
-import { formatReceitaWSCEP } from '@/services/receitaws'
+import { formatReceitaWSCEP, type CompanyData } from '@/services/receitaws'
 import { maskCNPJ, maskCPF, maskPhone, maskZipCode } from '@/lib/masks'
+import { CnpjAutofillConfirmDialog } from '@/components/cnpj-autofill-confirm-dialog'
 import {
   scheduleWizardStep,
   WIZARD_DIALOG_CONTENT_CLASS,
@@ -80,6 +81,8 @@ export function SupplierFormDialog({
   const [backendErrors, setBackendErrors] = useState<Record<string, string>>({})
   const [currentStep, setCurrentStep] = useState(0)
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
+  const [cnpjAutofillOpen, setCnpjAutofillOpen] = useState(false)
+  const [pendingCompany, setPendingCompany] = useState<CompanyData | null>(null)
 
   const {
     register,
@@ -122,7 +125,42 @@ export function SupplierFormDialog({
     }
     setCurrentStep(0)
     setCompletedSteps(new Set())
+    setCnpjAutofillOpen(false)
+    setPendingCompany(null)
   }, [supplier, setValue, reset, open])
+
+  const applyCompanyAutofill = (company: CompanyData) => {
+    const current = getValues()
+
+    if (company.nome && !current.name) setValue('name', company.nome, { shouldDirty: true })
+    if (company.nomeFantasia && !current.fantasy_name) {
+      setValue('fantasy_name', company.nomeFantasia, { shouldDirty: true })
+    }
+    if (company.email && !current.email) setValue('email', company.email, { shouldDirty: true })
+    if (company.phone && !current.phone) {
+      setValue('phone', maskPhone(company.phone), { shouldDirty: true })
+    }
+
+    if (company.address) setValue('address', company.address, { shouldDirty: true })
+    if (company.number) setValue('number', company.number, { shouldDirty: true })
+    if (company.complement) setValue('complement', company.complement, { shouldDirty: true })
+    if (company.neighborhood) setValue('neighborhood', company.neighborhood, { shouldDirty: true })
+    if (company.city) setValue('city', company.city, { shouldDirty: true })
+    if (company.state) setValue('state', company.state, { shouldDirty: true })
+    if (company.zipCode) {
+      setValue('zip_code', formatReceitaWSCEP(company.zipCode), { shouldDirty: true })
+    }
+
+    toast.success('Dados do fornecedor preenchidos automaticamente!')
+  }
+
+  const handleConfirmCnpjAutofill = () => {
+    if (pendingCompany) {
+      applyCompanyAutofill(pendingCompany)
+    }
+    setPendingCompany(null)
+    setCnpjAutofillOpen(false)
+  }
 
   const applyMaskedValue = (
     field: keyof SupplierFormData,
@@ -154,33 +192,8 @@ export function SupplierFormDialog({
     const company = await searchCNPJ(cnpj)
     if (!company) return
 
-    const shouldFill = window.confirm(
-      `Empresa encontrada: ${company.nome}\n\nDeseja preencher os dados automaticamente?`
-    )
-    if (!shouldFill) return
-
-    const current = getValues()
-
-    if (company.nome && !current.name) setValue('name', company.nome, { shouldDirty: true })
-    if (company.nomeFantasia && !current.fantasy_name) {
-      setValue('fantasy_name', company.nomeFantasia, { shouldDirty: true })
-    }
-    if (company.email && !current.email) setValue('email', company.email, { shouldDirty: true })
-    if (company.phone && !current.phone) {
-      setValue('phone', maskPhone(company.phone), { shouldDirty: true })
-    }
-
-    if (company.address) setValue('address', company.address, { shouldDirty: true })
-    if (company.number) setValue('number', company.number, { shouldDirty: true })
-    if (company.complement) setValue('complement', company.complement, { shouldDirty: true })
-    if (company.neighborhood) setValue('neighborhood', company.neighborhood, { shouldDirty: true })
-    if (company.city) setValue('city', company.city, { shouldDirty: true })
-    if (company.state) setValue('state', company.state, { shouldDirty: true })
-    if (company.zipCode) {
-      setValue('zip_code', formatReceitaWSCEP(company.zipCode), { shouldDirty: true })
-    }
-
-    toast.success('Dados do fornecedor preenchidos automaticamente!')
+    setPendingCompany(company)
+    setCnpjAutofillOpen(true)
   }
 
   const handleSearchCEP = async (cep: string) => {
@@ -668,6 +681,16 @@ export function SupplierFormDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <CnpjAutofillConfirmDialog
+        open={cnpjAutofillOpen}
+        onOpenChange={(nextOpen) => {
+          setCnpjAutofillOpen(nextOpen)
+          if (!nextOpen) setPendingCompany(null)
+        }}
+        companyName={pendingCompany?.nome || 'Empresa'}
+        onConfirm={handleConfirmCnpjAutofill}
+      />
     </Dialog>
   )
 }

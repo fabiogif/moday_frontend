@@ -27,12 +27,14 @@ import { useInputMask } from "@/hooks/use-input-mask"
 import { validateCNPJ, validateEmail, validatePhone } from "@/lib/masks"
 import { useViaCEP } from "@/hooks/use-viacep"
 import { useReceitaWS } from "@/hooks/use-receitaws"
+import { type CompanyData } from "@/services/receitaws"
 import { AlertCircle, CheckCircle2 } from "lucide-react"
 import { StateCityFormFields } from "@/components/location/state-city-form-fields"
 import { PlansSection } from "./components/plans-section"
 import { resolveImageUrl } from "@/lib/resolve-image-url"
 import { OrderStepper } from "@/components/order-stepper"
 import { extractValidationErrors } from "@/lib/error-formatter"
+import { CnpjAutofillConfirmDialog } from "@/components/cnpj-autofill-confirm-dialog"
 
 const companyFormSchema = z.object({
   name: z.string().min(1, "Nome da empresa é obrigatório"),
@@ -125,6 +127,8 @@ export default function CompanySettings() {
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
   const [validatingStep, setValidatingStep] = useState(false)
   const [backendErrors, setBackendErrors] = useState<Record<string, string>>({})
+  const [cnpjAutofillOpen, setCnpjAutofillOpen] = useState(false)
+  const [pendingCompany, setPendingCompany] = useState<CompanyData | null>(null)
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
@@ -245,6 +249,33 @@ export default function CompanySettings() {
   }
   
   // Função para buscar dados da empresa pelo CNPJ
+  const applyCompanyAutofill = (company: CompanyData) => {
+    if (company.nome && !form.getValues('name')) {
+      form.setValue('name', company.nome)
+    }
+    if (company.email && !form.getValues('email')) {
+      form.setValue('email', company.email)
+    }
+    if (company.phone && !form.getValues('phone')) {
+      form.setValue('phone', company.phone)
+    }
+
+    if (company.address) form.setValue('address', company.address)
+    if (company.city) form.setValue('city', company.city)
+    if (company.state) form.setValue('state', company.state)
+    if (company.zipCode) form.setValue('zipcode', company.zipCode)
+
+    toast.success('Dados da empresa preenchidos automaticamente!')
+  }
+
+  const handleConfirmCnpjAutofill = () => {
+    if (pendingCompany) {
+      applyCompanyAutofill(pendingCompany)
+    }
+    setPendingCompany(null)
+    setCnpjAutofillOpen(false)
+  }
+
   const handleSearchCNPJ = async (cnpj: string) => {
     const cleanCNPJ = cnpj.replace(/\D/g, '');
     
@@ -255,31 +286,8 @@ export default function CompanySettings() {
     const company = await searchCNPJ(cnpj);
     
     if (company) {
-      // Pergunta ao usuário se deseja preencher os dados
-      const shouldFill = window.confirm(
-        `Empresa encontrada: ${company.nome}\n\nDeseja preencher os dados automaticamente?`
-      );
-      
-      if (shouldFill) {
-        // Preenche dados básicos
-        if (company.nome && !form.getValues('name')) {
-          form.setValue('name', company.nome);
-        }
-        if (company.email && !form.getValues('email')) {
-          form.setValue('email', company.email);
-        }
-        if (company.phone && !form.getValues('phone')) {
-          form.setValue('phone', company.phone);
-        }
-        
-        // Preenche endereço
-        if (company.address) form.setValue('address', company.address);
-        if (company.city) form.setValue('city', company.city);
-        if (company.state) form.setValue('state', company.state);
-        if (company.zipCode) form.setValue('zipcode', company.zipCode);
-
-        toast.success('Dados da empresa preenchidos automaticamente!');
-      }
+      setPendingCompany(company)
+      setCnpjAutofillOpen(true)
     }
   }
 
@@ -1046,6 +1054,16 @@ export default function CompanySettings() {
           <PlansSection />
         </CardContent>
       </Card>
+
+      <CnpjAutofillConfirmDialog
+        open={cnpjAutofillOpen}
+        onOpenChange={(nextOpen) => {
+          setCnpjAutofillOpen(nextOpen)
+          if (!nextOpen) setPendingCompany(null)
+        }}
+        companyName={pendingCompany?.nome || 'Empresa'}
+        onConfirm={handleConfirmCnpjAutofill}
+      />
     </div>
   )
 }
