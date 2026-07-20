@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ChangeEvent } from 'react'
 import { useForm } from 'react-hook-form'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -10,11 +10,19 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Supplier, SupplierFormData } from '@/hooks/use-suppliers'
-import { Building2, Phone, MapPin, CreditCard, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Building2, Phone, MapPin, CreditCard, AlertCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { extractValidationErrors } from '@/lib/error-formatter'
 import { OrderStepper } from '@/components/order-stepper'
+import { useViaCEP } from '@/hooks/use-viacep'
+import { useReceitaWS } from '@/hooks/use-receitaws'
+import { formatReceitaWSCEP } from '@/services/receitaws'
+import { maskCNPJ, maskCPF, maskPhone, maskZipCode } from '@/lib/masks'
+import {
+  scheduleWizardStep,
+  WIZARD_DIALOG_CONTENT_CLASS,
+} from '../../components/account-form-shared'
 
 interface SupplierFormDialogProps {
   open: boolean
@@ -79,13 +87,26 @@ export function SupplierFormDialog({
     formState: { errors },
     reset,
     setValue,
+    getValues,
     watch,
     trigger,
   } = useForm<SupplierFormData>({
     mode: 'onBlur',
   })
 
+  const { loading: loadingCEP, searchCEP } = useViaCEP()
+  const { loading: loadingCNPJ, searchCNPJ } = useReceitaWS()
+
   const documentType = watch('document_type')
+  const documentValue = watch('document')
+  const phoneValue = watch('phone')
+  const phone2Value = watch('phone2')
+  const zipCodeValue = watch('zip_code')
+
+  useEffect(() => {
+    register('document', { required: 'O documento é obrigatório' })
+    register('phone', { required: 'O telefone é obrigatório' })
+  }, [register])
 
   useEffect(() => {
     if (supplier) {
@@ -103,12 +124,90 @@ export function SupplierFormDialog({
     setCompletedSteps(new Set())
   }, [supplier, setValue, reset, open])
 
+  const applyMaskedValue = (
+    field: keyof SupplierFormData,
+    value: string,
+    maskFn: (value: string) => string
+  ) => {
+    setValue(field, maskFn(value) as never, { shouldDirty: true, shouldValidate: true })
+  }
+
+  const handleDocumentChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const maskFn = documentType === 'cpf' ? maskCPF : maskCNPJ
+    applyMaskedValue('document', e.target.value, maskFn)
+  }
+
+  const handlePhoneChange = (field: 'phone' | 'phone2') => (e: ChangeEvent<HTMLInputElement>) => {
+    applyMaskedValue(field, e.target.value, maskPhone)
+  }
+
+  const handleZipCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    applyMaskedValue('zip_code', e.target.value, maskZipCode)
+  }
+
+  const handleSearchCNPJ = async (cnpj: string) => {
+    if (documentType !== 'cnpj') return
+
+    const cleanCNPJ = cnpj.replace(/\D/g, '')
+    if (cleanCNPJ.length !== 14) return
+
+    const company = await searchCNPJ(cnpj)
+    if (!company) return
+
+    const shouldFill = window.confirm(
+      `Empresa encontrada: ${company.nome}\n\nDeseja preencher os dados automaticamente?`
+    )
+    if (!shouldFill) return
+
+    const current = getValues()
+
+    if (company.nome && !current.name) setValue('name', company.nome, { shouldDirty: true })
+    if (company.nomeFantasia && !current.fantasy_name) {
+      setValue('fantasy_name', company.nomeFantasia, { shouldDirty: true })
+    }
+    if (company.email && !current.email) setValue('email', company.email, { shouldDirty: true })
+    if (company.phone && !current.phone) {
+      setValue('phone', maskPhone(company.phone), { shouldDirty: true })
+    }
+
+    if (company.address) setValue('address', company.address, { shouldDirty: true })
+    if (company.number) setValue('number', company.number, { shouldDirty: true })
+    if (company.complement) setValue('complement', company.complement, { shouldDirty: true })
+    if (company.neighborhood) setValue('neighborhood', company.neighborhood, { shouldDirty: true })
+    if (company.city) setValue('city', company.city, { shouldDirty: true })
+    if (company.state) setValue('state', company.state, { shouldDirty: true })
+    if (company.zipCode) {
+      setValue('zip_code', formatReceitaWSCEP(company.zipCode), { shouldDirty: true })
+    }
+
+    toast.success('Dados do fornecedor preenchidos automaticamente!')
+  }
+
+  const handleSearchCEP = async (cep: string) => {
+    const cleanCEP = cep.replace(/\D/g, '')
+    if (cleanCEP.length !== 8) return
+
+    try {
+      const address = await searchCEP(cep)
+      if (!address) return
+
+      setValue('address', address.address || address.logradouro || '', { shouldDirty: true })
+      setValue('neighborhood', address.neighborhood || address.bairro || '', { shouldDirty: true })
+      setValue('city', address.city || address.localidade || '', { shouldDirty: true })
+      setValue('state', address.state || address.uf || '', { shouldDirty: true })
+    } catch {
+      // Erro já tratado pelo useViaCEP
+    }
+  }
+
   const goNext = async () => {
     const fields = STEP_FIELDS[currentStep]
     const valid = fields.length === 0 || (await trigger(fields))
     if (!valid) return
     setCompletedSteps((prev) => new Set(prev).add(currentStep))
-    setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1))
+    scheduleWizardStep(() => {
+      setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1))
+    })
   }
 
   const goBack = () => setCurrentStep((s) => Math.max(s - 1, 0))
@@ -166,10 +265,10 @@ export function SupplierFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-            <Building2 className="h-6 w-6" />
+      <DialogContent className={WIZARD_DIALOG_CONTENT_CLASS}>
+        <DialogHeader className="shrink-0 space-y-1 text-left">
+          <DialogTitle className="flex items-center gap-2 text-xl font-bold sm:text-2xl">
+            <Building2 className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" />
             {supplier ? 'Editar Fornecedor' : 'Novo Fornecedor'}
           </DialogTitle>
           <DialogDescription>
@@ -177,33 +276,45 @@ export function SupplierFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <OrderStepper
-          currentStep={currentStep}
-          steps={STEPS}
-          onStepClick={goToStep}
-          completedSteps={completedSteps}
-        />
+        <div className="shrink-0 overflow-x-hidden">
+          <OrderStepper
+            currentStep={currentStep}
+            steps={STEPS}
+            onStepClick={goToStep}
+            completedSteps={completedSteps}
+          />
+        </div>
 
         {backendErrors._general && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="shrink-0">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{backendErrors._general}</AlertDescription>
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+        <form
+          onSubmit={(e) => {
+            if (!isLastStep) {
+              e.preventDefault()
+              return
+            }
+            void handleSubmit(handleFormSubmit)(e)
+          }}
+          className="flex min-h-0 flex-1 flex-col gap-6 overflow-x-hidden"
+        >
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden pr-1">
           {/* Passo 1: Dados Principais */}
           {currentStep === 0 && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Dados Principais</h3>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="name">Nome/Razão Social *</Label>
                   <Input
                     id="name"
+                    className={cn('h-9 w-full', hasError('name') && 'border-destructive')}
                     {...register('name', { required: 'O nome é obrigatório' })}
-                    className={cn(hasError('name') && 'border-destructive')}
                     placeholder="Ex: Empresa Fornecedora Ltda"
                   />
                   {hasError('name') && (
@@ -214,24 +325,25 @@ export function SupplierFormDialog({
                   )}
                 </div>
 
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="fantasy_name">Nome Fantasia</Label>
                   <Input
                     id="fantasy_name"
+                    className="h-9 w-full"
                     {...register('fantasy_name')}
                     placeholder="Ex: Fornecedora"
                   />
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="document_type">Tipo de Documento *</Label>
                   <Select
                     value={documentType}
                     onValueChange={(value) => setValue('document_type', value as any)}
                   >
-                    <SelectTrigger className={cn(hasError('document_type') && 'border-destructive')}>
+                    <SelectTrigger className={cn('h-9 w-full', hasError('document_type') && 'border-destructive')}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -241,14 +353,36 @@ export function SupplierFormDialog({
                   </Select>
                 </div>
 
-                <div className="md:col-span-2 space-y-2">
+                <div className="min-w-0 space-y-2 md:col-span-2">
                   <Label htmlFor="document">{documentType === 'cnpj' ? 'CNPJ' : 'CPF'} *</Label>
-                  <Input
-                    id="document"
-                    {...register('document', { required: 'O documento é obrigatório' })}
-                    className={cn(hasError('document') && 'border-destructive')}
-                    placeholder={documentType === 'cnpj' ? '00.000.000/0000-00' : '000.000.000-00'}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="document"
+                      className={cn('h-9 w-full', hasError('document') && 'border-destructive')}
+                      value={documentValue || ''}
+                      onChange={handleDocumentChange}
+                      onBlur={(e) => {
+                        void trigger('document')
+                        void handleSearchCNPJ(e.target.value)
+                      }}
+                      placeholder={documentType === 'cnpj' ? '00.000.000/0000-00' : '000.000.000-00'}
+                      maxLength={documentType === 'cnpj' ? 18 : 14}
+                      disabled={loadingCNPJ}
+                      name="document"
+                    />
+                    {loadingCNPJ && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {documentType === 'cnpj'
+                      ? loadingCNPJ
+                        ? 'Consultando Receita Federal...'
+                        : 'Digite o CNPJ para buscar dados da empresa'
+                      : 'Informe o CPF do fornecedor'}
+                  </p>
                   {hasError('document') && (
                     <p className="text-sm text-destructive flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
@@ -268,14 +402,18 @@ export function SupplierFormDialog({
                 Contato
               </h3>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="phone">Telefone *</Label>
                   <Input
                     id="phone"
-                    {...register('phone', { required: 'O telefone é obrigatório' })}
-                    className={cn(hasError('phone') && 'border-destructive')}
+                    className={cn('h-9 w-full', hasError('phone') && 'border-destructive')}
+                    value={phoneValue || ''}
+                    onChange={handlePhoneChange('phone')}
+                    onBlur={() => void trigger('phone')}
                     placeholder="(00) 00000-0000"
+                    maxLength={15}
+                    name="phone"
                   />
                   {hasError('phone') && (
                     <p className="text-sm text-destructive">
@@ -284,22 +422,25 @@ export function SupplierFormDialog({
                   )}
                 </div>
 
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="phone2">Telefone 2</Label>
                   <Input
                     id="phone2"
-                    {...register('phone2')}
+                    className="h-9 w-full"
+                    value={phone2Value || ''}
+                    onChange={handlePhoneChange('phone2')}
                     placeholder="(00) 00000-0000"
+                    maxLength={15}
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="email">E-mail</Label>
                   <Input
                     id="email"
                     type="email"
+                    className={cn('h-9 w-full', hasError('email') && 'border-destructive')}
                     {...register('email')}
-                    className={cn(hasError('email') && 'border-destructive')}
                     placeholder="contato@fornecedor.com.br"
                   />
                   {hasError('email') && (
@@ -320,65 +461,88 @@ export function SupplierFormDialog({
                 Endereço <span className="text-sm text-muted-foreground font-normal">(opcional)</span>
               </h3>
 
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="md:col-span-2 space-y-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="min-w-0 space-y-2">
+                  <Label htmlFor="zip_code">CEP</Label>
+                  <div className="relative">
+                    <Input
+                      id="zip_code"
+                      className="h-9 w-full"
+                      value={zipCodeValue || ''}
+                      onChange={handleZipCodeChange}
+                      onBlur={(e) => {
+                        void handleSearchCEP(e.target.value)
+                      }}
+                      placeholder="00000-000"
+                      maxLength={9}
+                      disabled={loadingCEP}
+                    />
+                    {loadingCEP && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {loadingCEP ? 'Buscando endereço...' : 'Digite o CEP para preencher automaticamente'}
+                  </p>
+                </div>
+
+                <div className="min-w-0 space-y-2 md:col-span-2">
                   <Label htmlFor="address">Logradouro</Label>
                   <Input
                     id="address"
+                    className="h-9 w-full"
                     {...register('address')}
                     placeholder="Rua, Avenida, etc."
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="number">Número</Label>
                   <Input
                     id="number"
+                    className="h-9 w-full"
                     {...register('number')}
                     placeholder="123"
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="complement">Complemento</Label>
                   <Input
                     id="complement"
+                    className="h-9 w-full"
                     {...register('complement')}
                     placeholder="Sala, Bloco, etc."
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="neighborhood">Bairro</Label>
                   <Input
                     id="neighborhood"
+                    className="h-9 w-full"
                     {...register('neighborhood')}
                     placeholder="Centro"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="zip_code">CEP</Label>
-                  <Input
-                    id="zip_code"
-                    {...register('zip_code')}
-                    placeholder="00000-000"
-                  />
-                </div>
-
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="city">Cidade</Label>
                   <Input
                     id="city"
+                    className="h-9 w-full"
                     {...register('city')}
                     placeholder="São Paulo"
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="state">Estado (UF)</Label>
                   <Input
                     id="state"
+                    className="h-9 w-full"
                     {...register('state')}
                     placeholder="SP"
                     maxLength={2}
@@ -397,38 +561,42 @@ export function SupplierFormDialog({
                   Dados Bancários <span className="text-sm text-muted-foreground font-normal">(opcional)</span>
                 </h3>
 
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="min-w-0 space-y-2">
                     <Label htmlFor="bank_name">Banco</Label>
                     <Input
                       id="bank_name"
+                      className="h-9 w-full"
                       {...register('bank_name')}
                       placeholder="Ex: Banco do Brasil"
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="min-w-0 space-y-2">
                     <Label htmlFor="bank_agency">Agência</Label>
                     <Input
                       id="bank_agency"
+                      className="h-9 w-full"
                       {...register('bank_agency')}
                       placeholder="0000"
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="min-w-0 space-y-2">
                     <Label htmlFor="bank_account">Conta</Label>
                     <Input
                       id="bank_account"
+                      className="h-9 w-full"
                       {...register('bank_account')}
                       placeholder="00000-0"
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="min-w-0 space-y-2">
                     <Label htmlFor="pix_key">Chave PIX</Label>
                     <Input
                       id="pix_key"
+                      className="h-9 w-full"
                       {...register('pix_key')}
                       placeholder="CNPJ, email, telefone ou chave aleatória"
                     />
@@ -436,38 +604,63 @@ export function SupplierFormDialog({
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="min-w-0 space-y-2">
                 <Label htmlFor="notes">Observações</Label>
                 <Textarea
                   id="notes"
                   {...register('notes')}
                   placeholder="Informações adicionais sobre o fornecedor..."
                   rows={3}
+                  className="resize-none"
                 />
               </div>
             </div>
           )}
+          </div>
 
-          <DialogFooter className="flex-row items-center justify-between sm:justify-between gap-2">
-            <div>
-              {currentStep > 0 ? (
-                <Button type="button" variant="outline" onClick={goBack} disabled={isLoading}>
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Voltar
-                </Button>
-              ) : (
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
-                  Cancelar
-                </Button>
-              )}
-            </div>
+          <DialogFooter className="shrink-0 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {currentStep > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 w-full sm:justify-self-start"
+                onClick={goBack}
+                disabled={isLoading}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Voltar
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 w-full sm:justify-self-start"
+                onClick={() => onOpenChange(false)}
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+            )}
 
             {isLastStep ? (
-              <Button type="submit" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="h-9 w-full sm:justify-self-end"
+                disabled={isLoading}
+              >
                 {isLoading ? 'Salvando...' : supplier ? 'Atualizar' : 'Criar Fornecedor'}
               </Button>
             ) : (
-              <Button type="button" onClick={goNext} disabled={isLoading}>
+              <Button
+                type="button"
+                className="h-9 w-full sm:justify-self-end"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  void goNext()
+                }}
+                disabled={isLoading}
+              >
                 Continuar
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Button>

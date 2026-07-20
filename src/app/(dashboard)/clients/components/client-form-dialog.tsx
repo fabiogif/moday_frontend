@@ -31,8 +31,11 @@ import { validateCPF, validateEmail, validatePhone, maskCPF, maskPhone, maskZipC
 import { useViaCEP } from "@/hooks/use-viacep"
 import { StateCityFormFields } from "@/components/location/state-city-form-fields"
 import { useBackendValidation } from "@/hooks/use-backend-validation"
-import { showErrorToast, showSuccessToast } from "@/components/ui/error-toast"
+import { showErrorToast } from "@/components/ui/error-toast"
 import { OrderStepper } from "@/components/order-stepper"
+import { apiClient, endpoints } from "@/lib/api-client"
+import { extractValidationErrors } from "@/lib/error-formatter"
+import { scheduleWizardStep } from "@/app/(dashboard)/financial/components/account-form-shared"
 
 const clientFormSchema = z.object({
   name: z.string().min(3, {
@@ -129,9 +132,12 @@ export function ClientFormDialog({
   const isEditing = !!editingClient
   const { loading: loadingCEP, searchCEP } = useViaCEP();
   const [submitting, setSubmitting] = React.useState(false);
+  const [validatingStep, setValidatingStep] = React.useState(false);
   const [pendingCity, setPendingCity] = React.useState<string | null>(null);
   const [currentStep, setCurrentStep] = React.useState(0);
   const [completedSteps, setCompletedSteps] = React.useState<Set<number>>(new Set());
+  const [backendErrors, setBackendErrors] = React.useState<Record<string, string>>({});
+  const [errorSnapshot, setErrorSnapshot] = React.useState<string | null>(null);
 
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
@@ -153,17 +159,135 @@ export function ClientFormDialog({
 
   const { handleBackendErrors } = useBackendValidation(form.setError)
 
+  const watchedValues = form.watch()
+
+  const getStepSnapshot = React.useCallback(
+    (step: number, values: ClientFormValues) => {
+      const fields =
+        step === 0
+          ? (["name", "cpf", "email", "phone"] as const)
+          : (["address", "number", "complement", "neighborhood", "city", "state", "zip_code", "isActive"] as const)
+      return JSON.stringify(
+        Object.fromEntries(fields.map((field) => [field, values[field] ?? ""]))
+      )
+    },
+    []
+  )
+
+  const stepBackendErrorFields = React.useMemo(() => {
+    const fields =
+      currentStep === 0
+        ? ["name", "cpf", "email", "phone"]
+        : ["address", "number", "complement", "neighborhood", "city", "state", "zip_code", "isActive", "is_active"]
+    return Object.keys(backendErrors).filter((field) => fields.includes(field))
+  }, [backendErrors, currentStep])
+
+  const hasPendingBackendErrors = stepBackendErrorFields.length > 0
+  const fieldsChangedSinceError =
+    errorSnapshot !== null &&
+    getStepSnapshot(currentStep, watchedValues) !== errorSnapshot
+
+  const canContinue =
+    !submitting &&
+    !validatingStep &&
+    (!hasPendingBackendErrors || fieldsChangedSinceError)
+
+  const applyBackendErrors = (error: unknown) => {
+    const extracted = extractValidationErrors(error)
+    const { _general, ...fieldErrors } = extracted
+    setBackendErrors(fieldErrors)
+    setErrorSnapshot(getStepSnapshot(currentStep, form.getValues()))
+
+    Object.entries(fieldErrors).forEach(([field, message]) => {
+      form.setError(field as keyof ClientFormValues, {
+        type: "server",
+        message,
+      })
+    })
+
+    handleBackendErrors(error)
+
+    if (_general) {
+      showErrorToast(error, "Erro de validação")
+    } else if (Object.keys(fieldErrors).length > 0) {
+      showErrorToast(error, "Erro de validação")
+    }
+
+    const firstErrorField = Object.keys(fieldErrors)[0] as keyof ClientFormValues | undefined
+    const stepWithError = firstErrorField ? FIELD_STEP[firstErrorField] : undefined
+    if (stepWithError !== undefined) {
+      setCurrentStep(stepWithError)
+    }
+  }
+
+  const clearBackendValidation = () => {
+    setBackendErrors({})
+    setErrorSnapshot(null)
+    const serverFields = Object.keys(form.formState.errors) as (keyof ClientFormValues)[]
+    serverFields.forEach((field) => {
+      if (form.formState.errors[field]?.type === "server") {
+        form.clearErrors(field)
+      }
+    })
+  }
+
+  const buildStepPayload = (step: number) => {
+    const values = form.getValues()
+    const base = {
+      step,
+      client_id: editingClient?.id,
+    }
+
+    if (step === 0) {
+      return {
+        ...base,
+        name: values.name,
+        cpf: values.cpf,
+        email: values.email,
+        phone: values.phone,
+      }
+    }
+
+    return {
+      ...base,
+      address: values.address,
+      number: values.number,
+      complement: values.complement,
+      neighborhood: values.neighborhood,
+      city: values.city,
+      state: values.state,
+      zip_code: values.zip_code,
+      isActive: values.isActive,
+      is_active: values.isActive,
+    }
+  }
+
   const goNext = async () => {
+    if (!canContinue) return
+
     const fields = STEP_FIELDS[currentStep]
     const valid = fields.length === 0 || (await form.trigger(fields))
     if (!valid) return
-    setCompletedSteps((prev) => new Set(prev).add(currentStep))
-    setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1))
+
+    try {
+      setValidatingStep(true)
+      await apiClient.post(endpoints.clients.validate, buildStepPayload(currentStep))
+      clearBackendValidation()
+      setCompletedSteps((prev) => new Set(prev).add(currentStep))
+      scheduleWizardStep(() => {
+        setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1))
+      })
+    } catch (error: unknown) {
+      applyBackendErrors(error)
+    } finally {
+      setValidatingStep(false)
+    }
   }
 
   const goBack = () => setCurrentStep((s) => Math.max(s - 1, 0))
 
   const goToStep = (step: number) => {
+    if (hasPendingBackendErrors && !fieldsChangedSinceError) return
     if (step <= currentStep || completedSteps.has(step)) {
       setCurrentStep(step)
     }
@@ -249,6 +373,8 @@ export function ClientFormDialog({
     setPendingCity(null);
     setCurrentStep(0);
     setCompletedSteps(new Set());
+    setBackendErrors({});
+    setErrorSnapshot(null);
 
     if (editingClient) {
       form.reset({
@@ -297,40 +423,16 @@ export function ClientFormDialog({
       form.reset()
       onOpenChange(false)
       
-    } catch (error: any) {
-      // Log organizado apenas em desenvolvimento
-      if (process.env.NODE_ENV === 'development') {
-
-      }
-      
-      // Tentar tratar erros do backend automaticamente
-      const handled = handleBackendErrors(error)
-      
-      // Se não conseguiu tratar automaticamente, mostrar erro formatado
-      if (!handled) {
-        // Mostrar toast com erro formatado
-        showErrorToast(error, isEditing ? 'Erro ao Atualizar Cliente' : 'Erro ao Cadastrar Cliente')
-        
-        // Verificar se é erro de CPF duplicado
-        if (error?.data?.message?.includes('CPF')) {
-          form.setError('cpf', { 
-            type: 'manual', 
-            message: error.data.message 
-          })
-        } else if (error?.data?.message?.includes('email')) {
-          form.setError('email', { 
-            type: 'manual', 
-            message: error.data.message 
-          })
-        }
-      } else {
-        // Se foi tratado, ainda mostrar toast
-        showErrorToast(error, isEditing ? 'Erro ao Atualizar Cliente' : 'Erro ao Cadastrar Cliente')
-      }
+    } catch (error: unknown) {
+      applyBackendErrors(error)
     } finally {
       setSubmitting(false)
     }
   }
+
+  const isLastStep = currentStep === STEPS.length - 1
+  const fieldHasError = (field: keyof ClientFormValues) =>
+    Boolean(form.formState.errors[field] || backendErrors[field])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -342,8 +444,8 @@ export function ClientFormDialog({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-3xl flex-col gap-6 overflow-x-hidden overflow-y-auto p-6 sm:max-w-3xl">
+        <DialogHeader className="shrink-0 space-y-1 text-left">
           <DialogTitle>{isEditing ? 'Editar Cliente' : 'Novo Cliente'}</DialogTitle>
           <DialogDescription>
             {isEditing 
@@ -353,18 +455,30 @@ export function ClientFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <OrderStepper
-          currentStep={currentStep}
-          steps={STEPS}
-          onStepClick={goToStep}
-          completedSteps={completedSteps}
-        />
+        <div className="shrink-0 overflow-x-hidden">
+          <OrderStepper
+            currentStep={currentStep}
+            steps={STEPS}
+            onStepClick={goToStep}
+            completedSteps={completedSteps}
+          />
+        </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              if (!isLastStep) {
+                e.preventDefault()
+                return
+              }
+              void form.handleSubmit(onSubmit)(e)
+            }}
+            className="flex min-h-0 flex-1 flex-col gap-6 overflow-x-hidden"
+          >
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden pr-1">
             {/* Passo 1: Dados básicos */}
             {currentStep === 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
                 name="name"
@@ -372,9 +486,16 @@ export function ClientFormDialog({
                   <FormItem className="md:col-span-2">
                     <FormLabel>Nome Completo *</FormLabel>
                     <FormControl>
-                      <Input placeholder="João Silva" {...field} />
+                      <Input
+                        placeholder="João Silva"
+                        className={fieldHasError("name") ? "border-destructive" : undefined}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
+                    {backendErrors.name && !form.formState.errors.name && (
+                      <p className="text-sm font-medium text-destructive">{backendErrors.name}</p>
+                    )}
                   </FormItem>
                 )}
               />
@@ -391,6 +512,7 @@ export function ClientFormDialog({
                       <FormControl>
                         <Input 
                           placeholder="000.000.000-00" 
+                          className={fieldHasError("cpf") ? "border-destructive" : undefined}
                           value={field.value}
                           onChange={handleCPFChange}
                           onBlur={field.onBlur}
@@ -399,6 +521,9 @@ export function ClientFormDialog({
                         />
                       </FormControl>
                       <FormMessage />
+                      {backendErrors.cpf && !form.formState.errors.cpf && (
+                        <p className="text-sm font-medium text-destructive">{backendErrors.cpf}</p>
+                      )}
                     </FormItem>
                   );
                 }}
@@ -411,9 +536,17 @@ export function ClientFormDialog({
                   <FormItem>
                     <FormLabel>Email *</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="joao@example.com" {...field} />
+                      <Input
+                        type="email"
+                        placeholder="joao@example.com"
+                        className={fieldHasError("email") ? "border-destructive" : undefined}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
+                    {backendErrors.email && !form.formState.errors.email && (
+                      <p className="text-sm font-medium text-destructive">{backendErrors.email}</p>
+                    )}
                   </FormItem>
                 )}
               />
@@ -430,6 +563,7 @@ export function ClientFormDialog({
                       <FormControl>
                         <Input 
                           placeholder="(11) 99999-9999" 
+                          className={fieldHasError("phone") ? "border-destructive" : undefined}
                           value={field.value}
                           onChange={handlePhoneChange}
                           onBlur={field.onBlur}
@@ -438,6 +572,9 @@ export function ClientFormDialog({
                         />
                       </FormControl>
                       <FormMessage />
+                      {backendErrors.phone && !form.formState.errors.phone && (
+                        <p className="text-sm font-medium text-destructive">{backendErrors.phone}</p>
+                      )}
                     </FormItem>
                   );
                 }}
@@ -583,28 +720,61 @@ export function ClientFormDialog({
             />
             </>
             )}
+            </div>
 
-            <DialogFooter className="flex-row items-center justify-between sm:justify-between gap-2">
-              <div>
-                {currentStep > 0 ? (
-                  <Button type="button" variant="outline" onClick={goBack} disabled={submitting}>
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Voltar
-                  </Button>
-                ) : (
-                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-                    Cancelar
-                  </Button>
-                )}
-              </div>
-
-              {currentStep < STEPS.length - 1 ? (
-                <Button type="button" onClick={goNext} disabled={submitting}>
-                  Continuar
-                  <ChevronRight className="h-4 w-4 ml-1" />
+            <DialogFooter className="shrink-0 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {currentStep > 0 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-9 w-full sm:justify-self-start"
+                  onClick={goBack}
+                  disabled={submitting || validatingStep}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Voltar
                 </Button>
               ) : (
-                <Button type="submit" disabled={submitting}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-9 w-full sm:justify-self-start"
+                  onClick={() => onOpenChange(false)}
+                  disabled={submitting || validatingStep}
+                >
+                  Cancelar
+                </Button>
+              )}
+
+              {currentStep < STEPS.length - 1 ? (
+                <Button
+                  type="button"
+                  className="h-9 w-full sm:justify-self-end"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    void goNext()
+                  }}
+                  disabled={!canContinue}
+                >
+                  {validatingStep ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Validando...
+                    </>
+                  ) : (
+                    <>
+                      Continuar
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  className="h-9 w-full sm:justify-self-end"
+                  disabled={submitting || validatingStep || (hasPendingBackendErrors && !fieldsChangedSinceError)}
+                >
                   {submitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -230,240 +230,291 @@ export function BankAccountForm({ open, account, onClose, onSuccess }: BankAccou
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-2xl flex-col gap-6 overflow-x-hidden overflow-y-auto p-6 sm:max-w-2xl">
+        <DialogHeader className="shrink-0 space-y-1 text-left">
           <DialogTitle>{account ? 'Editar' : 'Nova'} Conta Bancária</DialogTitle>
           <DialogDescription>
-            {account 
-              ? 'Atualize os dados da conta bancária' 
-              : 'Cadastre uma conta bancária para receber pagamentos'
-            }
+            {account
+              ? 'Atualize os dados da conta bancária'
+              : 'Cadastre uma conta bancária para receber pagamentos'}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Tipo de Conta */}
-          <div>
-            <Label>Tipo de Conta *</Label>
-            <Select
-              value={formData.account_type}
-              onValueChange={(value: any) => setFormData({ ...formData, account_type: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="checking">Conta Corrente</SelectItem>
-                <SelectItem value="savings">Conta Poupança</SelectItem>
-                <SelectItem value="payment">Conta Pagamento</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Banco */}
-          <div>
-            <Label>Banco *</Label>
-            <Select
-              value={formData.bank_code}
-              onValueChange={(value) => setFormData({ ...formData, bank_code: value })}
-              disabled={isLoadingBanks || !!account}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={isLoadingBanks ? "Carregando..." : "Selecione o banco"} />
-              </SelectTrigger>
-              <SelectContent>
-                {banks.map((bank) => (
-                  <SelectItem key={bank.code} value={bank.code}>
-                    {bank.code} - {bank.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Agência e Dígito */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-2">
-              <Label>Agência *</Label>
-              <Input
-                value={formData.agency}
-                onChange={(e) => setFormData({ ...formData, agency: e.target.value.replace(/\D/g, '') })}
-                placeholder="0001"
-                maxLength={10}
-                required
-                disabled={!!account}
-              />
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col gap-6 overflow-x-hidden">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden pr-1">
+            <div className="min-w-0 space-y-2">
+              <Label htmlFor="account_type">Tipo de Conta *</Label>
+              <Select
+                value={formData.account_type}
+                onValueChange={(value: BankAccountFormData['account_type']) =>
+                  setFormData({ ...formData, account_type: value })
+                }
+              >
+                <SelectTrigger id="account_type" className="h-9 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="checking">Conta Corrente</SelectItem>
+                  <SelectItem value="savings">Conta Poupança</SelectItem>
+                  <SelectItem value="payment">Conta Pagamento</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <Label>Dígito</Label>
-              <Input
-                value={formData.agency_digit}
-                onChange={(e) => setFormData({ ...formData, agency_digit: e.target.value.replace(/\D/g, '') })}
-                placeholder="0"
-                maxLength={2}
-                disabled={!!account}
-              />
-            </div>
-          </div>
 
-          {/* Conta e Dígito */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-2">
-              <Label>Número da Conta *</Label>
-              <Input
-                value={formData.account_number}
-                onChange={(e) => setFormData({ ...formData, account_number: e.target.value.replace(/\D/g, '') })}
-                placeholder="12345678"
-                maxLength={20}
-                required
-                disabled={!!account}
-              />
+            <div className="min-w-0 space-y-2">
+              <Label htmlFor="bank_code">Banco *</Label>
+              <Select
+                value={formData.bank_code}
+                onValueChange={(value) => setFormData({ ...formData, bank_code: value })}
+                disabled={isLoadingBanks || !!account}
+              >
+                <SelectTrigger id="bank_code" className="h-9 w-full">
+                  <SelectValue
+                    placeholder={isLoadingBanks ? 'Carregando...' : 'Selecione o banco'}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {banks.map((bank) => (
+                    <SelectItem key={bank.code} value={bank.code}>
+                      {bank.code} - {bank.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <Label>Dígito *</Label>
-              <Input
-                value={formData.account_digit}
-                onChange={(e) => setFormData({ ...formData, account_digit: e.target.value.replace(/\D/g, '') })}
-                placeholder="0"
-                maxLength={2}
-                required
-                disabled={!!account}
-              />
-            </div>
-          </div>
 
-          {!account && (
-            <>
-              {/* Titular */}
-              <div>
-                <Label>Nome do Titular *</Label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="min-w-0 space-y-2 sm:col-span-2">
+                <Label htmlFor="agency">Agência *</Label>
                 <Input
-                  value={formData.account_holder_name}
-                  onChange={(e) => setFormData({ ...formData, account_holder_name: e.target.value })}
-                  placeholder="Nome completo ou razão social"
+                  id="agency"
+                  className="h-9 w-full"
+                  value={formData.agency}
+                  onChange={(e) =>
+                    setFormData({ ...formData, agency: e.target.value.replace(/\D/g, '') })
+                  }
+                  placeholder="0001"
+                  maxLength={10}
                   required
+                  disabled={!!account}
                 />
               </div>
+              <div className="min-w-0 space-y-2">
+                <Label htmlFor="agency_digit">Dígito</Label>
+                <Input
+                  id="agency_digit"
+                  className="h-9 w-full"
+                  value={formData.agency_digit}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      agency_digit: e.target.value.replace(/\D/g, ''),
+                    })
+                  }
+                  placeholder="0"
+                  maxLength={2}
+                  disabled={!!account}
+                />
+              </div>
+            </div>
 
-              {/* Tipo e Documento */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Tipo de Titular *</Label>
-                  <Select
-                    value={formData.account_holder_type}
-                    onValueChange={(value: any) => setFormData({ ...formData, account_holder_type: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="individual">Pessoa Física</SelectItem>
-                      <SelectItem value="company">Pessoa Jurídica</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>CPF/CNPJ *</Label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="min-w-0 space-y-2 sm:col-span-2">
+                <Label htmlFor="account_number">Número da Conta *</Label>
+                <Input
+                  id="account_number"
+                  className="h-9 w-full"
+                  value={formData.account_number}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      account_number: e.target.value.replace(/\D/g, ''),
+                    })
+                  }
+                  placeholder="12345678"
+                  maxLength={20}
+                  required
+                  disabled={!!account}
+                />
+              </div>
+              <div className="min-w-0 space-y-2">
+                <Label htmlFor="account_digit">Dígito *</Label>
+                <Input
+                  id="account_digit"
+                  className="h-9 w-full"
+                  value={formData.account_digit}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      account_digit: e.target.value.replace(/\D/g, ''),
+                    })
+                  }
+                  placeholder="0"
+                  maxLength={2}
+                  required
+                  disabled={!!account}
+                />
+              </div>
+            </div>
+
+            {!account && (
+              <>
+                <div className="min-w-0 space-y-2">
+                  <Label htmlFor="account_holder_name">Nome do Titular *</Label>
                   <Input
-                    value={formData.account_holder_document}
-                    onChange={(e) => {
-                      const formatted = formatDocument(e.target.value)
-                      setFormData({ ...formData, account_holder_document: formatted })
-                    }}
-                    placeholder={formData.account_holder_type === 'individual' ? '000.000.000-00' : '00.000.000/0000-00'}
+                    id="account_holder_name"
+                    className="h-9 w-full"
+                    value={formData.account_holder_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, account_holder_name: e.target.value })
+                    }
+                    placeholder="Nome completo ou razão social"
                     required
                   />
                 </div>
-              </div>
-            </>
-          )}
 
-          {/* PIX */}
-          <div className="border-t pt-4">
-            <Label className="text-base font-semibold">Chave PIX (Opcional)</Label>
-            <div className="grid grid-cols-2 gap-4 mt-2">
-              <div>
-                <Label>Tipo de Chave</Label>
-                <Select
-                  value={formData.pix_key_type || ''}
-                  onValueChange={(value) => {
-                    // Limpar o campo da chave quando mudar o tipo
-                    setFormData({ ...formData, pix_key_type: value as any, pix_key: '' })
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cpf">CPF</SelectItem>
-                    <SelectItem value="cnpj">CNPJ</SelectItem>
-                    <SelectItem value="email">E-mail</SelectItem>
-                    <SelectItem value="phone">Telefone</SelectItem>
-                    <SelectItem value="random">Chave Aleatória</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Chave</Label>
-                <Input
-                  type={formData.pix_key_type === 'email' ? 'email' : 'text'}
-                  value={formData.pix_key}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    const type = formData.pix_key_type
-                    
-                    // Aplicar máscara para CPF, CNPJ e Telefone
-                    if (type && ['cpf', 'cnpj', 'phone'].includes(type)) {
-                      const masked = maskPixKey(value, type)
-                      setFormData({ ...formData, pix_key: masked })
-                    } else {
-                      // E-mail e chave aleatória sem máscara
-                      setFormData({ ...formData, pix_key: value })
-                    }
-                  }}
-                  placeholder={getPixKeyPlaceholder(formData.pix_key_type)}
-                  maxLength={getPixKeyMaxLength(formData.pix_key_type)}
-                  disabled={!formData.pix_key_type}
-                />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="min-w-0 space-y-2">
+                    <Label htmlFor="account_holder_type">Tipo de Titular *</Label>
+                    <Select
+                      value={formData.account_holder_type}
+                      onValueChange={(value: BankAccountFormData['account_holder_type']) =>
+                        setFormData({ ...formData, account_holder_type: value })
+                      }
+                    >
+                      <SelectTrigger id="account_holder_type" className="h-9 w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="individual">Pessoa Física</SelectItem>
+                        <SelectItem value="company">Pessoa Jurídica</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="min-w-0 space-y-2">
+                    <Label htmlFor="account_holder_document">CPF/CNPJ *</Label>
+                    <Input
+                      id="account_holder_document"
+                      className="h-9 w-full"
+                      value={formData.account_holder_document}
+                      onChange={(e) => {
+                        const formatted = formatDocument(e.target.value)
+                        setFormData({ ...formData, account_holder_document: formatted })
+                      }}
+                      placeholder={
+                        formData.account_holder_type === 'individual'
+                          ? '000.000.000-00'
+                          : '00.000.000/0000-00'
+                      }
+                      required
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="space-y-4 border-t pt-4">
+              <Label className="text-base font-semibold">Chave PIX (Opcional)</Label>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="min-w-0 space-y-2">
+                  <Label htmlFor="pix_key_type">Tipo de Chave</Label>
+                  <Select
+                    value={formData.pix_key_type || ''}
+                    onValueChange={(value) => {
+                      setFormData({
+                        ...formData,
+                        pix_key_type: value as BankAccountFormData['pix_key_type'],
+                        pix_key: '',
+                      })
+                    }}
+                  >
+                    <SelectTrigger id="pix_key_type" className="h-9 w-full">
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cpf">CPF</SelectItem>
+                      <SelectItem value="cnpj">CNPJ</SelectItem>
+                      <SelectItem value="email">E-mail</SelectItem>
+                      <SelectItem value="phone">Telefone</SelectItem>
+                      <SelectItem value="random">Chave Aleatória</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="min-w-0 space-y-2">
+                  <Label htmlFor="pix_key">Chave</Label>
+                  <Input
+                    id="pix_key"
+                    className="h-9 w-full"
+                    type={formData.pix_key_type === 'email' ? 'email' : 'text'}
+                    value={formData.pix_key}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      const type = formData.pix_key_type
+
+                      if (type && ['cpf', 'cnpj', 'phone'].includes(type)) {
+                        const masked = maskPixKey(value, type)
+                        setFormData({ ...formData, pix_key: masked })
+                      } else {
+                        setFormData({ ...formData, pix_key: value })
+                      }
+                    }}
+                    placeholder={getPixKeyPlaceholder(formData.pix_key_type)}
+                    maxLength={getPixKeyMaxLength(formData.pix_key_type)}
+                    disabled={!formData.pix_key_type}
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Notas */}
-          <div>
-            <Label>Observações</Label>
-            <Textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Observações internas sobre esta conta..."
-              rows={3}
-            />
-          </div>
-
-          {/* Conta Principal */}
-          {!account && (
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="is_primary"
-                checked={formData.is_primary}
-                onCheckedChange={(checked) => setFormData({ ...formData, is_primary: checked as boolean })}
+            <div className="min-w-0 space-y-2">
+              <Label htmlFor="notes">Observações</Label>
+              <Textarea
+                id="notes"
+                className="w-full resize-none"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Observações internas sobre esta conta..."
+                rows={3}
               />
-              <label
-                htmlFor="is_primary"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Definir como conta principal para recebimentos
-              </label>
             </div>
-          )}
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+            {!account && (
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="is_primary"
+                  className="mt-0.5"
+                  checked={formData.is_primary}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, is_primary: checked as boolean })
+                  }
+                />
+                <label
+                  htmlFor="is_primary"
+                  className="text-sm font-medium leading-snug peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Definir como conta principal para recebimentos
+                </label>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="shrink-0 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 w-full sm:justify-self-start"
+              onClick={onClose}
+              disabled={isLoading}
+            >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="h-9 w-full sm:justify-self-end"
+              disabled={isLoading}
+            >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLoading ? 'Salvando...' : (account ? 'Atualizar' : 'Cadastrar')}
+              {isLoading ? 'Salvando...' : account ? 'Atualizar' : 'Cadastrar'}
             </Button>
           </DialogFooter>
         </form>

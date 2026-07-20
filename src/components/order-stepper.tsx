@@ -15,9 +15,14 @@ interface OrderStepperProps {
   completedSteps?: Set<number>
 }
 
-export function OrderStepper({ currentStep, steps, onStepClick, completedSteps = new Set() }: OrderStepperProps) {
+export function OrderStepper({
+  currentStep,
+  steps,
+  onStepClick,
+  completedSteps = new Set(),
+}: OrderStepperProps) {
   return (
-    <div className="flex items-center justify-between w-full">
+    <div className="flex w-full min-w-0 items-center justify-center gap-1 overflow-x-hidden sm:gap-2">
       {steps.map((step, index) => {
         const isCompleted = completedSteps.has(index)
         const isCurrent = index === currentStep
@@ -25,20 +30,20 @@ export function OrderStepper({ currentStep, steps, onStepClick, completedSteps =
         const Icon = step.icon
 
         return (
-          <div key={index} className="flex items-center flex-1 last:flex-none">
+          <div key={index} className="flex min-w-0 flex-1 items-center last:flex-none last:flex-initial">
             <button
               type="button"
               onClick={() => isClickable && onStepClick?.(index)}
               disabled={!isClickable}
               className={cn(
-                "flex items-center gap-2 shrink-0 transition-colors",
+                "flex min-w-0 max-w-full flex-col items-center gap-1 transition-colors sm:flex-row sm:gap-2",
                 isClickable && "cursor-pointer",
                 !isClickable && "cursor-default"
               )}
             >
               <div
                 className={cn(
-                  "flex items-center justify-center rounded-full w-9 h-9 sm:w-10 sm:h-10 text-sm font-medium transition-colors shrink-0",
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors sm:h-9 sm:w-9",
                   isCurrent && "bg-primary text-primary-foreground",
                   isCompleted && !isCurrent && "bg-green-600 text-white",
                   !isCurrent && !isCompleted && "bg-muted text-muted-foreground"
@@ -52,7 +57,7 @@ export function OrderStepper({ currentStep, steps, onStepClick, completedSteps =
               </div>
               <span
                 className={cn(
-                  "hidden sm:block text-xs sm:text-sm font-medium whitespace-nowrap",
+                  "max-w-[4.5rem] text-center text-[10px] leading-tight font-medium break-words sm:max-w-[7rem] sm:text-left sm:text-xs md:max-w-none md:text-sm",
                   isCurrent && "text-foreground",
                   !isCurrent && "text-muted-foreground"
                 )}
@@ -64,7 +69,7 @@ export function OrderStepper({ currentStep, steps, onStepClick, completedSteps =
             {index < steps.length - 1 && (
               <div
                 className={cn(
-                  "h-0.5 mx-2 sm:mx-3 flex-1 rounded-full transition-colors",
+                  "mx-1 h-0.5 min-w-2 flex-1 rounded-full transition-colors sm:mx-2",
                   isCompleted ? "bg-green-600" : "bg-muted"
                 )}
               />

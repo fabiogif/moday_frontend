@@ -44,6 +44,8 @@ import {
   formatAccountDate,
   PAYABLE_STATUS_LABELS,
   ReviewRow,
+  scheduleWizardStep,
+  WIZARD_DIALOG_CONTENT_CLASS,
 } from '../../components/account-form-shared'
 
 interface AccountPayableFormDialogProps {
@@ -131,7 +133,10 @@ export function AccountPayableFormDialog({
     const valid = fields.length === 0 || (await trigger(fields))
     if (!valid) return
     setCompletedSteps((prev) => new Set(prev).add(currentStep))
-    setCurrentStep((s) => Math.min(s + 1, ACCOUNT_FORM_STEPS.length - 1))
+    // Evita que o mesmo clique acione o botão Criar (submit) da etapa seguinte
+    scheduleWizardStep(() => {
+      setCurrentStep((s) => Math.min(s + 1, ACCOUNT_FORM_STEPS.length - 1))
+    })
   }
 
   const goBack = () => setCurrentStep((s) => Math.max(s - 1, 0))
@@ -188,7 +193,7 @@ export function AccountPayableFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-2xl flex-col gap-4 overflow-hidden p-4 sm:p-6">
+      <DialogContent className={WIZARD_DIALOG_CONTENT_CLASS}>
         <DialogHeader className="shrink-0 space-y-1 text-left">
           <DialogTitle>
             {account ? 'Editar Conta a Pagar' : 'Nova Conta a Pagar'}
@@ -198,7 +203,7 @@ export function AccountPayableFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="shrink-0">
+        <div className="shrink-0 overflow-x-hidden">
           <OrderStepper
             currentStep={currentStep}
             steps={ACCOUNT_FORM_STEPS}
@@ -215,8 +220,14 @@ export function AccountPayableFormDialog({
         )}
 
         <form
-          onSubmit={handleSubmit(handleFormSubmit)}
-          className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden"
+          onSubmit={(e) => {
+            if (!isLastStep) {
+              e.preventDefault()
+              return
+            }
+            void handleSubmit(handleFormSubmit)(e)
+          }}
+          className="flex min-h-0 flex-1 flex-col gap-6 overflow-x-hidden"
         >
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden pr-1">
             {currentStep === 0 && (
@@ -443,42 +454,48 @@ export function AccountPayableFormDialog({
             )}
           </div>
 
-          <DialogFooter className="shrink-0 flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="w-full sm:w-auto">
-              {currentStep > 0 ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-9 w-full sm:w-auto"
-                  onClick={goBack}
-                  disabled={isLoading}
-                >
-                  <ChevronLeft className="mr-1 h-4 w-4" />
-                  Voltar
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-9 w-full sm:w-auto"
-                  onClick={() => onOpenChange(false)}
-                  disabled={isLoading}
-                >
-                  Cancelar
-                </Button>
-              )}
-            </div>
+          <DialogFooter className="shrink-0 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:justify-between">
+            {currentStep > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 w-full sm:justify-self-start"
+                onClick={goBack}
+                disabled={isLoading}
+              >
+                <ChevronLeft className="mr-1 h-4 w-4" />
+                Voltar
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 w-full sm:justify-self-start"
+                onClick={() => onOpenChange(false)}
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+            )}
 
             {isLastStep ? (
-              <Button type="submit" className="h-9 w-full sm:w-auto" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="h-9 w-full sm:justify-self-end"
+                disabled={isLoading}
+              >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {account ? 'Atualizar' : 'Criar'}
               </Button>
             ) : (
               <Button
                 type="button"
-                className="h-9 w-full sm:w-auto"
-                onClick={goNext}
+                className="h-9 w-full sm:justify-self-end"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  void goNext()
+                }}
                 disabled={isLoading}
               >
                 Continuar

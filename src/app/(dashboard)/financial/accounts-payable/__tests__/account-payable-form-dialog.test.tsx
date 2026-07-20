@@ -57,11 +57,14 @@ describe('AccountPayableFormDialog - wizard de passos', () => {
     await user.click(screen.getByRole('button', { name: /Continuar/i }))
 
     expect(await screen.findByLabelText(/Data de Emissão/i)).toBeInTheDocument()
+    expect(onSubmit).not.toHaveBeenCalled()
+
     await user.clear(screen.getByLabelText(/Valor/i))
     await user.type(screen.getByLabelText(/Valor/i), '150.50')
     await user.click(screen.getByRole('button', { name: /Continuar/i }))
 
     expect(await screen.findByText(/Resumo da conta/i)).toBeInTheDocument()
+    expect(onSubmit).not.toHaveBeenCalled()
     expect(screen.getByText('Conta de luz')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /^Criar$/i }))
 

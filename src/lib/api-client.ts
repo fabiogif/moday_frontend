@@ -451,6 +451,7 @@ export const endpoints = {
     getById: (id: string) => `/api/client/${id}`,
     update: (id: number | string) => `/api/client/${id}`,
     delete: (id: string) => `/api/client/${id}`,
+    validate: '/api/client/validate',
   },
 
   // Formas de Pagamento
@@ -511,6 +512,7 @@ export const endpoints = {
       list: '/api/marketing/coupons',
       stats: '/api/marketing/coupons/stats',
       create: '/api/marketing/coupons',
+      validate: '/api/marketing/coupons/validate',
       show: (uuid: string) => `/api/marketing/coupons/${uuid}`,
       update: (uuid: string) => `/api/marketing/coupons/${uuid}`,
       toggle: (uuid: string) => `/api/marketing/coupons/${uuid}/toggle`,

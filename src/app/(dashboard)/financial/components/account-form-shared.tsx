@@ -70,3 +70,21 @@ export function ReviewRow({ label, value }: { label: string; value: ReactNode })
     </div>
   )
 }
+
+export const EXPENSE_STATUS_LABELS: Record<string, string> = {
+  pendente: 'Pendente',
+  pago: 'Pago',
+  cancelado: 'Cancelado',
+}
+
+/** Classes base para DialogContent de wizards financeiros (evita sm:max-w-lg do Dialog). */
+export const WIZARD_DIALOG_CONTENT_CLASS =
+  'flex max-h-[90vh] w-[calc(100%-2rem)] max-w-3xl flex-col gap-6 overflow-x-hidden overflow-y-auto p-6 sm:max-w-3xl'
+
+/**
+ * Avança o passo no próximo tick para o clique de Continuar não acionar
+ * o botão Criar (type=submit) recém-renderizado no mesmo evento.
+ */
+export function scheduleWizardStep(update: () => void) {
+  window.setTimeout(update, 0)
+}

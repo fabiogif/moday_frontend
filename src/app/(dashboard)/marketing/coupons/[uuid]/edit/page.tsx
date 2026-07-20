@@ -149,6 +149,7 @@ export default function EditCouponPage() {
             busy={busy || loadingCoupon}
             initialValues={initialValues}
             initialImageUrl={fullImageUrl}
+            couponUuid={couponUuid}
             onCancel={() => router.push("/marketing/coupons")}
             onSubmit={handleSubmit}
           />

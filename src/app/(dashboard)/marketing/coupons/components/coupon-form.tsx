@@ -1,17 +1,30 @@
 "use client"
 
-import { FormEvent, useEffect, useState } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon } from "lucide-react"
+import {
+  AlertCircle,
+  CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardCheck,
+  Loader2,
+  Percent,
+  Tag,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { format, parseISO } from "date-fns"
+import { OrderStepper } from "@/components/order-stepper"
+import { apiClient, endpoints } from "@/lib/api-client"
+import { extractValidationErrors } from "@/lib/error-formatter"
+import { scheduleWizardStep } from "@/app/(dashboard)/financial/components/account-form-shared"
+import { toast } from "sonner"
 
 export type CouponFormValues = {
   code: string
@@ -47,6 +60,12 @@ const defaultValues: CouponFormValues = {
   optionals: [],
 }
 
+const STEPS = [
+  { label: "Detalhes", icon: Tag },
+  { label: "Regras", icon: Percent },
+  { label: "Validade", icon: ClipboardCheck },
+]
+
 type CouponFormSubmitPayload = {
   values: CouponFormValues
   imageFile: File | null
@@ -58,6 +77,7 @@ interface CouponFormProps {
   busy?: boolean
   initialValues?: Partial<CouponFormValues>
   initialImageUrl?: string | null
+  couponUuid?: string | null
   onCancel?: () => void
   onSubmit: (payload: CouponFormSubmitPayload) => Promise<void>
 }
@@ -67,6 +87,7 @@ export function CouponForm({
   busy,
   initialValues,
   initialImageUrl = null,
+  couponUuid = null,
   onCancel,
   onSubmit,
 }: CouponFormProps) {
@@ -75,12 +96,18 @@ export function CouponForm({
   const [imagePreview, setImagePreview] = useState<string | null>(initialImageUrl)
   const [removeImage, setRemoveImage] = useState(false)
   const [timeInputs, setTimeInputs] = useState({ start_at: "", end_at: "" })
+  const [currentStep, setCurrentStep] = useState(0)
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [backendErrors, setBackendErrors] = useState<Record<string, string>>({})
+  const [errorSnapshot, setErrorSnapshot] = useState<string | null>(null)
+  const [validatingStep, setValidatingStep] = useState(false)
 
   const parseDateValue = (value: string) => {
     if (!value) return undefined
     try {
       return parseISO(value)
-    } catch (error) {
+    } catch {
       return undefined
     }
   }
@@ -88,6 +115,11 @@ export function CouponForm({
   useEffect(() => {
     const normalized = normalizeValues(initialValues)
     setFormState(normalized)
+    setCurrentStep(0)
+    setCompletedSteps(new Set())
+    setFieldErrors({})
+    setBackendErrors({})
+    setErrorSnapshot(null)
 
     const startDate = normalized.start_at ? parseDateValue(normalized.start_at) : undefined
     const endDate = normalized.end_at ? parseDateValue(normalized.end_at) : undefined
@@ -112,8 +144,34 @@ export function CouponForm({
     }
   }, [imagePreview])
 
+  const getStepSnapshot = (step: number, values: CouponFormValues) => {
+    const fields = STEP_SNAPSHOT_FIELDS[step]
+    return JSON.stringify(Object.fromEntries(fields.map((field) => [field, values[field] ?? ""])))
+  }
+
+  const stepBackendErrorKeys = useMemo(() => {
+    const fields = STEP_SNAPSHOT_FIELDS[currentStep] as string[]
+    return Object.keys(backendErrors).filter((key) => fields.includes(key))
+  }, [backendErrors, currentStep])
+
+  const hasPendingBackendErrors = stepBackendErrorKeys.length > 0
+  const fieldsChangedSinceError =
+    errorSnapshot !== null && getStepSnapshot(currentStep, formState) !== errorSnapshot
+
+  const canContinue =
+    !busy && !validatingStep && (!hasPendingBackendErrors || fieldsChangedSinceError)
+
+  const isLastStep = currentStep === STEPS.length - 1
+
   const handleInputChange = (field: keyof CouponFormValues, value: string | boolean) => {
     setFormState((prev) => ({ ...prev, [field]: value }))
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev }
+        delete next[field]
+        return next
+      })
+    }
   }
 
   const handleDateSelection = (
@@ -141,33 +199,31 @@ export function CouponForm({
     field: keyof Pick<CouponFormValues, "start_at" | "end_at">,
     value: string
   ) => {
-    let input = value.replace(/[^0-9]/g, "").slice(0, 4);
+    let input = value.replace(/[^0-9]/g, "").slice(0, 4)
     if (input.length > 2) {
-      input = `${input.slice(0, 2)}:${input.slice(2)}`;
+      input = `${input.slice(0, 2)}:${input.slice(2)}`
     }
-    setTimeInputs(prev => ({...prev, [field]: input}));
-  };
+    setTimeInputs((prev) => ({ ...prev, [field]: input }))
+  }
 
-  const handleTimeBlur = (
-    field: keyof Pick<CouponFormValues, "start_at" | "end_at">,
-  ) => {
-    const time = timeInputs[field];
-    let [hoursStr, minutesStr] = time.split(":");
+  const handleTimeBlur = (field: keyof Pick<CouponFormValues, "start_at" | "end_at">) => {
+    const time = timeInputs[field]
+    const [hoursStr, minutesStr] = time.split(":")
 
-    let hours = parseInt(hoursStr, 10);
-    let minutes = parseInt(minutesStr, 10);
+    let hours = parseInt(hoursStr, 10)
+    let minutes = parseInt(minutesStr, 10)
 
-    if (isNaN(hours) || hours < 0 || hours > 23) hours = 0;
-    if (isNaN(minutes) || minutes < 0 || minutes > 59) minutes = 0;
+    if (isNaN(hours) || hours < 0 || hours > 23) hours = 0
+    if (isNaN(minutes) || minutes < 0 || minutes > 59) minutes = 0
 
-    const formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    setTimeInputs(prev => ({...prev, [field]: formattedTime}));
+    const formattedTime = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`
+    setTimeInputs((prev) => ({ ...prev, [field]: formattedTime }))
 
-    const current = parseDateValue(formState[field]) ?? new Date();
-    const updated = new Date(current);
-    updated.setHours(hours, minutes, 0, 0);
-    handleInputChange(field, updated.toISOString());
-  };
+    const current = parseDateValue(formState[field]) ?? new Date()
+    const updated = new Date(current)
+    updated.setHours(hours, minutes, 0, 0)
+    handleInputChange(field, updated.toISOString())
+  }
 
   const handleImageReset = () => {
     if (imagePreview && imagePreview.startsWith("blob:")) {
@@ -178,306 +234,579 @@ export function CouponForm({
     setRemoveImage(true)
   }
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    await onSubmit({
-      values: {
-        ...formState,
-        optionals: Array.isArray(formState.optionals)
-          ? formState.optionals
-          : String(formState.optionals ?? "")
-              .split(",")
-              .map((item: string) => item.trim())
-              .filter(Boolean),
-      },
-      imageFile,
-      removeImage,
-    })
+  const validateStepFrontend = (step: number): boolean => {
+    const errors: Record<string, string> = {}
+
+    if (step === 0) {
+      if (!formState.code.trim()) errors.code = "Informe um código para o cupom."
+      else if (formState.code.trim().length > 40) errors.code = "O código pode ter no máximo 40 caracteres."
+      if (!formState.name.trim()) errors.name = "Informe um nome para o cupom."
+      else if (formState.name.trim().length > 255) errors.name = "O nome pode ter no máximo 255 caracteres."
+      if (formState.description && formState.description.length > 500) {
+        errors.description = "A descrição pode ter no máximo 500 caracteres."
+      }
+    }
+
+    if (step === 1) {
+      if (!formState.discount_type) errors.discount_type = "Selecione o tipo de desconto."
+      const value = Number(formState.discount_value)
+      if (!formState.discount_value || Number.isNaN(value) || value <= 0) {
+        errors.discount_value = "Informe um valor de desconto maior que zero."
+      }
+      if (formState.discount_type === "percentage" && value > 100) {
+        errors.discount_value = "Percentual não pode ser maior que 100."
+      }
+    }
+
+    if (step === 2) {
+      if (formState.start_at && formState.end_at) {
+        const start = parseDateValue(formState.start_at)
+        const end = parseDateValue(formState.end_at)
+        if (start && end && end < start) {
+          errors.end_at = "A data final deve ser igual ou posterior à data inicial."
+        }
+      }
+    }
+
+    setFieldErrors(errors)
+    return Object.keys(errors).length === 0
   }
 
+  const buildStepPayload = (step: number) => {
+    const base = {
+      step,
+      uuid: couponUuid || undefined,
+    }
+
+    if (step === 0) {
+      return {
+        ...base,
+        code: formState.code,
+        name: formState.name,
+        description: formState.description || undefined,
+      }
+    }
+
+    if (step === 1) {
+      return {
+        ...base,
+        discount_type: formState.discount_type,
+        discount_value: formState.discount_value,
+        max_discount_amount: formState.max_discount_amount || undefined,
+        minimum_order_amount: formState.minimum_order_amount || undefined,
+        usage_limit: formState.usage_limit || undefined,
+        usage_limit_per_client: formState.usage_limit_per_client || undefined,
+      }
+    }
+
+    return {
+      ...base,
+      start_at: formState.start_at || undefined,
+      end_at: formState.end_at || undefined,
+      is_active: formState.is_active,
+      is_featured: formState.is_featured,
+    }
+  }
+
+  const clearBackendValidation = () => {
+    setBackendErrors({})
+    setErrorSnapshot(null)
+  }
+
+  const applyBackendErrors = (error: unknown) => {
+    const extracted = extractValidationErrors(error)
+    const { _general, ...fieldErrs } = extracted
+    setBackendErrors(fieldErrs)
+    setErrorSnapshot(getStepSnapshot(currentStep, formState))
+    if (_general || Object.keys(fieldErrs).length > 0) {
+      toast.error(_general || Object.values(fieldErrs)[0] || "Dados inválidos")
+    }
+  }
+
+  const goNext = async () => {
+    if (!canContinue) return
+    if (!validateStepFrontend(currentStep)) return
+
+    try {
+      setValidatingStep(true)
+      await apiClient.post(endpoints.marketing.coupons.validate, buildStepPayload(currentStep))
+      clearBackendValidation()
+      setFieldErrors({})
+      setCompletedSteps((prev) => new Set(prev).add(currentStep))
+      scheduleWizardStep(() => {
+        setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1))
+      })
+    } catch (error: unknown) {
+      applyBackendErrors(error)
+    } finally {
+      setValidatingStep(false)
+    }
+  }
+
+  const goBack = () => setCurrentStep((s) => Math.max(s - 1, 0))
+
+  const goToStep = (step: number) => {
+    if (hasPendingBackendErrors && !fieldsChangedSinceError) return
+    if (step <= currentStep || completedSteps.has(step)) {
+      setCurrentStep(step)
+    }
+  }
+
+  const handleFinalSubmit = async () => {
+    if (!validateStepFrontend(currentStep)) return
+
+    try {
+      setValidatingStep(true)
+      await apiClient.post(endpoints.marketing.coupons.validate, buildStepPayload(currentStep))
+      clearBackendValidation()
+      setFieldErrors({})
+      await onSubmit({
+        values: {
+          ...formState,
+          optionals: Array.isArray(formState.optionals)
+            ? formState.optionals
+            : String(formState.optionals ?? "")
+                .split(",")
+                .map((item: string) => item.trim())
+                .filter(Boolean),
+        },
+        imageFile,
+        removeImage,
+      })
+    } catch (error: unknown) {
+      applyBackendErrors(error)
+    } finally {
+      setValidatingStep(false)
+    }
+  }
+
+  const getError = (field: string) => fieldErrors[field] || backendErrors[field]
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5 sm:gap-6">
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)]">
-        <div className="space-y-2">
-          <Label htmlFor="code">Código *</Label>
-          <Input
-            id="code"
-            value={formState.code}
-            onChange={(event) => handleInputChange("code", event.target.value.toUpperCase())}
-            placeholder="PROMO2024"
-            maxLength={40}
-            className="h-10 uppercase tracking-wide"
-            disabled={busy}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="name">Nome *</Label>
-          <Input
-            id="name"
-            value={formState.name}
-            onChange={(event) => handleInputChange("name", event.target.value)}
-            placeholder="Desconto de Primavera"
-            className="h-10"
-            disabled={busy}
-          />
-        </div>
-      </div>
+    <div className="flex min-w-0 flex-col gap-6 overflow-x-hidden">
+      <OrderStepper
+        currentStep={currentStep}
+        steps={STEPS}
+        onStepClick={goToStep}
+        completedSteps={completedSteps}
+      />
 
-      <div className="space-y-2">
-        <Label htmlFor="description">Descrição</Label>
-        <Textarea
-          id="description"
-          value={formState.description}
-          onChange={(event) => handleInputChange("description", event.target.value)}
-          placeholder="Detalhe regras adicionais ou canais de divulgação"
-          rows={2}
-          className="min-h-[80px] max-h-[120px]"
-          disabled={busy}
-        />
-      </div>
+      <div className="min-w-0 space-y-4 overflow-x-hidden">
+        {currentStep === 0 && (
+          <div className="space-y-4">
+            <h3 className="text-base font-semibold">Detalhes Básicos</h3>
 
-      <div className="space-y-2">
-        <Label>Imagem promocional</Label>
-        <p className="text-[11px] text-muted-foreground">
-          Exibida no cardápio no slider (380 x 220). Prefira JPG/PNG otimizados.
-        </p>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="h-[110px] w-[190px] overflow-hidden rounded-lg border border-dashed border-border/70 bg-muted/30">
-            {imagePreview ? (
-              <img
-                src={imagePreview}
-                alt="Pré-visualização do cupom"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-                Prévia 380x220
-              </div>
-            )}
-          </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto">
-            <Input
-              type="file"
-              accept="image/*"
-              disabled={busy}
-              onChange={(event) => {
-                const file = event.target.files?.[0]
-                if (!file) {
-                  if (imagePreview && imagePreview.startsWith("blob:")) {
-                    URL.revokeObjectURL(imagePreview)
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field
+                label="Código *"
+                htmlFor="code"
+                error={getError("code")}
+              >
+                <Input
+                  id="code"
+                  value={formState.code}
+                  onChange={(event) =>
+                    handleInputChange("code", event.target.value.toUpperCase())
                   }
-                  setImageFile(null)
-                  setImagePreview(initialImageUrl ?? null)
-                  setRemoveImage(false)
-                  return
-                }
+                  placeholder="PROMO2024"
+                  maxLength={40}
+                  className={cn("h-9 w-full uppercase tracking-wide", getError("code") && "border-destructive")}
+                  disabled={busy || validatingStep}
+                />
+              </Field>
+              <Field label="Nome *" htmlFor="name" error={getError("name")}>
+                <Input
+                  id="name"
+                  value={formState.name}
+                  onChange={(event) => handleInputChange("name", event.target.value)}
+                  placeholder="Desconto de Primavera"
+                  className={cn("h-9 w-full", getError("name") && "border-destructive")}
+                  disabled={busy || validatingStep}
+                />
+              </Field>
+            </div>
 
-                if (imagePreview && imagePreview.startsWith("blob:")) {
-                  URL.revokeObjectURL(imagePreview)
-                }
+            <Field label="Descrição" htmlFor="description" error={getError("description")}>
+              <Textarea
+                id="description"
+                value={formState.description}
+                onChange={(event) => handleInputChange("description", event.target.value)}
+                placeholder="Detalhe regras adicionais ou canais de divulgação"
+                rows={3}
+                className={cn("min-h-[80px] w-full resize-none", getError("description") && "border-destructive")}
+                disabled={busy || validatingStep}
+              />
+            </Field>
 
-                setImageFile(file)
-                setImagePreview(URL.createObjectURL(file))
-                setRemoveImage(false)
-              }}
-            />
-            {(imageFile || imagePreview) && (
-              <Button type="button" variant="outline" size="sm" onClick={handleImageReset} disabled={busy}>
-                Remover imagem
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
+            <div className="min-w-0 space-y-2">
+              <Label>Imagem promocional</Label>
+              <p className="text-xs text-muted-foreground">
+                Exibida no cardápio no slider (380 x 220). Prefira JPG/PNG otimizados.
+              </p>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="h-[110px] w-full max-w-[190px] overflow-hidden rounded-lg border border-dashed border-border/70 bg-muted/30">
+                  {imagePreview ? (
+                    <img
+                      src={imagePreview}
+                      alt="Pré-visualização do cupom"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                      Prévia 380x220
+                    </div>
+                  )}
+                </div>
+                <div className="flex w-full min-w-0 flex-col gap-2 sm:max-w-xs">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    className="h-9 w-full"
+                    disabled={busy || validatingStep}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0]
+                      if (!file) {
+                        if (imagePreview && imagePreview.startsWith("blob:")) {
+                          URL.revokeObjectURL(imagePreview)
+                        }
+                        setImageFile(null)
+                        setImagePreview(initialImageUrl ?? null)
+                        setRemoveImage(false)
+                        return
+                      }
 
-      <Separator />
+                      if (imagePreview && imagePreview.startsWith("blob:")) {
+                        URL.revokeObjectURL(imagePreview)
+                      }
 
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
-        <div className="space-y-2">
-          <Label>Tipo de desconto *</Label>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant={formState.discount_type === "percentage" ? "default" : "outline"}
-              onClick={() => handleInputChange("discount_type", "percentage")}
-              size="sm"
-              className="flex-1 min-w-[140px] sm:flex-none"
-              disabled={busy}
-            >
-              Percentual (%)
-            </Button>
-            <Button
-              type="button"
-              variant={formState.discount_type === "fixed" ? "default" : "outline"}
-              onClick={() => handleInputChange("discount_type", "fixed")}
-              size="sm"
-              className="flex-1 min-w-[140px] sm:flex-none"
-              disabled={busy}
-            >
-              Valor fixo (R$)
-            </Button>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="discount_value">Valor *</Label>
-          <Input
-            id="discount_value"
-            type="number"
-            min="0"
-            step="0.01"
-            value={formState.discount_value}
-            onChange={(event) => handleInputChange("discount_value", event.target.value)}
-            className="h-10 sm:max-w-[180px]"
-            disabled={busy}
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="space-y-2">
-          <Label htmlFor="max_discount_amount">Limite de desconto</Label>
-          <Input
-            id="max_discount_amount"
-            type="number"
-            min="0"
-            step="0.01"
-            value={formState.max_discount_amount}
-            onChange={(event) => handleInputChange("max_discount_amount", event.target.value)}
-            placeholder="Opcional"
-            className="h-10 sm:max-w-[170px]"
-            disabled={busy}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="minimum_order_amount">Pedido mínimo</Label>
-          <Input
-            id="minimum_order_amount"
-            type="number"
-            min="0"
-            step="0.01"
-            value={formState.minimum_order_amount}
-            onChange={(event) => handleInputChange("minimum_order_amount", event.target.value)}
-            placeholder="Opcional"
-            className="h-10 sm:max-w-[170px]"
-            disabled={busy}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="usage_limit">Limite total de uso</Label>
-          <Input
-            id="usage_limit"
-            type="number"
-            min="0"
-            step="1"
-            value={formState.usage_limit}
-            onChange={(event) => handleInputChange("usage_limit", event.target.value)}
-            placeholder="Ilimitado"
-            className="h-10 sm:max-w-[150px]"
-            disabled={busy}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="usage_limit_per_client">Limite por cliente</Label>
-          <Input
-            id="usage_limit_per_client"
-            type="number"
-            min="0"
-            step="1"
-            value={formState.usage_limit_per_client}
-            onChange={(event) => handleInputChange("usage_limit_per_client", event.target.value)}
-            placeholder="Ilimitado"
-            className="h-10 sm:max-w-[150px]"
-            disabled={busy}
-          />
-        </div>
-        {(["start_at", "end_at"] as const).map((field) => {
-          const parsedDate = parseDateValue(formState[field])
-          const timeValue = timeInputs[field]
-
-          return (
-            <div key={field} className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4" />
-                {field === "start_at" ? "Início" : "Fim"}
-              </Label>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <Popover modal={false}>
-                  <PopoverTrigger asChild>
+                      setImageFile(file)
+                      setImagePreview(URL.createObjectURL(file))
+                      setRemoveImage(false)
+                    }}
+                  />
+                  {(imageFile || imagePreview) && (
                     <Button
                       type="button"
                       variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !parsedDate && "text-muted-foreground"
-                      )}
-                      disabled={busy}
+                      size="sm"
+                      className="h-9 w-full sm:w-auto"
+                      onClick={handleImageReset}
+                      disabled={busy || validatingStep}
                     >
-                      {parsedDate ? format(parsedDate, "dd/MM/yyyy") : "Selecionar data"}
+                      Remover imagem
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={parsedDate}
-                      onSelect={(date) => handleDateSelection(field, date ?? undefined)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 1 && (
+          <div className="space-y-4">
+            <h3 className="text-base font-semibold">Regras e Valores</h3>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="min-w-0 space-y-2">
+                <Label>Tipo de desconto *</Label>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <Button
+                    type="button"
+                    variant={formState.discount_type === "percentage" ? "default" : "outline"}
+                    onClick={() => handleInputChange("discount_type", "percentage")}
+                    size="sm"
+                    className="h-9 w-full"
+                    disabled={busy || validatingStep}
+                  >
+                    Percentual (%)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={formState.discount_type === "fixed" ? "default" : "outline"}
+                    onClick={() => handleInputChange("discount_type", "fixed")}
+                    size="sm"
+                    className="h-9 w-full"
+                    disabled={busy || validatingStep}
+                  >
+                    Valor fixo (R$)
+                  </Button>
+                </div>
+                {getError("discount_type") && <FieldError message={getError("discount_type")} />}
+              </div>
+
+              <Field label="Valor *" htmlFor="discount_value" error={getError("discount_value")}>
                 <Input
-                  type="text"
-                  placeholder="HH:MM"
-                  value={timeValue}
-                  onChange={(event) => handleTimeChange(field, event.target.value)}
-                  onBlur={() => handleTimeBlur(field)}
-                  maxLength={5}
-                  disabled={busy}
-                  className="h-10 sm:max-w-[120px]"
+                  id="discount_value"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formState.discount_value}
+                  onChange={(event) => handleInputChange("discount_value", event.target.value)}
+                  className={cn("h-9 w-full", getError("discount_value") && "border-destructive")}
+                  disabled={busy || validatingStep}
+                />
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Limite de desconto" htmlFor="max_discount_amount" error={getError("max_discount_amount")}>
+                <Input
+                  id="max_discount_amount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formState.max_discount_amount}
+                  onChange={(event) => handleInputChange("max_discount_amount", event.target.value)}
+                  placeholder="Opcional"
+                  className="h-9 w-full"
+                  disabled={busy || validatingStep}
+                />
+              </Field>
+              <Field label="Pedido mínimo" htmlFor="minimum_order_amount" error={getError("minimum_order_amount")}>
+                <Input
+                  id="minimum_order_amount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formState.minimum_order_amount}
+                  onChange={(event) => handleInputChange("minimum_order_amount", event.target.value)}
+                  placeholder="Opcional"
+                  className="h-9 w-full"
+                  disabled={busy || validatingStep}
+                />
+              </Field>
+              <Field label="Limite total de uso" htmlFor="usage_limit" error={getError("usage_limit")}>
+                <Input
+                  id="usage_limit"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formState.usage_limit}
+                  onChange={(event) => handleInputChange("usage_limit", event.target.value)}
+                  placeholder="Ilimitado"
+                  className="h-9 w-full"
+                  disabled={busy || validatingStep}
+                />
+              </Field>
+              <Field
+                label="Limite por cliente"
+                htmlFor="usage_limit_per_client"
+                error={getError("usage_limit_per_client")}
+              >
+                <Input
+                  id="usage_limit_per_client"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formState.usage_limit_per_client}
+                  onChange={(event) =>
+                    handleInputChange("usage_limit_per_client", event.target.value)
+                  }
+                  placeholder="Ilimitado"
+                  className="h-9 w-full"
+                  disabled={busy || validatingStep}
+                />
+              </Field>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 2 && (
+          <div className="space-y-4">
+            <h3 className="text-base font-semibold">Validade e Status</h3>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {(["start_at", "end_at"] as const).map((field) => {
+                const parsedDate = parseDateValue(formState[field])
+                const timeValue = timeInputs[field]
+
+                return (
+                  <div key={field} className="min-w-0 space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4" />
+                      {field === "start_at" ? "Início" : "Fim"}
+                    </Label>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <Popover modal={false}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className={cn(
+                              "h-9 w-full justify-start text-left font-normal sm:flex-1",
+                              !parsedDate && "text-muted-foreground",
+                              getError(field) && "border-destructive"
+                            )}
+                            disabled={busy || validatingStep}
+                          >
+                            {parsedDate ? format(parsedDate, "dd/MM/yyyy") : "Selecionar data"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={parsedDate}
+                            onSelect={(date) => handleDateSelection(field, date ?? undefined)}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <Input
+                        type="text"
+                        placeholder="HH:MM"
+                        value={timeValue}
+                        onChange={(event) => handleTimeChange(field, event.target.value)}
+                        onBlur={() => handleTimeBlur(field)}
+                        maxLength={5}
+                        disabled={busy || validatingStep}
+                        className="h-9 w-full sm:w-[120px] sm:shrink-0"
+                      />
+                    </div>
+                    {getError(field) && <FieldError message={getError(field)} />}
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="font-medium">Cupom ativo</p>
+                  <p className="text-xs text-muted-foreground">
+                    Clientes poderão utilizar imediatamente.
+                  </p>
+                </div>
+                <Switch
+                  checked={formState.is_active}
+                  onCheckedChange={(checked) => handleInputChange("is_active", checked)}
+                  disabled={busy || validatingStep}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="font-medium">Destacar cupom</p>
+                  <p className="text-xs text-muted-foreground">
+                    Evidencie na vitrine pública e nas comunicações.
+                  </p>
+                </div>
+                <Switch
+                  checked={formState.is_featured}
+                  onCheckedChange={(checked) => handleInputChange("is_featured", checked)}
+                  disabled={busy || validatingStep}
                 />
               </div>
             </div>
-          )
-        })}
+          </div>
+        )}
       </div>
 
-      <Separator />
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
-          <div>
-            <p className="font-medium">Cupom ativo</p>
-            <p className="text-xs text-muted-foreground">Clientes poderão utilizar imediatamente.</p>
-          </div>
-          <Switch
-            checked={formState.is_active}
-            onCheckedChange={(checked) => handleInputChange("is_active", checked)}
-            disabled={busy}
-          />
-        </div>
-        <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
-          <div>
-            <p className="font-medium">Destacar cupom</p>
-            <p className="text-xs text-muted-foreground">Evidencie na vitrine pública e nas comunicações.</p>
-          </div>
-          <Switch
-            checked={formState.is_featured}
-            onCheckedChange={(checked) => handleInputChange("is_featured", checked)}
-            disabled={busy}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-        {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} disabled={busy}>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {currentStep > 0 ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-9 w-full sm:justify-self-start"
+            onClick={goBack}
+            disabled={busy || validatingStep}
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            Voltar
+          </Button>
+        ) : onCancel ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-9 w-full sm:justify-self-start"
+            onClick={onCancel}
+            disabled={busy || validatingStep}
+          >
             Cancelar
           </Button>
+        ) : (
+          <div />
         )}
-        <Button type="submit" disabled={busy}>
-          {mode === "edit" ? (busy ? "Salvando..." : "Salvar alterações") : busy ? "Criando..." : "Criar cupom"}
-        </Button>
+
+        {isLastStep ? (
+          <Button
+            type="button"
+            className="h-9 w-full sm:justify-self-end"
+            onClick={() => void handleFinalSubmit()}
+            disabled={!canContinue}
+          >
+            {(busy || validatingStep) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {mode === "edit"
+              ? busy
+                ? "Salvando..."
+                : "Salvar alterações"
+              : busy
+                ? "Criando..."
+                : "Criar cupom"}
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            className="h-9 w-full sm:justify-self-end"
+            onClick={() => void goNext()}
+            disabled={!canContinue}
+          >
+            {validatingStep ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Validando...
+              </>
+            ) : (
+              <>
+                Continuar
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </>
+            )}
+          </Button>
+        )}
       </div>
-    </form>
+    </div>
+  )
+}
+
+const STEP_SNAPSHOT_FIELDS: (keyof CouponFormValues)[][] = [
+  ["code", "name", "description"],
+  [
+    "discount_type",
+    "discount_value",
+    "max_discount_amount",
+    "minimum_order_amount",
+    "usage_limit",
+    "usage_limit_per_client",
+  ],
+  ["start_at", "end_at", "is_active", "is_featured"],
+]
+
+function Field({
+  label,
+  htmlFor,
+  error,
+  children,
+}: {
+  label: string
+  htmlFor: string
+  error?: string
+  children: ReactNode
+}) {
+  return (
+    <div className="min-w-0 space-y-2">
+      <Label htmlFor={htmlFor}>{label}</Label>
+      {children}
+      {error && <FieldError message={error} />}
+    </div>
+  )
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null
+  return (
+    <p className="flex items-center gap-1 text-sm text-destructive">
+      <AlertCircle className="h-3 w-3 shrink-0" />
+      {message}
+    </p>
   )
 }
 
@@ -508,4 +837,3 @@ function normalizeValues(values?: Partial<CouponFormValues>): CouponFormValues {
     optionals: Array.isArray(values.optionals) ? values.optionals : defaultValues.optionals,
   }
 }
-
