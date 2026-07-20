@@ -1,3 +1,5 @@
+import type { Metadata } from 'next'
+
 /** Caminhos oficiais dos ícones da marca Alba Tec (símbolo "A"). */
 export const SITE_ICONS = {
   symbol512: '/brand/icon-512.png',
@@ -7,7 +9,7 @@ export const SITE_ICONS = {
   appleTouch: '/brand/apple-touch-icon.png',
 } as const
 
-export const SITE_ICON_METADATA = {
+export const SITE_ICON_METADATA: NonNullable<Metadata['icons']> = {
   icon: [
     { url: SITE_ICONS.favicon32, sizes: '32x32', type: 'image/png' },
     { url: SITE_ICONS.favicon64, sizes: '64x64', type: 'image/png' },
@@ -18,4 +20,4 @@ export const SITE_ICON_METADATA = {
     { url: SITE_ICONS.appleTouch, sizes: '180x180', type: 'image/png' },
   ],
   shortcut: SITE_ICONS.favicon64,
-} as const
+}
