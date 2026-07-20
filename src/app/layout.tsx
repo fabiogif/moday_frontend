@@ -6,9 +6,9 @@ import { SidebarConfigProvider } from "@/contexts/sidebar-context";
 import { AuthProvider } from "@/contexts/auth-context";
 import { inter } from "@/lib/fonts";
 import { ToasterProvider } from "@/components/toaster-provider";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalyticsHead } from "@/components/google-analytics";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site-config";
+import { SITE_ICON_METADATA } from "@/lib/site-icons";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -18,10 +18,7 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   manifest: "/manifest.json",
-  icons: {
-    icon: "/favicon.png",
-    apple: "/brand/logo-alba-tec-sem-fundo.png",
-  },
+  icons: SITE_ICON_METADATA,
 };
 
 export const viewport: Viewport = {
@@ -49,7 +46,6 @@ export default function RootLayout({
             </SidebarConfigProvider>
           </AuthProvider>
         </ThemeProvider>
-        <SpeedInsights />
       </body>
     </html>
   );

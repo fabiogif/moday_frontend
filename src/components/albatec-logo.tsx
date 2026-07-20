@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 
 const LOGO_LIGHT = "/brand/logo-alba-tec-sem-fundo.png"
 const LOGO_DARK = "/brand/logo-alba-escuro.png"
-const LOGO_SYMBOL = "/brand/logo-simbolo.png"
+const LOGO_SYMBOL = "/brand/icon-512.png"
 
 export type AlbaTecLogoVariant = "horizontal" | "full" | "icon" | "wordmark"
 
