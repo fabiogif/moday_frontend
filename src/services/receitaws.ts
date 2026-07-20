@@ -1,10 +1,12 @@
 /**
  * Serviço de integração com API ReceitaWS
  * Documentação: https://receitaws.com.br/api
- * 
- * IMPORTANTE: ReceitaWS é um serviço gratuito com limite de consultas.
- * Para uso em produção, considere uma API paga ou cache dos resultados.
+ *
+ * A consulta é feita via proxy no backend (endpoints.cnpj.lookup), não
+ * diretamente do navegador — a ReceitaWS não envia cabeçalhos CORS para
+ * requisições de browser, então uma chamada direta é bloqueada em produção.
  */
+import { apiClient, endpoints } from '@/lib/api-client';
 
 export interface ReceitaWSResponse {
   // Dados básicos
@@ -94,35 +96,24 @@ export interface CompanyData {
  * @returns Dados da empresa ou null se não encontrado
  */
 export async function searchCompanyByCNPJ(cnpj: string): Promise<CompanyData | null> {
+  // Remove máscara do CNPJ
+  const cleanCNPJ = cnpj.replace(/\D/g, '');
+
+  // Valida se tem 14 dígitos
+  if (cleanCNPJ.length !== 14) {
+    throw new Error('CNPJ deve ter 14 dígitos');
+  }
+
   try {
-    // Remove máscara do CNPJ
-    const cleanCNPJ = cnpj.replace(/\D/g, '');
-    
-    // Valida se tem 14 dígitos
-    if (cleanCNPJ.length !== 14) {
-      throw new Error('CNPJ deve ter 14 dígitos');
-    }
+    // Consulta via proxy no backend (evita bloqueio de CORS do navegador)
+    const response = await apiClient.get<ReceitaWSResponse>(endpoints.cnpj.lookup(cleanCNPJ));
+    const data = response.data;
 
-    // Faz requisição para ReceitaWS
-    const response = await fetch(`https://www.receitaws.com.br/v1/cnpj/${cleanCNPJ}`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error('Erro ao consultar CNPJ');
-    }
-    
-    const data: ReceitaWSResponse = await response.json();
-
-    // Verifica se retornou erro
-    if (data.status === 'ERROR' || data.message) {
-
+    // Verifica se retornou erro ou não encontrou
+    if (!data || data.status === 'ERROR' || data.message) {
       return null;
     }
-    
+
     // Mapeia para o formato da aplicação
     return {
       // Dados básicos
@@ -149,8 +140,11 @@ export async function searchCompanyByCNPJ(cnpj: string): Promise<CompanyData | n
       porte: data.porte || '',
       naturezaJuridica: data.natureza_juridica || '',
     };
-  } catch (error) {
-
+  } catch (error: any) {
+    // Backend retorna 404 quando o CNPJ não é encontrado — não é um erro real
+    if (error?.status === 404) {
+      return null;
+    }
     throw error;
   }
 }

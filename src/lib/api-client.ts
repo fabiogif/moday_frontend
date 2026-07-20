@@ -639,6 +639,10 @@ export const endpoints = {
     checkDocument: '/api/suppliers/check-document',
   },
 
+  cnpj: {
+    lookup: (cnpj: string) => `/api/cnpj/${cnpj}`,
+  },
+
   expenses: {
     list: '/api/expenses',
     stats: '/api/expenses/stats',
