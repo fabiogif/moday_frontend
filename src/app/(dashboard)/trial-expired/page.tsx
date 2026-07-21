@@ -94,7 +94,7 @@ export default function TrialExpiredPage() {
 
           {/* Botões de ação */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <Link href="/subscription/plans" className="flex-1">
+            <Link href="/billing" className="flex-1">
               <Button className="w-full" size="lg">
                 <CreditCard className="mr-2 h-5 w-5" />
                 Ver Planos e Fazer Upgrade
