@@ -19,6 +19,7 @@ import {
   CalendarPlus,
 } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { endpoints } from "@/lib/api-client"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -48,7 +49,7 @@ export function OrderDetailsDialog({ order, open, onOpenChange }: OrderDetailsDi
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null
       const baseUrl = getApiBaseUrl()
-      const res = await fetch(`${baseUrl}/api/order/${order.identify}/calendar`, {
+      const res = await fetch(`${baseUrl}${endpoints.orders.calendarLink(order.identify)}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
       if (!res.ok) throw new Error("Falha ao gerar arquivo de calendário")

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,6 +32,7 @@ import {
 } from '@/hooks/use-accounts-receivable'
 import { useFinancialCategories } from '@/hooks/use-financial-categories'
 import { AccountReceivableFormDialog } from './components/account-receivable-form-dialog'
+import { UsersPagination } from '../../users/components/users-pagination'
 import { 
   Plus, Search, X, Edit, Trash2, Loader2, TrendingUp, 
   FileText, Calendar, DollarSign, AlertCircle, CheckCircle, ShoppingBag 
@@ -49,11 +50,19 @@ export default function AccountsReceivablePage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedAccount, setSelectedAccount] = useState<AccountReceivable | null>(null)
   const [accountToDelete, setAccountToDelete] = useState<AccountReceivable | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
 
-  const { data: accounts, loading, refetch } = useAccountsReceivable()
+  const { data: accounts, loading, refetch, pagination } = useAccountsReceivable(
+    statusFilter !== 'all' ? { status: statusFilter } : undefined,
+    currentPage
+  )
   const { data: stats } = useAccountReceivableStats()
   const { data: categories } = useFinancialCategories('receita')
   const { mutate, loading: mutating } = useAccountReceivableMutation()
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [statusFilter])
 
   // Filtrar contas
   const filteredAccounts = (accounts || []).filter(account => {
@@ -350,6 +359,17 @@ export default function AccountsReceivablePage() {
                 ))}
               </TableBody>
             </Table>
+          )}
+          {pagination && (
+            <div className="mt-4">
+              <UsersPagination
+                onPageChange={setCurrentPage}
+                currentPage={pagination.current_page}
+                totalPages={pagination.last_page}
+                totalItems={pagination.total}
+                itemsPerPage={pagination.per_page}
+              />
+            </div>
           )}
         </CardContent>
       </Card>

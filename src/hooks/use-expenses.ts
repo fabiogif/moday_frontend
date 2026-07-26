@@ -72,11 +72,21 @@ export function useExpenses(filters?: {
   supplier_id?: number
   start_date?: string
   end_date?: string
-}) {
-  return useAuthenticatedApi<Expense[]>(endpoints.expenses.list, {
+}, page: number = 1, perPage: number = 15) {
+  const result = useAuthenticatedApi<{ expenses: Expense[] }>(endpoints.expenses.list, {
     immediate: true,
-    queryParams: filters,
+    queryParams: { ...(filters ?? {}), page, per_page: perPage },
   })
+
+  const expenses = result.data && typeof result.data === 'object' && 'expenses' in result.data
+    ? (result.data as any).expenses
+    : (result.data as any)
+
+  return {
+    ...result,
+    data: expenses as Expense[],
+    pagination: result.pagination,
+  }
 }
 
 /**

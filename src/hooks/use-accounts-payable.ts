@@ -84,16 +84,29 @@ export interface AccountPayableStats {
   total_overdue: number
 }
 
-export function useAccountsPayable(filters?: AccountPayableFilters) {
-  const endpoint = filters 
-    ? `${endpoints.accountsPayable.list}?${new URLSearchParams(
-        Object.entries(filters)
-          .filter(([_, v]) => v !== undefined && v !== '')
-          .map(([k, v]) => [k, String(v)])
-      ).toString()}`
-    : endpoints.accountsPayable.list
+export function useAccountsPayable(filters?: AccountPayableFilters, page: number = 1, perPage: number = 15) {
+  const queryParams = {
+    ...(filters ?? {}),
+    page,
+    per_page: perPage,
+  }
+  const endpoint = `${endpoints.accountsPayable.list}?${new URLSearchParams(
+    Object.entries(queryParams)
+      .filter(([_, v]) => v !== undefined && v !== '')
+      .map(([k, v]) => [k, String(v)])
+  ).toString()}`
 
-  return useAuthenticatedApi<AccountPayable[]>(endpoint)
+  const result = useAuthenticatedApi<{ accounts_payable: AccountPayable[] }>(endpoint)
+
+  const accountsPayable = result.data && typeof result.data === 'object' && 'accounts_payable' in result.data
+    ? (result.data as any).accounts_payable
+    : (result.data as any)
+
+  return {
+    ...result,
+    data: accountsPayable as AccountPayable[],
+    pagination: result.pagination,
+  }
 }
 
 export function useAccountPayableStats() {

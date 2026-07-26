@@ -92,7 +92,18 @@ export function TopProducts() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {products.length === 0 ? (
+          {error && products.length === 0 ? (
+            <div className="text-center py-4 space-y-2">
+              <p className="text-sm text-muted-foreground">Não foi possível carregar os produtos.</p>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          ) : products.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">Nenhum produto encontrado</p>
           ) : (
             products.map((product) => (

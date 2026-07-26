@@ -94,16 +94,29 @@ export interface AccountReceivableStats {
   total_overdue: number
 }
 
-export function useAccountsReceivable(filters?: AccountReceivableFilters) {
-  const endpoint = filters 
-    ? `${endpoints.accountsReceivable.list}?${new URLSearchParams(
-        Object.entries(filters)
-          .filter(([_, v]) => v !== undefined && v !== '')
-          .map(([k, v]) => [k, String(v)])
-      ).toString()}`
-    : endpoints.accountsReceivable.list
+export function useAccountsReceivable(filters?: AccountReceivableFilters, page: number = 1, perPage: number = 15) {
+  const queryParams = {
+    ...(filters ?? {}),
+    page,
+    per_page: perPage,
+  }
+  const endpoint = `${endpoints.accountsReceivable.list}?${new URLSearchParams(
+    Object.entries(queryParams)
+      .filter(([_, v]) => v !== undefined && v !== '')
+      .map(([k, v]) => [k, String(v)])
+  ).toString()}`
 
-  return useAuthenticatedApi<AccountReceivable[]>(endpoint)
+  const result = useAuthenticatedApi<{ accounts_receivable: AccountReceivable[] }>(endpoint)
+
+  const accountsReceivable = result.data && typeof result.data === 'object' && 'accounts_receivable' in result.data
+    ? (result.data as any).accounts_receivable
+    : (result.data as any)
+
+  return {
+    ...result,
+    data: accountsReceivable as AccountReceivable[],
+    pagination: result.pagination,
+  }
 }
 
 export function useAccountReceivableStats() {

@@ -77,7 +77,7 @@ export function AssignPermissionsDialog({
     try {
       const response = await fetch(buildApiUrl(endpoints.profiles.permissions(profile.id)), {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
           'Accept': 'application/json',
         },
       })
@@ -86,9 +86,11 @@ export function AssignPermissionsDialog({
         const data = await response.json()
         const permissions = data.data || []
         setSelectedPermissions(permissions.map((p: Permission) => p.id))
+      } else {
+        toast.error("Não foi possível carregar as permissões do perfil")
       }
     } catch (error) {
-
+      toast.error("Não foi possível carregar as permissões do perfil")
     }
   }
 

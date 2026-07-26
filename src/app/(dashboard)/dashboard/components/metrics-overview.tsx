@@ -106,6 +106,28 @@ export function MetricsOverview() {
     }
   }, [metricsData])
 
+  if (error && !metrics) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardDescription className="text-sm font-medium">Métricas</CardDescription>
+          <CardTitle className="text-base font-normal text-muted-foreground">
+            Não foi possível carregar as métricas do dashboard.
+          </CardTitle>
+        </CardHeader>
+        <CardFooter>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            Tentar novamente
+          </button>
+        </CardFooter>
+      </Card>
+    )
+  }
+
   if (authLoading || loading || !metrics) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 @5xl:grid-cols-4">

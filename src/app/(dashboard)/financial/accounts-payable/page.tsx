@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,6 +34,7 @@ import {
 import { useFinancialCategories } from '@/hooks/use-financial-categories'
 import { useSuppliers } from '@/hooks/use-suppliers'
 import { AccountPayableFormDialog } from './components/account-payable-form-dialog'
+import { UsersPagination } from '../../users/components/users-pagination'
 import { 
   Plus, Search, X, Edit, Trash2, Loader2, CreditCard, 
   FileText, Calendar, DollarSign, AlertCircle, CheckCircle 
@@ -51,13 +52,21 @@ export default function AccountsPayablePage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedAccount, setSelectedAccount] = useState<AccountPayable | null>(null)
   const [accountToDelete, setAccountToDelete] = useState<AccountPayable | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
 
-  const { data: accounts, loading, refetch } = useAccountsPayable()
+  const { data: accounts, loading, refetch, pagination } = useAccountsPayable(
+    statusFilter !== 'all' ? { status: statusFilter } : undefined,
+    currentPage
+  )
   const { data: stats } = useAccountPayableStats()
   const { data: alerts } = useAccountPayableAlerts(7)
   const { data: categories } = useFinancialCategories('despesa')
   const { data: suppliers } = useSuppliers()
   const { mutate, loading: mutating } = useAccountPayableMutation()
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [statusFilter])
 
   // Filtrar contas
   const filteredAccounts = (accounts || []).filter(account => {
@@ -361,6 +370,17 @@ export default function AccountsPayablePage() {
                 ))}
               </TableBody>
             </Table>
+          )}
+          {pagination && (
+            <div className="mt-4">
+              <UsersPagination
+                onPageChange={setCurrentPage}
+                currentPage={pagination.current_page}
+                totalPages={pagination.last_page}
+                totalItems={pagination.total}
+                itemsPerPage={pagination.per_page}
+              />
+            </div>
           )}
         </CardContent>
       </Card>

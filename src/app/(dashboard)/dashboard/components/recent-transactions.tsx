@@ -105,7 +105,18 @@ export function RecentTransactions() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {transactions.length === 0 ? (
+          {error && transactions.length === 0 ? (
+            <div className="text-center py-4 space-y-2">
+              <p className="text-sm text-muted-foreground">Não foi possível carregar as transações.</p>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          ) : transactions.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">Nenhuma transação encontrada</p>
           ) : (
             transactions.map((transaction) => {

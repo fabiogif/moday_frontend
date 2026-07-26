@@ -18,7 +18,6 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuthenticatedClients, useAuthenticatedCatalogProducts, useAuthenticatedTables, useAuthenticatedActivePaymentMethods, useMutation } from "@/hooks/use-authenticated-api";
-import { useProducts } from "@/hooks/use-api"; // Temporário para teste
 import { apiClient, endpoints } from "@/lib/api-client";
 import { toast } from "sonner";
 import { useOrderRefresh } from "@/hooks/use-order-refresh";
@@ -182,7 +181,6 @@ export default function NewOrderPage() {
   const { triggerRefresh } = useOrderRefresh();
   const auth = useAuth();
   const { data: clientsData, loading: clientsLoading, refetch: refetchClients } = useAuthenticatedClients();
-  const { data: productsData, loading: productsLoading } = useProducts(); // Teste não autenticado
   const { data: tablesData, loading: tablesLoading } = useAuthenticatedTables();
   const { data: paymentMethodsData, loading: paymentMethodsLoading } = useAuthenticatedActivePaymentMethods();
   const { mutate: createClient } = useMutation();
@@ -354,9 +352,8 @@ export default function NewOrderPage() {
   }, [clientsData]);
   
   const clients = localClients.length > 0 ? localClients : clientsFromApi;
-  // Usar dados de qualquer hook que funcionar e filtrar apenas produtos ativos
-  const finalProductsData = productsDataAuth || productsData;
-  const products = getArrayFromData(finalProductsData)
+  // Filtrar apenas produtos ativos
+  const products = getArrayFromData(productsDataAuth)
     .filter((p: any) => {
       // Verificar se produto tem os campos necessários e está ativo
       const hasRequiredFields = p && p.identify && p.name;

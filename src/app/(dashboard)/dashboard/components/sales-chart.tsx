@@ -1,15 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useAuth } from "@/contexts/auth-context"
-import { useAuthenticatedApi } from "@/hooks/use-authenticated-api"
-import { apiClient } from "@/lib/api-client"
 
 interface MonthlyData {
   month: string
@@ -31,41 +28,14 @@ const chartConfig = {
 }
 
 export function SalesChart() {
-  const { isAuthenticated, isLoading: authLoading, token } = useAuth()
   const [timeRange, setTimeRange] = useState("12m")
-  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([])
-  const [currentMonth, setCurrentMonth] = useState<MonthlyData | null>(null)
+  const [monthlyData] = useState<MonthlyData[]>([])
+  const [currentMonth] = useState<MonthlyData | null>(null)
 
-  // Use authenticated API hook for sales performance
-  const { data: salesData, loading, error, refetch } = useAuthenticatedApi<{
-    monthly_data: MonthlyData[]
-    current_month: MonthlyData
-  }>(
-    '/api/dashboard/sales-performance',
-    { immediate: false }
-  )
-  
-  // Garantir que o token está no apiClient antes de fazer refetch
-  useEffect(() => {
-    if (token) {
-      apiClient.setToken(token)
-      apiClient.reloadToken()
-    }
-  }, [token])
-
-  useEffect(() => {
-    // Aguardar autenticação completa antes de carregar
-    if (!authLoading && isAuthenticated) {
-      refetch()
-    }
-  }, [authLoading, isAuthenticated, refetch])
-
-  useEffect(() => {
-    if (salesData) {
-      setMonthlyData(salesData.monthly_data)
-      setCurrentMonth(salesData.current_month)
-    }
-  }, [salesData])
+  // Componente desativado (render abaixo comentado) — o fetch foi removido
+  // para não disparar uma chamada de API sem uso enquanto ele estiver assim.
+  // Ao reativar o card, restaurar o useAuthenticatedApi('/api/dashboard/sales-performance')
+  // e os efeitos de sincronização de token/refetch que existiam aqui.
 
   const filteredData = monthlyData.slice(
     timeRange === "3m" ? -3 : timeRange === "6m" ? -6 : -12
