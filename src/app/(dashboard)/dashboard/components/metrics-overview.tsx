@@ -8,14 +8,31 @@ import {
   Users,
   ShoppingCart,
   BarChart3,
+  Receipt,
+  UserPlus,
+  CheckCircle2,
+  XCircle,
+  Star,
+  Clock,
+  Repeat,
+  TrendingUp as ProjectedIcon,
+  type LucideIcon,
 } from "lucide-react"
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { EmptyState } from "@/components/ui/empty-state"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { useAuth } from "@/contexts/auth-context"
 import { useRealtimeDashboard } from "@/hooks/use-realtime-dashboard"
-import { useAuthenticatedApi } from "@/hooks/use-authenticated-api"
+import { useAuthenticatedApi, useAuthenticatedOrderStats, useAuthenticatedReviewStats } from "@/hooks/use-authenticated-api"
+import { useSalesPerformance } from "@/hooks/use-sales-performance"
 import { apiClient } from "@/lib/api-client"
+import { useDashboardFilters } from "../context/dashboard-filters-context"
 import { Area, AreaChart, ResponsiveContainer } from "recharts"
 
 interface MetricData {
@@ -33,6 +50,22 @@ interface MetricsData {
   active_clients: MetricData
   total_orders: MetricData
   conversion_rate: MetricData
+}
+
+interface StatTrio {
+  current: number
+  previous: number
+  growth: number
+}
+
+interface OrderStats {
+  delivered_orders: StatTrio
+  canceled_orders: StatTrio
+}
+
+interface ReviewStats {
+  average_rating: number
+  total: number
 }
 
 function MiniSparkline({ data, trend }: { data?: Array<{ month: string; revenue: number }>; trend: "up" | "down" }) {
@@ -63,21 +96,143 @@ function MiniSparkline({ data, trend }: { data?: Array<{ month: string; revenue:
   )
 }
 
-const iconColors = [
-  "text-primary bg-primary/10",
-  "text-emerald-600 bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-400",
-  "text-violet-600 bg-violet-50 dark:bg-violet-950 dark:text-violet-400",
-  "text-amber-600 bg-amber-50 dark:bg-amber-950 dark:text-amber-400",
-]
+interface KpiCardProps {
+  title: string
+  value: string
+  change?: string
+  trend?: "up" | "down"
+  icon: LucideIcon
+  iconClassName: string
+  footer?: string
+  subfooter?: string
+  chartData?: Array<{ month: string; revenue: number }>
+  tooltip: string
+  liveIndicator?: boolean
+}
+
+function KpiCard({ title, value, change, trend, icon: Icon, iconClassName, footer, subfooter, chartData, tooltip, liveIndicator }: KpiCardProps) {
+  const TrendIcon = trend === "up" ? TrendingUp : TrendingDown
+  const trendColor =
+    trend === "up"
+      ? "text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400"
+      : "text-rose-600 border-rose-200 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-400"
+
+  return (
+    <Card className="cursor-default overflow-hidden transition-shadow hover:shadow-md">
+      {liveIndicator && (
+        <span className="absolute top-3 right-3 flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+        </span>
+      )}
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <CardDescription className="text-sm font-medium underline decoration-dotted underline-offset-4">
+                {title}
+              </CardDescription>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="max-w-56">{tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+          <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${iconClassName}`}>
+            <Icon className="h-4 w-4" />
+          </div>
+        </div>
+        <CardTitle className="text-2xl font-bold tabular-nums @[250px]/card:text-3xl mt-1">
+          {value}
+        </CardTitle>
+        {change && trend && (
+          <CardAction>
+            <Badge variant="outline" className={`text-xs font-medium ${trendColor}`}>
+              <TrendIcon className="h-3 w-3 mr-1" />
+              {change}
+            </Badge>
+          </CardAction>
+        )}
+      </CardHeader>
+
+      {chartData && chartData.length > 1 && trend && (
+        <div className="px-6 pb-0">
+          <MiniSparkline data={chartData} trend={trend} />
+        </div>
+      )}
+
+      {(footer || subfooter) && (
+        <CardFooter className="flex-col items-start gap-1 text-sm pt-2">
+          {footer && <div className="line-clamp-1 flex gap-2 font-medium text-foreground/80">{footer}</div>}
+          {subfooter && <div className="text-xs text-muted-foreground">{subfooter}</div>}
+        </CardFooter>
+      )}
+    </Card>
+  )
+}
+
+function ComingSoonCard({ title, icon: Icon, description }: { title: string; icon: LucideIcon; description: string }) {
+  return (
+    <Card className="border-dashed bg-muted/20">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardDescription className="text-sm font-medium">{title}</CardDescription>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <Icon className="h-4 w-4" />
+          </div>
+        </div>
+        <CardAction>
+          <Badge variant="outline" className="text-xs font-medium text-muted-foreground">
+            Em breve
+          </Badge>
+        </CardAction>
+      </CardHeader>
+      <CardFooter className="pt-2">
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </CardFooter>
+    </Card>
+  )
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
+}
+
+function formatGrowth(growth: number) {
+  return `${growth >= 0 ? "+" : ""}${growth.toFixed(1)}%`
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{children}</h3>
+}
 
 export function MetricsOverview() {
   const { user, isAuthenticated, isLoading: authLoading, token } = useAuth()
   const [metrics, setMetrics] = useState<MetricsData | null>(null)
+  const { dateRange } = useDashboardFilters()
 
   const { data: metricsData, loading, error, refetch } = useAuthenticatedApi<MetricsData>(
     "/api/dashboard/metrics",
     { immediate: false }
   )
+
+  const {
+    data: salesPerformance,
+    loading: salesLoading,
+    error: salesError,
+  } = useSalesPerformance({
+    start_date: dateRange.start_date,
+    end_date: dateRange.end_date,
+    days: dateRange.days,
+  })
+
+  const { data: orderStats, loading: orderStatsLoading } = useAuthenticatedOrderStats() as {
+    data: OrderStats | null
+    loading: boolean
+  }
+  const { data: reviewStats, loading: reviewStatsLoading } = useAuthenticatedReviewStats() as {
+    data: ReviewStats | null
+    loading: boolean
+  }
 
   useEffect(() => {
     if (token) {
@@ -111,18 +266,13 @@ export function MetricsOverview() {
       <Card>
         <CardHeader>
           <CardDescription className="text-sm font-medium">Métricas</CardDescription>
-          <CardTitle className="text-base font-normal text-muted-foreground">
-            Não foi possível carregar as métricas do dashboard.
-          </CardTitle>
         </CardHeader>
         <CardFooter>
-          <button
-            type="button"
-            onClick={() => refetch()}
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            Tentar novamente
-          </button>
+          <EmptyState
+            variant="error"
+            title="Não foi possível carregar as métricas do dashboard."
+            action={{ label: "Tentar novamente", onClick: () => refetch() }}
+          />
         </CardFooter>
       </Card>
     )
@@ -148,98 +298,163 @@ export function MetricsOverview() {
     )
   }
 
-  const metricsConfig = [
-    {
-      title: "Receita Total",
-      value: metrics.total_revenue.formatted || `R$ ${metrics.total_revenue.value.toFixed(2)}`,
-      change: `${metrics.total_revenue.growth >= 0 ? "+" : ""}${metrics.total_revenue.growth.toFixed(1)}%`,
-      trend: metrics.total_revenue.trend,
-      icon: DollarSign,
-      footer: metrics.total_revenue.subtitle,
-      subfooter: metrics.total_revenue.description,
-      chartData: metrics.total_revenue.chart_data,
-    },
-    {
-      title: "Clientes Ativos",
-      value: metrics.active_clients.value.toString(),
-      change: `${metrics.active_clients.growth >= 0 ? "+" : ""}${metrics.active_clients.growth.toFixed(1)}%`,
-      trend: metrics.active_clients.trend,
-      icon: Users,
-      footer: metrics.active_clients.subtitle,
-      subfooter: metrics.active_clients.description,
-      chartData: metrics.active_clients.chart_data,
-    },
-    {
-      title: "Total de Pedidos",
-      value: metrics.total_orders.value.toString(),
-      change: `${metrics.total_orders.growth >= 0 ? "+" : ""}${metrics.total_orders.growth.toFixed(1)}%`,
-      trend: metrics.total_orders.trend,
-      icon: ShoppingCart,
-      footer: metrics.total_orders.subtitle,
-      subfooter: metrics.total_orders.description,
-      chartData: metrics.total_orders.chart_data,
-    },
-    {
-      title: "Taxa de Conversão",
-      value: metrics.conversion_rate.formatted || `${metrics.conversion_rate.value.toFixed(1)}%`,
-      change: `${metrics.conversion_rate.growth >= 0 ? "+" : ""}${metrics.conversion_rate.growth.toFixed(1)}%`,
-      trend: metrics.conversion_rate.trend,
-      icon: BarChart3,
-      footer: metrics.conversion_rate.subtitle,
-      subfooter: metrics.conversion_rate.description,
-      chartData: metrics.conversion_rate.chart_data,
-    },
-  ]
+  const indicators = salesPerformance?.indicators
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 @5xl:grid-cols-4">
-      {metricsConfig.map((metric, index) => {
-        const TrendIcon = metric.trend === "up" ? TrendingUp : TrendingDown
-        const trendColor = metric.trend === "up"
-          ? "text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400"
-          : "text-rose-600 border-rose-200 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-400"
+    <div className="space-y-6">
+      {/* Grupo 1 — reage ao seletor de período global */}
+      <div className="space-y-2">
+        <SectionLabel>Período selecionado · {dateRange.label}</SectionLabel>
+        {salesError && !indicators ? (
+          <EmptyState
+            variant="error"
+            size="sm"
+            title="Não foi possível carregar os indicadores do período."
+          />
+        ) : salesLoading || !indicators ? (
+          <div className="grid gap-4 sm:grid-cols-2 @5xl:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-4 w-24 mb-2" />
+                  <Skeleton className="h-8 w-32" />
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 @5xl:grid-cols-4">
+            <KpiCard
+              title="Receita"
+              value={formatCurrency(indicators.total_sales_value.current)}
+              change={formatGrowth(indicators.total_sales_value.growth)}
+              trend={indicators.total_sales_value.growth >= 0 ? "up" : "down"}
+              icon={DollarSign}
+              iconClassName="text-primary bg-primary/10"
+              tooltip="Soma do valor dos pedidos no período selecionado, comparada ao período anterior de mesma duração."
+            />
+            <KpiCard
+              title="Pedidos"
+              value={indicators.total_sales.current.toString()}
+              change={formatGrowth(indicators.total_sales.growth)}
+              trend={indicators.total_sales.growth >= 0 ? "up" : "down"}
+              icon={ShoppingCart}
+              iconClassName="text-violet-600 bg-violet-50 dark:bg-violet-950 dark:text-violet-400"
+              tooltip="Total de pedidos no período selecionado, comparado ao período anterior de mesma duração."
+            />
+            <KpiCard
+              title="Ticket Médio"
+              value={formatCurrency(indicators.average_ticket.current)}
+              change={formatGrowth(indicators.average_ticket.growth)}
+              trend={indicators.average_ticket.growth >= 0 ? "up" : "down"}
+              icon={Receipt}
+              iconClassName="text-amber-600 bg-amber-50 dark:bg-amber-950 dark:text-amber-400"
+              tooltip="Valor médio por pedido (receita ÷ pedidos) no período selecionado."
+            />
+            <KpiCard
+              title="Novos Clientes"
+              value={indicators.new_clients.current.toString()}
+              change={formatGrowth(indicators.new_clients.growth)}
+              trend={indicators.new_clients.growth >= 0 ? "up" : "down"}
+              icon={UserPlus}
+              iconClassName="text-emerald-600 bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-400"
+              tooltip="Clientes que fizeram o primeiro pedido dentro do período selecionado."
+            />
+          </div>
+        )}
+      </div>
 
-        return (
-          <Card key={metric.title} className="cursor-pointer overflow-hidden transition-shadow hover:shadow-md">
-            {isConnected && index === 0 && (
-              <span className="absolute top-3 right-3 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
-            )}
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardDescription className="text-sm font-medium">{metric.title}</CardDescription>
-                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${iconColors[index]}`}>
-                  <metric.icon className="h-4 w-4" />
-                </div>
-              </div>
-              <CardTitle className="text-2xl font-bold tabular-nums @[250px]/card:text-3xl mt-1">
-                {metric.value}
-              </CardTitle>
-              <CardAction>
-                <Badge variant="outline" className={`text-xs font-medium ${trendColor}`}>
-                  <TrendIcon className="h-3 w-3 mr-1" />
-                  {metric.change}
-                </Badge>
-              </CardAction>
-            </CardHeader>
+      {/* Grupo 2 — fixo (mês atual), independente do seletor */}
+      <div className="space-y-2">
+        <SectionLabel>Este mês (vs. mês anterior)</SectionLabel>
+        <div className="grid gap-4 sm:grid-cols-2 @5xl:grid-cols-4">
+          <KpiCard
+            title="Clientes Ativos"
+            value={metrics.active_clients.value.toString()}
+            change={formatGrowth(metrics.active_clients.growth)}
+            trend={metrics.active_clients.trend}
+            icon={Users}
+            iconClassName="text-emerald-600 bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-400"
+            footer={metrics.active_clients.subtitle}
+            subfooter={metrics.active_clients.description}
+            tooltip="Clientes com pelo menos um pedido no mês atual."
+            liveIndicator={isConnected}
+          />
+          <KpiCard
+            title="Taxa de Conversão"
+            value={metrics.conversion_rate.formatted || `${metrics.conversion_rate.value.toFixed(1)}%`}
+            change={formatGrowth(metrics.conversion_rate.growth)}
+            trend={metrics.conversion_rate.trend}
+            icon={BarChart3}
+            iconClassName="text-primary bg-primary/10"
+            footer={metrics.conversion_rate.subtitle}
+            subfooter={metrics.conversion_rate.description}
+            tooltip="Percentual de visitas/pedidos iniciados que viraram pedidos concluídos, no mês atual."
+          />
+          {orderStatsLoading || !orderStats ? (
+            <>
+              <Card><CardHeader><Skeleton className="h-4 w-24 mb-2" /><Skeleton className="h-8 w-16" /></CardHeader></Card>
+              <Card><CardHeader><Skeleton className="h-4 w-24 mb-2" /><Skeleton className="h-8 w-16" /></CardHeader></Card>
+            </>
+          ) : (
+            <>
+              <KpiCard
+                title="Pedidos Concluídos"
+                value={orderStats.delivered_orders.current.toString()}
+                change={formatGrowth(orderStats.delivered_orders.growth)}
+                trend={orderStats.delivered_orders.growth >= 0 ? "up" : "down"}
+                icon={CheckCircle2}
+                iconClassName="text-emerald-600 bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-400"
+                tooltip="Pedidos com status Concluído no mês atual."
+              />
+              <KpiCard
+                title="Pedidos Cancelados"
+                value={orderStats.canceled_orders.current.toString()}
+                change={formatGrowth(orderStats.canceled_orders.growth)}
+                trend={orderStats.canceled_orders.growth >= 0 ? "down" : "up"}
+                icon={XCircle}
+                iconClassName="text-rose-600 bg-rose-50 dark:bg-rose-950 dark:text-rose-400"
+                tooltip="Pedidos com status Cancelado no mês atual. Uma redução (verde) é o resultado desejado."
+              />
+            </>
+          )}
+          {reviewStatsLoading || !reviewStats ? (
+            <Card><CardHeader><Skeleton className="h-4 w-24 mb-2" /><Skeleton className="h-8 w-16" /></CardHeader></Card>
+          ) : (
+            <KpiCard
+              title="Avaliação Média"
+              value={reviewStats.total > 0 ? reviewStats.average_rating.toFixed(1) : "—"}
+              icon={Star}
+              iconClassName="text-amber-600 bg-amber-50 dark:bg-amber-950 dark:text-amber-400"
+              footer={reviewStats.total > 0 ? `${reviewStats.total} avaliações` : undefined}
+              subfooter={reviewStats.total === 0 ? "Ainda sem avaliações" : undefined}
+              tooltip="Nota média das avaliações aprovadas de clientes."
+            />
+          )}
+        </div>
+      </div>
 
-            {metric.chartData && metric.chartData.length > 1 && (
-              <div className="px-6 pb-0">
-                <MiniSparkline data={metric.chartData} trend={metric.trend} />
-              </div>
-            )}
-
-            <CardFooter className="flex-col items-start gap-1 text-sm pt-2">
-              <div className="line-clamp-1 flex gap-2 font-medium text-foreground/80">
-                {metric.footer}
-              </div>
-              <div className="text-xs text-muted-foreground">{metric.subfooter}</div>
-            </CardFooter>
-          </Card>
-        )
-      })}
+      {/* Grupo 3 — sem fonte de dado real no backend hoje; nunca fabricar número */}
+      <div className="space-y-2">
+        <SectionLabel>Em breve</SectionLabel>
+        <div className="grid gap-4 sm:grid-cols-2 @5xl:grid-cols-3">
+          <ComingSoonCard
+            title="Receita Projetada"
+            icon={ProjectedIcon}
+            description="Projeção de fechamento do período com base na tendência atual. Em desenvolvimento."
+          />
+          <ComingSoonCard
+            title="Clientes Recorrentes"
+            icon={Repeat}
+            description="Percentual de clientes com mais de um pedido. Depende de um cálculo que ainda não existe no backend."
+          />
+          <ComingSoonCard
+            title="Tempo Médio de Atendimento"
+            icon={Clock}
+            description="Tempo entre a criação e a conclusão do pedido. Depende de um cálculo que ainda não existe no backend."
+          />
+        </div>
+      </div>
     </div>
   )
 }

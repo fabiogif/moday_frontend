@@ -98,7 +98,7 @@ describe('CustomersChart', () => {
 
     render(<CustomersChart />)
     
-    expect(screen.getByText(/Número de Clientes/i)).toBeInTheDocument()
+    expect(screen.getByText(/Novos Clientes/i)).toBeInTheDocument()
     expect(screen.getByText(/Últimos 6 meses/i)).toBeInTheDocument()
   })
 
@@ -118,7 +118,7 @@ describe('CustomersChart', () => {
     render(<CustomersChart />)
     
     await waitFor(() => {
-      expect(screen.getByText(/Número de Clientes/i)).toBeInTheDocument()
+      expect(screen.getByText(/Novos Clientes/i)).toBeInTheDocument()
       expect(screen.getByText(/3 clientes totais/i)).toBeInTheDocument()
     })
   })

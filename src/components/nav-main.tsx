@@ -3,6 +3,7 @@
 import { ChevronRight, type LucideIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
 
 import {
   Collapsible,
@@ -30,6 +31,7 @@ export function NavMain({
     url: string
     icon?: LucideIcon
     isActive?: boolean
+    badge?: number | string
     items?: {
       title: string
       url: string
@@ -60,10 +62,22 @@ export function NavMain({
               {item.items?.length ? (
                 <>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title} className="cursor-pointer">
+                    <SidebarMenuButton
+                      tooltip={item.title}
+                      className="cursor-pointer"
+                      isActive={pathname === item.url}
+                    >
                       {item.icon && <item.icon />}
                       <span>{item.title}</span>
-                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      {item.badge != null && (
+                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-md bg-sidebar-primary px-1 text-xs font-medium tabular-nums text-sidebar-primary-foreground">
+                          {item.badge}
+                        </span>
+                      )}
+                      <ChevronRight className={cn(
+                        "transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90",
+                        item.badge == null && "ml-auto"
+                      )} />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -89,6 +103,11 @@ export function NavMain({
                   <Link href={item.url}>
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>
+                    {item.badge != null && (
+                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-md bg-sidebar-primary px-1 text-xs font-medium tabular-nums text-sidebar-primary-foreground">
+                        {item.badge}
+                      </span>
+                    )}
                   </Link>
                 </SidebarMenuButton>
               )}

@@ -36,6 +36,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
+import { useAuthenticatedOrderStats } from "@/hooks/use-authenticated-api"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -47,7 +48,8 @@ import {
 } from "@/components/ui/sidebar"
 import { AlbaTecLogo } from "@/components/albatec-logo"
 
-const navGroups = [
+function buildNavGroups(openOrdersCount?: number) {
+  return [
   {
     label: "Principal",
     items: [
@@ -60,6 +62,7 @@ const navGroups = [
         title: "Pedidos",
         url: "/orders",
         icon: ShoppingCart,
+        badge: openOrdersCount && openOrdersCount > 0 ? openOrdersCount : undefined,
         items: [
           { title: "Todos os Pedidos", url: "/orders" },
           { title: "Quadro Kanban", url: "/orders/board" },
@@ -183,10 +186,16 @@ const navGroups = [
       },
     ],
   },
-]
+  ]
+}
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, isAuthenticated } = useAuth()
+  const { data: orderStats } = useAuthenticatedOrderStats() as {
+    data: { in_preparo_orders?: { current: number } } | null
+  }
+
+  const navGroups = buildNavGroups(orderStats?.in_preparo_orders?.current)
 
   const userData = {
     name: user?.name || "Usuário",

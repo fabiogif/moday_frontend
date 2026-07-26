@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { X, Bell, Check, CheckCheck, ShoppingCart, MessageSquare, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
-import { formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow, isToday, isYesterday } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useOrderNotifications } from '@/contexts/order-notifications-context'
 import { useRouter } from 'next/navigation'
@@ -63,6 +64,29 @@ export function NotificationsSidebar({ open, onClose }: NotificationsSidebarProp
   }, [orderNotifications, readIds])
 
   const unreadCount = notifications.filter(n => !n.read).length
+
+  const [filter, setFilter] = useState<'all' | 'unread' | 'order'>('all')
+
+  const filteredNotifications = useMemo(() => {
+    if (filter === 'unread') return notifications.filter(n => !n.read)
+    if (filter === 'order') return notifications.filter(n => n.type === 'order')
+    return notifications
+  }, [notifications, filter])
+
+  const groupedNotifications = useMemo(() => {
+    const groups: { label: string; items: Notification[] }[] = [
+      { label: 'Hoje', items: [] },
+      { label: 'Ontem', items: [] },
+      { label: 'Mais antigas', items: [] },
+    ]
+    for (const notification of filteredNotifications) {
+      const date = new Date(notification.timestamp)
+      if (isToday(date)) groups[0].items.push(notification)
+      else if (isYesterday(date)) groups[1].items.push(notification)
+      else groups[2].items.push(notification)
+    }
+    return groups.filter(g => g.items.length > 0)
+  }, [filteredNotifications])
 
   const markAsRead = (id: string) => {
     setReadIds(prev => {
@@ -183,20 +207,36 @@ export function NotificationsSidebar({ open, onClose }: NotificationsSidebarProp
                 Marcar todas como lidas
               </Button>
             )}
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+              <TabsList className="w-full">
+                <TabsTrigger value="all" className="flex-1">Tudo</TabsTrigger>
+                <TabsTrigger value="unread" className="flex-1">Não lidas</TabsTrigger>
+                <TabsTrigger value="order" className="flex-1">Pedidos</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
 
           {/* Content */}
           <ScrollArea className="flex-1">
             <div className="p-4 space-y-3">
-              {notifications.length === 0 ? (
+              {filteredNotifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <Bell className="h-12 w-12 text-muted-foreground/50 mb-4" />
                   <p className="text-sm text-muted-foreground">
-                    Nenhuma notificação ainda
+                    {filter === 'unread'
+                      ? 'Nenhuma notificação não lida'
+                      : filter === 'order'
+                      ? 'Nenhum pedido notificado ainda'
+                      : 'Nenhuma notificação ainda'}
                   </p>
                 </div>
               ) : (
-                notifications.map((notification) => (
+                groupedNotifications.map((group) => (
+                  <div key={group.label} className="space-y-3">
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground px-1">
+                      {group.label}
+                    </h4>
+                    {group.items.map((notification) => (
                   <div
                     key={notification.id}
                     className={cn(
@@ -263,6 +303,8 @@ export function NotificationsSidebar({ open, onClose }: NotificationsSidebarProp
                         </div>
                       </div>
                     </div>
+                  </div>
+                    ))}
                   </div>
                 ))
               )}
