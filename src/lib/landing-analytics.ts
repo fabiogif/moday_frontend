@@ -8,6 +8,7 @@ export type LandingCTAEvent =
   | 'cta_operacao_flow_click'
   | 'cta_financeiro_flow_click'
   | 'cta_app_mobile_flow_click'
+  | 'cta_what_is_click'
 
 type LandingAnalyticsPayload = {
   event: LandingCTAEvent

@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
+import Link from "next/link"
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,6 +18,7 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form"
+import { COMPANY_EMAILS } from '@/lib/company-emails'
 
 const newsletterSchema = z.object({
   email: z.string().email({
@@ -26,12 +28,17 @@ const newsletterSchema = z.object({
 
 const footerLinks = {
   product: [
-    { name: 'Recursos', href: '#features' },
-    { name: 'Planos', href: '#pricing' },
+    { name: 'O que é o Alba Tec', href: '/#o-que-e' },
+    { name: 'Recursos do sistema', href: '/#features' },
+    { name: 'Planos e preços', href: '/#pricing' },
+    { name: 'Demonstração do cardápio', href: '/demo/menu' },
+    { name: 'Criar conta grátis', href: '/auth/register' },
   ],
   company: [
-    { name: 'Contato', href: '#contact' },
-    { name: 'FAQ', href: '#faq' },
+    { name: 'Contato', href: '/#contact' },
+    { name: 'Perguntas frequentes', href: '/#faq' },
+    { name: 'Política de Privacidade', href: '/privacidade' },
+    { name: 'Termos de Uso', href: '/termos' },
   ],
 }
 
@@ -73,12 +80,11 @@ export function LandingFooter() {
   }
 
   return (
-    <footer className="border-t bg-background">
+    <footer className="border-t bg-background" role="contentinfo">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        {/* Newsletter Section */}
         <div className="mb-16">
           <div className="mx-auto max-w-2xl text-center">
-            <h3 className="text-2xl font-bold mb-4">Fique por dentro</h3>
+            <h2 className="text-2xl font-bold mb-4">Fique por dentro</h2>
             <p className="text-muted-foreground mb-6">
               Receba novidades, dicas e atualizações sobre gestão de restaurantes.
             </p>
@@ -93,6 +99,7 @@ export function LandingFooter() {
                         <Input
                           type="email"
                           placeholder="Digite seu e-mail"
+                          aria-label="E-mail para newsletter"
                           {...field}
                         />
                       </FormControl>
@@ -115,46 +122,61 @@ export function LandingFooter() {
           </div>
         </div>
 
-        {/* Main Footer Content */}
         <div className="grid gap-8 grid-cols-2 lg:grid-cols-4">
-          {/* Brand Column */}
           <div className="col-span-2 max-w-2xl">
             <div className="mb-5 max-lg:flex max-lg:justify-center">
               <AlbaTecLogo height={64} />
             </div>
-            <p className="text-muted-foreground mb-6 max-lg:text-center max-lg:flex max-lg:justify-center text-sm leading-relaxed">
-              Sistema completo de gestão para restaurantes. Pedidos, cardápio, financeiro e relatórios em uma única plataforma.
+            <p className="text-muted-foreground mb-4 max-lg:text-center max-lg:flex max-lg:justify-center text-sm leading-relaxed">
+              Sistema de gestão para restaurantes com PDV, cardápio digital, financeiro e relatórios
+              em uma única plataforma.
+            </p>
+            <p className="text-sm text-muted-foreground max-lg:text-center">
+              Contato:{' '}
+              <a
+                href={`mailto:${COMPANY_EMAILS.contact}`}
+                className="text-foreground hover:underline"
+              >
+                {COMPANY_EMAILS.contact}
+              </a>
+              {' · '}
+              Atendimento:{' '}
+              <a
+                href={`mailto:${COMPANY_EMAILS.support}`}
+                className="text-foreground hover:underline"
+              >
+                {COMPANY_EMAILS.support}
+              </a>
             </p>
           </div>
 
-          {/* Links Columns */}
           <div className='max-md:col-span-1 lg:col-span-1'>
-            <h4 className="font-semibold mb-4">Produto</h4>
+            <h3 className="font-semibold mb-4">Produto</h3>
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
                 <li key={link.name}>
-                  <a
+                  <Link
                     href={link.href}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground transition-colors text-sm"
                   >
                     {link.name}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
 
           <div className='max-md:col-span-1 lg:col-span-1'>
-            <h4 className="font-semibold mb-4">Empresa</h4>
+            <h3 className="font-semibold mb-4">Empresa</h3>
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.name}>
-                  <a
+                  <Link
                     href={link.href}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground transition-colors text-sm"
                   >
                     {link.name}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -163,10 +185,17 @@ export function LandingFooter() {
 
         <Separator className="my-8" />
 
-        {/* Bottom Footer */}
         <div className="flex flex-col lg:flex-row justify-between items-center gap-2">
           <div className="text-muted-foreground text-sm text-center lg:text-left">
             © {new Date().getFullYear()} Alba Tec. Todos os direitos reservados.
+          </div>
+          <div className="flex gap-4 text-sm text-muted-foreground">
+            <Link href="/privacidade" className="hover:text-foreground">
+              Privacidade
+            </Link>
+            <Link href="/termos" className="hover:text-foreground">
+              Termos
+            </Link>
           </div>
         </div>
       </div>

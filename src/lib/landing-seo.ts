@@ -1,15 +1,22 @@
 import type { Metadata } from 'next'
+import { COMPANY_EMAILS } from '@/lib/company-emails'
 import { LANDING_FAQ_ITEMS } from '@/lib/landing-faq'
-import { LANDING_HEADLINE_VARIANTS } from '@/lib/landing-variants'
-import { SITE_DESCRIPTION, SITE_LOCALE, SITE_NAME, SITE_URL } from '@/lib/site-config'
+import {
+  LANDING_TITLE,
+  SITE_DESCRIPTION,
+  SITE_LOCALE,
+  SITE_NAME,
+  SITE_URL,
+} from '@/lib/site-config'
 
-const LANDING_OG_IMAGE = '/landing/dashboard-painel.png'
+const LANDING_OG_IMAGE = '/landing/sistema-gestao-restaurantes-painel.webp'
+const LANDING_OG_IMAGE_FALLBACK = '/landing/dashboard-painel.png'
 const LANDING_OG_IMAGE_ALT =
-  'Painel do Alba Tec com receita, pedidos, clientes e gráficos em tempo real'
+  'Painel do sistema de gestão para restaurantes Alba Tec com receita, pedidos e gráficos em tempo real'
 
 export function buildLandingMetadata(canonicalPath = '/'): Metadata {
-  const title = `${SITE_NAME} — Sistema de Gestão para Restaurantes`
-  const description = `${LANDING_HEADLINE_VARIANTS.a.subtitle} Teste grátis por 7 dias, sem cartão.`
+  const title = LANDING_TITLE
+  const description = SITE_DESCRIPTION
 
   return {
     metadataBase: new URL(SITE_URL),
@@ -19,6 +26,18 @@ export function buildLandingMetadata(canonicalPath = '/'): Metadata {
     },
     description,
     applicationName: SITE_NAME,
+    keywords: [
+      'sistema de gestão para restaurantes',
+      'PDV para restaurante',
+      'cardápio digital',
+      'sistema para restaurante',
+      'gestão de pedidos',
+      'controle de mesas',
+      'Alba Tec',
+    ],
+    authors: [{ name: SITE_NAME, url: SITE_URL }],
+    creator: SITE_NAME,
+    publisher: SITE_NAME,
     alternates: {
       canonical: canonicalPath,
     },
@@ -32,8 +51,14 @@ export function buildLandingMetadata(canonicalPath = '/'): Metadata {
       images: [
         {
           url: LANDING_OG_IMAGE,
-          width: 1400,
-          height: 900,
+          width: 1024,
+          height: 474,
+          alt: LANDING_OG_IMAGE_ALT,
+        },
+        {
+          url: LANDING_OG_IMAGE_FALLBACK,
+          width: 1024,
+          height: 474,
           alt: LANDING_OG_IMAGE_ALT,
         },
       ],
@@ -70,7 +95,21 @@ export function buildLandingJsonLd(canonicalPath = '/') {
       url: SITE_URL,
       logo: `${SITE_URL}/brand/logo-alba-tec-sem-fundo.png`,
       description: SITE_DESCRIPTION,
-      email: 'contato@albatec.com.br',
+      email: COMPANY_EMAILS.contact,
+      contactPoint: [
+        {
+          '@type': 'ContactPoint',
+          contactType: 'customer support',
+          email: COMPANY_EMAILS.support,
+          availableLanguage: ['Portuguese'],
+        },
+        {
+          '@type': 'ContactPoint',
+          contactType: 'sales',
+          email: COMPANY_EMAILS.contact,
+          availableLanguage: ['Portuguese'],
+        },
+      ],
     },
     {
       '@context': 'https://schema.org',
@@ -79,28 +118,61 @@ export function buildLandingJsonLd(canonicalPath = '/') {
       url: SITE_URL,
       inLanguage: 'pt-BR',
       description: SITE_DESCRIPTION,
+      publisher: {
+        '@type': 'Organization',
+        name: SITE_NAME,
+        url: SITE_URL,
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      '@id': `${pageUrl}#webpage`,
+      url: pageUrl,
+      name: LANDING_TITLE,
+      description: SITE_DESCRIPTION,
+      inLanguage: 'pt-BR',
+      isPartOf: {
+        '@type': 'WebSite',
+        name: SITE_NAME,
+        url: SITE_URL,
+      },
+      about: {
+        '@type': 'SoftwareApplication',
+        name: SITE_NAME,
+      },
     },
     {
       '@context': 'https://schema.org',
       '@type': 'SoftwareApplication',
       name: SITE_NAME,
       applicationCategory: 'BusinessApplication',
-      operatingSystem: 'Web',
+      applicationSubCategory: 'Restaurant Management Software',
+      operatingSystem: 'Web, Android, iOS',
       url: pageUrl,
       description: SITE_DESCRIPTION,
+      image: `${SITE_URL}${LANDING_OG_IMAGE_FALLBACK}`,
       offers: {
-        '@type': 'Offer',
-        price: '0',
+        '@type': 'AggregateOffer',
+        lowPrice: '0',
+        highPrice: '99.90',
         priceCurrency: 'BRL',
-        description: 'Plano gratuito e teste de 7 dias nos planos pagos',
+        offerCount: '3',
+        description: 'Plano gratuito e planos pagos com teste de 7 dias',
       },
       featureList: [
         'PDV touch-first',
         'Cardápio digital',
         'Controle de mesas',
         'Gestão financeira',
+        'App mobile de pedidos',
         'Relatórios em tempo real',
       ],
+      provider: {
+        '@type': 'Organization',
+        name: SITE_NAME,
+        url: SITE_URL,
+      },
     },
     {
       '@context': 'https://schema.org',

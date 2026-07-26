@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
+        allow: ['/', '/demo/menu', '/privacidade', '/termos', '/subscribe', '/auth/'],
         disallow: [
           '/dashboard/',
           '/admin/',
@@ -24,7 +24,6 @@ export default function robots(): MetadataRoute.Robots {
           '/reports/',
           '/financial/',
           '/contas-bancarias/',
-          '/demo/',
         ],
       },
     ],

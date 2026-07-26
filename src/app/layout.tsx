@@ -7,18 +7,22 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { inter } from "@/lib/fonts";
 import { ToasterProvider } from "@/components/toaster-provider";
 import { GoogleAnalyticsHead } from "@/components/google-analytics";
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site-config";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, LANDING_TITLE } from "@/lib/site-config";
 import { SITE_ICON_METADATA } from "@/lib/site-icons";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — Gestão para Restaurantes`,
+    default: LANDING_TITLE,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
   manifest: "/manifest.json",
   icons: SITE_ICON_METADATA,
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export const viewport: Viewport = {

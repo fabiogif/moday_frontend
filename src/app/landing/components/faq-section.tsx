@@ -14,10 +14,15 @@ const FaqSection = () => {
             Perguntas Frequentes
           </p>
           <h2 className="text-3xl font-bold tracking-[-0.02em] sm:text-4xl mb-4 text-zinc-900">
-            Perguntas Frequentes
+            Dúvidas sobre o sistema de gestão para restaurantes
           </h2>
           <p className="text-lg text-zinc-500">
-            Tire suas dúvidas sobre o Alba Tec. Precisa de mais informações? Entre em contato conosco.
+            Respostas sobre preços, teste grátis, mobile, WhatsApp, suporte e implantação. Ainda
+            precisa de ajuda?{' '}
+            <a href="#contact" className="text-zinc-900 font-medium underline-offset-4 hover:underline">
+              Fale conosco
+            </a>
+            .
           </p>
         </div>
 
@@ -34,7 +39,9 @@ const FaqSection = () => {
                     <div className="bg-orange-50 text-orange-600 flex size-9 shrink-0 items-center justify-center rounded-lg">
                       <CircleHelp className="size-4" />
                     </div>
-                    <span className="text-start font-semibold text-zinc-900 text-sm">{item.question}</span>
+                    <span className="text-start font-semibold text-zinc-900 text-sm">
+                      {item.question}
+                    </span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4 pt-3 text-sm text-zinc-500 leading-relaxed">

@@ -11,13 +11,13 @@ export const LANDING_HEADLINE_VARIANTS: Record<LandingVariant, LandingHeadlineVa
     id: 'a',
     title: 'Venda mais e cometa menos erros no seu restaurante',
     subtitle:
-      'Controle pedidos, cardápio e vendas em um só lugar. Sua equipe trabalha mais rápido e você toma decisões com dados reais — não com planilhas.',
+      'Sistema de gestão para restaurantes com PDV, cardápio e vendas em um só lugar. Sua equipe trabalha mais rápido e você decide com dados reais — não com planilhas.',
   },
   b: {
     id: 'b',
     title: 'O sistema que restaurantes usam para vender mais todo dia',
     subtitle:
-      'PDV rápido, cardápio digital e relatórios em tempo real. Menos erros na cozinha, mais vendas no salão e no delivery.',
+      'PDV rápido, cardápio digital e relatórios em tempo real no sistema de gestão para restaurantes Alba Tec. Menos erros na cozinha, mais vendas no salão e no delivery.',
   },
 }
 

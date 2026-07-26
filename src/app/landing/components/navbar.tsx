@@ -23,8 +23,10 @@ import { TRIAL_CTA_LABEL } from '@/lib/landing-copy'
 import { useLandingCTAClick } from '@/hooks/use-landing-cta-click'
 
 const navigationItems = [
+  { name: 'O que é', href: '#o-que-e' },
   { name: 'Recursos', href: '#features' },
   { name: 'Planos', href: '#pricing' },
+  { name: 'Demo', href: '/demo/menu' },
   { name: 'FAQ', href: '#faq' },
   { name: 'Contato', href: '#contact' },
 ]
@@ -47,7 +49,10 @@ export function LandingNavbar() {
   const trackCTA = useLandingCTAClick('cta_navbar_click')
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/90 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80">
+    <header
+      className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/90 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80"
+      role="banner"
+    >
       <div className="container mx-auto flex h-24 items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center space-x-2">
           <AlbaTecLogo href="/" height={72} priority />

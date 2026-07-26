@@ -6,6 +6,48 @@ export type LandingFaqItem = {
 
 export const LANDING_FAQ_ITEMS: LandingFaqItem[] = [
   {
+    id: 'o-que-e',
+    question: 'O que é o Alba Tec?',
+    answer:
+      'O Alba Tec é um sistema de gestão para restaurantes com PDV, cardápio digital, controle de mesas, financeiro e relatórios em tempo real. Tudo em nuvem, para operar salão, balcão e delivery em um só lugar.',
+  },
+  {
+    id: 'preco',
+    question: 'Quanto custa o sistema de gestão para restaurantes?',
+    answer:
+      'Há plano gratuito para começar e planos pagos conforme o tamanho do negócio. Nos planos pagos você testa por 7 dias sem cartão. Os valores atualizados estão na seção de planos desta página.',
+  },
+  {
+    id: 'teste-gratis',
+    question: 'Existe teste gratuito?',
+    answer:
+      'Sim. Você pode usar o plano gratuito sem prazo de expiração ou testar os planos pagos por 7 dias, sem cartão de crédito. Cadastre-se e comece em minutos.',
+  },
+  {
+    id: 'mobile',
+    question: 'Funciona em celular e tablet?',
+    answer:
+      'Sim. O sistema é em nuvem e funciona no navegador de computador, tablet e smartphone. Há também o app Alba Tec Restaurante para receber pedidos com push e gerenciar o status pelo celular.',
+  },
+  {
+    id: 'nfe',
+    question: 'O Alba Tec emite NF-e?',
+    answer:
+      'A emissão fiscal depende do plano e das integrações habilitadas para o seu estabelecimento. Fale com nosso time de contato para confirmar o cenário ideal para o seu restaurante.',
+  },
+  {
+    id: 'whatsapp',
+    question: 'Tem integração com WhatsApp?',
+    answer:
+      'Sim. Você compartilha o cardápio digital por WhatsApp e redes sociais, e o fluxo de pedidos pode notificar o cliente. No dia a dia, o suporte prioritário via WhatsApp está disponível nos planos avançados.',
+  },
+  {
+    id: 'implantacao',
+    question: 'Quanto tempo leva a implantação?',
+    answer:
+      'A maioria dos restaurantes começa no mesmo dia: cadastro, produtos e cardápio digital. Treinamento e suporte ajudam a equipe a operar o PDV e os pedidos com segurança.',
+  },
+  {
     id: 'pedidos',
     question: 'Como funciona o sistema de gestão de pedidos?',
     answer:
@@ -33,7 +75,7 @@ export const LANDING_FAQ_ITEMS: LandingFaqItem[] = [
     id: 'suporte',
     question: 'O sistema oferece suporte e treinamento?',
     answer:
-      'Sim. Há suporte por chat e e-mail, documentação e materiais de treinamento para sua equipe começar a usar o sistema com segurança.',
+      'Sim. Há suporte por chat e e-mail (atendimento@albatec.com.br), documentação e materiais de treinamento para sua equipe começar a usar o sistema com segurança.',
   },
   {
     id: 'multiplas-unidades',
