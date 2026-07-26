@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/form"
 import { Mail, Phone, Headphones, Wallet } from 'lucide-react'
 import { useState } from 'react'
-import { COMPANY_EMAILS } from '@/lib/company-emails'
+import { SITE_CONTACT } from '@/lib/site-config'
 
 const contactFormSchema = z.object({
   firstName: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
@@ -87,8 +87,8 @@ export function ContactSection() {
               </CardHeader>
               <CardContent>
                 <p className="text-zinc-500 mb-2">Dúvidas, parcerias e informações</p>
-                <a href={`mailto:${COMPANY_EMAILS.contact}`} className="text-zinc-800 font-medium underline decoration-zinc-300 hover:decoration-zinc-600 transition-colors">
-                  {COMPANY_EMAILS.contact}
+                <a href={`mailto:${SITE_CONTACT.email}`} className="text-zinc-800 font-medium underline decoration-zinc-300 hover:decoration-zinc-600 transition-colors">
+                  {SITE_CONTACT.email}
                 </a>
               </CardContent>
             </Card>
@@ -104,8 +104,8 @@ export function ContactSection() {
               </CardHeader>
               <CardContent>
                 <p className="text-zinc-500 mb-2">Suporte a clientes e assistência técnica</p>
-                <a href={`mailto:${COMPANY_EMAILS.support}`} className="text-zinc-800 font-medium underline decoration-zinc-300 hover:decoration-zinc-600 transition-colors">
-                  {COMPANY_EMAILS.support}
+                <a href={`mailto:${SITE_CONTACT.supportEmail}`} className="text-zinc-800 font-medium underline decoration-zinc-300 hover:decoration-zinc-600 transition-colors">
+                  {SITE_CONTACT.supportEmail}
                 </a>
               </CardContent>
             </Card>
@@ -121,8 +121,8 @@ export function ContactSection() {
               </CardHeader>
               <CardContent>
                 <p className="text-zinc-500 mb-2">Pagamentos, faturas e questões financeiras</p>
-                <a href={`mailto:${COMPANY_EMAILS.pix}`} className="text-zinc-800 font-medium underline decoration-zinc-300 hover:decoration-zinc-600 transition-colors">
-                  {COMPANY_EMAILS.pix}
+                <a href={`mailto:${SITE_CONTACT.pixEmail}`} className="text-zinc-800 font-medium underline decoration-zinc-300 hover:decoration-zinc-600 transition-colors">
+                  {SITE_CONTACT.pixEmail}
                 </a>
               </CardContent>
             </Card>
@@ -139,12 +139,12 @@ export function ContactSection() {
               <CardContent>
                 <p className="text-zinc-500 mb-2">Fale conosco pelo WhatsApp</p>
                 <a
-                  href="https://wa.me/5571991981871"
+                  href={SITE_CONTACT.whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-zinc-800 font-medium underline decoration-zinc-300 hover:decoration-zinc-600 transition-colors"
                 >
-                  +55 71 99198-1871
+                  {SITE_CONTACT.whatsappDisplay}
                 </a>
               </CardContent>
             </Card>

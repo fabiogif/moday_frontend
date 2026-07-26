@@ -30,12 +30,12 @@ export function CTASection() {
             <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-400 mb-6">
               <span className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-                500+ restaurantes
+                Teste grátis por 7 dias
               </span>
               <span className="text-zinc-700">·</span>
-              <span>Suporte 24/7</span>
+              <span>Sem cartão de crédito</span>
               <span className="text-zinc-700">·</span>
-              <span>4.9★ Avaliação</span>
+              <span>Suporte por e-mail e WhatsApp</span>
             </div>
 
             <h2 className="text-4xl font-bold tracking-tight text-balance text-zinc-50 sm:text-5xl mb-5">

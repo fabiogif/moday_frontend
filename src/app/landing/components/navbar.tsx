@@ -26,6 +26,7 @@ const navigationItems = [
   { name: 'O que é', href: '#o-que-e' },
   { name: 'Recursos', href: '#features' },
   { name: 'Planos', href: '#pricing' },
+  { name: 'Blog', href: '/blog' },
   { name: 'Demo', href: '/demo/menu' },
   { name: 'FAQ', href: '#faq' },
   { name: 'Contato', href: '#contact' },

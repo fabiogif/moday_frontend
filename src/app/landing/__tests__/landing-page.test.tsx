@@ -43,10 +43,10 @@ describe('LandingPageContent', () => {
     })
   })
 
-  it('deve renderizar seção de stats', () => {
+  it('deve renderizar sinais de confiança honestos no hero', () => {
     render(<LandingPageContent />)
-    expect(screen.getByText(/500\+ restaurantes ativos/i)).toBeInTheDocument()
-    expect(screen.getByText(/1M\+ pedidos processados/i)).toBeInTheDocument()
+    expect(screen.getByText(/7 dias de teste grátis/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/Sem cartão de crédito/i).length).toBeGreaterThan(0)
   })
 
   it('deve renderizar trust badges', () => {

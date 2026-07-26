@@ -31,9 +31,9 @@ export const LANDING_FAQ_ITEMS: LandingFaqItem[] = [
   },
   {
     id: 'nfe',
-    question: 'O Alba Tec emite NF-e?',
+    question: 'O Alba Tec emite NF-e / NFC-e?',
     answer:
-      'A emissão fiscal depende do plano e das integrações habilitadas para o seu estabelecimento. Fale com nosso time de contato para confirmar o cenário ideal para o seu restaurante.',
+      'Hoje o PDV e o cardápio digital já permitem coletar CPF/CNPJ do cliente para nota. A emissão automática de NFC-e/NF-e junto à SEFAZ ainda está em evolução — quando liberada no seu plano, o fluxo usa o documento já capturado no pedido. Enquanto isso, você organiza vendas e documentos no sistema e pode emitir a nota no seu emissor atual.',
   },
   {
     id: 'whatsapp',

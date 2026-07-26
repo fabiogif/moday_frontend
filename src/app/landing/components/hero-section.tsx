@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { ArrowRight, Star } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TRIAL_CTA_LABEL, TRIAL_MICRO_COPY } from '@/lib/landing-copy'
 import {
@@ -86,14 +86,11 @@ export function HeroSection() {
             <p className="mt-3.5 text-xs text-zinc-400">{TRIAL_MICRO_COPY}</p>
 
             <div className="mt-8 flex flex-wrap items-center gap-5 text-sm text-zinc-500 pt-6 border-t border-zinc-200">
-              <div className="flex items-center gap-1.5">
-                <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                <span className="font-medium text-zinc-700">4.8 de 5 estrelas</span>
-              </div>
-              <span className="w-px h-4 bg-zinc-300 hidden sm:block" />
-              <span>500+ restaurantes ativos</span>
-              <span className="w-px h-4 bg-zinc-300 hidden sm:block" />
-              <span>1M+ pedidos processados</span>
+              <span className="font-medium text-zinc-700">7 dias de teste grátis</span>
+              <span className="w-px h-4 bg-zinc-300 hidden sm:block" aria-hidden />
+              <span>Sem cartão de crédito</span>
+              <span className="w-px h-4 bg-zinc-300 hidden sm:block" aria-hidden />
+              <span>PDV, cardápio digital e app</span>
             </div>
           </div>
 

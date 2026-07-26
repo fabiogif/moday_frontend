@@ -1,18 +1,18 @@
 import type { Metadata } from 'next'
-import { COMPANY_EMAILS } from '@/lib/company-emails'
 import { LANDING_FAQ_ITEMS } from '@/lib/landing-faq'
 import {
   LANDING_TITLE,
+  SITE_CONTACT,
   SITE_DESCRIPTION,
   SITE_LOCALE,
   SITE_NAME,
   SITE_URL,
 } from '@/lib/site-config'
 
-const LANDING_OG_IMAGE = '/landing/sistema-gestao-restaurantes-painel.webp'
-const LANDING_OG_IMAGE_FALLBACK = '/landing/dashboard-painel.png'
+const LANDING_OG_IMAGE = '/landing/og-sistema-gestao-restaurantes.webp'
+const LANDING_OG_IMAGE_FALLBACK = '/landing/sistema-gestao-restaurantes-painel.webp'
 const LANDING_OG_IMAGE_ALT =
-  'Painel do sistema de gestão para restaurantes Alba Tec com receita, pedidos e gráficos em tempo real'
+  'Alba Tec — sistema de gestão para restaurantes com PDV, cardápio digital e relatórios'
 
 export function buildLandingMetadata(canonicalPath = '/'): Metadata {
   const title = LANDING_TITLE
@@ -51,8 +51,8 @@ export function buildLandingMetadata(canonicalPath = '/'): Metadata {
       images: [
         {
           url: LANDING_OG_IMAGE,
-          width: 1024,
-          height: 474,
+          width: 1200,
+          height: 630,
           alt: LANDING_OG_IMAGE_ALT,
         },
         {
@@ -87,30 +87,46 @@ export function buildLandingMetadata(canonicalPath = '/'): Metadata {
 export function buildLandingJsonLd(canonicalPath = '/') {
   const pageUrl = `${SITE_URL}${canonicalPath}`
 
+  const organization: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: `${SITE_URL}/brand/logo-alba-tec-sem-fundo.png`,
+    description: SITE_DESCRIPTION,
+    email: SITE_CONTACT.email,
+    sameAs: [SITE_CONTACT.whatsappUrl],
+    contactPoint: [
+      {
+        '@type': 'ContactPoint',
+        contactType: 'customer support',
+        email: SITE_CONTACT.supportEmail,
+        telephone: `+${SITE_CONTACT.whatsappE164}`,
+        availableLanguage: ['Portuguese'],
+      },
+      {
+        '@type': 'ContactPoint',
+        contactType: 'sales',
+        email: SITE_CONTACT.email,
+        telephone: `+${SITE_CONTACT.whatsappE164}`,
+        availableLanguage: ['Portuguese'],
+      },
+    ],
+  }
+
+  if (SITE_CONTACT.cnpj) {
+    organization.taxID = SITE_CONTACT.cnpj
+  }
+  if (SITE_CONTACT.address) {
+    organization.address = {
+      '@type': 'PostalAddress',
+      streetAddress: SITE_CONTACT.address,
+      addressCountry: 'BR',
+    }
+  }
+
   return [
-    {
-      '@context': 'https://schema.org',
-      '@type': 'Organization',
-      name: SITE_NAME,
-      url: SITE_URL,
-      logo: `${SITE_URL}/brand/logo-alba-tec-sem-fundo.png`,
-      description: SITE_DESCRIPTION,
-      email: COMPANY_EMAILS.contact,
-      contactPoint: [
-        {
-          '@type': 'ContactPoint',
-          contactType: 'customer support',
-          email: COMPANY_EMAILS.support,
-          availableLanguage: ['Portuguese'],
-        },
-        {
-          '@type': 'ContactPoint',
-          contactType: 'sales',
-          email: COMPANY_EMAILS.contact,
-          availableLanguage: ['Portuguese'],
-        },
-      ],
-    },
+    organization,
     {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
@@ -151,7 +167,7 @@ export function buildLandingJsonLd(canonicalPath = '/') {
       operatingSystem: 'Web, Android, iOS',
       url: pageUrl,
       description: SITE_DESCRIPTION,
-      image: `${SITE_URL}${LANDING_OG_IMAGE_FALLBACK}`,
+      image: `${SITE_URL}${LANDING_OG_IMAGE}`,
       offers: {
         '@type': 'AggregateOffer',
         lowPrice: '0',

@@ -18,7 +18,7 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form"
-import { COMPANY_EMAILS } from '@/lib/company-emails'
+import { SITE_CONTACT } from '@/lib/site-config'
 
 const newsletterSchema = z.object({
   email: z.string().email({
@@ -35,6 +35,8 @@ const footerLinks = {
     { name: 'Criar conta grátis', href: '/auth/register' },
   ],
   company: [
+    { name: 'Sobre', href: '/sobre' },
+    { name: 'Blog', href: '/blog' },
     { name: 'Contato', href: '/#contact' },
     { name: 'Perguntas frequentes', href: '/#faq' },
     { name: 'Política de Privacidade', href: '/privacidade' },
@@ -134,20 +136,28 @@ export function LandingFooter() {
             <p className="text-sm text-muted-foreground max-lg:text-center">
               Contato:{' '}
               <a
-                href={`mailto:${COMPANY_EMAILS.contact}`}
+                href={`mailto:${SITE_CONTACT.email}`}
                 className="text-foreground hover:underline"
               >
-                {COMPANY_EMAILS.contact}
+                {SITE_CONTACT.email}
               </a>
               {' · '}
-              Atendimento:{' '}
+              WhatsApp:{' '}
               <a
-                href={`mailto:${COMPANY_EMAILS.support}`}
+                href={SITE_CONTACT.whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-foreground hover:underline"
               >
-                {COMPANY_EMAILS.support}
+                {SITE_CONTACT.whatsappDisplay}
               </a>
             </p>
+            {SITE_CONTACT.cnpj ? (
+              <p className="text-xs text-muted-foreground mt-2 max-lg:text-center">
+                CNPJ: {SITE_CONTACT.cnpj}
+                {SITE_CONTACT.address ? ` · ${SITE_CONTACT.address}` : ''}
+              </p>
+            ) : null}
           </div>
 
           <div className='max-md:col-span-1 lg:col-span-1'>
