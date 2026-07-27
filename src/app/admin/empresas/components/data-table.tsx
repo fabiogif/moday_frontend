@@ -29,13 +29,16 @@ import {
   XCircle,
   AlertCircle,
   RefreshCw,
+  ArrowRightLeft,
 } from 'lucide-react'
+import { ChangeTenantPlanDialog } from './change-tenant-plan-dialog'
 
 interface Tenant {
   id: number
   name: string
   subdomain: string
   account_status: string
+  plan_id: number | null
   subscription_plan: string
   is_blocked: boolean
   mrr: number
@@ -47,11 +50,13 @@ interface DataTableProps {
   data: Tenant[]
   onRefresh: () => void
   isLoading: boolean
+  canManage?: boolean
 }
 
-export function DataTable({ data, onRefresh, isLoading }: DataTableProps) {
+export function DataTable({ data, onRefresh, isLoading, canManage = false }: DataTableProps) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [planDialogTenant, setPlanDialogTenant] = useState<Tenant | null>(null)
 
   // Filtrar dados localmente
   const filteredData = data.filter((tenant) => {
@@ -220,12 +225,24 @@ export function DataTable({ data, onRefresh, isLoading }: DataTableProps) {
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Link href={`/admin/empresas/${tenant.id}`}>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Detalhes
-                        </Button>
-                      </Link>
+                      <div className="flex items-center justify-end gap-1">
+                        {canManage && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setPlanDialogTenant(tenant)}
+                          >
+                            <ArrowRightLeft className="h-4 w-4 mr-2" />
+                            Plano
+                          </Button>
+                        )}
+                        <Link href={`/admin/empresas/${tenant.id}`}>
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4 mr-2" />
+                            Detalhes
+                          </Button>
+                        </Link>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -234,6 +251,25 @@ export function DataTable({ data, onRefresh, isLoading }: DataTableProps) {
           </Table>
         </div>
       </CardContent>
+
+      {canManage && planDialogTenant && (
+        <ChangeTenantPlanDialog
+          open={Boolean(planDialogTenant)}
+          onOpenChange={(open) => {
+            if (!open) setPlanDialogTenant(null)
+          }}
+          tenant={{
+            id: planDialogTenant.id,
+            name: planDialogTenant.name,
+            plan_id: planDialogTenant.plan_id,
+            subscription_plan: planDialogTenant.subscription_plan,
+          }}
+          onSuccess={() => {
+            setPlanDialogTenant(null)
+            onRefresh()
+          }}
+        />
+      )}
     </Card>
   )
 }

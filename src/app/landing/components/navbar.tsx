@@ -56,7 +56,7 @@ export function LandingNavbar() {
     >
       <div className="container mx-auto flex h-24 items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center space-x-2">
-          <AlbaTecLogo href="/" height={72} priority />
+          <AlbaTecLogo href="/" variant="icon" width={56} height={56} priority />
         </div>
 
         <NavigationMenu className="hidden xl:flex">
@@ -105,7 +105,7 @@ export function LandingNavbar() {
             <div className="flex h-full flex-col bg-white">
               <SheetHeader className="space-y-0 border-b p-4 pb-2">
                 <div className="flex items-center gap-2">
-                  <AlbaTecLogo height={56} />
+                  <AlbaTecLogo variant="icon" width={48} height={48} />
                   <SheetTitle className="sr-only">Alba Tec</SheetTitle>
                   <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="ml-auto h-8 w-8 cursor-pointer">
                     <X className="h-4 w-4" />

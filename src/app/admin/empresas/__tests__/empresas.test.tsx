@@ -12,6 +12,7 @@ jest.mock('@/contexts/admin-auth-context', () => ({
   useAdminAuth: () => ({
     isAuthenticated: true,
     isLoading: false,
+    hasPermission: () => true,
   }),
 }))
 
@@ -29,6 +30,7 @@ const mockTenants = [
     name: 'Restaurante Teste',
     subdomain: 'teste',
     account_status: 'active',
+    plan_id: 1,
     subscription_plan: 'basico',
     is_blocked: false,
     mrr: 49.9,

@@ -13,6 +13,7 @@ interface Tenant {
   name: string
   subdomain: string
   account_status: string
+  plan_id: number | null
   subscription_plan: string
   is_blocked: boolean
   mrr: number
@@ -25,7 +26,7 @@ interface Tenant {
 
 export default function AdminEmpresasPage() {
   const router = useRouter()
-  const { isAuthenticated, isLoading: authLoading } = useAdminAuth()
+  const { isAuthenticated, isLoading: authLoading, hasPermission } = useAdminAuth()
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [stats, setStats] = useState({
@@ -101,6 +102,7 @@ export default function AdminEmpresasPage() {
           data={tenants} 
           onRefresh={handleRefresh}
           isLoading={isLoading}
+          canManage={hasPermission('tenants.manage')}
         />
       </div>
     </div>

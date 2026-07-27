@@ -291,6 +291,32 @@ class AdminApiClient {
     })
   }
 
+  async migrateTenantPlan(data: {
+    tenant_id: number
+    plan_id: number
+    reason?: string
+    notify_tenant?: boolean
+  }) {
+    return this.request('/plan-migrations/migrate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getPlanMigrationHistory(params?: {
+    tenant_id?: number
+    plan_id?: number
+    limit?: number
+  }) {
+    const query = new URLSearchParams()
+    if (params?.tenant_id) query.append('tenant_id', String(params.tenant_id))
+    if (params?.plan_id) query.append('plan_id', String(params.plan_id))
+    if (params?.limit) query.append('limit', String(params.limit))
+
+    const suffix = query.toString() ? `?${query.toString()}` : ''
+    return this.request(`/plan-migrations/history${suffix}`)
+  }
+
   async pauseTenantAccess(id: string | number, reason: string) {
     return this.request(`/tenants/${id}/pause-access`, {
       method: 'POST',

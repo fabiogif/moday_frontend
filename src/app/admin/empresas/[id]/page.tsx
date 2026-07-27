@@ -49,7 +49,9 @@ import {
   Trash2,
   ShieldAlert,
   AlertTriangle,
+  ArrowRightLeft,
 } from 'lucide-react'
+import { ChangeTenantPlanDialog } from '../components/change-tenant-plan-dialog'
 
 interface TenantDetails {
   tenant: {
@@ -57,6 +59,7 @@ interface TenantDetails {
     name: string
     subdomain: string
     account_status: string
+    plan_id: number | null
     subscription_plan: string
     is_blocked: boolean
     blocked_at: string | null
@@ -116,6 +119,7 @@ export default function TenantDetailsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [planDialogOpen, setPlanDialogOpen] = useState(false)
 
   // Estados de edição
   const [editData, setEditData] = useState({
@@ -523,7 +527,20 @@ export default function TenantDetailsPage() {
             </div>
             <div>
               <Label className="text-muted-foreground">Plano</Label>
-              <p className="font-medium capitalize">{tenant.subscription_plan || 'Trial'}</p>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <p className="font-medium capitalize">{tenant.subscription_plan || 'Trial'}</p>
+                {canManage && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPlanDialogOpen(true)}
+                  >
+                    <ArrowRightLeft className="h-4 w-4 mr-2" />
+                    Alterar plano
+                  </Button>
+                )}
+              </div>
             </div>
             <div>
               <Label className="text-muted-foreground">MRR</Label>
@@ -843,6 +860,20 @@ export default function TenantDetailsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {canManage && (
+        <ChangeTenantPlanDialog
+          open={planDialogOpen}
+          onOpenChange={setPlanDialogOpen}
+          tenant={{
+            id: tenant.id,
+            name: tenant.name,
+            plan_id: tenant.plan_id,
+            subscription_plan: tenant.subscription_plan,
+          }}
+          onSuccess={loadData}
+        />
+      )}
     </div>
   )
 }
