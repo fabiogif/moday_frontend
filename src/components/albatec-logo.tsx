@@ -4,9 +4,18 @@ import Image from "next/image"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
-const LOGO_LIGHT = "/brand/logo-alba-tec-sem-fundo.png"
-const LOGO_DARK = "/brand/logo-alba-escuro.png"
+/** Wordmark horizontal (símbolo + texto lado a lado) — navbar e headers */
+const LOGO_HORIZONTAL_LIGHT = "/brand/logo-symbol.png"
+/** Logo completa empilhada — hero, login e fundos claros */
+const LOGO_FULL_LIGHT = "/brand/logo-alba-tec-sem-fundo.png"
+/** Logo completa para fundos escuros */
+const LOGO_FULL_DARK = "/brand/logo-alba-escuro.png"
 const LOGO_SYMBOL = "/brand/icon-512.png"
+
+const LOGO_ASPECT = {
+  horizontal: 1053 / 702,
+  full: 1,
+} as const
 
 export type AlbaTecLogoVariant = "horizontal" | "full" | "icon" | "wordmark"
 
@@ -44,20 +53,32 @@ export function AlbaTecLogo({
   const useDarkLogo = onDark || inverted
   const iconSize = Math.round(width ?? height)
 
+  const isFullLogo = variant === "full"
+  const logoAspect = isFullLogo ? LOGO_ASPECT.full : LOGO_ASPECT.horizontal
+
   const renderWordmark = (src: string, visibilityClass?: string) => {
-    const logoHeight = variant === "full" ? height : Math.round(height * 1.15)
+    const logoHeight = isFullLogo ? height : Math.round(height * 1.15)
+    const logoWidth = Math.round(logoHeight * logoAspect)
 
     return (
       <Image
         src={src}
         alt="Alba Tec"
-        width={Math.round(logoHeight * 1.35)}
+        width={logoWidth}
         height={logoHeight}
         className={cn("h-auto w-auto object-contain", visibilityClass, className)}
         style={{ height: logoHeight, width: "auto" }}
         priority={priority}
       />
     )
+  }
+
+  const resolveWordmarkSrc = (dark: boolean) => {
+    if (isFullLogo) {
+      return dark ? LOGO_FULL_DARK : LOGO_FULL_LIGHT
+    }
+
+    return dark ? LOGO_FULL_DARK : LOGO_HORIZONTAL_LIGHT
   }
 
   const image = (() => {
@@ -81,19 +102,19 @@ export function AlbaTecLogo({
     }
 
     if (withBackground) {
-      return renderWordmark(LOGO_LIGHT)
+      return renderWordmark(resolveWordmarkSrc(false))
     }
 
     if (adaptive) {
       return (
         <>
-          {renderWordmark(LOGO_LIGHT, "dark:hidden")}
-          {renderWordmark(LOGO_DARK, "hidden dark:block")}
+          {renderWordmark(resolveWordmarkSrc(false), "dark:hidden")}
+          {renderWordmark(resolveWordmarkSrc(true), "hidden dark:block")}
         </>
       )
     }
 
-    return renderWordmark(useDarkLogo ? LOGO_DARK : LOGO_LIGHT)
+    return renderWordmark(resolveWordmarkSrc(useDarkLogo))
   })()
 
   const content = withBackground ? (

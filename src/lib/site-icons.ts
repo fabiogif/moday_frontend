@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 export const SITE_ICONS = {
   symbol512: '/brand/icon-512.png',
   symbol192: '/brand/icon-192.png',
-  favicon64: '/favicon.png',
+  favicon64: '/brand/favicon-64.png',
   favicon32: '/favicon-32.png',
   appleTouch: '/brand/apple-touch-icon.png',
 } as const
