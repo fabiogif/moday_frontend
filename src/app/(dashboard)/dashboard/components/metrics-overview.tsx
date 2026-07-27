@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/tooltip"
 import { useAuth } from "@/contexts/auth-context"
 import { useRealtimeDashboard } from "@/hooks/use-realtime-dashboard"
-import { useAuthenticatedApi, useAuthenticatedOrderStats, useAuthenticatedReviewStats } from "@/hooks/use-authenticated-api"
+import { useAuthenticatedApi, useAuthenticatedOrderStats, useAuthenticatedReviewStats, useAuthenticatedClientStats } from "@/hooks/use-authenticated-api"
 import { useSalesPerformance } from "@/hooks/use-sales-performance"
 import { apiClient } from "@/lib/api-client"
 import { useDashboardFilters } from "../context/dashboard-filters-context"
@@ -61,6 +61,16 @@ interface StatTrio {
 interface OrderStats {
   delivered_orders: StatTrio
   canceled_orders: StatTrio
+  average_service_time_minutes: {
+    current: number | null
+    previous: number | null
+    growth: number
+  }
+  projected_revenue: StatTrio
+}
+
+interface ClientStats {
+  recurring_clients_rate: StatTrio
 }
 
 interface ReviewStats {
@@ -170,35 +180,21 @@ function KpiCard({ title, value, change, trend, icon: Icon, iconClassName, foote
   )
 }
 
-function ComingSoonCard({ title, icon: Icon, description }: { title: string; icon: LucideIcon; description: string }) {
-  return (
-    <Card className="border-dashed bg-muted/20">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardDescription className="text-sm font-medium">{title}</CardDescription>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-            <Icon className="h-4 w-4" />
-          </div>
-        </div>
-        <CardAction>
-          <Badge variant="outline" className="text-xs font-medium text-muted-foreground">
-            Em breve
-          </Badge>
-        </CardAction>
-      </CardHeader>
-      <CardFooter className="pt-2">
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </CardFooter>
-    </Card>
-  )
-}
-
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 }
 
 function formatGrowth(growth: number) {
   return `${growth >= 0 ? "+" : ""}${growth.toFixed(1)}%`
+}
+
+function formatDuration(minutes: number) {
+  if (minutes < 60) {
+    return `${Math.round(minutes)}min`
+  }
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = Math.round(minutes % 60)
+  return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -231,6 +227,10 @@ export function MetricsOverview() {
   }
   const { data: reviewStats, loading: reviewStatsLoading } = useAuthenticatedReviewStats() as {
     data: ReviewStats | null
+    loading: boolean
+  }
+  const { data: clientStats, loading: clientStatsLoading } = useAuthenticatedClientStats() as {
+    data: ClientStats | null
     loading: boolean
   }
 
@@ -434,25 +434,61 @@ export function MetricsOverview() {
         </div>
       </div>
 
-      {/* Grupo 3 — sem fonte de dado real no backend hoje; nunca fabricar número */}
+      {/* Grupo 3 — métricas derivadas, também no recorte "mês atual vs. anterior" */}
       <div className="space-y-2">
-        <SectionLabel>Em breve</SectionLabel>
+        <SectionLabel>Este mês (vs. mês anterior)</SectionLabel>
         <div className="grid gap-4 sm:grid-cols-2 @5xl:grid-cols-3">
-          <ComingSoonCard
-            title="Receita Projetada"
-            icon={ProjectedIcon}
-            description="Projeção de fechamento do período com base na tendência atual. Em desenvolvimento."
-          />
-          <ComingSoonCard
-            title="Clientes Recorrentes"
-            icon={Repeat}
-            description="Percentual de clientes com mais de um pedido. Depende de um cálculo que ainda não existe no backend."
-          />
-          <ComingSoonCard
-            title="Tempo Médio de Atendimento"
-            icon={Clock}
-            description="Tempo entre a criação e a conclusão do pedido. Depende de um cálculo que ainda não existe no backend."
-          />
+          {orderStatsLoading || !orderStats ? (
+            <Card><CardHeader><Skeleton className="h-4 w-24 mb-2" /><Skeleton className="h-8 w-16" /></CardHeader></Card>
+          ) : (
+            <KpiCard
+              title="Receita Projetada"
+              value={formatCurrency(orderStats.projected_revenue.current)}
+              change={formatGrowth(orderStats.projected_revenue.growth)}
+              trend={orderStats.projected_revenue.growth >= 0 ? "up" : "down"}
+              icon={ProjectedIcon}
+              iconClassName="text-primary bg-primary/10"
+              subfooter="Projeção linear com base na receita do mês até agora"
+              tooltip="Projeção de fechamento do mês, extrapolando a receita acumulada até hoje. Menos precisa no início do mês."
+            />
+          )}
+
+          {clientStatsLoading || !clientStats ? (
+            <Card><CardHeader><Skeleton className="h-4 w-24 mb-2" /><Skeleton className="h-8 w-16" /></CardHeader></Card>
+          ) : (
+            <KpiCard
+              title="Clientes Recorrentes"
+              value={`${clientStats.recurring_clients_rate.current.toFixed(1)}%`}
+              change={formatGrowth(clientStats.recurring_clients_rate.growth)}
+              trend={clientStats.recurring_clients_rate.growth >= 0 ? "up" : "down"}
+              icon={Repeat}
+              iconClassName="text-violet-600 bg-violet-50 dark:bg-violet-950 dark:text-violet-400"
+              tooltip="Percentual de clientes (dentre os que já fizeram pedido) com mais de um pedido, considerando todo o histórico."
+            />
+          )}
+
+          {orderStatsLoading || !orderStats ? (
+            <Card><CardHeader><Skeleton className="h-4 w-24 mb-2" /><Skeleton className="h-8 w-16" /></CardHeader></Card>
+          ) : orderStats.average_service_time_minutes.current === null ? (
+            <KpiCard
+              title="Tempo Médio de Atendimento"
+              value="—"
+              icon={Clock}
+              iconClassName="text-amber-600 bg-amber-50 dark:bg-amber-950 dark:text-amber-400"
+              subfooter="Ainda sem pedidos concluídos neste período"
+              tooltip="Tempo médio entre a criação e a conclusão do pedido, no mês atual."
+            />
+          ) : (
+            <KpiCard
+              title="Tempo Médio de Atendimento"
+              value={formatDuration(orderStats.average_service_time_minutes.current)}
+              change={formatGrowth(orderStats.average_service_time_minutes.growth)}
+              trend={orderStats.average_service_time_minutes.growth >= 0 ? "down" : "up"}
+              icon={Clock}
+              iconClassName="text-amber-600 bg-amber-50 dark:bg-amber-950 dark:text-amber-400"
+              tooltip="Tempo médio entre a criação e a conclusão do pedido, no mês atual. Uma redução (verde) é o resultado desejado."
+            />
+          )}
         </div>
       </div>
     </div>

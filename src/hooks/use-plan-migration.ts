@@ -20,7 +20,7 @@ export interface MigratePlanParams {
 }
 
 export interface UsePlanMigrationState {
-  migratePlan: (params: MigratePlanParams) => Promise<boolean>
+  migratePlan: (params: MigratePlanParams) => Promise<{ success: boolean; error?: string }>
   getHistory: () => Promise<PlanMigrationHistory[]>
   isMigrating: boolean
   isLoadingHistory: boolean
@@ -34,7 +34,7 @@ export function usePlanMigration(): UsePlanMigrationState {
   const [error, setError] = useState<string | null>(null)
   const [history, setHistory] = useState<PlanMigrationHistory[]>([])
 
-  const migratePlan = useCallback(async (params: MigratePlanParams): Promise<boolean> => {
+  const migratePlan = useCallback(async (params: MigratePlanParams): Promise<{ success: boolean; error?: string }> => {
     setIsMigrating(true)
     setError(null)
 
@@ -42,14 +42,16 @@ export function usePlanMigration(): UsePlanMigrationState {
       const response = await apiClient.post(endpoints.planMigration.migrate, params)
 
       if (response.success) {
-        return true
-      } else {
-        setError(response.message || 'Erro ao migrar plano')
-        return false
+        return { success: true }
       }
+
+      const message = response.message || 'Erro ao migrar plano'
+      setError(message)
+      return { success: false, error: message }
     } catch (err: any) {
-      setError(err.message || 'Erro ao migrar plano')
-      return false
+      const message = err?.message || err?.error || 'Erro ao migrar plano'
+      setError(message)
+      return { success: false, error: message }
     } finally {
       setIsMigrating(false)
     }

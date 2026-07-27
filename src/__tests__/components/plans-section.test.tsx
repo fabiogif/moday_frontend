@@ -79,7 +79,7 @@ describe('PlansSection', () => {
     },
   ]
 
-  const mockMigratePlan = jest.fn().mockResolvedValue(true)
+  const mockMigratePlan = jest.fn().mockResolvedValue({ success: true })
   const mockGetHistory = jest.fn().mockResolvedValue([])
 
   beforeEach(() => {

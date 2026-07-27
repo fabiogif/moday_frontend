@@ -51,10 +51,11 @@ describe('usePlanMigration', () => {
 
     let success = false
     await act(async () => {
-      success = await result.current.migratePlan({
+      const migration = await result.current.migratePlan({
         plan_id: 2,
         notes: 'Migração de teste',
       })
+      success = migration.success
     })
 
     expect(success).toBe(true)
@@ -78,9 +79,10 @@ describe('usePlanMigration', () => {
 
     let success = true
     await act(async () => {
-      success = await result.current.migratePlan({
+      const migration = await result.current.migratePlan({
         plan_id: 2,
       })
+      success = migration.success
     })
 
     expect(success).toBe(false)
@@ -97,9 +99,10 @@ describe('usePlanMigration', () => {
 
     let success = true
     await act(async () => {
-      success = await result.current.migratePlan({
+      const migration = await result.current.migratePlan({
         plan_id: 2,
       })
+      success = migration.success
     })
 
     expect(success).toBe(false)
@@ -178,7 +181,7 @@ describe('usePlanMigration', () => {
 
     const { result } = renderHook(() => usePlanMigration())
 
-    let migratePromise: Promise<boolean>
+    let migratePromise: Promise<{ success: boolean; error?: string }>
     act(() => {
       migratePromise = result.current.migratePlan({
         plan_id: 2,

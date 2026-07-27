@@ -33,19 +33,24 @@ export function PlansSection() {
     return []
   }, [plansData])
 
-  // Buscar plan_id do tenant
+  // Buscar plan_id do tenant (TenantResource precisa expor plan_id)
   useEffect(() => {
     const fetchTenantPlan = async () => {
       try {
         if (user?.tenant?.uuid) {
           const response = await apiClient.get(`/api/tenant/${user.tenant.uuid}`)
           if (response.success && response.data) {
-            const tenant = response.data as any
-            setCurrentPlanId(tenant.plan_id || null)
+            const payload = response.data as Record<string, unknown>
+            // JsonResource pode vir como { data: {...} } ou atributos planos
+            const tenant = (payload.data && typeof payload.data === 'object'
+              ? payload.data
+              : payload) as { plan_id?: number | string | null }
+            const planId = tenant.plan_id != null ? Number(tenant.plan_id) : null
+            setCurrentPlanId(Number.isFinite(planId as number) ? (planId as number) : null)
           }
         }
-      } catch (error) {
-
+      } catch {
+        // Mantém currentPlanId atual; evita liberar migração do plano atual por falha silenciosa
       }
     }
 
@@ -55,6 +60,11 @@ export function PlansSection() {
   }, [user])
 
   const handleMigrate = (planId: number) => {
+    if (currentPlanId != null && Number(planId) === Number(currentPlanId)) {
+      toast.info("Este já é o seu plano atual.")
+      return
+    }
+
     const plan = plans.find((p) => p.id === planId)
     if (plan) {
       setSelectedPlan({ id: plan.id, name: plan.name })
@@ -64,12 +74,13 @@ export function PlansSection() {
 
   const handleConfirmMigration = async (planId: number, notes?: string) => {
     try {
-      const success = await migratePlan({ plan_id: planId, notes })
+      const result = await migratePlan({ plan_id: planId, notes })
       
-      if (success) {
+      if (result.success) {
         toast.success("Plano migrado com sucesso!")
         setMigrationModalOpen(false)
         setSelectedPlan(null)
+        setCurrentPlanId(planId)
         
         // Recarregar dados
         refetchPlans()
@@ -79,7 +90,7 @@ export function PlansSection() {
           window.location.reload()
         }, 1000)
       } else {
-        toast.error(migrationError || "Erro ao migrar plano")
+        toast.error(result.error || migrationError || "Erro ao migrar plano")
       }
     } catch (error: any) {
       toast.error(error.message || "Erro ao migrar plano")
@@ -219,7 +230,7 @@ export function PlansSection() {
             <PlanCard
               key={plan.id}
               plan={plan}
-              isCurrentPlan={plan.id === currentPlanId}
+              isCurrentPlan={Number(plan.id) === Number(currentPlanId)}
               onMigrate={handleMigrate}
               isMigrating={isMigrating}
             />
