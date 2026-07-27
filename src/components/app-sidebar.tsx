@@ -34,7 +34,7 @@ import {
   Settings,
   Megaphone,
 } from "lucide-react"
-import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { useAuthenticatedOrderStats } from "@/hooks/use-authenticated-api"
 
@@ -47,6 +47,7 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar"
 import { AlbaTecLogo } from "@/components/albatec-logo"
+import { cn } from "@/lib/utils"
 
 function buildNavGroups(openOrdersCount?: number) {
   return [
@@ -190,12 +191,17 @@ function buildNavGroups(openOrdersCount?: number) {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, trialStatus } = useAuth()
+  const pathname = usePathname()
   const { data: orderStats } = useAuthenticatedOrderStats() as {
     data: { in_preparo_orders?: { current: number } } | null
   }
 
   const navGroups = buildNavGroups(orderStats?.in_preparo_orders?.current)
+  const modulesLocked =
+    pathname === "/trial-expired" ||
+    Boolean(trialStatus?.is_expired) ||
+    Boolean(trialStatus?.needs_payment && !trialStatus?.is_active)
 
   const userData = {
     name: user?.name || "Usuário",
@@ -207,22 +213,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const tenantName = tenantData?.name || "Meu Restaurante"
 
   return (
-    <Sidebar {...props}>
+    <Sidebar {...props} className={cn(props.className, modulesLocked && "select-none")}>
       <SidebarHeader className="flex flex-row items-center gap-0 border-b p-0 px-2 py-2">
-        <Link
-          href="/dashboard"
-          className="flex flex-row items-center gap-3 min-w-0 w-full"
+        <div
+          className={cn(
+            "flex flex-row items-center gap-3 min-w-0 w-full",
+            modulesLocked && "opacity-60 pointer-events-none cursor-not-allowed"
+          )}
         >
           <AlbaTecLogo variant="icon" width={80} height={80} className="shrink-0" />
           <div className="flex flex-col leading-tight min-w-0 flex-1">
             <span className="font-semibold text-sm truncate">Alba Tec</span>
             <span className="text-xs text-muted-foreground truncate">{tenantName}</span>
           </div>
-        </Link>
+        </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className={cn(modulesLocked && "pointer-events-none")}>
         {navGroups.map((group) => (
-          <NavMain key={group.label} label={group.label} items={group.items} />
+          <NavMain
+            key={group.label}
+            label={group.label}
+            items={group.items}
+            locked={modulesLocked}
+          />
         ))}
       </SidebarContent>
       <SidebarFooter>

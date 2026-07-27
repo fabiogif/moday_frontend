@@ -154,7 +154,7 @@ export function CommandSearch({ open, onOpenChange }: CommandSearchProps) {
     { title: "Usuários", url: "/users", group: "Sistema", icon: UserCog },
     { title: "Perfis e Permissões", url: "/permissions", group: "Sistema", icon: ShieldCheck },
     { title: "Configurações", url: "/settings", group: "Sistema", icon: Settings },
-    { title: "Planos", url: "/billing", group: "Sistema", icon: CreditCard },
+    { title: "Planos", url: "/subscribe", group: "Sistema", icon: CreditCard },
     { title: "FAQs", url: "/faqs", group: "Sistema", icon: HelpCircle },
   ]
 

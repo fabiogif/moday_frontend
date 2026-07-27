@@ -5,10 +5,6 @@ import {
   Plus,
   Store,
   MonitorSmartphone,
-  UserPlus,
-  Wallet,
-  FileBarChart,
-  Megaphone,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
@@ -38,14 +34,6 @@ const ACTIONS: QuickAction[] = [
     shortcut: "Alt+P",
   },
   {
-    key: "novo-cliente",
-    label: "Novo Cliente",
-    icon: UserPlus,
-    onClick: ({ router }) => router.push("/clients"),
-    variant: "outline",
-    shortcut: "Alt+C",
-  },
-  {
     key: "pdv",
     label: "Abrir PDV",
     icon: MonitorSmartphone,
@@ -54,41 +42,17 @@ const ACTIONS: QuickAction[] = [
     shortcut: "Alt+D",
   },
   {
-    key: "financeiro",
-    label: "Financeiro",
-    icon: Wallet,
-    onClick: ({ router }) => router.push("/financial/dashboard"),
-    variant: "outline",
-    shortcut: "Alt+F",
-  },
-  {
-    key: "relatorio",
-    label: "Gerar Relatório",
-    icon: FileBarChart,
-    onClick: ({ router }) => router.push("/reports"),
-    variant: "ghost",
-  },
-  {
     key: "cardapio",
     label: "Cardápio",
     icon: Store,
     onClick: ({ tenantSlug }) => window.open(`/store/${tenantSlug}`, "_blank"),
     variant: "ghost",
   },
-  {
-    key: "marketing",
-    label: "Marketing",
-    icon: Megaphone,
-    onClick: ({ router }) => router.push("/marketing/coupons"),
-    variant: "ghost",
-  },
 ]
 
 const SHORTCUT_KEY_MAP: Record<string, string> = {
   p: "novo-pedido",
-  c: "novo-cliente",
   d: "pdv",
-  f: "financeiro",
 }
 
 function isTypingTarget(target: EventTarget | null) {

@@ -49,7 +49,7 @@ export function DunningBanner({ status }: DunningBannerProps) {
         <Button
           size="sm"
           variant={config.variant === "destructive" ? "outline" : "default"}
-          onClick={() => router.push("/billing")}
+          onClick={() => router.push("/subscribe")}
           className="shrink-0"
         >
           Regularizar pagamento

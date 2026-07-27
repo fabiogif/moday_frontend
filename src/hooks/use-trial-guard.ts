@@ -4,7 +4,14 @@ import { useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 
-const EXEMPT_PATHS = ["/trial-expired", "/subscription"]
+/** Rotas liberadas com trial expirado (assinatura, suporte e a própria tela). */
+const EXEMPT_PATHS = [
+  "/trial-expired",
+  "/subscribe",
+  "/subscription",
+  "/contact",
+  "/plans",
+]
 
 function isExemptPath(pathname: string): boolean {
   return EXEMPT_PATHS.some(

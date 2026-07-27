@@ -72,7 +72,7 @@ export function TrialBanner() {
         </div>
 
         <div className="flex gap-2 ml-4">
-          <Link href="/billing">
+          <Link href="/subscribe">
             <Button 
               size="sm"
               className={

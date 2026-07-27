@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { apiClient } from "@/lib/api-client"
+import { apiClient, endpoints } from "@/lib/api-client"
 import type {
   SubscriptionStatus2,
   SubscriptionInvoice,
@@ -105,9 +105,13 @@ export function useSubscription() {
     setLoading(true)
     setError(null)
     try {
-      const res = await apiClient.get<SubscriptionInvoice[]>("/api/subscription/invoices")
+      const res = await apiClient.get<SubscriptionInvoice[]>(endpoints.subscription.invoices)
       return res?.data ?? []
     } catch (err: any) {
+      // 404/rota ausente: não quebra a UI — lista vazia
+      if (err?.status === 404) {
+        return []
+      }
       setError(err?.message ?? "Falha ao buscar faturas.")
       return []
     } finally {
