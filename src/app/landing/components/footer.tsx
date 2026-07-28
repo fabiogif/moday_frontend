@@ -8,7 +8,7 @@ import Link from "next/link"
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { AlbaTecLogo } from '@/components/albatec-logo'
+import { AlbaTecLogo, LANDING_FOOTER_BRAND_ICON_SIZE } from '@/components/albatec-logo'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import {
@@ -127,7 +127,12 @@ export function LandingFooter() {
         <div className="grid gap-8 grid-cols-2 lg:grid-cols-4">
           <div className="col-span-2 max-w-2xl">
             <div className="mb-5 max-lg:flex max-lg:justify-center">
-              <AlbaTecLogo variant="full" height={80} adaptive />
+              <AlbaTecLogo
+                variant="icon"
+                width={LANDING_FOOTER_BRAND_ICON_SIZE}
+                height={LANDING_FOOTER_BRAND_ICON_SIZE}
+                className="shrink-0"
+              />
             </div>
             <p className="text-muted-foreground mb-4 max-lg:text-center max-lg:flex max-lg:justify-center text-sm leading-relaxed">
               Sistema de gestão para restaurantes com PDV, cardápio digital, financeiro e relatórios

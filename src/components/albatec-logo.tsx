@@ -17,6 +17,9 @@ const LOGO_ASPECT = {
   full: 1,
 } as const
 
+export const PANEL_BRAND_ICON_SIZE = 50
+export const LANDING_FOOTER_BRAND_ICON_SIZE = 56
+
 export type AlbaTecLogoVariant = "horizontal" | "full" | "icon" | "wordmark"
 
 interface AlbaTecLogoProps {

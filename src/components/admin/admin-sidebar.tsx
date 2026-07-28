@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useAdminAuth } from '@/contexts/admin-auth-context'
-import { AlbaTecLogo } from '@/components/albatec-logo'
+import { AlbaTecLogo, PANEL_BRAND_ICON_SIZE } from '@/components/albatec-logo'
 import {
   LayoutDashboard,
   Building2,
@@ -70,7 +70,7 @@ export function AdminSidebar() {
           href="/admin/dashboard"
           className="flex flex-row items-center gap-3 min-w-0 w-full"
         >
-          <AlbaTecLogo variant="icon" width={80} height={80} className="shrink-0" />
+          <AlbaTecLogo variant="icon" width={PANEL_BRAND_ICON_SIZE} height={PANEL_BRAND_ICON_SIZE} className="shrink-0" />
           <div className="flex flex-col leading-tight min-w-0 flex-1">
             <span className="font-semibold text-sm truncate">Painel Admin</span>
             <span className="text-xs text-muted-foreground truncate">Alba Tec</span>

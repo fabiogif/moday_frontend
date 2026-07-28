@@ -46,7 +46,7 @@ import {
   SidebarFooter,
   SidebarHeader,
 } from "@/components/ui/sidebar"
-import { AlbaTecLogo } from "@/components/albatec-logo"
+import { AlbaTecLogo, PANEL_BRAND_ICON_SIZE } from "@/components/albatec-logo"
 import { cn } from "@/lib/utils"
 
 function buildNavGroups(openOrdersCount?: number) {
@@ -221,7 +221,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             modulesLocked && "opacity-60 pointer-events-none cursor-not-allowed"
           )}
         >
-          <AlbaTecLogo variant="icon" width={80} height={80} className="shrink-0" />
+          <AlbaTecLogo variant="icon" width={PANEL_BRAND_ICON_SIZE} height={PANEL_BRAND_ICON_SIZE} className="shrink-0" />
           <div className="flex flex-col leading-tight min-w-0 flex-1">
             <span className="font-semibold text-sm truncate">Alba Tec</span>
             <span className="text-xs text-muted-foreground truncate">{tenantName}</span>
