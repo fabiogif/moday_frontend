@@ -23,7 +23,7 @@ export default function BlogIndexPage() {
     <div className="min-h-screen bg-stone-50 text-zinc-900">
       <header className="border-b border-zinc-200 bg-white">
         <div className="container mx-auto flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
-          <AlbaTecLogo href="/" height={56} />
+          <AlbaTecLogo href="/" variant="icon" width={80} height={80} className="shrink-0" />
           <nav className="flex items-center gap-4 text-sm font-medium">
             <Link href="/sobre" className="text-zinc-600 hover:text-zinc-900">
               Sobre
