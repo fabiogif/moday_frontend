@@ -28,7 +28,7 @@ export function HeroSection() {
     <section
       id="inicio"
       aria-label="Apresentação do Alba Tec, sistema de gestão para restaurantes"
-      className="bg-stone-50 pt-20 sm:pt-28 pb-16 sm:pb-24 border-b border-zinc-200"
+      className="bg-gradient-to-b from-white to-[#F9F5FF] pt-20 sm:pt-28 pb-16 sm:pb-24 border-b border-gray-200"
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16 xl:gap-20">
@@ -36,7 +36,7 @@ export function HeroSection() {
           {/* Left column */}
           <div>
             <div className="flex items-center gap-2.5 mb-6">
-              <span className="w-7 h-px bg-orange-600 flex-shrink-0" />
+              <span className="w-7 h-px bg-apricot-600 flex-shrink-0" />
               <p className="text-[11px] uppercase tracking-[0.22em] text-zinc-500 font-medium">
                 Alba Tec · Sistema para Restaurantes
               </p>
@@ -54,7 +54,7 @@ export function HeroSection() {
               {['PDV touch-first', 'App mobile de pedidos', 'Cardápio digital', 'Relatórios em tempo real'].map((tag) => (
                 <span
                   key={tag}
-                  className="text-xs font-medium px-2.5 py-1 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200"
+                  className="text-xs font-medium px-2.5 py-1 rounded-md bg-apricot-100 text-primary-700 border border-apricot-200"
                 >
                   {tag}
                 </span>
@@ -64,7 +64,7 @@ export function HeroSection() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button
                 size="lg"
-                className="bg-zinc-900 text-white hover:bg-zinc-700 rounded-md h-11 px-7 text-sm font-semibold transition-colors"
+                className="bg-primary text-white hover:bg-primary-600 rounded-md h-11 px-7 text-sm font-semibold transition-colors"
                 asChild
               >
                 <Link href="/auth/register" className="flex items-center gap-2" onClick={() => trackCTA('/auth/register')}>

@@ -91,7 +91,7 @@ export function ModulesSection() {
           >
             {/* Imagem */}
             <div className={`relative ${module.layout === 'right' ? 'lg:col-start-2' : ''}`}>
-              <div className="absolute inset-0 bg-gradient-to-r from-[#FF6528]/20 to-[#FF8A50]/20 rounded-3xl blur-3xl -z-10" />
+              <div className="absolute inset-0 bg-gradient-to-r from-apricot-300/40 to-apricot-500/30 rounded-3xl blur-3xl -z-10" />
               <div className="relative rounded-2xl shadow-2xl overflow-hidden">
                 <Image
                   src={module.image}
@@ -101,7 +101,7 @@ export function ModulesSection() {
                   className="w-full h-auto object-cover"
                 />
                 {/* Floating Badge */}
-                <div className="absolute top-4 right-4 bg-[#FF6528] text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                <div className="absolute top-4 right-4 bg-apricot-400 text-gray-900 px-4 py-2 rounded-full text-sm font-bold shadow-lg">
                   {module.badge}
                 </div>
               </div>
@@ -128,7 +128,7 @@ export function ModulesSection() {
 
               {/* CTA */}
               <Button
-                className="bg-[#FF6528] hover:bg-[#FF8A50] text-white group"
+                className="bg-primary hover:bg-primary-600 text-white group"
                 onClick={() => openModal()}
               >
                 <span className="inline-flex items-center gap-2">

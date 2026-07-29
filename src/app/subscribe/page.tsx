@@ -164,7 +164,7 @@ function PaymentStep({
         </div>
 
         <div className="text-center sm:text-left space-y-2">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-[#7C3AED] font-medium">
+          <p className="text-[11px] uppercase tracking-[0.22em] text-primary font-medium">
             Checkout
           </p>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
@@ -284,14 +284,14 @@ function PaymentStep({
 
                 {!brickReady && !submitting && brickError === null && (
                   <div className="flex flex-col items-center gap-3 py-10">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#7C3AED]" />
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     <p className="text-xs text-zinc-500">Carregando formulário seguro…</p>
                   </div>
                 )}
 
                 {submitting && (
                   <div className="flex flex-col items-center gap-3 py-10">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#7C3AED]" />
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     <p className="text-sm text-zinc-500">Processando pagamento…</p>
                   </div>
                 )}
@@ -349,7 +349,7 @@ function PlansStep({
             ) : (
               <Badge
                 variant="outline"
-                className="text-xs px-3 py-1 border-[#7C3AED]/40 text-[#7C3AED]"
+                className="text-xs px-3 py-1 border-primary/40 text-primary"
               >
                 <Clock className="h-3 w-3 mr-1" />
                 {daysRemaining > 0
@@ -387,7 +387,7 @@ function PlansStep({
 
           {loading ? (
             <div className="flex flex-col items-center gap-3 py-16">
-              <Loader2 className="h-8 w-8 animate-spin text-[#7C3AED]" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-sm text-zinc-500">Carregando planos…</p>
             </div>
           ) : plans.length === 0 ? (
@@ -457,13 +457,13 @@ function PlansStep({
                     <ul className="space-y-2 text-sm text-zinc-600 mb-5">
                       {plan.max_users != null && (
                         <li className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-[#7C3AED] shrink-0" />
+                          <Users className="h-4 w-4 text-primary shrink-0" />
                           Até {plan.max_users} usuários
                         </li>
                       )}
                       {plan.max_orders_per_month != null && (
                         <li className="flex items-center gap-2">
-                          <Zap className="h-4 w-4 text-[#7C3AED] shrink-0" />
+                          <Zap className="h-4 w-4 text-primary shrink-0" />
                           Até {plan.max_orders_per_month} pedidos/mês
                         </li>
                       )}
@@ -596,7 +596,7 @@ function SubscribePageContent() {
   if (bootstrapping) {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-[#7C3AED]" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-sm text-zinc-500">Preparando assinatura…</p>
       </div>
     )
@@ -626,7 +626,7 @@ export default function SubscribePage() {
       <Suspense
         fallback={
           <div className="min-h-[50vh] flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-[#7C3AED]" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         }
       >

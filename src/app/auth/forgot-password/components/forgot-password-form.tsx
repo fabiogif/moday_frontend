@@ -126,7 +126,7 @@ export function ForgotPasswordForm({
             </div>
           </div>
 
-          <div className="relative hidden lg:flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-[#5A18C9] via-primary to-violet-800 p-10 text-white">
+          <div className="relative hidden lg:flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-primary-700 via-primary to-primary-900 p-10 text-white">
             <div
               className="absolute inset-0 opacity-15"
               style={{
