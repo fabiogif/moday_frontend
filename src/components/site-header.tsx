@@ -71,6 +71,7 @@ const routeLabels: Record<string, string> = {
   calendar: "Calendário",
   mail: "E-mail",
   faqs: "Perguntas Frequentes",
+  "trial-expired": "Período de teste encerrado",
 }
 
 function useBreadcrumbs() {
