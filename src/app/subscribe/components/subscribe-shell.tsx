@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { ArrowLeft, LayoutDashboard, LogIn } from "lucide-react"
-import { AlbaTecLogo } from "@/components/albatec-logo"
+import { AlbaTecLogo, LANDING_FOOTER_BRAND_ICON_SIZE } from "@/components/albatec-logo"
 import { Button } from "@/components/ui/button"
 import { LandingLightThemeLock } from "@/app/landing/components/landing-light-theme-lock"
 import { useAuth } from "@/contexts/auth-context"
@@ -20,9 +20,9 @@ export function SubscribeShell({ children }: { children: React.ReactNode }) {
   return (
     <LandingLightThemeLock>
       <header className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/90 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80">
-        <div className="container mx-auto flex h-16 sm:h-20 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto flex h-24 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3 min-w-0">
-            <AlbaTecLogo href="/landing" height={48} priority />
+            <AlbaTecLogo href="/landing" variant="full" height={80} adaptive priority />
             <span className="hidden sm:inline text-xs font-medium uppercase tracking-[0.18em] text-zinc-500 truncate">
               Assinatura
             </span>
@@ -37,7 +37,7 @@ export function SubscribeShell({ children }: { children: React.ReactNode }) {
             >
               <Link href="/landing#pricing">
                 <ArrowLeft className="h-4 w-4 mr-1.5" />
-                Ver planos na landing
+                Voltar aos planos
               </Link>
             </Button>
 
@@ -74,7 +74,13 @@ export function SubscribeShell({ children }: { children: React.ReactNode }) {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-md space-y-3">
-              <AlbaTecLogo href="/landing" height={48} />
+              <AlbaTecLogo
+                href="/landing"
+                variant="icon"
+                width={LANDING_FOOTER_BRAND_ICON_SIZE}
+                height={LANDING_FOOTER_BRAND_ICON_SIZE}
+                className="shrink-0"
+              />
               <p className="text-sm text-zinc-500 leading-relaxed">
                 Sistema completo de gestão para restaurantes. Pedidos, cardápio,
                 financeiro e relatórios em uma única plataforma.

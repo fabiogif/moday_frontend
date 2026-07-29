@@ -14,6 +14,7 @@ jest.mock('@/hooks/use-theme', () => ({
 
 jest.mock('@/components/albatec-logo', () => ({
   AlbaTecLogo: ({ href }: { href?: string }) => <a href={href || '/'}>Alba Tec</a>,
+  LANDING_FOOTER_BRAND_ICON_SIZE: 56,
 }))
 
 describe('SubscribeShell', () => {
@@ -26,6 +27,10 @@ describe('SubscribeShell', () => {
 
     expect(screen.getAllByText('Alba Tec').length).toBeGreaterThan(0)
     expect(screen.getByText('conteúdo')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Voltar aos planos/i })).toHaveAttribute(
+      'href',
+      '/landing#pricing'
+    )
     expect(screen.getByRole('link', { name: /Painel/i })).toHaveAttribute('href', '/dashboard')
     expect(screen.getByRole('link', { name: /Recursos/i })).toHaveAttribute(
       'href',
