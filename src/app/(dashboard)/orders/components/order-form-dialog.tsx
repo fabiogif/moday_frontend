@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -36,6 +36,9 @@ import { endpoints } from "@/lib/api-client"
 import { SuccessAlert } from "./success-alert"
 import { StateCityFormFields } from "@/components/location/state-city-form-fields"
 import { ClientFormDialog } from "../../clients/components/client-form-dialog"
+import { useViaCEP } from "@/hooks/use-viacep"
+import { applyCepToForm } from "@/lib/apply-cep-to-form"
+import { maskZipCode } from "@/lib/masks"
 
 const orderFormSchema = z.object({
   clientId: z.string().min(1, {
@@ -161,6 +164,7 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
   const { data: productsData, loading: productsLoading, error: productsError } = useAuthenticatedCatalogProducts()
   const { data: tablesData, loading: tablesLoading, error: tablesError } = useAuthenticatedTables()
   const { mutate: createClient } = useMutation()
+  const { loading: loadingCEP, searchCEP } = useViaCEP()
   
   // Estado local para forçar atualização de clientes
   const [localClients, setLocalClients] = useState<any[]>([])
@@ -223,6 +227,26 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
   const useClientAddress = form.watch("useClientAddress")
   const selectedClientId = form.watch("clientId")
   const watchProducts = form.watch("products")
+
+  const handleDeliveryCepLookup = useCallback(
+    async (cepValue: string) => {
+      if (!cepValue || useClientAddress) return
+
+      const cleanCEP = cepValue.replace(/\D/g, "")
+      if (cleanCEP.length !== 8) return
+
+      const address = await searchCEP(cepValue)
+      if (address) {
+        applyCepToForm(form.setValue, address, {
+          address: "deliveryAddress",
+          neighborhood: "deliveryNeighborhood",
+          state: "deliveryState",
+          city: "deliveryCity",
+        })
+      }
+    },
+    [form, searchCEP, useClientAddress]
+  )
 
   // Buscar dados do cliente selecionado
   const selectedClient = clients.find((c: Client) => c.id.toString() === selectedClientId)
@@ -688,7 +712,27 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
                     <FormItem>
                       <FormLabel>CEP</FormLabel>
                       <FormControl>
-                        <Input placeholder="01234-567" {...field} value={field.value || ""} />
+                        <div className="relative">
+                          <Input
+                            placeholder="01234-567"
+                            value={field.value || ""}
+                            onChange={(event) => {
+                              const masked = maskZipCode(event.target.value)
+                              field.onChange(masked)
+                            }}
+                            onBlur={(event) => {
+                              field.onBlur()
+                              void handleDeliveryCepLookup(event.target.value)
+                            }}
+                            maxLength={9}
+                            disabled={loadingCEP || useClientAddress}
+                          />
+                          {loadingCEP && (
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            </div>
+                          )}
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1294,33 +1338,17 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
                           )}
                         />
 
-                        <FormField
-                          control={form.control}
-                          name="deliveryCity"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Cidade *</FormLabel>
-                              <FormControl>
-                                <Input placeholder="São Paulo" {...field} value={field.value || ""} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="deliveryState"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Estado</FormLabel>
-                              <FormControl>
-                                <Input placeholder="SP" {...field} value={field.value || ""} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <StateCityFormFields
+                            control={form.control}
+                            stateFieldName="deliveryState"
+                            cityFieldName="deliveryCity"
+                            stateLabel="Estado"
+                            cityLabel="Cidade"
+                            required
+                            gridCols="equal"
+                          />
+                        </div>
 
                         <FormField
                           control={form.control}
@@ -1329,7 +1357,27 @@ export function OrderFormDialog({ onAddOrder, renderAsPage = false }: OrderFormD
                             <FormItem>
                               <FormLabel>CEP</FormLabel>
                               <FormControl>
-                                <Input placeholder="01234-567" {...field} value={field.value || ""} />
+                                <div className="relative">
+                                  <Input
+                                    placeholder="01234-567"
+                                    value={field.value || ""}
+                                    onChange={(event) => {
+                                      const masked = maskZipCode(event.target.value)
+                                      field.onChange(masked)
+                                    }}
+                                    onBlur={(event) => {
+                                      field.onBlur()
+                                      void handleDeliveryCepLookup(event.target.value)
+                                    }}
+                                    maxLength={9}
+                                    disabled={loadingCEP || useClientAddress}
+                                  />
+                                  {loadingCEP && (
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                    </div>
+                                  )}
+                                </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>

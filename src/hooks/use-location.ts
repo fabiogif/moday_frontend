@@ -1,20 +1,24 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { apiClient, endpoints } from '@/lib/api-client'
 
 export interface State {
   id: number
   uf: string
   name: string
+  ibge_code?: string
+  region?: string
 }
 
 export interface City {
   id: number
   name: string
+  ibge_code?: string
   is_capital: boolean
   state?: {
     id: number
     uf: string
     name: string
+    ibge_code?: string
   }
 }
 
@@ -31,16 +35,17 @@ export function useStates() {
     try {
       setLoading(true)
       setError(null)
-      const response = await apiClient.get<{ success: boolean; data: { success: boolean; data: State[] } }>(endpoints.states.list)
-      
+      const response = await apiClient.get<{ success: boolean; data: { success: boolean; data: State[] } }>(
+        endpoints.states.list
+      )
+
       if (response.success && response.data?.data) {
         setStates(Array.isArray(response.data.data) ? response.data.data : [])
       } else {
         setError('Erro ao carregar estados')
         setStates([])
       }
-    } catch (err) {
-
+    } catch {
       setError('Erro ao carregar estados')
       setStates([])
     } finally {
@@ -51,42 +56,60 @@ export function useStates() {
   return { states: states || [], loading, error, refresh: loadStates }
 }
 
-export function useCitiesByState(uf: string | null) {
+/**
+ * Carrega municípios da base local IBGE pelo ID do estado.
+ * Aceita também UF para compatibilidade: resolve o id via lista de estados.
+ */
+export function useCitiesByState(stateKey: string | number | null) {
+  const { states } = useStates()
   const [cities, setCities] = useState<City[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const stateId = useMemo(() => {
+    if (stateKey === null || stateKey === undefined || stateKey === '') {
+      return null
+    }
+    if (typeof stateKey === 'number') {
+      return stateKey
+    }
+    if (/^\d+$/.test(stateKey)) {
+      return Number(stateKey)
+    }
+    const match = states.find((s) => s.uf === stateKey.toUpperCase())
+    return match?.id ?? null
+  }, [stateKey, states])
+
   useEffect(() => {
-    if (uf) {
-      loadCities(uf)
+    if (stateId) {
+      loadCities(stateId)
     } else {
       setCities([])
     }
-  }, [uf])
+  }, [stateId])
 
-  async function loadCities(stateUf: string) {
+  async function loadCities(id: number) {
     try {
       setLoading(true)
       setError(null)
-      const response = await apiClient.get<{ 
+      const response = await apiClient.get<{
         success: boolean
-        data: { 
+        data: {
           success: boolean
           data: {
             state: State
-            cities: City[] 
+            cities: City[]
           }
-        } 
-      }>(endpoints.states.cities(stateUf))
-      
+        }
+      }>(endpoints.states.cities(id))
+
       if (response.success && response.data?.data && 'cities' in response.data.data) {
-        setCities(Array.isArray((response.data.data as any).cities) ? (response.data.data as any).cities : [])
+        setCities(Array.isArray(response.data.data.cities) ? response.data.data.cities : [])
       } else {
         setError('Erro ao carregar cidades')
         setCities([])
       }
-    } catch (err) {
-
+    } catch {
       setError('Erro ao carregar cidades')
       setCities([])
     } finally {
@@ -94,7 +117,12 @@ export function useCitiesByState(uf: string | null) {
     }
   }
 
-  return { cities: cities || [], loading, error, refresh: () => uf && loadCities(uf) }
+  return {
+    cities: cities || [],
+    loading,
+    error,
+    refresh: () => stateId && loadCities(stateId),
+  }
 }
 
 export function useSearchCities(searchTerm: string, minLength = 2) {
@@ -106,7 +134,7 @@ export function useSearchCities(searchTerm: string, minLength = 2) {
     if (searchTerm && searchTerm.length >= minLength) {
       const timer = setTimeout(() => {
         searchCities(searchTerm)
-      }, 300) // Debounce
+      }, 300)
 
       return () => clearTimeout(timer)
     } else {
@@ -118,24 +146,21 @@ export function useSearchCities(searchTerm: string, minLength = 2) {
     try {
       setLoading(true)
       setError(null)
-      const response = await apiClient.get<{ 
+      const response = await apiClient.get<{
         success: boolean
         data: {
           success: boolean
           data: City[]
         }
-      }>(
-        `${endpoints.cities.search}?q=${encodeURIComponent(query)}`
-      )
-      
+      }>(`${endpoints.cities.search}?q=${encodeURIComponent(query)}`)
+
       if (response.success && response.data?.data) {
         setCities(Array.isArray(response.data.data) ? response.data.data : [])
       } else {
         setError('Erro ao pesquisar cidades')
         setCities([])
       }
-    } catch (err) {
-
+    } catch {
       setError('Erro ao pesquisar cidades')
       setCities([])
     } finally {
@@ -145,4 +170,3 @@ export function useSearchCities(searchTerm: string, minLength = 2) {
 
   return { cities: cities || [], loading, error }
 }
-

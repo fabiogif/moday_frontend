@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Skeleton } from "@/components/ui/skeleton"
 
 interface StateCityFormFieldsProps<T extends FieldValues> {
   control: Control<T>
@@ -28,7 +27,7 @@ interface StateCityFormFieldsProps<T extends FieldValues> {
   required?: boolean
   disabled?: boolean
   onStateChange?: (value: string) => void
-  gridCols?: "equal" | "state-small" // equal: 1-1, state-small: 1-2
+  gridCols?: "equal" | "state-small"
 }
 
 export function StateCityFormFields<T extends FieldValues>({
@@ -44,85 +43,72 @@ export function StateCityFormFields<T extends FieldValues>({
 }: StateCityFormFieldsProps<T>) {
   const { states, loading: loadingStates } = useStates()
 
-  // Observar mudanças no campo de estado usando useWatch (reativo)
   const stateField = useWatch({
     control,
     name: stateFieldName,
   })
-  
+
   const cityField = useWatch({
     control,
     name: cityFieldName,
   })
-  
+
   const { cities, loading: loadingCities } = useCitiesByState(stateField || null)
 
-  // Debug
-  useEffect(() => {
-    // .map(c => c.name)
-    // })
-  }, [stateField, cities, loadingCities])
-
-  // Notificar quando estado mudar
   useEffect(() => {
     if (stateField && onStateChange) {
       onStateChange(stateField)
     }
   }, [stateField, onStateChange])
 
-  // Limpar cidade quando estado mudar
   useEffect(() => {
-    if (stateField && cityField) {
-      const cityExists = cities.some(city => city.name === cityField)
-      if (!cityExists && cities.length > 0) {
-        // Marcar campo como dirty para validação
-        (control._formState.dirtyFields as any)[cityFieldName] = true
-        // Não limpa automaticamente para não perder o valor durante carregamento
+    if (stateField && cityField && cities.length > 0) {
+      const cityExists = cities.some((city) => city.name === cityField)
+      if (!cityExists) {
+        ;(control._formState.dirtyFields as Record<string, boolean>)[cityFieldName as string] = true
       }
     }
   }, [stateField, cities, cityField, cityFieldName, control])
 
   return (
     <>
-      {/* Campo de Estado */}
       <FormField
         control={control}
         name={stateFieldName}
         render={({ field }) => (
-            <FormItem className={gridCols === "state-small" ? "" : ""}>
-              <FormLabel>
-                {stateLabel} {required && <span className="text-red-500">*</span>}
-              </FormLabel>
-              <Select
-                value={field.value}
-                onValueChange={field.onChange}
-                disabled={disabled || loadingStates}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent className="max-h-[300px]">
-                  {loadingStates ? (
-                    <SelectItem value="_loading" disabled>
-                      Carregando...
+          <FormItem className={gridCols === "state-small" ? "" : ""}>
+            <FormLabel>
+              {stateLabel} {required && <span className="text-red-500">*</span>}
+            </FormLabel>
+            <Select
+              value={field.value}
+              onValueChange={field.onChange}
+              disabled={disabled || loadingStates}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent className="max-h-[300px]">
+                {loadingStates ? (
+                  <SelectItem value="_loading" disabled>
+                    Carregando...
+                  </SelectItem>
+                ) : (
+                  states.map((state) => (
+                    <SelectItem key={state.id} value={state.uf}>
+                      {state.name} ({state.uf})
                     </SelectItem>
-                  ) : (
-                    states.map((state) => (
-                      <SelectItem key={state.id} value={state.uf}>
-                        {state.name} ({state.uf})
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
         )}
       />
 
-      {/* Campo de Cidade */}
       <FormField
         control={control}
         name={cityFieldName}
@@ -143,8 +129,8 @@ export function StateCityFormFields<T extends FieldValues>({
                       !stateField
                         ? "Selecione um estado primeiro"
                         : loadingCities
-                        ? "Carregando..."
-                        : "Selecione"
+                          ? "Carregando..."
+                          : "Selecione"
                     }
                   />
                 </SelectTrigger>
@@ -175,4 +161,3 @@ export function StateCityFormFields<T extends FieldValues>({
     </>
   )
 }
-

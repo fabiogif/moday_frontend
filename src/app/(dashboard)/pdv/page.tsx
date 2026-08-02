@@ -97,8 +97,7 @@ import {
   CreditCard as CreditCardIcon,
   ShoppingCart as ShoppingCartIcon,
 } from "lucide-react"
-import { maskPhone, maskZipCode } from "@/lib/masks"
-import { useViaCEP } from "@/hooks/use-viacep"
+import { maskPhone } from "@/lib/masks"
 import { PixQrCodeDialog } from "./components/pix-qr-code-dialog"
 import { PDVTutorial } from "./components/pdv-tutorial"
 import { PDVFeedback } from "./components/pdv-feedback"
@@ -838,9 +837,6 @@ export default function POSPage() {
     error: tableOrdersError,
     refetch: refetchTableOrders,
   } = useAuthenticatedOrdersByTable(selectedTable)
-
-  // Hook para busca de CEP via ViaCEP
-  const { loading: loadingCEP, searchCEP } = useViaCEP()
 
   // ============================================
   // USEMEMO E OUTROS HOOKS DERIVADOS
@@ -1855,33 +1851,6 @@ const handleClientChange = (value: string) => {
       }
     } catch (error: any) {
       toast.error(error?.message || "Erro ao atualizar pedido")
-    }
-  }
-
-  const handleZipChange = async (value: string) => {
-    const masked = maskZipCode(value)
-    setDeliveryAddress((prev) => ({ ...prev, zip: masked }))
-
-    // Buscar endereço automaticamente quando CEP estiver completo (8 dígitos)
-    const cleanCEP = masked.replace(/\D/g, "")
-    if (cleanCEP.length === 8) {
-      try {
-        const address = await searchCEP(masked)
-        if (address) {
-          setDeliveryAddress((prev) => ({
-            ...prev,
-            address: address.address || address.logradouro || prev.address,
-            neighborhood: address.neighborhood || address.bairro || prev.neighborhood,
-            city: address.city || address.localidade || prev.city,
-            state: address.state || address.uf || prev.state,
-          }))
-        }
-      } catch (error) {
-        // Erro já é tratado pelo useViaCEP com toast
-        if (process.env.NODE_ENV === "development") {
-
-        }
-      }
     }
   }
 

@@ -44,26 +44,23 @@ export function StateCitySelect({
   const { states, loading: loadingStates } = useStates()
   const { cities, loading: loadingCities } = useCitiesByState(stateValue || null)
 
-  // Limpar cidade quando estado mudar (apenas se a cidade não pertence ao novo estado)
   useEffect(() => {
     if (stateValue && cityValue && cities.length > 0) {
-      const cityExists = cities.some(city => city.name === cityValue)
+      const cityExists = cities.some((city) => city.name === cityValue)
       if (!cityExists) {
-        // Aguardar um pouco antes de limpar para dar tempo do CEP setar os valores
         const timer = setTimeout(() => {
-          const stillNotExists = cities.some(city => city.name === cityValue)
-          if (!stillNotExists) {
+          const stillNotExists = !cities.some((city) => city.name === cityValue)
+          if (stillNotExists) {
             onCityChange("")
           }
         }, 100)
         return () => clearTimeout(timer)
       }
     }
-  }, [stateValue, cities])
+  }, [stateValue, cities, cityValue, onCityChange])
 
   return (
     <div className={cn("grid grid-cols-1 gap-4 md:grid-cols-3", className)}>
-      {/* Select de Estado */}
       <div className={cn("space-y-2", fieldClassName)}>
         <label className={cn("text-sm font-medium", labelClassName)}>
           Estado {required && <span className="text-red-500">*</span>}
@@ -94,12 +91,9 @@ export function StateCitySelect({
             </SelectContent>
           </Select>
         )}
-        {stateError && (
-          <p className="text-sm text-red-500">{stateError}</p>
-        )}
+        {stateError && <p className="text-sm text-red-500">{stateError}</p>}
       </div>
 
-      {/* Select de Cidade */}
       <div className={cn("space-y-2 md:col-span-2", fieldClassName)}>
         <label className={cn("text-sm font-medium", labelClassName)}>
           Cidade {required && <span className="text-red-500">*</span>}
@@ -113,14 +107,14 @@ export function StateCitySelect({
             disabled={disabled || !stateValue || loadingCities}
           >
             <SelectTrigger className={cn(triggerClassName, cityError && "border-red-500")}>
-              <SelectValue 
+              <SelectValue
                 placeholder={
-                  !stateValue 
-                    ? "Primeiro selecione um estado" 
-                    : cities.length === 0 
-                    ? "Carregando..." 
-                    : "Selecione a cidade"
-                } 
+                  !stateValue
+                    ? "Primeiro selecione um estado"
+                    : cities.length === 0
+                      ? "Carregando..."
+                      : "Selecione a cidade"
+                }
               />
             </SelectTrigger>
             <SelectContent>
@@ -139,11 +133,8 @@ export function StateCitySelect({
             </SelectContent>
           </Select>
         )}
-        {cityError && (
-          <p className="text-sm text-red-500">{cityError}</p>
-        )}
+        {cityError && <p className="text-sm text-red-500">{cityError}</p>}
       </div>
     </div>
   )
 }
-

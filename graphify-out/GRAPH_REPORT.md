@@ -1,86 +1,86 @@
-# Graph Report - moday_frontend  (2026-07-29)
+# Graph Report - moday_frontend  (2026-08-01)
 
 ## Corpus Check
-- 777 files · ~857,725 words
+- 778 files · ~857,649 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4357 nodes · 12322 edges · 247 communities (181 shown, 66 thin omitted)
+- 4361 nodes · 12398 edges · 247 communities (184 shown, 63 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 15 edges (avg confidence: 0.58)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `11ea6be2`
+- Built from commit: `dc0520f6`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- orders/new/page.tsx
+- product-form-wizard.tsx
 - dialog.tsx
 - card.tsx
 - button.tsx
 - cn
-- badge.tsx
+- select.tsx
 - account-receivable-form-dialog.tsx
-- pdv/page.tsx
-- clients/[id]/page.tsx
-- product-form-wizard.tsx
-- company/page.tsx
-- metrics-overview.tsx
+- split-payment-form.tsx
+- status-pedidos/page.tsx
+- resolveImageUrl
+- register-form.tsx
+- useAuth
 - 🧪 Guia Rápido - Testes de Frontend
 - 🧪 Casos de Teste - Cardápio com Categorias
 - 👤 Implementação da Edição de Usuários
 - ✅ Feature: Separação de Produtos por Categorias no Cardápio
 - financial/dashboard/page.tsx
 - ✨ Feature: Pré-seleção de Plano no Registro
-- use-authenticated-api.ts
+- POSPage
 - api-client.ts
 - useAuthenticatedApi
 - AdminApiClient
 - Frontend CRUD Tests
 - 🔐 Implementação da Confirmação de Senha
-- coupons/page.tsx
+- product-card.tsx
 - dashboard-old/components/data-table.tsx
-- theme-customizer/index.tsx
+- landing-theme-customizer.tsx
 - 🧪 Casos de Teste CRUD - Frontend
 - Deploy para Digital Ocean - Guia de Solução
 - Sistema de Permissões Frontend - React/TypeScript
 - 🔧 Fix: React Key Prop Warning
 - buildApiUrl
-- useAuth
+- usePermissions
 - mail.tsx
-- test-utils.tsx
+- order-track.tsx
 - 🪑 Melhorias Implementadas no Módulo de Mesas
 - 🔧 Fix: plan.price.toFixed is not a function
-- products/page.tsx
+- auth-context.tsx
 - 🐛 Troubleshooting - Erro ao Criar Pedido
 - 🎉 DEPLOY PRONTO - Configuração Final Completa!
 - store/[slug]/page.tsx
-- permissions/components/data-table.tsx
-- order-notifications-context.tsx
+- pdv/page.tsx
+- expense-form-dialog.tsx
 - ✅ Correção de Erro de Hidratação - Implementado
 - lib/order-status.ts
 - subscribe/page.tsx
-- revenue-chart.tsx
+- mail-display.tsx
 - site-header.tsx
 - 🚨 AÇÃO URGENTE - Atualizar Configuração no Painel Digital Ocean
 - 🔧 Correção de Erro de Hidratação Next.js
 - compilerOptions
 - ✅ CONFIGURAÇÃO FINAL - Digital Ocean Deploy
-- catalogs/page.tsx
+- notifications-button.tsx
 - trial-expired/page.tsx
 - 🚨 AÇÃO IMEDIATA - Corrigir Deploy na Digital Ocean
 - Configuração
 - reset-password-form.tsx
-- calendar-main.tsx
+- coupon-form.tsx
 - useMutation
 - delivery/page.tsx
 - pricing-section.tsx
 - devDependencies
 - 🪑 Resumo Final - Melhorias no Módulo de Mesas
-- useAdminAuth
+- loading-progress.tsx
 - logo.tsx
-- reviews/page.tsx
+- use-authenticated-api.ts
 - faq-list.tsx
 - data-table-toolbar.tsx
 - useLandingCTAClick
@@ -93,14 +93,14 @@
 - Digital Ocean Deployment Fix
 - Melhorias no Formulário de Pedidos
 - ✅ Correção Aplicada: payment_method_id
-- admin/plans/page.tsx
-- conversation-list.tsx
-- chart.tsx
-- plans-section.test.tsx
+- board/page.tsx
+- dropdown-menu.tsx
+- revenue-chart.tsx
+- plans-section.tsx
 - app/layout.tsx
-- admin-api-client.ts
+- navbar.tsx
 - calendars.tsx
-- react
+- useTheme
 - Sistema de Autenticação - Alba Tec Frontend
 - 📋 Melhorias Implementadas no Formulário de Pedidos
 - Solução: Erro "pnpm: command not found" na Digital Ocean
@@ -110,28 +110,28 @@
 - 🔥 CORREÇÃO CRÍTICA - Digital Ocean usando Buildpack em vez de Docker
 - components.json
 - 🔧 Correções de Erro no Formulário de Pedidos
-- CalendarEvent
-- success/page.tsx
+- use-accounts-receivable.ts
+- (dashboard)/orders/page.tsx
 - 🎉 SUCESSO! Servidor Rodando - Último Ajuste
-- bank-account-list.tsx
+- bank-account.ts
 - pdv-header.tsx
 - pagination.tsx
 - ApiClient
 - ✅ Deploy Pronto para Digital Ocean
 - 🚀 Correção de Hidratação - COMPLETO
 - 🎯 SOLUÇÃO DEFINITIVA - Wrapper server.js
-- (dashboard)/categories/page.tsx
-- message-input.tsx
+- test-utils.tsx
+- order-status-tracker.tsx
 - service-types/page.tsx
 - manifest.json
 - blog/[slug]/page.tsx
-- tables/components/data-table.tsx
+- tables/page.tsx
 - use-api.ts
 - Correções de Erros de Carregamento da Landing Page
 - 📝 RESUMO DA SOLUÇÃO - Erro Digital Ocean
 - isPublicRoute
-- board/page.tsx
-- sidebar.tsx
+- product-optionals-manager.tsx
+- use-suppliers.ts
 - use-realtime.ts
 - dependencies
 - jest.setup.js
@@ -143,29 +143,29 @@
 - hero-section.tsx
 - landing-seo.ts
 - admin-reset-password-form.tsx
-- orders/types.ts
-- isFinalStatus
+- event-detail-dialog.tsx
+- alert.tsx
 - 📝 Grupos de Testes
-- perfil/page.tsx
-- class-variance-authority
-- order-item-card.tsx
-- dropdown-menu.tsx
-- use-subscription.ts
-- receitaws.ts
-- status-pedidos/page.tsx
-- modules-section.tsx
-- client-auth-context.tsx
-- package.json
-- bank-account-form.tsx
 - faqs/components/features-grid.tsx
-- scroll-area.tsx
+- theme.ts
+- order-item-card.tsx
+- reviews-section.tsx
+- (dashboard)/billing/page.tsx
+- orders/new/page.tsx
+- OrderStatus
+- modules-section.tsx
+- client-orders.tsx
+- package.json
+- user-statistics.tsx
+- not-found-error.tsx
+- payment-methods/page.tsx
 - 🔐 Validação em Tempo Real para Senhas
-- store-hour-form-dialog.tsx
+- extractValidationErrors
 - recommended-plan-card.tsx
-- users/components/data-table.tsx
+- order-notifications-context.tsx
 - remove-console-logs.js
 - upgrade-to-pro-button.tsx
-- use-plan-migration.ts
+- unauthorized-error.tsx
 - ✅ Funcionalidades Implementadas
 - eslint.config.mjs
 - 1. 🎯 Seleção de Arquivo (4 testes)
@@ -183,12 +183,11 @@
 - jest.config.js
 - forbidden-error.tsx
 - internal-server-error.tsx
-- not-found-error.tsx
-- unauthorized-error.tsx
 - under-maintenance-error.tsx
+- tables/components/stat-cards.tsx
 - logo-carousel.tsx
+- cmdk
 - testimonials-section.tsx
-- use-location.ts
 - 🚀 Benefícios da Implementação
 - **Estados do Botão**
 - 5. 💬 Mensagens de Erro e Sucesso (2 testes)
@@ -203,11 +202,11 @@
 - test-server.js
 - 🔐 Segurança
 - clsx
-- cmdk
 - comandos-debug-digital-ocean.sh
 - date-fns
 - @dnd-kit/core
 - @dnd-kit/modifiers
+- react
 - @dnd-kit/utilities
 - jest-environment-jsdom
 - laravel-echo
@@ -252,6 +251,7 @@
 - @types/react-dom
 - postcss.config.mjs
 - test-dashboard-fixed.sh
+- @dnd-kit/sortable
 
 ## God Nodes (most connected - your core abstractions)
 1. `cn()` - 414 edges
@@ -268,67 +268,67 @@
 ## Surprising Connections (you probably didn't know these)
 - `SidebarNotification()` --references--> `react`  [EXTRACTED]
   moday_frontend/src/components/sidebar-notification.tsx → moday_frontend/package.json
+- `RevenueChart()` --calls--> `useAuthenticatedApi()`  [EXTRACTED]
+  moday_frontend/src/app/(dashboard)/dashboard/components/revenue-chart.tsx → moday_frontend/src/hooks/use-authenticated-api.ts
+- `IfoodOAuthPage()` --calls--> `useAuth()`  [EXTRACTED]
+  moday_frontend/src/app/(dashboard)/integrations/ifood/oauth/page.tsx → moday_frontend/src/contexts/auth-context.tsx
 - `OrderCard()` --calls--> `cn()`  [EXTRACTED]
   moday_frontend/src/app/(dashboard)/orders/board/page.tsx → moday_frontend/src/lib/utils.ts
 - `DroppableColumnArea()` --calls--> `cn()`  [EXTRACTED]
   moday_frontend/src/app/(dashboard)/orders/board/page.tsx → moday_frontend/src/lib/utils.ts
-- `BoardColumn()` --calls--> `cn()`  [EXTRACTED]
-  moday_frontend/src/app/(dashboard)/orders/board/page.tsx → moday_frontend/src/lib/utils.ts
-- `POSPage()` --indirect_call--> `getNextStatusName()`  [INFERRED]
-  moday_frontend/src/app/(dashboard)/pdv/page.tsx → moday_frontend/src/lib/order-status.ts
 
 ## Import Cycles
 - 1-file cycle: `moday_frontend/src/app/(dashboard)/calendar/data.ts -> moday_frontend/src/app/(dashboard)/calendar/data.ts`
 
-## Communities (247 total, 66 thin omitted)
+## Communities (247 total, 63 thin omitted)
 
-### Community 0 - "orders/new/page.tsx"
+### Community 0 - "product-form-wizard.tsx"
 Cohesion: 0.05
-Nodes (86): Plan, registerFormSchema, RegisterFormValues, loginFormSchema, LoginFormValues, signupFormSchema, SignupFormValues, CategoryFormDialogProps (+78 more)
+Nodes (66): loginFormSchema, LoginFormValues, signupFormSchema, SignupFormValues, CategoryFormDialog(), CategoryFormDialogProps, categoryFormSchema, CategoryFormValues (+58 more)
 
 ### Community 1 - "dialog.tsx"
-Cohesion: 0.05
-Nodes (73): ChangeTenantPlanDialog(), ChangeTenantPlanDialogProps, formatPlanPrice(), DEFAULT_FORM, BillingPage(), EventDetailDialog(), mockEvent, LoyaltyProgramFormDialogProps (+65 more)
+Cohesion: 0.07
+Nodes (53): ChangeTenantPlanDialogProps, formatPlanPrice(), BankAccountForm(), getPixKeyMaxLength(), getPixKeyPlaceholder(), maskPixKey(), LoyaltyRewardFormDialogProps, RewardFormValues (+45 more)
 
 ### Community 2 - "card.tsx"
 Cohesion: 0.05
-Nodes (60): StatCardsProps, FormData, schema, QuickActionsProps, ClientStats, StatCards(), PLACEHOLDER_GOALS, RecentReviewsCardProps (+52 more)
+Nodes (74): StatCardsProps, FormData, schema, QuickActionsProps, CategoryStats, ClientStats, StatCards(), BankAccountFormProps (+66 more)
 
 ### Community 3 - "button.tsx"
-Cohesion: 0.06
-Nodes (52): PlanDetailsManager(), PlanDetailsManagerProps, PlanDetail, LoginFormData, loginSchema, durationOptions, EventForm(), eventTypes (+44 more)
+Cohesion: 0.10
+Nodes (32): PlanDetailsManager(), PlanDetailsManagerProps, DEFAULT_FORM, PlanDetail, LoginFormData, loginSchema, CATEGORY_COLORS, LoyaltyProgramFormDialogProps (+24 more)
 
 ### Community 4 - "cn"
 Cohesion: 0.04
-Nodes (57): ForgotPasswordForm3(), SignupForm3(), CalendarMain(), CalendarMain(), SortableStatusRow(), Category, ProductFilters(), ProductFiltersProps (+49 more)
+Nodes (68): ForgotPasswordForm3(), SignupForm3(), CalendarMain(), SortableStatusRow(), ConnectionStatus(), ConnectionStatusProps, NumericKeypad(), TableStatusIndicator() (+60 more)
 
-### Community 5 - "badge.tsx"
-Cohesion: 0.09
-Nodes (50): DataTableProps, Tenant, TenantDetails, NewsletterStats, NewsletterSubscriber, Tenant, GrowthData, RevenueData (+42 more)
+### Community 5 - "select.tsx"
+Cohesion: 0.07
+Nodes (70): DataTableProps, Tenant, Category, CategoryFormValues, DataTableProps, chartConfig, customerGrowthData, demographicsData (+62 more)
 
 ### Community 6 - "account-receivable-form-dialog.tsx"
-Cohesion: 0.06
-Nodes (57): EVENT_COLORS, EventFormDialog(), mockClients, mockEvent, AccountPayableFormDialog(), AccountPayableFormDialogProps, FIELD_STEP, STEP_FIELDS (+49 more)
+Cohesion: 0.13
+Nodes (26): AccountPayableFormDialog(), AccountPayableFormDialogProps, FIELD_STEP, STEP_FIELDS, categories, suppliers, AccountReceivableFormDialog(), FIELD_STEP (+18 more)
 
-### Community 7 - "pdv/page.tsx"
-Cohesion: 0.05
-Nodes (61): ChangeDialog(), FiscalDocument(), OrderNotes(), OrderNotesProps, getIcon(), iconMap, OrderType, OrderTypeSelector() (+53 more)
+### Community 7 - "split-payment-form.tsx"
+Cohesion: 0.11
+Nodes (24): PaymentAmountInput(), PaymentAmountInputProps, getPaymentIcon(), PaymentButtonsGrid(), PaymentButtonsGridProps, PaymentConfirmationItem, PaymentMethod, PaymentMethodCard() (+16 more)
 
-### Community 8 - "clients/[id]/page.tsx"
+### Community 8 - "status-pedidos/page.tsx"
 Cohesion: 0.10
-Nodes (43): SuccessAlertProps, Category, CategoryFormValues, categorySchema, DataTable(), SuccessAlert(), SuccessAlertProps, Client (+35 more)
+Nodes (43): TenantDetails, SuccessAlertProps, Category, CategoryFormValues, categorySchema, Client, ClientFormValues, DataTable() (+35 more)
 
-### Community 9 - "product-form-wizard.tsx"
-Cohesion: 0.07
-Nodes (46): PRESET_OPTIONS, ProductFormDialog(), isFilled(), PRODUCT_FIELD_STEP, ProductFormValues, ProductFormWizard(), ProductFormWizardProps, STEP_FIELDS (+38 more)
-
-### Community 10 - "company/page.tsx"
-Cohesion: 0.07
-Nodes (45): ClientFormDialog(), mockApiPost, FIELD_STEP, STEP_FIELDS, STEPS, SupplierFormDialog(), SupplierFormDialogProps, EditOrderPage() (+37 more)
-
-### Community 11 - "metrics-overview.tsx"
+### Community 9 - "resolveImageUrl"
 Cohesion: 0.06
-Nodes (41): GlobalFilters(), GoalsCard(), buildInsights(), Insight, InsightsCard(), PAYMENT_METHOD_LABELS, TONE_CLASSES, ClientStats (+33 more)
+Nodes (34): DataTable(), StatCards(), CategoriesPage(), Category, CategoryFormValues, EditCouponPage(), PDVHeader(), ProductGrid() (+26 more)
+
+### Community 10 - "register-form.tsx"
+Cohesion: 0.20
+Nodes (11): Plan, RegisterForm(), registerFormSchema, RegisterFormValues, AssignProfileDialog(), ChangePasswordDialog(), ChangePasswordDialogProps, DeliveryPickupSettings (+3 more)
+
+### Community 11 - "useAuth"
+Cohesion: 0.07
+Nodes (40): DashboardGreeting(), formatCurrency(), getFormattedDate(), getGreeting(), MetricData, MetricsData, GlobalFilters(), GoalsCard() (+32 more)
 
 ### Community 12 - "🧪 Guia Rápido - Testes de Frontend"
 Cohesion: 0.04
@@ -347,24 +347,28 @@ Cohesion: 0.04
 Nodes (45): 1. **Abas por Categoria**, 1. Acessar o Cardápio, 1. Imports Adicionados, 2. **Filtro de Produtos**, 2. Novo Estado, 2. Verificar Abas, 3. **Badge de Categoria**, 3. Lógica de Categorias (+37 more)
 
 ### Community 16 - "financial/dashboard/page.tsx"
-Cohesion: 0.10
-Nodes (37): FinancialSummary(), AccountsPayablePage(), AccountReceivableFormDialogProps, AccountsReceivablePage(), FinancialDashboardPage(), expenseStats, getKpiCard(), getKpiCardValue() (+29 more)
+Cohesion: 0.15
+Nodes (25): FinancialSummary(), AccountsPayablePage(), FinancialDashboardPage(), expenseStats, getKpiCard(), getKpiCardValue(), hasCurrency(), mockPush (+17 more)
 
 ### Community 17 - "✨ Feature: Pré-seleção de Plano no Registro"
 Cohesion: 0.05
 Nodes (42): 1. Landing Page → Clique no Plano, 1. Marketing Campaign, 1. Múltiplos Parâmetros, 1. Plano Existe?, 1. `register/page.tsx`, 2. Email Marketing, 2. Plans Carregados?, 2. `register/components/register-form.tsx` (+34 more)
 
-### Community 18 - "use-authenticated-api.ts"
-Cohesion: 0.06
-Nodes (44): ClientsPage(), defaultClientStats, mockClients, RecentReviewsCard(), mockUseAuthenticatedRecentReviews, OrderFormDialog(), NewOrderPage(), extractCollection() (+36 more)
+### Community 18 - "POSPage"
+Cohesion: 0.09
+Nodes (31): ClientsPage(), defaultClientStats, mockClients, OrderFormDialog(), NewOrderPage(), POSPage(), defaultCategories, defaultClients (+23 more)
 
 ### Community 19 - "api-client.ts"
-Cohesion: 0.06
-Nodes (24): CouponFormValues, CouponResponse, DataTable(), ProfileFormDialog(), StatCards(), Profile, ProfileFormValues, UserStats (+16 more)
+Cohesion: 0.09
+Nodes (14): mockApiPost, ContasBancariasPage(), City, State, Notification, NotificationPreference, API_BASE_URL, ApiError (+6 more)
 
 ### Community 20 - "useAuthenticatedApi"
-Cohesion: 0.06
-Nodes (41): CustomersChart(), extractOrderDate(), OrdersVolumeChart(), RevenueChart(), EventDetailDialogProps, EventFormDialogProps, EventsPage(), mockClients (+33 more)
+Cohesion: 0.08
+Nodes (36): EventsPage(), mockClients, mockEvents, mockStats, LoyaltyProgramFormDialog(), LoyaltyProgramPage(), LoyaltyRewardsPage(), StoreHourFormDialog() (+28 more)
+
+### Community 21 - "AdminApiClient"
+Cohesion: 0.07
+Nodes (7): AdminPerfilPage(), mockAdmin, mockLogout, mockUpdateAdmin, mockUpdatePassword, mockUpdateProfile, AdminApiClient
 
 ### Community 22 - "Frontend CRUD Tests"
 Cohesion: 0.05
@@ -374,17 +378,17 @@ Nodes (41): 1. Testes de Operações CRUD, 2. Testes de Interface, 3. Testes de 
 Cohesion: 0.05
 Nodes (40): **1. Abrir Modal**, **1. Client-Side (Zod)**, **1. Schema de Validação Atualizado**, **1. Validação de Comprimento**, **2. Preencher Formulário**, **2. Server-Side (Laravel)**, **2. Validação de Coincidência**, **2. Valores Padrão Atualizados** (+32 more)
 
-### Community 24 - "coupons/page.tsx"
-Cohesion: 0.08
-Nodes (33): Coupon, CouponsPage(), CouponStats, formatCurrency(), formatDate(), formatDiscount(), resolveStatus(), EditCouponPage() (+25 more)
+### Community 24 - "product-card.tsx"
+Cohesion: 0.22
+Nodes (9): parsePrice(), Product, ProductCard(), ProductCardProps, TODO: Abrir dialog de observação, TODO: Abrir dialog de observação, Product, ProductGrid() (+1 more)
 
 ### Community 25 - "dashboard-old/components/data-table.tsx"
-Cohesion: 0.08
-Nodes (26): ChartAreaInteractive(), chartData, chartData, columns, DataTable(), TableCellViewer(), SectionCards(), schema (+18 more)
-
-### Community 26 - "theme-customizer/index.tsx"
 Cohesion: 0.11
-Nodes (27): ImportModal(), ImportModalProps, ThemeCustomizer(), ThemeCustomizerProps, ThemeCustomizerTrigger(), LayoutTab(), ThemeTab(), ThemeTabProps (+19 more)
+Nodes (20): chartData, columns, DataTable(), SectionCards(), schema, Task, NotificationsSidebarProps, Drawer() (+12 more)
+
+### Community 26 - "landing-theme-customizer.tsx"
+Cohesion: 0.17
+Nodes (22): LandingThemeCustomizer(), LandingThemeCustomizerProps, LandingThemeCustomizerTrigger(), ColorPicker(), ImportModal(), ImportModalProps, ThemeCustomizerProps, ThemeTab() (+14 more)
 
 ### Community 27 - "🧪 Casos de Teste CRUD - Frontend"
 Cohesion: 0.05
@@ -404,19 +408,19 @@ Nodes (34): 1. **Garante Unicidade**, 2. **Estável**, 3. **Semântica**, 4. **B
 
 ### Community 31 - "buildApiUrl"
 Cohesion: 0.11
-Nodes (24): POST(), DELETE(), PUT(), GET(), POST(), POST(), POST(), GET() (+16 more)
+Nodes (23): POST(), DELETE(), PUT(), GET(), POST(), POST(), POST(), GET() (+15 more)
 
-### Community 32 - "useAuth"
-Cohesion: 0.10
-Nodes (27): DashboardGreeting(), formatCurrency(), getFormattedDate(), getGreeting(), MetricData, MetricsData, IfoodCatalogsPage(), IfoodOAuthPage() (+19 more)
+### Community 32 - "usePermissions"
+Cohesion: 0.43
+Nodes (6): AdminOnly(), CanManage(), ManagerOnly(), PermissionGuard(), PermissionGuardProps, usePermissions()
 
 ### Community 33 - "mail.tsx"
-Cohesion: 0.12
-Nodes (24): MailDisplay(), MailDisplayProps, getBadgeVariantFromLabel(), MailList(), MailListProps, Mail(), MailProps, Account (+16 more)
+Cohesion: 0.15
+Nodes (19): MailDisplay(), MailDisplayProps, getBadgeVariantFromLabel(), MailList(), MailListProps, Mail(), MailProps, Account (+11 more)
 
-### Community 34 - "test-utils.tsx"
-Cohesion: 0.07
-Nodes (25): OrdersPage(), StatCards(), Profile, User, UserFormValues, UsersPage(), useAuthenticatedOrders(), useAuthenticatedRoles() (+17 more)
+### Community 34 - "order-track.tsx"
+Cohesion: 0.19
+Nodes (9): getStatusColor(), getStatusIcon(), OrderProduct, OrderTrack(), OrderTrackingResult, OrderTrackProps, StoreInfoData, ReviewData (+1 more)
 
 ### Community 35 - "🪑 Melhorias Implementadas no Módulo de Mesas"
 Cohesion: 0.06
@@ -426,9 +430,9 @@ Nodes (34): 1️⃣ Correção da Data "Invalid Date", 1. **Feedback Visual**, 1
 Cohesion: 0.06
 Nodes (33): 1. Atualizar Interface TypeScript, 1. **Defensivo**, 2. Converter no useEffect, 2. **Type-Safe**, 3. **Conversão Central**, 3. Usar Number() na Renderização (Defesa Extra), 4. **Fallback Seguro**, Alternativa 1: Forçar backend a retornar número (+25 more)
 
-### Community 37 - "products/page.tsx"
-Cohesion: 0.10
-Nodes (26): ProductStatCards(), SuccessAlert(), Product, ProductFormValues, ProductsPage(), useAuthenticatedProducts(), useAuthenticatedProductStats(), useMutationWithValidation() (+18 more)
+### Community 37 - "auth-context.tsx"
+Cohesion: 0.08
+Nodes (32): DataTable(), ProductStatCards(), SuccessAlert(), Product, ProductFormValues, ProductsPage(), AuthContext, AuthContextType (+24 more)
 
 ### Community 38 - "🐛 Troubleshooting - Erro ao Criar Pedido"
 Cohesion: 0.06
@@ -439,36 +443,36 @@ Cohesion: 0.06
 Nodes (31): 1. ❌ → ✅ pnpm: command not found, 1. `Procfile`, 2. ❌ → ✅ Health check porta 8080, 2. `.npmrc`, 3. `.do/app.yaml`, 3. ❌ → ✅ npm ci sync errors, 4. ❌ → ✅ Cannot find module 'typescript', 4. `package.json` (engines) (+23 more)
 
 ### Community 40 - "store/[slug]/page.tsx"
-Cohesion: 0.12
-Nodes (23): CalendarMainProps, CartItem, DemoPaymentMethod, demoPaymentMethods, DemoProduct, demoProducts, LandingThemeCustomizerProps, CartItem (+15 more)
+Cohesion: 0.07
+Nodes (39): Calendar(), CalendarProps, CalendarMain(), CalendarMainProps, CalendarMainProps, durationOptions, EventForm(), EventFormProps (+31 more)
 
-### Community 41 - "permissions/components/data-table.tsx"
-Cohesion: 0.08
-Nodes (24): CategoryFormDialog(), Category, CategoryFormValues, DataTable(), DataTableProps, DataTable(), DataTableProps, Permission (+16 more)
+### Community 41 - "pdv/page.tsx"
+Cohesion: 0.04
+Nodes (47): Category, ProductFilters(), ProductFiltersProps, Product, ProductSearch(), ProductSearchProps, ChangeDialog(), FiscalDocument() (+39 more)
 
-### Community 42 - "order-notifications-context.tsx"
-Cohesion: 0.12
-Nodes (20): NotificationsButton(), NotificationsButtonProps, Notification, NotificationsSidebar(), OrderNotificationToggle(), AuthProvider(), OrderNotification, OrderNotificationsContext (+12 more)
+### Community 42 - "expense-form-dialog.tsx"
+Cohesion: 0.17
+Nodes (13): EXPENSE_STATUS_LABELS, ExpenseFormDialogProps, FIELD_STEP, STEP_FIELDS, ExpensesPage(), categories, suppliers, Expense (+5 more)
 
 ### Community 43 - "✅ Correção de Erro de Hidratação - Implementado"
 Cohesion: 0.07
 Nodes (29): 1. **AuthContext** (auth-context.tsx), 1. Componente ClientOnly, 1. Identifique o componente específico, 1. Sempre use useEffect para browser APIs, 1. Verificar se o erro desapareceu, 2. **ClientAuthContext** (client-auth-context.tsx), 2. Evite Date no render inicial, 2. Hook useHydrated (+21 more)
 
 ### Community 44 - "lib/order-status.ts"
-Cohesion: 0.11
-Nodes (27): DataTable(), renderOrderActionButtons(), DELIVERY_STEPS, OrderStatus, OrderStatusTracker(), OrderStatusTrackerProps, Step, BulkAdvanceSelection (+19 more)
+Cohesion: 0.12
+Nodes (28): OrderStatusBadge(), OrderStatusBadgeProps, OrderStatusGuard(), OrderStatusTooltip(), renderOrderActionButtons(), OrderStatusTracker(), BulkAdvanceSelection, canAdvanceStatus() (+20 more)
 
 ### Community 45 - "subscribe/page.tsx"
-Cohesion: 0.11
-Nodes (19): ClientDetailPage(), footerLinks, SubscribeShell(), formatPrice(), isFreePlan(), PaymentStep(), PlansStep(), Step (+11 more)
+Cohesion: 0.13
+Nodes (15): footerLinks, SubscribeShell(), formatPrice(), isFreePlan(), PaymentStep(), PlansStep(), Step, trustItems (+7 more)
 
-### Community 46 - "revenue-chart.tsx"
+### Community 46 - "mail-display.tsx"
 Cohesion: 0.11
-Nodes (21): chartConfig, CustomersData, chartConfig, OrdersVolumeData, Client, chartConfig, MonthlyData, SalesPerformancePayload (+13 more)
+Nodes (28): PRESET_OPTIONS, DashboardFiltersContext, DashboardFiltersContextValue, DashboardFiltersProvider(), CustomRange, DashboardPeriod, PERIOD_LABELS, ResolvedDateRange (+20 more)
 
 ### Community 47 - "site-header.tsx"
-Cohesion: 0.10
-Nodes (25): Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSearch(), CommandSearchProps (+17 more)
+Cohesion: 0.13
+Nodes (19): Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSearch(), CommandSearchProps (+11 more)
 
 ### Community 48 - "🚨 AÇÃO URGENTE - Atualizar Configuração no Painel Digital Ocean"
 Cohesion: 0.07
@@ -486,13 +490,13 @@ Nodes (27): dom, dom.iterable, es6, next-env.d.ts, .next/types/**/*.ts, node_mod
 Cohesion: 0.07
 Nodes (26): 1. `.do/app.yaml`, 2. `Procfile`, 3. `.npmrc`, 4. `package.json` (scripts), 5. **package-lock.json**, Aguardar Deploy no Digital Ocean, Arquivos Críticos, ✅ Checklist Final (+18 more)
 
-### Community 52 - "catalogs/page.tsx"
-Cohesion: 0.13
-Nodes (17): Alert, DashboardStats, CatalogCategories, IfoodCatalog, IfoodCategory, IfoodItem, IfoodOption, IfoodOptionGroup (+9 more)
+### Community 52 - "notifications-button.tsx"
+Cohesion: 0.43
+Nodes (5): NotificationsButton(), NotificationsButtonProps, Notification, NotificationsSidebar(), useOrderNotifications()
 
 ### Community 53 - "trial-expired/page.tsx"
-Cohesion: 0.09
-Nodes (17): benefits, BenefitsSection, DataProtectionCard(), locked, LockedFeatures, SupportCard, TrialHeader(), TrialHeaderProps (+9 more)
+Cohesion: 0.12
+Nodes (12): benefits, BenefitsSection, DataProtectionCard(), locked, LockedFeatures, SupportCard, TrialHeader(), TrialHeaderProps (+4 more)
 
 ### Community 54 - "🚨 AÇÃO IMEDIATA - Corrigir Deploy na Digital Ocean"
 Cohesion: 0.08
@@ -506,17 +510,17 @@ Nodes (25): 10. Comandos Úteis, 1. Variáveis de Ambiente, 2. Endpoints Impleme
 Cohesion: 0.13
 Nodes (15): AdminForgotPasswordPage(), ForgotPasswordForm(), ForgotPasswordFormData, forgotPasswordSchema, ResetPasswordForm(), ResetPasswordFormData, ResetPasswordFormProps, resetPasswordSchema (+7 more)
 
-### Community 57 - "calendar-main.tsx"
-Cohesion: 0.22
-Nodes (14): ConversationList(), formatMessageTime(), statusConfig, Transaction, team, Avatar(), AvatarFallback(), AvatarImage() (+6 more)
+### Community 57 - "coupon-form.tsx"
+Cohesion: 0.16
+Nodes (10): CouponForm(), CouponFormProps, CouponFormSubmitPayload, defaultValues, normalizeValues(), STEP_SNAPSHOT_FIELDS, STEPS, OrderStepper() (+2 more)
 
 ### Community 58 - "useMutation"
-Cohesion: 0.08
-Nodes (30): CategoryDetailPage(), SuppliersPage(), mockSuppliers, NewCouponPage(), DataTable(), StatCards(), PaymentMethod, PaymentMethodFormValues (+22 more)
+Cohesion: 0.09
+Nodes (26): CategoryDetailPage(), NewCouponPage(), CouponsPage(), formatCurrency(), formatDate(), formatDiscount(), resolveStatus(), DataTable() (+18 more)
 
 ### Community 59 - "delivery/page.tsx"
 Cohesion: 0.12
-Nodes (22): DeliveryFeeZoneFormDialogProps, DistanceBand, DistanceBandsEditor(), emptyBand(), FEE_TYPE_OPTIONS, FeeType, formatFeeType(), sampleBand (+14 more)
+Nodes (25): DeliveryFeeZoneFormDialog(), DeliveryFeeZoneFormDialogProps, DistanceBand, DistanceBandsEditor(), DistanceBandsEditorProps, emptyBand(), FEE_TYPE_OPTIONS, FeeType (+17 more)
 
 ### Community 60 - "pricing-section.tsx"
 Cohesion: 0.14
@@ -530,41 +534,41 @@ Nodes (25): eslint, eslint-config-next, @eslint/eslintrc, jest, devDependencies,
 Cohesion: 0.08
 Nodes (24): 1️⃣ ❌ "Invalid Date" → ✅ **CORRIGIDO**, 2️⃣ ❌ Sem feedback → ✅ **"Mesa salva com sucesso!"**, 3️⃣ ❌ Endpoints não verificados → ✅ **VERIFICADOS E FUNCIONAIS**, 4️⃣ ❌ Sem edição → ✅ **EDIÇÃO COMPLETA IMPLEMENTADA**, 5️⃣ ❌ Sem exclusão → ✅ **EXCLUSÃO COMPLETA IMPLEMENTADA**, **Antes**, 🔧 Arquivos Modificados, **Backend (Verificado)** (+16 more)
 
-### Community 63 - "useAdminAuth"
-Cohesion: 0.11
-Nodes (16): AdminDashboardPage(), TenantDetailsPage(), InformativoPage(), AdminLayoutInner(), AdminLoginPage(), CrescimentoPage(), FaturamentoPage(), PageProps (+8 more)
+### Community 63 - "loading-progress.tsx"
+Cohesion: 0.04
+Nodes (64): AdminDashboardPage(), Alert, DashboardStats, mockStats, ChangeTenantPlanDialog(), DataTable(), StatCards(), TenantDetailsPage() (+56 more)
 
 ### Community 64 - "logo.tsx"
 Cohesion: 0.11
-Nodes (9): ForgotPasswordForm2(), ForgotPasswordForm1(), RegisterForm(), LoginForm2(), LoginForm1(), SignupForm2(), SignupForm1(), Logo() (+1 more)
+Nodes (8): ForgotPasswordForm2(), ForgotPasswordForm1(), LoginForm2(), LoginForm1(), SignupForm2(), SignupForm1(), Logo(), SidebarNotification()
 
-### Community 65 - "reviews/page.tsx"
-Cohesion: 0.36
-Nodes (7): ReviewStatCards(), ReviewStatCardsProps, ReviewsDataTable(), ReviewsPage(), ReviewStats, useAuthenticatedReviews(), useAuthenticatedReviewStats()
+### Community 65 - "use-authenticated-api.ts"
+Cohesion: 0.15
+Nodes (18): RecentReviewsCard(), mockUseAuthenticatedRecentReviews, ReviewStatCards(), ReviewStatCardsProps, ReviewsDataTable(), ReviewsPage(), ReviewStats, PlansSection() (+10 more)
 
 ### Community 66 - "faq-list.tsx"
 Cohesion: 0.15
 Nodes (15): Category, FAQ, FAQListProps, FAQ, FAQSection(), FAQSectionProps, FeaturesGrid(), SalesPerformanceGlossary() (+7 more)
 
 ### Community 67 - "data-table-toolbar.tsx"
-Cohesion: 0.15
-Nodes (18): AddTaskModal(), AddTaskModalProps, columns, DataTable(), DataTableProps, DataTableFacetedFilter(), DataTablePagination(), DataTableRowActions() (+10 more)
+Cohesion: 0.14
+Nodes (18): AddTaskModal(), AddTaskModalProps, columns, DataTableColumnHeader(), DataTable(), DataTableProps, DataTableFacetedFilter(), DataTableRowActions() (+10 more)
 
 ### Community 68 - "useLandingCTAClick"
 Cohesion: 0.14
 Nodes (14): CTASection(), FloatingCTABar(), FlowFeature, FlowFeatureIcon, LandingFlowSection(), LandingFlowSectionProps, OperationFlowAnimation(), pillars (+6 more)
 
 ### Community 69 - "(dashboard)/layout.tsx"
-Cohesion: 0.14
-Nodes (15): DashboardLayout(), AppSidebar(), buildNavGroups(), ForceLogoutButton(), BaseLayout(), BaseLayoutProps, SiteFooter(), TrialBanner() (+7 more)
+Cohesion: 0.09
+Nodes (27): DashboardLayout(), AuthDebug(), ForceLogoutButton(), BaseLayout(), BaseLayoutProps, SiteFooter(), SiteHeader(), useBreadcrumbs() (+19 more)
 
 ### Community 70 - "albatec-logo.tsx"
-Cohesion: 0.14
-Nodes (11): metadata, metadata, metadata, metadata, AlbaTecLogo(), AlbaTecLogoProps, AlbaTecLogoVariant, LOGO_ASPECT (+3 more)
+Cohesion: 0.13
+Nodes (11): metadata, metadata, metadata, metadata, metadata, AlbaTecLogo(), AlbaTecLogoProps, AlbaTecLogoVariant (+3 more)
 
 ### Community 71 - "landing-page-content.tsx"
-Cohesion: 0.12
-Nodes (14): AppMobileFlowAnimation(), DemoMenuCTA(), features, LandingFooter(), AppMobileFlowSection(), FinanceFlowSection(), OperationFlowSection(), MenuFlowAnimation() (+6 more)
+Cohesion: 0.13
+Nodes (13): AppMobileFlowAnimation(), DemoMenuCTA(), features, AppMobileFlowSection(), FinanceFlowSection(), OperationFlowSection(), MenuFlowAnimation(), badges (+5 more)
 
 ### Community 72 - "🔧 Correção: Campo payment_method_id Obrigatório"
 Cohesion: 0.09
@@ -590,37 +594,37 @@ Nodes (21): 1. ✅ Seleção de Cliente (em vez de campos manuais), 2. ✅ Modal
 Cohesion: 0.09
 Nodes (21): Arquivo Corrigido, ✅ Backend Integration, Backend Requirements (StoreOrderRequest.php), ✅ Checklist Final, 📚 Contexto Completo, ✅ Correção Aplicada: payment_method_id, ✅ Formulário, Frontend Form (orderFormSchema) (+13 more)
 
-### Community 78 - "admin/plans/page.tsx"
-Cohesion: 0.13
-Nodes (18): DataTable(), DataTableProps, PlanFormDialog(), PlanFormDialogProps, SuccessAlert(), Plan, PlanFormValues, PlansPage() (+10 more)
+### Community 78 - "board/page.tsx"
+Cohesion: 0.14
+Nodes (13): BoardColumn(), BoardColumnProps, Client, COLUMNS, DroppableColumnArea(), DroppableColumnAreaProps, Order, OrderCard() (+5 more)
 
-### Community 79 - "conversation-list.tsx"
-Cohesion: 0.21
-Nodes (16): Chat(), ChatProps, ChatHeader(), ChatHeaderProps, ConversationList(), ConversationListProps, formatMessageTime(), ConversationListProps (+8 more)
+### Community 79 - "dropdown-menu.tsx"
+Cohesion: 0.09
+Nodes (44): Chat(), ChatProps, ChatHeader(), ChatHeaderProps, ConversationList(), ConversationListProps, formatMessageTime(), ConversationList() (+36 more)
 
-### Community 80 - "chart.tsx"
-Cohesion: 0.12
-Nodes (18): chartConfig, SalesByDayChart(), SalesByDayChartProps, chartConfig, SalesByHourChart(), SalesByHourChartProps, chartConfig, COLORS (+10 more)
+### Community 80 - "revenue-chart.tsx"
+Cohesion: 0.07
+Nodes (35): chartConfig, CustomersChart(), CustomersData, chartConfig, extractOrderDate(), OrdersVolumeChart(), OrdersVolumeData, chartConfig (+27 more)
 
-### Community 81 - "plans-section.test.tsx"
-Cohesion: 0.13
-Nodes (17): PlansSection(), PlanLimitNotification(), PlanLimitNotificationProps, useAuthenticatedPlans(), CurrentUsage, PlanLimitData, useCurrentUsage(), usePlanLimits() (+9 more)
+### Community 81 - "plans-section.tsx"
+Cohesion: 0.09
+Nodes (24): Plan, PlanCard(), PlanLimitNotification(), PlanLimitNotificationProps, PlanMigrationModal(), CurrentUsage, PlanLimitData, useCurrentUsage() (+16 more)
 
 ### Community 82 - "app/layout.tsx"
 Cohesion: 0.12
 Nodes (14): metadata, viewport, GoogleAnalyticsHead(), Theme, ThemeProvider(), ThemeProviderProps, ToasterProvider(), initialState (+6 more)
 
-### Community 83 - "admin-api-client.ts"
-Cohesion: 0.14
-Nodes (13): mockStats, DataTable(), StatCards(), AdminEmpresasPage(), Tenant, mockPlans, mockTenants, MensagensRedirectPage() (+5 more)
+### Community 83 - "navbar.tsx"
+Cohesion: 0.21
+Nodes (12): LandingNavbar(), navigationItems, smoothScrollTo(), NavigationMenu(), NavigationMenuContent(), NavigationMenuIndicator(), NavigationMenuItem(), NavigationMenuLink() (+4 more)
 
 ### Community 84 - "calendars.tsx"
-Cohesion: 0.13
-Nodes (16): CalendarSidebar(), CalendarSidebarProps, CalendarGroup, CalendarItem, Calendars(), CalendarsProps, enhancedCalendars, DatePicker() (+8 more)
+Cohesion: 0.17
+Nodes (12): CalendarSidebar(), CalendarSidebarProps, CalendarGroup, CalendarItem, Calendars(), CalendarsProps, enhancedCalendars, DatePicker() (+4 more)
 
-### Community 85 - "react"
-Cohesion: 0.16
-Nodes (15): react, react, RevenueBreakdown(), AccountSwitcher(), PermissionFormDialog(), LandingLightThemeLock(), LandingThemeCustomizer(), ModeToggle() (+7 more)
+### Community 85 - "useTheme"
+Cohesion: 0.40
+Nodes (6): LandingLightThemeLock(), ModeToggle(), ModeToggleProps, CircularTransitionHook, useCircularTransition(), useTheme()
 
 ### Community 86 - "Sistema de Autenticação - Alba Tec Frontend"
 Cohesion: 0.10
@@ -658,29 +662,33 @@ Nodes (17): aliases, components, hooks, lib, ui, utils, iconLibrary, rsc (+9 mor
 Cohesion: 0.11
 Nodes (17): 1. Função Helper para Transformar Dados da API, 2. Filtragem de Dados Inválidos, 3. Mensagens de Fallback nas Listas, 4. Tratamento Seguro de Nomes de Mesa, 5. Logs de Debug, Antes, Clientes, 🔧 Correções de Erro no Formulário de Pedidos (+9 more)
 
-### Community 95 - "CalendarEvent"
-Cohesion: 0.18
-Nodes (13): Calendar(), CalendarProps, CalendarMainProps, EventFormProps, calendars, eventDates, events, Calendar (+5 more)
+### Community 95 - "use-accounts-receivable.ts"
+Cohesion: 0.22
+Nodes (10): AccountReceivableFormDialogProps, AccountsReceivablePage(), AccountReceivable, AccountReceivableFilters, AccountReceivableFormData, AccountReceivableStats, ReceiptData, useAccountReceivableMutation() (+2 more)
 
-### Community 96 - "success/page.tsx"
-Cohesion: 0.28
-Nodes (15): OrderData, OrderSuccessContent(), buildOrderWhatsAppMessage(), formatReceiptCurrency(), formatReceiptDate(), formatWhatsAppPhone(), generateOrderReceiptHtml(), getClientPhone() (+7 more)
+### Community 96 - "(dashboard)/orders/page.tsx"
+Cohesion: 0.10
+Nodes (32): DataTable(), DataTableProps, OrderDetailsDialog(), ReceiptDialog(), ReceiptDialogProps, StatCards(), OrdersPage(), OrderData (+24 more)
 
 ### Community 97 - "🎉 SUCESSO! Servidor Rodando - Último Ajuste"
 Cohesion: 0.11
 Nodes (17): 🎓 Conquistas, 📊 Estatísticas da Jornada, Estrutura Final, Filosofia, 💡 Lições Finais, 📝 Logs Esperados, Pipeline de Build, 🎯 Problema Atual (Menor) (+9 more)
 
-### Community 98 - "bank-account-list.tsx"
-Cohesion: 0.15
-Nodes (14): BankAccountFormProps, accountTypeLabels, BankAccountList(), Props, mockAccounts, AccountHolderType, AccountType, Bank (+6 more)
+### Community 98 - "bank-account.ts"
+Cohesion: 0.22
+Nodes (8): AccountHolderType, AccountType, Bank, BankAccountDetail, BankAccountFormData, BankAccountLog, PixKeyType, VerificationMethod
 
 ### Community 99 - "pdv-header.tsx"
 Cohesion: 0.15
-Nodes (14): ConnectionStatus(), ConnectionStatusProps, Order, PDVHeader(), PDVHeaderProps, Table, TenantInfo, CombinedSearch() (+6 more)
+Nodes (15): Order, PDVHeaderProps, Table, TenantInfo, CombinedSearch(), CombinedSearchProps, formatCurrency(), Order (+7 more)
 
 ### Community 100 - "pagination.tsx"
 Cohesion: 0.27
 Nodes (11): PermissionsPaginationProps, ProfilesPaginationProps, UsersPaginationProps, Pagination(), PaginationContent, PaginationEllipsis(), PaginationItem, PaginationLink() (+3 more)
+
+### Community 101 - "ApiClient"
+Cohesion: 0.24
+Nodes (3): mockApiPost, TENANT, ApiClient
 
 ### Community 102 - "✅ Deploy Pronto para Digital Ocean"
 Cohesion: 0.12
@@ -694,29 +702,29 @@ Nodes (15): 1. ClientOnly Component, 2. useHydrated Hook, 3. useLocalStorage Hoo
 Cohesion: 0.12
 Nodes (15): Arquivo: `server.js` (novo), 📊 Benefícios, ✅ Checklist de Sucesso, 🎯 Como Funciona, 📊 Estatísticas Finais, 🎉 EXPECTATIVA: SUCESSO TOTAL!, Filosofia:, 🎓 Lições Finais (+7 more)
 
-### Community 105 - "(dashboard)/categories/page.tsx"
-Cohesion: 0.17
-Nodes (13): CategoryStats, StatCards(), CategoriesPage(), Category, CategoryFormValues, useAuthenticatedCategories(), useAuthenticatedCategoryStats(), defaultCategoryStats (+5 more)
+### Community 105 - "test-utils.tsx"
+Cohesion: 0.07
+Nodes (25): DataTable(), StatCards(), UserStats, Profile, User, UserFormValues, UsersPage(), useAuthenticatedRoles() (+17 more)
 
-### Community 106 - "message-input.tsx"
-Cohesion: 0.21
-Nodes (11): MessageInput(), MessageInputProps, ACTIONS, QuickAction, QuickActions(), SHORTCUT_KEY_MAP, NavProps, Tooltip() (+3 more)
+### Community 106 - "order-status-tracker.tsx"
+Cohesion: 0.19
+Nodes (12): ACTIONS, QuickAction, SHORTCUT_KEY_MAP, NavProps, DELIVERY_STEPS, OrderStatus, OrderStatusTrackerProps, Step (+4 more)
 
 ### Community 107 - "service-types/page.tsx"
-Cohesion: 0.22
-Nodes (12): DataTable(), DataTableProps, ServiceTypeFormDialog(), ServiceTypeFormDialogProps, ServiceTypeStats, StatCards(), StatCardsProps, SuccessAlert() (+4 more)
+Cohesion: 0.24
+Nodes (11): DataTable(), DataTableProps, ServiceTypeFormDialogProps, ServiceTypeStats, StatCards(), StatCardsProps, SuccessAlert(), ServiceTypesPage() (+3 more)
 
 ### Community 108 - "manifest.json"
 Cohesion: 0.13
 Nodes (14): background_color, categories, description, dir, display, icons, lang, name (+6 more)
 
 ### Community 109 - "blog/[slug]/page.tsx"
-Cohesion: 0.22
-Nodes (9): metadata, BlogPostPage(), generateMetadata(), generateStaticParams(), Props, BLOG_POSTS, BlogPost, getAllBlogSlugs() (+1 more)
+Cohesion: 0.29
+Nodes (8): BlogPostPage(), generateMetadata(), generateStaticParams(), Props, BLOG_POSTS, BlogPost, getAllBlogSlugs(), getBlogPost()
 
-### Community 110 - "tables/components/data-table.tsx"
-Cohesion: 0.26
-Nodes (10): DataTable(), DataTableProps, StatCards(), TableStats, SuccessAlert(), TableFormDialog(), TableFormDialogProps, TableData (+2 more)
+### Community 110 - "tables/page.tsx"
+Cohesion: 0.31
+Nodes (7): DataTable(), DataTableProps, SuccessAlert(), TableFormDialogProps, TableData, TableFormValues, { useAuthenticatedTables, useMutation }
 
 ### Community 111 - "use-api.ts"
 Cohesion: 0.21
@@ -731,16 +739,16 @@ Cohesion: 0.14
 Nodes (13): 📁 Arquivos Criados, 🟢 Causa, 📚 Documentação, 🎯 O Que Foi Resolvido, PASSO 1: Acessar Digital Ocean, PASSO 2: Limpar Comandos, PASSO 3: Redeploy, 🆘 Precisa de Ajuda? (+5 more)
 
 ### Community 114 - "isPublicRoute"
-Cohesion: 0.23
-Nodes (8): LoginForm3(), isAdminRoute(), isPublicRoute(), PUBLIC_EXACT, PUBLIC_PREFIXES, config, middleware(), resolvePostLoginPath()
+Cohesion: 0.17
+Nodes (13): LoginForm3(), AuthGuard(), EXEMPT_PATHS, isExemptPath(), useTrialGuard(), getLoginRedirectUrl(), isAdminRoute(), isPublicRoute() (+5 more)
 
-### Community 115 - "board/page.tsx"
-Cohesion: 0.14
-Nodes (13): BoardColumn(), BoardColumnProps, Client, COLUMNS, DroppableColumnArea(), DroppableColumnAreaProps, Order, OrderCard() (+5 more)
+### Community 115 - "product-optionals-manager.tsx"
+Cohesion: 0.33
+Nodes (10): ProductFormWizardProps, Product, ProductOptionalsManager(), ProductOptionalsManagerProps, ProductVariationsManager(), ProductVariationsManagerProps, ProductOptional, ProductVariation (+2 more)
 
-### Community 116 - "sidebar.tsx"
-Cohesion: 0.12
-Nodes (26): NavMain(), NavUser(), Sidebar(), SidebarContent(), SidebarContext, SidebarContextProps, SidebarFooter(), SidebarGroup() (+18 more)
+### Community 116 - "use-suppliers.ts"
+Cohesion: 0.29
+Nodes (8): SupplierFormDialogProps, SuppliersPage(), mockSuppliers, SupplierFormData, useCheckSupplierDocument(), useSupplier(), useSupplierMutation(), useSuppliers()
 
 ### Community 117 - "use-realtime.ts"
 Cohesion: 0.26
@@ -748,7 +756,7 @@ Nodes (11): DashboardMetrics, useRealtimeDashboard(), UseRealtimeDashboardOption
 
 ### Community 118 - "dependencies"
 Cohesion: 0.15
-Nodes (13): @dnd-kit/sortable, @hookform/resolvers, dependencies, @dnd-kit/sortable, @hookform/resolvers, pusher-js, @radix-ui/react-avatar, @radix-ui/react-dropdown-menu (+5 more)
+Nodes (13): class-variance-authority, @hookform/resolvers, dependencies, class-variance-authority, @hookform/resolvers, pusher-js, @radix-ui/react-avatar, @radix-ui/react-dropdown-menu (+5 more)
 
 ### Community 119 - "jest.setup.js"
 Cohesion: 0.15
@@ -786,81 +794,81 @@ Nodes (7): metadata, LandingStructuredData(), LandingStructuredDataProps, LANDIN
 Cohesion: 0.22
 Nodes (6): AdminResetPasswordForm(), AdminResetPasswordFormProps, FormData, schema, passwordConfirmationSchema, passwordSchema
 
-### Community 128 - "orders/types.ts"
-Cohesion: 0.22
-Nodes (8): DataTableProps, ReceiptDialogProps, mockUseAuthenticatedOrders, mockUseMutation, Order, OrderFormValues, OrderReceipt, OrderStatus
+### Community 128 - "event-detail-dialog.tsx"
+Cohesion: 0.32
+Nodes (6): EventDetailDialog(), EventDetailDialogProps, EventFormDialogProps, mockEvent, Event, EventFormData
 
-### Community 129 - "isFinalStatus"
-Cohesion: 0.35
-Nodes (9): OrderStatusBadge(), OrderStatusBadgeProps, OrderStatusGuard(), OrderStatusGuardProps, OrderStatusTooltip(), OrderStatusTooltipProps, getStatusColor(), getStatusDescription() (+1 more)
+### Community 129 - "alert.tsx"
+Cohesion: 0.13
+Nodes (18): IfoodOAuthPage(), UserCodeResponse, OrderStatusGuardProps, OrderStatusTooltipProps, SalesPerformanceCallToAction(), SalesPerformanceHeader(), SalesPerformanceIndicators(), SalesPerformancePage() (+10 more)
 
 ### Community 130 - "📝 Grupos de Testes"
 Cohesion: 0.20
 Nodes (10): 3. 📝 Criação de Produto com Imagem (2 testes), 4. 🔄 Atualização de Produto com Imagem (2 testes), 7. 🔌 Integração com API (2 testes), `deve atualizar produto adicionando nova imagem`, `deve atualizar produto mantendo imagem existente`, `deve chamar refetch após criação bem-sucedida`, `deve criar produto com imagem usando FormData`, `deve criar produto sem imagem (campo opcional)` (+2 more)
 
-### Community 131 - "perfil/page.tsx"
-Cohesion: 0.20
-Nodes (7): AdminPerfilPage(), roleLabels, mockAdmin, mockLogout, mockUpdateAdmin, mockUpdatePassword, mockUpdateProfile
+### Community 131 - "faqs/components/features-grid.tsx"
+Cohesion: 0.29
+Nodes (5): FAQList(), FeatureItem, FeaturesGrid(), FeaturesGridProps, iconMap
+
+### Community 132 - "theme.ts"
+Cohesion: 0.32
+Nodes (5): ThemePreset, ThemeStyleProps, ThemeStyles, shadcnThemePresets, tweakcnPresets
 
 ### Community 133 - "order-item-card.tsx"
 Cohesion: 0.27
 Nodes (8): CartItem, OrderItemCard(), OrderItemCardProps, Product, ProductOptional, ProductVariation, OrderItemsList(), OrderItemsListProps
 
-### Community 134 - "dropdown-menu.tsx"
-Cohesion: 0.33
-Nodes (7): DataTableRowActionsProps, DropdownMenuRadioGroup(), DropdownMenuRadioItem(), DropdownMenuShortcut(), DropdownMenuSub(), DropdownMenuSubContent(), DropdownMenuSubTrigger()
+### Community 134 - "reviews-section.tsx"
+Cohesion: 0.32
+Nodes (5): Review, ReviewsSection(), ReviewsSectionProps, ReviewStats, Progress()
 
-### Community 135 - "use-subscription.ts"
-Cohesion: 0.33
-Nodes (8): DunningBannerProps, DowngradeRequest, ReactivateRequest, SubscriptionInvoice, SubscriptionStatus, SubscriptionStatus2, UpdateCardRequest, UpgradeRequest
+### Community 135 - "(dashboard)/billing/page.tsx"
+Cohesion: 0.13
+Nodes (20): BillingPage(), INVOICE_STATUS_LABELS, STATUS_LABELS, CancelDialog(), DowngradeDialog(), DowngradeDialogProps, DunningBannerProps, UpgradeDialog() (+12 more)
 
-### Community 136 - "receitaws.ts"
-Cohesion: 0.31
-Nodes (6): useReceitaWS(), useReceitaWSQuiet(), UseReceitaWSReturn, CompanyData, ReceitaWSResponse, searchCompanyByCNPJ()
+### Community 136 - "orders/new/page.tsx"
+Cohesion: 0.04
+Nodes (86): ClientFormDialog(), ClientFormDialogProps, clientFormSchema, ClientFormValues, FIELD_STEP, STEP_FIELDS, STEPS, Client (+78 more)
 
-### Community 137 - "status-pedidos/page.tsx"
-Cohesion: 0.39
-Nodes (5): StatusStatCards(), StatusStatCardsProps, SortableStatusRowProps, OrderStatus, OrderStatusForm
+### Community 137 - "OrderStatus"
+Cohesion: 0.40
+Nodes (4): StatusStatCardsProps, SortableStatusRowProps, OrderStatus, OrderStatusForm
 
 ### Community 138 - "modules-section.tsx"
 Cohesion: 0.28
 Nodes (6): modules, ModulesSection(), RegisterModal(), RegisterModalContext, RegisterModalContextType, useRegisterModal()
 
-### Community 139 - "client-auth-context.tsx"
-Cohesion: 0.25
-Nodes (6): ClientAuthContext, ClientAuthContextType, ClientAuthProvider(), ClientAuthProviderProps, ClientUser, RegisterData
+### Community 139 - "client-orders.tsx"
+Cohesion: 0.17
+Nodes (12): ClientLoginPage(), ClientOrders(), ClientOrdersProps, Order, OrderProduct, ClientAuthContext, ClientAuthContextType, ClientAuthProvider() (+4 more)
 
 ### Community 140 - "package.json"
 Cohesion: 0.25
 Nodes (7): engines, node, npm, name, pnpm, private, version
 
-### Community 141 - "bank-account-form.tsx"
-Cohesion: 0.39
-Nodes (6): BankAccountForm(), getPixKeyMaxLength(), getPixKeyPlaceholder(), maskPixKey(), mockAccounts, mockBanks
+### Community 141 - "user-statistics.tsx"
+Cohesion: 0.33
+Nodes (6): formatCount(), items, TrialUserStats, UserStatistics, UserStatisticsComponent(), UserStatisticsProps
 
-### Community 142 - "faqs/components/features-grid.tsx"
-Cohesion: 0.29
-Nodes (5): FAQList(), FeatureItem, FeaturesGrid(), FeaturesGridProps, iconMap
-
-### Community 143 - "scroll-area.tsx"
-Cohesion: 0.32
-Nodes (5): Product, ProductGridProps, menuItems, ScrollArea(), ScrollBar()
+### Community 143 - "payment-methods/page.tsx"
+Cohesion: 0.24
+Nodes (8): DataTable(), StatCards(), PaymentMethod, PaymentMethodFormValues, PaymentMethodsPage(), useAuthenticatedPaymentMethods(), { toast }, { useAuthenticatedPaymentMethods, useMutation }
 
 ### Community 144 - "🔐 Validação em Tempo Real para Senhas"
 Cohesion: 0.25
 Nodes (7): **Desktop**, **Funcionalidades:**, 📋 Implementação, **Mobile**, 📱 Responsividade, ✅ Resultado Final, 🔐 Validação em Tempo Real para Senhas
 
-### Community 145 - "store-hour-form-dialog.tsx"
-Cohesion: 0.33
-Nodes (6): daysOfWeek, StoreHourFormDialog(), StoreHourFormDialogProps, StoreHourFormValues, storeHourSchema, StoreHour
+### Community 145 - "extractValidationErrors"
+Cohesion: 0.17
+Nodes (12): EVENT_COLORS, EventFormDialog(), mockClients, mockEvent, CategoryFormDialog(), LoyaltyRewardFormDialog(), ApiError, extractValidationErrors() (+4 more)
 
 ### Community 146 - "recommended-plan-card.tsx"
 Cohesion: 0.33
 Nodes (5): formatPrice(), Plan, RecommendedPlanCard, RecommendedPlanCardComponent(), RecommendedPlanCardProps
 
-### Community 147 - "users/components/data-table.tsx"
-Cohesion: 0.29
-Nodes (6): DataTable(), DataTableProps, Profile, User, UserFormValues, UserFormDialog()
+### Community 147 - "order-notifications-context.tsx"
+Cohesion: 0.19
+Nodes (13): OrderNotificationToggle(), AuthProvider(), OrderNotification, OrderNotificationsContext, OrderNotificationsContextData, OrderNotificationsProvider(), OrderNotificationsProviderProps, initAudioContext() (+5 more)
 
 ### Community 148 - "remove-console-logs.js"
 Cohesion: 0.33
@@ -869,10 +877,6 @@ Nodes (4): filesToProcess, fs, path, srcDir
 ### Community 149 - "upgrade-to-pro-button.tsx"
 Cohesion: 0.53
 Nodes (3): HoverCard(), HoverCardContent(), HoverCardTrigger()
-
-### Community 150 - "use-plan-migration.ts"
-Cohesion: 0.40
-Nodes (4): MigratePlanParams, PlanMigrationHistory, usePlanMigration(), UsePlanMigrationState
 
 ### Community 151 - "✅ Funcionalidades Implementadas"
 Cohesion: 0.33
@@ -934,6 +938,10 @@ Nodes (4): 2. ✅ Validação de Arquivo (4 testes), `deve limpar arquivo seleci
 Cohesion: 0.50
 Nodes (3): createJestConfig, customJestConfig, nextJest
 
+### Community 169 - "tables/components/stat-cards.tsx"
+Cohesion: 0.67
+Nodes (3): StatCards(), TableStats, useAuthenticatedTableStats()
+
 ### Community 175 - "🚀 Benefícios da Implementação"
 Cohesion: 0.50
 Nodes (4): **1. UX Melhorada**, **2. Validação Robusta**, **3. Acessibilidade**, 🚀 Benefícios da Implementação
@@ -966,25 +974,29 @@ Nodes (3): 📈 Métricas, Performance, Qualidade
 Cohesion: 0.67
 Nodes (3): **Campos de Senha**, 🔐 Segurança, **Validação Dupla**
 
+### Community 195 - "react"
+Cohesion: 0.13
+Nodes (15): react, react, RevenueBreakdown(), ChartAreaInteractive(), TableCellViewer(), AccountSwitcher(), PermissionFormDialog(), ServiceTypeFormDialog() (+7 more)
+
 ## Knowledge Gaps
-- **1863 isolated node(s):** `comandos-debug-digital-ocean.sh script`, `$schema`, `style`, `rsc`, `tsx` (+1858 more)
+- **1864 isolated node(s):** `comandos-debug-digital-ocean.sh script`, `$schema`, `style`, `rsc`, `tsx` (+1859 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **66 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **63 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `cn` to `orders/new/page.tsx`, `isFinalStatus`, `card.tsx`, `button.tsx`, `dialog.tsx`, `badge.tsx`, `account-receivable-form-dialog.tsx`, `order-item-card.tsx`, `clients/[id]/page.tsx`, `status-pedidos/page.tsx`, `company/page.tsx`, `pdv/page.tsx`, `product-form-wizard.tsx`, `dropdown-menu.tsx`, `faqs/components/features-grid.tsx`, `scroll-area.tsx`, `financial/dashboard/page.tsx`, `use-authenticated-api.ts`, `useAuthenticatedApi`, `upgrade-to-pro-button.tsx`, `coupons/page.tsx`, `dashboard-old/components/data-table.tsx`, `theme-customizer/index.tsx`, `buildApiUrl`, `mail.tsx`, `store/[slug]/page.tsx`, `permissions/components/data-table.tsx`, `order-notifications-context.tsx`, `lib/order-status.ts`, `subscribe/page.tsx`, `revenue-chart.tsx`, `site-header.tsx`, `catalogs/page.tsx`, `reset-password-form.tsx`, `calendar-main.tsx`, `pricing-section.tsx`, `useAdminAuth`, `logo.tsx`, `reviews/page.tsx`, `faq-list.tsx`, `useLandingCTAClick`, `(dashboard)/layout.tsx`, `albatec-logo.tsx`, `conversation-list.tsx`, `chart.tsx`, `plans-section.test.tsx`, `calendars.tsx`, `react`, `features-section.tsx`, `pdv-header.tsx`, `pagination.tsx`, `(dashboard)/categories/page.tsx`, `message-input.tsx`, `service-types/page.tsx`, `tables/components/data-table.tsx`, `isPublicRoute`, `board/page.tsx`, `sidebar.tsx`, `hero-section.tsx`?**
-  _High betweenness centrality (0.110) - this node is a cross-community bridge._
-- **Why does `Button()` connect `button.tsx` to `orders/new/page.tsx`, `dialog.tsx`, `card.tsx`, `perfil/page.tsx`, `cn`, `badge.tsx`, `account-receivable-form-dialog.tsx`, `order-item-card.tsx`, `clients/[id]/page.tsx`, `status-pedidos/page.tsx`, `product-form-wizard.tsx`, `company/page.tsx`, `pdv/page.tsx`, `bank-account-form.tsx`, `faqs/components/features-grid.tsx`, `dropdown-menu.tsx`, `financial/dashboard/page.tsx`, `store-hour-form-dialog.tsx`, `recommended-plan-card.tsx`, `api-client.ts`, `users/components/data-table.tsx`, `scroll-area.tsx`, `upgrade-to-pro-button.tsx`, `coupons/page.tsx`, `dashboard-old/components/data-table.tsx`, `theme-customizer/index.tsx`, `mail.tsx`, `forbidden-error.tsx`, `internal-server-error.tsx`, `not-found-error.tsx`, `unauthorized-error.tsx`, `under-maintenance-error.tsx`, `store/[slug]/page.tsx`, `permissions/components/data-table.tsx`, `subscribe/page.tsx`, `order-notifications-context.tsx`, `site-header.tsx`, `catalogs/page.tsx`, `trial-expired/page.tsx`, `modules-section.tsx`, `reset-password-form.tsx`, `calendar-main.tsx`, `useMutation`, `delivery/page.tsx`, `pricing-section.tsx`, `client-auth-context.tsx`, `useAdminAuth`, `logo.tsx`, `faq-list.tsx`, `data-table-toolbar.tsx`, `useLandingCTAClick`, `(dashboard)/layout.tsx`, `landing-page-content.tsx`, `admin/plans/page.tsx`, `conversation-list.tsx`, `plans-section.test.tsx`, `calendars.tsx`, `react`, `features-section.tsx`, `success/page.tsx`, `bank-account-list.tsx`, `pdv-header.tsx`, `pagination.tsx`, `message-input.tsx`, `tables/components/data-table.tsx`, `board/page.tsx`, `sidebar.tsx`, `hero-section.tsx`, `admin-reset-password-form.tsx`?**
-  _High betweenness centrality (0.069) - this node is a cross-community bridge._
-- **Why does `react` connect `react` to `orders/new/page.tsx`, `button.tsx`, `product-form-wizard.tsx`, `company/page.tsx`, `dashboard-old/components/data-table.tsx`, `theme-customizer/index.tsx`, `mail.tsx`, `revenue-chart.tsx`, `site-header.tsx`, `logo.tsx`, `data-table-toolbar.tsx`, `(dashboard)/layout.tsx`, `chart.tsx`, `app/layout.tsx`, `calendars.tsx`, `service-types/page.tsx`, `tables/components/data-table.tsx`, `sidebar.tsx`, `dependencies`?**
+- **Why does `cn()` connect `cn` to `product-form-wizard.tsx`, `dialog.tsx`, `card.tsx`, `button.tsx`, `faqs/components/features-grid.tsx`, `select.tsx`, `account-receivable-form-dialog.tsx`, `order-item-card.tsx`, `status-pedidos/page.tsx`, `resolveImageUrl`, `register-form.tsx`, `orders/new/page.tsx`, `alert.tsx`, `split-payment-form.tsx`, `reviews-section.tsx`, `useAuth`, `financial/dashboard/page.tsx`, `extractValidationErrors`, `POSPage`, `useAuthenticatedApi`, `upgrade-to-pro-button.tsx`, `product-card.tsx`, `dashboard-old/components/data-table.tsx`, `landing-theme-customizer.tsx`, `buildApiUrl`, `mail.tsx`, `store/[slug]/page.tsx`, `pdv/page.tsx`, `expense-form-dialog.tsx`, `tables/components/stat-cards.tsx`, `lib/order-status.ts`, `subscribe/page.tsx`, `mail-display.tsx`, `site-header.tsx`, `notifications-button.tsx`, `reset-password-form.tsx`, `coupon-form.tsx`, `pricing-section.tsx`, `loading-progress.tsx`, `logo.tsx`, `use-authenticated-api.ts`, `faq-list.tsx`, `react`, `data-table-toolbar.tsx`, `useLandingCTAClick`, `albatec-logo.tsx`, `(dashboard)/layout.tsx`, `board/page.tsx`, `dropdown-menu.tsx`, `revenue-chart.tsx`, `plans-section.tsx`, `navbar.tsx`, `calendars.tsx`, `features-section.tsx`, `use-accounts-receivable.ts`, `(dashboard)/orders/page.tsx`, `pdv-header.tsx`, `pagination.tsx`, `order-status-tracker.tsx`, `service-types/page.tsx`, `isPublicRoute`, `hero-section.tsx`?**
+  _High betweenness centrality (0.105) - this node is a cross-community bridge._
+- **Why does `Button()` connect `button.tsx` to `product-form-wizard.tsx`, `dialog.tsx`, `card.tsx`, `event-detail-dialog.tsx`, `faqs/components/features-grid.tsx`, `select.tsx`, `account-receivable-form-dialog.tsx`, `(dashboard)/billing/page.tsx`, `status-pedidos/page.tsx`, `orders/new/page.tsx`, `register-form.tsx`, `useAuth`, `alert.tsx`, `order-item-card.tsx`, `not-found-error.tsx`, `split-payment-form.tsx`, `financial/dashboard/page.tsx`, `resolveImageUrl`, `recommended-plan-card.tsx`, `modules-section.tsx`, `useAuthenticatedApi`, `order-notifications-context.tsx`, `unauthorized-error.tsx`, `cn`, `upgrade-to-pro-button.tsx`, `dashboard-old/components/data-table.tsx`, `landing-theme-customizer.tsx`, `mail.tsx`, `order-track.tsx`, `reviews-section.tsx`, `forbidden-error.tsx`, `internal-server-error.tsx`, `under-maintenance-error.tsx`, `store/[slug]/page.tsx`, `expense-form-dialog.tsx`, `pdv/page.tsx`, `subscribe/page.tsx`, `mail-display.tsx`, `site-header.tsx`, `notifications-button.tsx`, `trial-expired/page.tsx`, `reset-password-form.tsx`, `coupon-form.tsx`, `useMutation`, `delivery/page.tsx`, `pricing-section.tsx`, `client-orders.tsx`, `loading-progress.tsx`, `logo.tsx`, `faq-list.tsx`, `data-table-toolbar.tsx`, `useLandingCTAClick`, `(dashboard)/layout.tsx`, `landing-page-content.tsx`, `board/page.tsx`, `dropdown-menu.tsx`, `plans-section.tsx`, `navbar.tsx`, `calendars.tsx`, `useTheme`, `features-section.tsx`, `(dashboard)/orders/page.tsx`, `pdv-header.tsx`, `pagination.tsx`, `order-status-tracker.tsx`, `product-optionals-manager.tsx`, `hero-section.tsx`, `admin-reset-password-form.tsx`?**
+  _High betweenness centrality (0.072) - this node is a cross-community bridge._
+- **Why does `react` connect `react` to `logo.tsx`, `mail.tsx`, `product-form-wizard.tsx`, `data-table-toolbar.tsx`, `cn`, `(dashboard)/layout.tsx`, `orders/new/page.tsx`, `service-types/page.tsx`, `mail-display.tsx`, `site-header.tsx`, `revenue-chart.tsx`, `app/layout.tsx`, `useTheme`, `dependencies`, `dashboard-old/components/data-table.tsx`, `landing-theme-customizer.tsx`?**
   _High betweenness centrality (0.045) - this node is a cross-community bridge._
 - **What connects `comandos-debug-digital-ocean.sh script`, `$schema`, `style` to the rest of the system?**
-  _1863 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `orders/new/page.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.04973302822273074 - nodes in this community are weakly interconnected._
+  _1864 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `product-form-wizard.tsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.050980392156862744 - nodes in this community are weakly interconnected._
 - **Should `dialog.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.05232755691471288 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07170868347338935 - nodes in this community are weakly interconnected._
 - **Should `card.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.05045871559633028 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.04530038759689922 - nodes in this community are weakly interconnected._

@@ -20,6 +20,7 @@ import Image from "next/image"
 import { maskCPF, maskCNPJ, maskPhone, maskZipCode } from '@/lib/masks'
 import { useViaCEP } from '@/hooks/use-viacep'
 import { StateCitySelect } from '@/components/location/state-city-select'
+import { applyCepToStateHandlers } from '@/lib/apply-cep-to-form'
 import { StoreHoursBanner } from './components/store-hours-banner'
 import { SiteFooter } from '@/components/site-footer'
 import { ReviewModal } from './components/review-modal'
@@ -655,12 +656,6 @@ export default function PublicStorePage() {
     setDeliveryData({ ...deliveryData, zip_code: formatted })
   }
 
-  // Helper function to handle State input (uppercase, 2 chars max)
-  const handleStateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toUpperCase().slice(0, 2)
-    setDeliveryData({ ...deliveryData, state: value })
-  }
-
   // Buscar endereço por CEP
   const handleSearchCEP = async () => {
     const cep = deliveryData.zip_code.replace(/\D/g, '')
@@ -672,25 +667,12 @@ export default function PublicStorePage() {
     const result = await searchCEP(cep)
     
     if (result) {
-      // Primeiro atualiza estado (isso vai carregar as cidades)
-      setDeliveryData({
-        ...deliveryData,
-        address: result.logradouro || deliveryData.address,
-        neighborhood: result.bairro || deliveryData.neighborhood,
-        state: result.uf || deliveryData.state,
+      applyCepToStateHandlers(result, {
+        setAddress: (v) => setDeliveryData((prev) => ({ ...prev, address: v })),
+        setNeighborhood: (v) => setDeliveryData((prev) => ({ ...prev, neighborhood: v })),
+        setState: (v) => setDeliveryData((prev) => ({ ...prev, state: v })),
+        setCity: (v) => setDeliveryData((prev) => ({ ...prev, city: v })),
       })
-      
-      // Aguardar cidades carregarem, então setar a cidade
-      setTimeout(() => {
-        setDeliveryData(prev => ({
-          ...prev,
-          city: result.localidade || prev.city,
-        }))
-      }, 500)
-      
-      toast.success('CEP encontrado! Endereço preenchido automaticamente.')
-    } else {
-      toast.error('CEP não encontrado. Preencha manualmente.')
     }
   }
 

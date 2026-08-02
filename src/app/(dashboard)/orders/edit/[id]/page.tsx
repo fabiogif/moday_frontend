@@ -50,6 +50,8 @@ import { OrderDetails } from "../../types"
 import { toast } from "sonner"
 import { useViaCEP } from "@/hooks/use-viacep"
 import { maskZipCode } from "@/lib/masks"
+import { StateCityFormFields } from "@/components/location/state-city-form-fields"
+import { applyCepToForm } from "@/lib/apply-cep-to-form"
 
 // Schema de validação para edição de pedido
 const orderEditSchema = z.object({
@@ -94,7 +96,6 @@ export default function EditOrderPage() {
   const [order, setOrder] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [pendingCity, setPendingCity] = useState<string | null>(null)
 
   const { data: orderData, loading: apiLoading, error: apiError } = useAuthenticatedApi<OrderDetails>(
     orderId ? endpoints.orders.show(orderId) : ''
@@ -123,18 +124,6 @@ export default function EditOrderPage() {
 
   const isDelivery = form.watch("is_delivery")
   const useClientAddress = form.watch("use_client_address")
-  const deliveryStateValue = form.watch("delivery_state")
-
-  useEffect(() => {
-    if (pendingCity && deliveryStateValue) {
-      const timer = setTimeout(() => {
-        form.setValue("delivery_city", pendingCity, { shouldDirty: true })
-        setPendingCity(null)
-      }, 600)
-
-      return () => clearTimeout(timer)
-    }
-  }, [pendingCity, deliveryStateValue, form])
 
   const handleDeliveryCepLookup = useCallback(
     async (cepValue: string) => {
@@ -148,33 +137,15 @@ export default function EditOrderPage() {
       try {
         const address = await searchCEP(cepValue)
         if (address) {
-          const street = address.address || address.logradouro || ""
-          const neighborhood = address.neighborhood || address.bairro || ""
-          const stateToSet = address.state || address.uf || ""
-          const cityToSet = address.city || address.localidade || ""
-
-          if (street) {
-            form.setValue("delivery_address", street, { shouldDirty: true })
-          }
-
-          if (neighborhood) {
-            form.setValue("delivery_neighborhood", neighborhood, { shouldDirty: true })
-          }
-
-          if (stateToSet) {
-            form.setValue("delivery_state", stateToSet, { shouldDirty: true })
-          }
-
-          if (cityToSet) {
-            setPendingCity(cityToSet)
-          } else {
-            setPendingCity(null)
-          }
+          applyCepToForm(form.setValue, address, {
+            address: "delivery_address",
+            neighborhood: "delivery_neighborhood",
+            state: "delivery_state",
+            city: "delivery_city",
+          })
         }
-      } catch (err) {
-        if (process.env.NODE_ENV === "development") {
-
-        }
+      } catch {
+        // Erro já é tratado pelo useViaCEP com toast
       }
     },
     [form, searchCEP, useClientAddress]
@@ -543,32 +514,12 @@ export default function EditOrderPage() {
                           />
 
                           <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 md:items-end">
-                            <FormField
+                            <StateCityFormFields
                               control={form.control}
-                              name="delivery_state"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Estado</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="SP" disabled={orderIsFinal} {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name="delivery_city"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Cidade</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="São Paulo" disabled={orderIsFinal} {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
+                              stateFieldName="delivery_state"
+                              cityFieldName="delivery_city"
+                              disabled={orderIsFinal}
+                              gridCols="state-small"
                             />
 
                             <FormField

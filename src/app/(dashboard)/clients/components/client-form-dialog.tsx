@@ -30,6 +30,7 @@ import { useInputMask } from "@/hooks/use-input-mask"
 import { validateCPF, validateEmail, validatePhone, maskCPF, maskPhone, maskZipCode } from "@/lib/masks"
 import { useViaCEP } from "@/hooks/use-viacep"
 import { StateCityFormFields } from "@/components/location/state-city-form-fields"
+import { applyCepToForm } from "@/lib/apply-cep-to-form"
 import { useBackendValidation } from "@/hooks/use-backend-validation"
 import { showErrorToast } from "@/components/ui/error-toast"
 import { OrderStepper } from "@/components/order-stepper"
@@ -133,7 +134,6 @@ export function ClientFormDialog({
   const { loading: loadingCEP, searchCEP } = useViaCEP();
   const [submitting, setSubmitting] = React.useState(false);
   const [validatingStep, setValidatingStep] = React.useState(false);
-  const [pendingCity, setPendingCity] = React.useState<string | null>(null);
   const [currentStep, setCurrentStep] = React.useState(0);
   const [completedSteps, setCompletedSteps] = React.useState<Set<number>>(new Set());
   const [backendErrors, setBackendErrors] = React.useState<Record<string, string>>({});
@@ -305,72 +305,32 @@ export function ClientFormDialog({
     setCurrentStep((current) => (earliest < current ? earliest : current))
   }, [form.formState.errors])
 
-  // Monitorar quando o estado mudar e há uma cidade pendente para ser setada
-  const currentState = form.watch('state');
-  React.useEffect(() => {
-    if (pendingCity && currentState) {
-      // Aguardar um pouco para as cidades carregarem
-      const timer = setTimeout(() => {
-        form.setValue('city', pendingCity);
-        setPendingCity(null);
-        
-        if (process.env.NODE_ENV === 'development') {
-
-        }
-      }, 1000); // 1 segundo para garantir que as cidades carregaram
-      
-      return () => clearTimeout(timer);
-    }
-  }, [currentState, pendingCity, form]);
-  
   // Função para buscar endereço pelo CEP
   const handleSearchCEP = async (cep: string) => {
-    // Remove máscara e valida
     const cleanCEP = cep.replace(/\D/g, '');
     
     if (cleanCEP.length !== 8) {
-      return; // CEP incompleto, não busca
+      return;
     }
     
     try {
       const address = await searchCEP(cep);
       
       if (address) {
-        if (process.env.NODE_ENV === 'development') {
-
-        }
-        
-        // Preenche os campos automaticamente
-        form.setValue('address', address.address || address.logradouro || '');
-        form.setValue('neighborhood', address.neighborhood || address.bairro || '');
-        
-        // Setar o estado primeiro (isso vai carregar as cidades)
-        const stateToSet = address.state || address.uf || '';
-        const cityToSet = address.city || address.localidade || '';
-        
-        form.setValue('state', stateToSet);
-        
-        // Armazenar a cidade para ser setada quando as cidades carregarem
-        if (cityToSet) {
-          setPendingCity(cityToSet);
-          
-          if (process.env.NODE_ENV === 'development') {
-
-          }
-        }
+        applyCepToForm(form.setValue, address, {
+          address: 'address',
+          neighborhood: 'neighborhood',
+          state: 'state',
+          city: 'city',
+        })
       }
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-
-      }
+    } catch {
       // Erro já é tratado pelo useViaCEP com toast
     }
   }
 
   // Preencher o formulário quando editingClient mudar (ou o modal reabrir)
   React.useEffect(() => {
-    // Limpar cidade pendente ao resetar formulário
-    setPendingCity(null);
     setCurrentStep(0);
     setCompletedSteps(new Set());
     setBackendErrors({});

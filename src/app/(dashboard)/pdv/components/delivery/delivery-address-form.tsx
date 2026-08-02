@@ -1,10 +1,11 @@
 "use client"
 
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
 import { useViaCEP } from "@/hooks/use-viacep"
 import { maskZipCode } from "@/lib/masks"
+import { StateCitySelect } from "@/components/location/state-city-select"
+import { applyCepToStateHandlers } from "@/lib/apply-cep-to-form"
 
 interface DeliveryAddress {
   zip: string
@@ -36,17 +37,26 @@ export function DeliveryAddressForm({
     const newAddress = { ...address, zip: maskedZip }
     onAddressChange(newAddress)
 
-    // Buscar endereço via CEP se tiver 8 dígitos
     if (maskedZip.replace(/\D/g, "").length === 8) {
       try {
         const cepData = await searchCEP(maskedZip.replace(/\D/g, ""))
         if (cepData) {
-          onAddressChange({
-            ...newAddress,
-            address: cepData.logradouro || "",
-            neighborhood: cepData.bairro || "",
-            city: cepData.localidade || "",
-            state: cepData.uf || "",
+          const next = { ...newAddress }
+          applyCepToStateHandlers(cepData, {
+            setAddress: (v) => {
+              next.address = v
+            },
+            setNeighborhood: (v) => {
+              next.neighborhood = v
+            },
+            setState: (v) => {
+              next.state = v
+              onAddressChange({ ...next })
+            },
+            setCity: (v) => {
+              next.city = v
+              onAddressChange({ ...next })
+            },
           })
         }
       } catch (error) {
@@ -114,30 +124,21 @@ export function DeliveryAddressForm({
             />
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Input
-              placeholder="Cidade"
-              value={address.city}
-              onChange={(e) =>
-                onAddressChange({ ...address, city: e.target.value })
-              }
-              className="h-9 text-sm bg-white dark:bg-gray-800"
-              disabled={disabled}
-            />
-            <Input
-              placeholder="UF"
-              value={address.state}
-              maxLength={2}
-              onChange={(e) =>
-                onAddressChange({
-                  ...address,
-                  state: e.target.value.toUpperCase(),
-                })
-              }
-              className="h-9 text-sm bg-white dark:bg-gray-800"
-              disabled={disabled}
-            />
-          </div>
+          <StateCitySelect
+            stateValue={address.state}
+            cityValue={address.city}
+            onStateChange={(value) =>
+              onAddressChange({ ...address, state: value, city: "" })
+            }
+            onCityChange={(value) =>
+              onAddressChange({ ...address, city: value })
+            }
+            disabled={disabled}
+            className="gap-2"
+            fieldClassName="space-y-1"
+            labelClassName="sr-only"
+            triggerClassName="h-9 text-sm bg-white dark:bg-gray-800"
+          />
 
           <Input
             placeholder="Complemento (opcional)"
@@ -153,4 +154,3 @@ export function DeliveryAddressForm({
     </div>
   )
 }
-

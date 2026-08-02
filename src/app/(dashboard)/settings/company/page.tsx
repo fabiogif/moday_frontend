@@ -30,6 +30,7 @@ import { useReceitaWS } from "@/hooks/use-receitaws"
 import { type CompanyData } from "@/services/receitaws"
 import { AlertCircle, CheckCircle2 } from "lucide-react"
 import { StateCityFormFields } from "@/components/location/state-city-form-fields"
+import { applyCepToForm } from "@/lib/apply-cep-to-form"
 import { PlansSection } from "./components/plans-section"
 import { resolveImageUrl } from "@/lib/resolve-image-url"
 import { OrderStepper } from "@/components/order-stepper"
@@ -229,22 +230,17 @@ export default function CompanySettings() {
     const cleanCEP = cep.replace(/\D/g, '');
     
     if (cleanCEP.length !== 8) {
-      return; // CEP incompleto
+      return;
     }
     
     const address = await searchCEP(cep);
     
     if (address) {
-      form.setValue('address', address.address);
-      
-      // Setar o estado primeiro (isso vai carregar as cidades)
-      form.setValue('state', address.state);
-      
-      // Aguardar as cidades carregarem, então setar a cidade
-      setTimeout(() => {
-        form.setValue('city', address.city);
-      }, 500);
-
+      applyCepToForm(form.setValue, address, {
+        address: 'address',
+        state: 'state',
+        city: 'city',
+      })
     }
   }
   

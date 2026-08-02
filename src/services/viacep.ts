@@ -1,93 +1,91 @@
 /**
- * Serviço de integração com API ViaCEP
- * Documentação: https://viacep.com.br/
+ * Consulta de CEP via proxy backend (ViaCEP + resolução IBGE local).
  */
 
-export interface ViaCEPResponse {
-  cep: string;
-  logradouro: string;
-  complemento: string;
-  bairro: string;
-  localidade: string;
-  uf: string;
-  ibge: string;
-  gia: string;
-  ddd: string;
-  siafi: string;
-  erro?: boolean;
-}
+import { apiClient, endpoints } from '@/lib/api-client'
 
 export interface AddressData {
-  address: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  // Campos originais do ViaCEP
-  logradouro?: string;
-  bairro?: string;
-  localidade?: string;
-  uf?: string;
+  address: string
+  neighborhood: string
+  city: string
+  state: string
+  zipCode: string
+  complement?: string
+  stateId?: number
+  cityId?: number
+  cityIbgeCode?: string
+  logradouro?: string
+  bairro?: string
+  localidade?: string
+  uf?: string
 }
 
-/**
- * Busca endereço pelo CEP usando ViaCEP
- * @param cep - CEP com ou sem máscara
- * @returns Dados do endereço ou null se não encontrado
- */
-export async function searchAddressByCEP(cep: string): Promise<AddressData | null> {
-  try {
-    // Remove máscara do CEP
-    const cleanCEP = cep.replace(/\D/g, '');
-    
-    // Valida se tem 8 dígitos
-    if (cleanCEP.length !== 8) {
-      throw new Error('CEP deve ter 8 dígitos');
-    }
-    
-    // Faz requisição para ViaCEP
-    const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error('Erro ao consultar CEP');
-    }
-    
-    const data: ViaCEPResponse = await response.json();
-    
-    // Verifica se retornou erro
-    if (data.erro) {
-      return null;
-    }
-    
-    // Mapeia para o formato da aplicação
-    return {
-      address: data.logradouro || '',
-      neighborhood: data.bairro || '',
-      city: data.localidade || '',
-      state: data.uf || '',
-      zipCode: data.cep || '',
-      // Incluir campos originais para compatibilidade
-      logradouro: data.logradouro || '',
-      bairro: data.bairro || '',
-      localidade: data.localidade || '',
-      uf: data.uf || '',
-    };
-  } catch (error) {
-
-    throw error;
+interface CepApiResponse {
+  address: string
+  neighborhood: string
+  complement?: string
+  zip_code: string
+  state: {
+    id: number
+    uf: string
+    name: string
+    ibge_code?: string
+  }
+  city: {
+    id: number
+    name: string
+    ibge_code?: string
   }
 }
 
 /**
- * Verifica se o CEP é válido (apenas formato)
+ * Busca endereço pelo CEP através da API interna.
  */
-export function isValidCEP(cep: string): boolean {
-  const cleanCEP = cep.replace(/\D/g, '');
-  return cleanCEP.length === 8;
+export async function searchAddressByCEP(cep: string): Promise<AddressData | null> {
+  const cleanCEP = cep.replace(/\D/g, '')
+
+  if (cleanCEP.length !== 8) {
+    throw new Error('CEP deve ter 8 dígitos')
+  }
+
+  try {
+    const response = await apiClient.get<{
+      success: boolean
+      data: CepApiResponse | null
+      message?: string
+    }>(endpoints.cep.lookup(cleanCEP))
+
+    if (!response.success || !response.data) {
+      return null
+    }
+
+    const data = response.data
+
+    return {
+      address: data.address || '',
+      neighborhood: data.neighborhood || '',
+      city: data.city?.name || '',
+      state: data.state?.uf || '',
+      zipCode: data.zip_code || cleanCEP,
+      complement: data.complement || '',
+      stateId: data.state?.id,
+      cityId: data.city?.id,
+      cityIbgeCode: data.city?.ibge_code,
+      logradouro: data.address || '',
+      bairro: data.neighborhood || '',
+      localidade: data.city?.name || '',
+      uf: data.state?.uf || '',
+    }
+  } catch (err: unknown) {
+    const status = (err as { status?: number })?.status
+    if (status === 404 || status === 422) {
+      return null
+    }
+    throw err
+  }
 }
 
+export function isValidCEP(cep: string): boolean {
+  const cleanCEP = cep.replace(/\D/g, '')
+  return cleanCEP.length === 8
+}

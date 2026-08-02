@@ -16,6 +16,8 @@ import { cn } from '@/lib/utils'
 import { extractValidationErrors } from '@/lib/error-formatter'
 import { OrderStepper } from '@/components/order-stepper'
 import { useViaCEP } from '@/hooks/use-viacep'
+import { StateCitySelect } from '@/components/location/state-city-select'
+import { applyCepToForm } from '@/lib/apply-cep-to-form'
 import { useReceitaWS } from '@/hooks/use-receitaws'
 import { formatReceitaWSCEP, type CompanyData } from '@/services/receitaws'
 import { maskCNPJ, maskCPF, maskPhone, maskZipCode } from '@/lib/masks'
@@ -105,6 +107,8 @@ export function SupplierFormDialog({
   const phoneValue = watch('phone')
   const phone2Value = watch('phone2')
   const zipCodeValue = watch('zip_code')
+  const stateValue = watch('state')
+  const cityValue = watch('city')
 
   useEffect(() => {
     register('document', { required: 'O documento é obrigatório' })
@@ -204,10 +208,12 @@ export function SupplierFormDialog({
       const address = await searchCEP(cep)
       if (!address) return
 
-      setValue('address', address.address || address.logradouro || '', { shouldDirty: true })
-      setValue('neighborhood', address.neighborhood || address.bairro || '', { shouldDirty: true })
-      setValue('city', address.city || address.localidade || '', { shouldDirty: true })
-      setValue('state', address.state || address.uf || '', { shouldDirty: true })
+      applyCepToForm(setValue, address, {
+        address: 'address',
+        neighborhood: 'neighborhood',
+        state: 'state',
+        city: 'city',
+      })
     } catch {
       // Erro já tratado pelo useViaCEP
     }
@@ -541,24 +547,15 @@ export function SupplierFormDialog({
                   />
                 </div>
 
-                <div className="min-w-0 space-y-2">
-                  <Label htmlFor="city">Cidade</Label>
-                  <Input
-                    id="city"
-                    className="h-9 w-full"
-                    {...register('city')}
-                    placeholder="São Paulo"
-                  />
-                </div>
-
-                <div className="min-w-0 space-y-2">
-                  <Label htmlFor="state">Estado (UF)</Label>
-                  <Input
-                    id="state"
-                    className="h-9 w-full"
-                    {...register('state')}
-                    placeholder="SP"
-                    maxLength={2}
+                <div className="min-w-0 space-y-2 md:col-span-3">
+                  <StateCitySelect
+                    stateValue={stateValue || ''}
+                    cityValue={cityValue || ''}
+                    onStateChange={(value) => {
+                      setValue('state', value, { shouldDirty: true })
+                      setValue('city', '', { shouldDirty: true })
+                    }}
+                    onCityChange={(value) => setValue('city', value, { shouldDirty: true })}
                   />
                 </div>
               </div>

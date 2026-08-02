@@ -26,6 +26,7 @@ import { useBackendValidation } from "@/hooks/use-backend-validation";
 import { ClientFormDialog } from "../../clients/components/client-form-dialog";
 import { StateCityFormFields } from "@/components/location/state-city-form-fields";
 import { useViaCEP } from "@/hooks/use-viacep";
+import { applyCepToForm } from "@/lib/apply-cep-to-form";
 import { maskZipCode } from "@/lib/masks";
 import { SuccessAlert } from "../components/success-alert";
 
@@ -199,7 +200,6 @@ export default function NewOrderPage() {
   
   // Estado local para forçar atualização de clientes
   const [localClients, setLocalClients] = useState<Client[]>([]);
-  const [pendingDeliveryCity, setPendingDeliveryCity] = useState<string | null>(null);
   const [successAlertOpen, setSuccessAlertOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('Pedido cadastrado com sucesso');
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
@@ -244,18 +244,6 @@ export default function NewOrderPage() {
   const watchProducts = form.watch("products");
   const discountValue = form.watch("discountValue");
   const discountType = form.watch("discountType");
-  const deliveryStateValue = form.watch("deliveryState");
-
-  useEffect(() => {
-    if (pendingDeliveryCity && deliveryStateValue) {
-      const timer = setTimeout(() => {
-        form.setValue("deliveryCity", pendingDeliveryCity, { shouldDirty: true });
-        setPendingDeliveryCity(null);
-      }, 600);
-
-      return () => clearTimeout(timer);
-    }
-  }, [pendingDeliveryCity, deliveryStateValue, form]);
 
   const handleDeliveryCepLookup = useCallback(
     async (cepValue: string) => {
@@ -269,33 +257,15 @@ export default function NewOrderPage() {
       try {
         const address = await searchCEP(cepValue);
         if (address) {
-          const street = address.address || address.logradouro || "";
-          const neighborhood = address.neighborhood || address.bairro || "";
-          const stateToSet = address.state || address.uf || "";
-          const cityToSet = address.city || address.localidade || "";
-
-          if (street) {
-            form.setValue("deliveryAddress", street, { shouldDirty: true });
-          }
-
-          if (neighborhood) {
-            form.setValue("deliveryNeighborhood", neighborhood, { shouldDirty: true });
-          }
-
-          if (stateToSet) {
-            form.setValue("deliveryState", stateToSet, { shouldDirty: true });
-          }
-
-          if (cityToSet) {
-            setPendingDeliveryCity(cityToSet);
-          } else {
-            setPendingDeliveryCity(null);
-          }
+          applyCepToForm(form.setValue, address, {
+            address: "deliveryAddress",
+            neighborhood: "deliveryNeighborhood",
+            state: "deliveryState",
+            city: "deliveryCity",
+          });
         }
-      } catch (error) {
-        if (process.env.NODE_ENV === "development") {
-
-        }
+      } catch {
+        // Erro já é tratado pelo useViaCEP com toast
       }
     },
     [form, searchCEP, useClientAddress]

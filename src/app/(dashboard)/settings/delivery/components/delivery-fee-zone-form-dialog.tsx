@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DeliveryFeeZone, DeliveryFeeZoneFormData, useDeliveryFeeZoneMutation } from '@/hooks/use-delivery-fee-zones'
 import { useViaCEP } from '@/hooks/use-viacep'
+import { StateCitySelect } from '@/components/location/state-city-select'
+import { applyCepToStateHandlers } from '@/lib/apply-cep-to-form'
 import { endpoints } from '@/lib/api-client'
 import { maskZipCode } from '@/lib/masks'
 import { extractValidationErrors } from '@/lib/error-formatter'
@@ -27,6 +29,7 @@ export function DeliveryFeeZoneFormDialog({ open, onOpenChange, zone, onSuccess 
   const { loading: loadingCep, searchCEP } = useViaCEP()
 
   const [zipCode, setZipCode] = useState('')
+  const [state, setState] = useState('')
   const [city, setCity] = useState('')
   const [neighborhood, setNeighborhood] = useState('')
   const [feeType, setFeeType] = useState<DeliveryFeeZoneFormData['fee_type']>('fixed')
@@ -37,6 +40,7 @@ export function DeliveryFeeZoneFormDialog({ open, onOpenChange, zone, onSuccess 
   useEffect(() => {
     if (zone) {
       setZipCode('')
+      setState('')
       setCity(zone.city)
       setNeighborhood(zone.neighborhood)
       setFeeType(zone.fee_type)
@@ -44,6 +48,7 @@ export function DeliveryFeeZoneFormDialog({ open, onOpenChange, zone, onSuccess 
       setEstimatedTime(String(zone.estimated_time_minutes))
     } else {
       setZipCode('')
+      setState('')
       setCity('')
       setNeighborhood('')
       setFeeType('fixed')
@@ -59,8 +64,11 @@ export function DeliveryFeeZoneFormDialog({ open, onOpenChange, zone, onSuccess 
 
     const address = await searchCEP(digits)
     if (address) {
-      setCity(address.city)
-      setNeighborhood(address.neighborhood)
+      applyCepToStateHandlers(address, {
+        setState,
+        setCity,
+        setNeighborhood,
+      })
     }
   }
 
@@ -138,34 +146,30 @@ export function DeliveryFeeZoneFormDialog({ open, onOpenChange, zone, onSuccess 
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="zone_city">
-                Cidade <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="zone_city"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="São Paulo"
-                className={backendErrors.city ? 'border-destructive' : ''}
-              />
-              {backendErrors.city && <p className="text-sm text-destructive">{backendErrors.city}</p>}
-            </div>
+          <StateCitySelect
+            stateValue={state}
+            cityValue={city}
+            onStateChange={(value) => {
+              setState(value)
+              setCity('')
+            }}
+            onCityChange={setCity}
+            cityError={backendErrors.city}
+            required
+          />
 
-            <div className="space-y-2">
-              <Label htmlFor="zone_neighborhood">
-                Bairro <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="zone_neighborhood"
-                value={neighborhood}
-                onChange={(e) => setNeighborhood(e.target.value)}
-                placeholder="Centro"
-                className={backendErrors.neighborhood ? 'border-destructive' : ''}
-              />
-              {backendErrors.neighborhood && <p className="text-sm text-destructive">{backendErrors.neighborhood}</p>}
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="zone_neighborhood">
+              Bairro <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="zone_neighborhood"
+              value={neighborhood}
+              onChange={(e) => setNeighborhood(e.target.value)}
+              placeholder="Centro"
+              className={backendErrors.neighborhood ? 'border-destructive' : ''}
+            />
+            {backendErrors.neighborhood && <p className="text-sm text-destructive">{backendErrors.neighborhood}</p>}
           </div>
 
           <div className="space-y-2">

@@ -601,12 +601,15 @@ export const endpoints = {
   // Localização (Estados e Municípios)
   states: {
     list: '/api/states',
-    cities: (uf: string) => `/api/states/${uf}/cities`,
+    cities: (id: number | string) => `/api/states/${id}/cities`,
   },
   cities: {
     list: '/api/cities',
     capitals: '/api/cities/capitals',
     search: '/api/cities/search',
+  },
+  cep: {
+    lookup: (cep: string) => `/api/cep/${cep}`,
   },
 
   // Eventos

@@ -49,6 +49,9 @@ import { toast } from "sonner"
 import { useInputMask } from "@/hooks/use-input-mask"
 import { validateCPF, validateEmail, validatePhone } from "@/lib/masks"
 import { showErrorToast } from "@/components/ui/error-toast"
+import { useViaCEP } from "@/hooks/use-viacep"
+import { StateCityFormFields } from "@/components/location/state-city-form-fields"
+import { applyCepToForm } from "@/lib/apply-cep-to-form"
 
 // Schema de validação
 const clientSchema = z.object({
@@ -117,6 +120,7 @@ export default function ClientDetailPage() {
   
   const { mutate: updateClient, loading: updating } = useMutation()
   const { mutate: deleteClient, loading: deleting } = useMutation()
+  const { loading: loadingCEP, searchCEP } = useViaCEP()
   
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
@@ -134,6 +138,21 @@ export default function ClientDetailPage() {
       complement: "",
     },
   })
+
+  const handleSearchCEP = async (cep: string) => {
+    const cleanCEP = cep.replace(/\D/g, "")
+    if (cleanCEP.length !== 8) return
+
+    const address = await searchCEP(cep)
+    if (address) {
+      applyCepToForm(form.setValue, address, {
+        address: "address",
+        neighborhood: "neighborhood",
+        state: "state",
+        city: "city",
+      })
+    }
+  }
   
   // Atualizar formulário quando cliente carregar
   useEffect(() => {
@@ -432,48 +451,48 @@ export default function ClientDetailPage() {
                       <FormItem>
                         <FormLabel>CEP</FormLabel>
                         <FormControl>
-                          <Input 
-                            value={field.value}
-                            onChange={handleZipCodeChange}
-                            onBlur={field.onBlur}
-                            name={field.name}
-                            disabled={!isEditing}
-                            placeholder="00000-000"
-                            maxLength={9}
-                          />
+                          <div className="relative">
+                            <Input 
+                              value={field.value}
+                              onChange={handleZipCodeChange}
+                              onBlur={(e) => {
+                                field.onBlur()
+                                if (isEditing) {
+                                  void handleSearchCEP(e.target.value)
+                                }
+                              }}
+                              name={field.name}
+                              disabled={!isEditing || loadingCEP}
+                              placeholder="00000-000"
+                              maxLength={9}
+                            />
+                            {loadingCEP && (
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                              </div>
+                            )}
+                          </div>
                         </FormControl>
+                        {isEditing && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {loadingCEP ? 'Buscando endereço...' : 'Digite o CEP para preencher automaticamente'}
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     );
                   }}
                 />
-                
-                <FormField
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <StateCityFormFields
                   control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cidade</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={!isEditing} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estado</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={!isEditing} maxLength={2} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  stateFieldName="state"
+                  cityFieldName="city"
+                  stateLabel="Estado"
+                  cityLabel="Cidade"
+                  disabled={!isEditing}
                 />
               </div>
               
