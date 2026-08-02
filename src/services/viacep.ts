@@ -49,11 +49,10 @@ export async function searchAddressByCEP(cep: string): Promise<AddressData | nul
   }
 
   try {
-    const response = await apiClient.get<{
-      success: boolean
-      data: CepApiResponse | null
-      message?: string
-    }>(endpoints.cep.lookup(cleanCEP))
+    // apiClient.get<T> tipa `data` como T (payload interno do ApiResponseClass)
+    const response = await apiClient.get<CepApiResponse | null>(
+      endpoints.cep.lookup(cleanCEP)
+    )
 
     if (!response.success || !response.data) {
       return null
