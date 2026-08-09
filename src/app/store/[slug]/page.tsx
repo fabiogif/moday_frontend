@@ -1158,7 +1158,7 @@ export default function PublicStorePage() {
   const renderSummaryContent = (variant: 'cart' | 'checkout' | 'review', hideActions = false) => {
     if (cart.length === 0) {
       return (
-        <div className="space-y-3 text-sm text-muted-foreground">
+        <div className="min-w-0 space-y-3 break-words text-sm text-muted-foreground">
           <p>Nenhum item no carrinho ainda.</p>
           <p>Explore o cardápio e adicione seus produtos favoritos!</p>
         </div>
@@ -1177,8 +1177,8 @@ export default function PublicStorePage() {
         : submitting
 
     return (
-      <div className="space-y-4">
-        <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1">
+      <div className="min-w-0 space-y-4 overflow-hidden">
+        <div className="max-h-[320px] space-y-3 overflow-x-hidden overflow-y-auto pr-1">
           {cart.map((item, index) => {
             const basePrice = getNumericPrice(item.promotional_price || item.price)
             const variationPrice = item.selectedVariation ? item.selectedVariation.price : 0
@@ -1537,9 +1537,9 @@ export default function PublicStorePage() {
       }`}>
         <div className="w-full">
           {!orderSuccess && currentStep === 0 && (
-            <section className="container mx-auto space-y-10 px-4 py-10">
-              <div className="flex flex-col gap-10 lg:flex-row">
-                <div className="flex-1 space-y-6">
+            <section className="container mx-auto space-y-10 overflow-x-hidden px-4 py-6 sm:py-10">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+                <div className="min-w-0 flex-1 space-y-6">
                   {/* Category filter chips */}
                   {categories.length > 0 && (
                     <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
@@ -1575,7 +1575,7 @@ export default function PublicStorePage() {
                         <p className="text-lg text-muted-foreground">Nenhum produto encontrado nesta categoria.</p>
                       </div>
                     ) : (
-                      <div className="flex flex-col gap-3 md:grid md:grid-cols-2 xl:grid-cols-3 md:gap-4">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-2 2xl:grid-cols-3">
                         {filteredProducts.map((product) => {
                           const price = product.promotional_price || product.price;
                           const hasDiscount = product.promotional_price && product.promotional_price < product.price;
@@ -1692,32 +1692,35 @@ export default function PublicStorePage() {
                   )}
                 </div>
 
-                <aside className="hidden w-full max-w-sm lg:block" id="order-summary">
-                  <Card className="sticky top-32 space-y-0 rounded-3xl border border-border/60 shadow-2xl">
-                    <CardHeader className="space-y-1 pb-0">
-                      <CardTitle className="flex items-center justify-between text-xl">
-                        <span>Seu pedido</span>
-                        <Badge variant="outline" className="rounded-full text-xs">
+                <aside
+                  className="hidden w-full shrink-0 lg:block lg:w-[22rem] xl:w-96"
+                  id="order-summary"
+                >
+                  <Card className="sticky top-32 space-y-0 overflow-hidden rounded-3xl border border-border/60 shadow-2xl">
+                    <CardHeader className="min-w-0 space-y-1 pb-0">
+                      <CardTitle className="flex items-center justify-between gap-3 text-xl">
+                        <span className="min-w-0 truncate">Seu pedido</span>
+                        <Badge variant="outline" className="shrink-0 rounded-full text-xs">
                           {cartCount} {cartCount === 1 ? 'item' : 'itens'}
                         </Badge>
                       </CardTitle>
-                      <CardDescription className="text-sm">
+                      <CardDescription className="text-sm break-words">
                         Revise os itens selecionados antes de prosseguir.
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4 pt-4">
+                    <CardContent className="min-w-0 space-y-4 overflow-hidden pt-4">
                       {renderSummaryContent('cart')}
                     </CardContent>
                   </Card>
                 </aside>
-                              </div>
-                            </section>
-                          )}
-                        </div>
+              </div>
+            </section>
+          )}
+        </div>
                 
           {!orderSuccess && currentStep >= 1 && currentStep <= 4 && (
-          <section className="container mx-auto px-4 py-4 sm:px-4 sm:py-6 lg:py-10">
-            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
+          <section className="container mx-auto overflow-x-hidden px-4 py-4 sm:px-4 sm:py-6 lg:py-10">
+            <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start lg:gap-8">
               <div className="flex-1 min-w-0 space-y-3 sm:space-y-4">
 
                 {/* ETAPA 1: DADOS */}
@@ -2118,17 +2121,17 @@ export default function PublicStorePage() {
               </div>
 
               {/* Order Summary Sidebar (desktop) */}
-              <div className="hidden lg:block w-72 shrink-0" id="order-summary">
-                <Card className="sticky top-24 rounded-3xl border border-border/60 shadow-lg">
-                  <CardHeader className="space-y-1 pb-0">
-                    <CardTitle className="flex items-center justify-between text-base">
-                      <span>Seu pedido</span>
-                      <Badge variant="outline" className="rounded-full text-xs">
+              <div className="hidden w-full shrink-0 lg:block lg:w-[22rem] xl:w-96" id="order-summary-checkout">
+                <Card className="sticky top-24 overflow-hidden rounded-3xl border border-border/60 shadow-lg">
+                  <CardHeader className="min-w-0 space-y-1 pb-0">
+                    <CardTitle className="flex items-center justify-between gap-3 text-base">
+                      <span className="min-w-0 truncate">Seu pedido</span>
+                      <Badge variant="outline" className="shrink-0 rounded-full text-xs">
                         {cartCount} {cartCount === 1 ? 'item' : 'itens'}
                       </Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4 pt-4">
+                  <CardContent className="min-w-0 space-y-4 overflow-hidden pt-4">
                     {renderSummaryContent(currentStep === 4 ? 'review' : 'checkout', true)}
                     {currentStep === 4 && (
                       <Button type="button" onClick={handleCheckout} disabled={submitting} className="w-full h-11 sm:h-12">
@@ -2532,11 +2535,11 @@ export default function PublicStorePage() {
       )}
 
       <Sheet open={mobileSummaryOpen} onOpenChange={setMobileSummaryOpen}>
-        <SheetContent side="bottom" className="z-[70] w-full max-h-[85vh] overflow-y-auto px-4 py-4 pb-6 sm:mx-auto sm:max-w-lg sm:px-6 sm:py-6 sm:pb-8">
+        <SheetContent side="bottom" className="z-[70] w-full max-h-[85vh] overflow-x-hidden overflow-y-auto px-4 py-4 pb-6 sm:mx-auto sm:max-w-lg sm:px-6 sm:py-6 sm:pb-8">
           <SheetHeader>
             <SheetTitle>Seu pedido</SheetTitle>
           </SheetHeader>
-          <div className="mt-4 space-y-4 pb-2">
+          <div className="mt-4 min-w-0 space-y-4 overflow-hidden pb-2 break-words">
             {renderSummaryContent(currentStep === 0 ? 'cart' : currentStep === 4 ? 'review' : 'checkout', currentStep >= 1)}
           </div>
         </SheetContent>
