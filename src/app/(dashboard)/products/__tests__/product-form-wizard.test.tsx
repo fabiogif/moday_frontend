@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -115,15 +115,42 @@ describe('ProductFormWizard - wizard de passos', () => {
 
     // Passo 5: Variações e Opcionais — botão final
     expect(await screen.findByText('Variações do Produto')).toBeInTheDocument()
+    await act(async () => {
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    })
     await user.click(screen.getByRole('button', { name: /Criar Produto/i }))
 
-    expect(onSubmit).toHaveBeenCalledWith(
+    expect(onSubmit).toHaveBeenCalled()
+    expect(onSubmit.mock.calls[0][0]).toEqual(
       expect.objectContaining({
         name: 'Pizza Margherita',
         categories: ['cat-1'],
-      }),
-      expect.anything()
+      })
     )
+  })
+
+    test('does not auto-save when continuing from Imagem to Variacoes', async () => {
+    const user = userEvent.setup()
+    const onSubmit = jest.fn()
+    render(<Harness onSubmit={onSubmit} mode="edit" />)
+
+    await user.type(screen.getByLabelText(/Nome do Produto/i), 'Pizza Margherita')
+    await user.type(screen.getByLabelText(/Descri/i), 'Molho, mussarela e manjericao')
+    await user.click(screen.getByRole('combobox'))
+    await user.click(await screen.findByText('Bebidas'))
+    await user.click(screen.getByRole('button', { name: /Continuar/i }))
+    await user.click(screen.getByRole('button', { name: /Continuar/i }))
+    await user.click(screen.getByRole('button', { name: /Continuar/i }))
+
+    // Passo Imagem
+    expect(await screen.findByText(/Sem imagem cadastrada/i)).toBeInTheDocument()
+    expect(onSubmit).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: /Continuar/i }))
+
+    // Botao final aparece; nao deve ter salvo automaticamente
+    expect(await screen.findByRole('button', { name: /Criar Produto/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Continuar/i })).not.toBeInTheDocument()
+    expect(onSubmit).not.toHaveBeenCalled()
   })
 
   test('shows the "Produto Ativo" toggle only in edit mode', async () => {

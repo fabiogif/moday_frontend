@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -120,6 +120,7 @@ export function ProductFormWizard({
 }: ProductFormWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const ignoreSaveClickRef = useRef(false);
 
   const name = form.watch("name");
   const description_ = form.watch("description");
@@ -135,9 +136,25 @@ export function ProductFormWizard({
     const fields = STEP_FIELDS[currentStep];
     const valid = fields.length === 0 || (await form.trigger(fields));
     if (!valid) return;
+
+    const leavingPenultimate = currentStep === STEPS.length - 2;
+    if (leavingPenultimate) {
+      ignoreSaveClickRef.current = true;
+    }
+
     setCompletedSteps((prev) => new Set(prev).add(currentStep));
     setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1));
+
+    if (leavingPenultimate) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          ignoreSaveClickRef.current = false;
+        });
+      });
+    }
   };
+
+
 
   const goBack = () => setCurrentStep((s) => Math.max(s - 1, 0));
 
@@ -197,7 +214,18 @@ export function ProductFormWizard({
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col">
+        <form
+          onSubmit={(e) => {
+            // Impede submit acidental (Enter / click-through ao trocar Continuar → Salvar)
+            e.preventDefault();
+            if (!isLastStep) {
+              void goNext();
+              return;
+            }
+            void form.handleSubmit(onSubmit)();
+          }}
+          className="flex-1 flex flex-col"
+        >
           <div className="flex-1 min-w-0">
             {/* Passo 1: Informações Básicas */}
             {currentStep === 0 && (
@@ -648,12 +676,37 @@ export function ProductFormWizard({
               )}
 
               {!isLastStep ? (
-                <Button type="button" onClick={goNext} disabled={submitting || !canContinue} className="h-12 flex-1">
+                <Button
+                  type="button"
+                  disabled={submitting || !canContinue}
+                  className="h-12 flex-1"
+                  onPointerDown={(e) => {
+                    // preventDefault evita que o click residual acione o botão Salvar
+                    // que substitui Continuar no mesmo lugar ao ir para o último passo.
+                    if (e.button !== 0) return;
+                    e.preventDefault();
+                    void goNext();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      void goNext();
+                    }
+                  }}
+                >
                   Continuar
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               ) : (
-                <Button type="submit" disabled={submitting} className="h-12 flex-1">
+                <Button
+                  type="button"
+                  disabled={submitting}
+                  className="h-12 flex-1"
+                  onClick={() => {
+                    if (ignoreSaveClickRef.current) return;
+                    void form.handleSubmit(onSubmit)();
+                  }}
+                >
                   {submitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
