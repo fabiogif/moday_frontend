@@ -421,7 +421,8 @@ describe('StoreHourFormDialog', () => {
       />
     )
 
-    expect(screen.getByText(/Dia da Semana/i)).toBeInTheDocument()
+    expect(screen.getByText(/Dias da Semana/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Segunda-feira/i)).toBeInTheDocument()
     expect(screen.getByText(/Horário de Início|Abre às/i)).toBeInTheDocument()
     expect(screen.getByText(/Horário de Término|Fecha às/i)).toBeInTheDocument()
     expect(screen.getByText(/Tipo de Serviço/i)).toBeInTheDocument()
@@ -457,10 +458,10 @@ describe('StoreHourFormDialog', () => {
     await userEvent.type(startTimeInput, '18:00')
 
     await userEvent.clear(endTimeInput)
-    await userEvent.type(endTimeInput, '08:00') // Antes do início
+    await userEvent.type(endTimeInput, '08:00')
 
     const submitButton = screen.getByRole('button', { name: /Adicionar/i })
-    
+
     await act(async () => {
       fireEvent.click(submitButton)
     })
@@ -478,7 +479,7 @@ describe('StoreHourFormDialog', () => {
 
     ;(apiClient.get as jest.Mock).mockResolvedValue({
       success: true,
-      data: [], // Sem conflitos
+      data: [],
     })
 
     render(
@@ -489,9 +490,8 @@ describe('StoreHourFormDialog', () => {
       />
     )
 
-    // Preencher formulário
     const submitButton = screen.getByRole('button', { name: /Adicionar/i })
-    
+
     await act(async () => {
       fireEvent.click(submitButton)
     })
@@ -500,6 +500,7 @@ describe('StoreHourFormDialog', () => {
       expect(apiClient.post).toHaveBeenCalledWith(
         endpoints.storeHours.create,
         expect.objectContaining({
+          day_of_week: 1,
           delivery_type: 'both',
           is_always_open: false,
         })
@@ -509,11 +510,46 @@ describe('StoreHourFormDialog', () => {
     })
   })
 
+  it('should create hours for multiple selected days', async () => {
+    ;(apiClient.post as jest.Mock).mockResolvedValue({
+      success: true,
+      message: 'Horário criado com sucesso',
+    })
+
+    ;(apiClient.get as jest.Mock).mockResolvedValue({
+      success: true,
+      data: [],
+    })
+
+    render(
+      <StoreHourFormDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        onSuccess={mockOnSuccess}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /Seg-Sex/i }))
+
+    const submitButton = screen.getByRole('button', { name: /Adicionar/i })
+
+    await act(async () => {
+      fireEvent.click(submitButton)
+    })
+
+    await waitFor(() => {
+      expect(apiClient.post).toHaveBeenCalledTimes(5)
+      expect(toast.success).toHaveBeenCalledWith('5 horários criados com sucesso')
+      expect(mockOnSuccess).toHaveBeenCalled()
+    })
+  })
+
   it('should detect overlapping hours', async () => {
     const existingHours = [
       {
         uuid: 'existing-uuid',
         day_of_week: 1,
+        day_name: 'Segunda-feira',
         start_time: '08:00',
         end_time: '12:00',
         is_active: true,
@@ -534,7 +570,7 @@ describe('StoreHourFormDialog', () => {
     )
 
     const submitButton = screen.getByRole('button', { name: /Adicionar/i })
-    
+
     await act(async () => {
       fireEvent.click(submitButton)
     })
@@ -573,6 +609,7 @@ describe('StoreHourFormDialog', () => {
       />
     )
 
+    expect(screen.getByText(/Dia da Semana/i)).toBeInTheDocument()
     expect(screen.getByDisplayValue('08:00')).toBeInTheDocument()
     expect(screen.getByDisplayValue('18:00')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Atualizar/i })).toBeInTheDocument()

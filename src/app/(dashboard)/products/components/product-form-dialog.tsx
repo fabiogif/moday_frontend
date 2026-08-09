@@ -34,6 +34,7 @@ import {
   useBackendValidation,
   commonFieldMappings,
 } from "@/hooks/use-backend-validation";
+import { ImageDropzone } from "@/components/image-dropzone";
 
 const productFormSchema = z.object({
   name: z.string().min(2, {
@@ -370,20 +371,12 @@ export function ProductFormDialog({ onAddProduct, renderAsPage = false }: Produc
             <FormField
               control={form.control}
               name="image"
-              render={({ field: { onChange, ...field } }) => (
+              render={({ field: { onChange } }) => (
                 <FormItem>
-                  <FormLabel>Imagem do Produto (opcional)</FormLabel>
                   <FormControl>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-
-                        onChange(file || undefined);
-                      }}
-                      {...field}
-                      value={undefined} // Input file não pode ter value controlado
+                    <ImageDropzone
+                      onFileSelect={(file) => onChange(file)}
+                      label="Imagem do Produto (opcional)"
                     />
                   </FormControl>
                   <FormMessage />

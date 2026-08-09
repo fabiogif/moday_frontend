@@ -11,11 +11,11 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { ComboboxForm, ComboboxOption } from "@/components/ui/combobox";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Info, DollarSign, Package, ImageIcon, Layers } from "lucide-react";
-import { toast } from "sonner";
 import { OrderStepper } from "@/components/order-stepper";
 import { ProductVariationsManager } from "@/components/product-variations-manager";
 import { ProductOptionalsManager } from "@/components/product-optionals-manager";
 import { ProductVariation, ProductOptional } from "@/types/product-variations";
+import { ImageDropzone } from "@/components/image-dropzone";
 
 export interface ProductFormValues {
   name: string;
@@ -78,8 +78,6 @@ function isFilled(value: unknown) {
   return typeof value === "string" ? value.trim().length > 0 : value != null && value !== "";
 }
 
-const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
-const VALID_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/svg+xml"];
 
 interface ProductFormWizardProps {
   mode: "create" | "edit";
@@ -177,23 +175,6 @@ export function ProductFormWizard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.formState.errors]);
 
-  const handleImageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > MAX_IMAGE_SIZE) {
-      toast.error("Imagem muito grande! Tamanho máximo: 2MB");
-      e.target.value = "";
-      return;
-    }
-    if (!VALID_IMAGE_TYPES.includes(file.type)) {
-      toast.error("Tipo de arquivo inválido! Use: JPG, PNG, GIF ou SVG");
-      e.target.value = "";
-      return;
-    }
-
-    onImageChange(file);
-  };
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] py-2 px-3 sm:px-6">
@@ -632,17 +613,17 @@ export function ProductFormWizard({
                     name="image"
                     render={() => (
                       <FormItem>
-                        <FormLabel>{currentImage ? "Selecionar Nova Imagem" : "Imagem do Produto"}</FormLabel>
                         <FormControl>
-                          <Input
-                            type="file"
-                            accept="image/jpeg,image/jpg,image/png,image/gif,image/svg+xml"
-                            onChange={handleImageInputChange}
+                          <ImageDropzone
+                            onFileSelect={(file) => {
+                              form.setValue("image", file, { shouldDirty: true });
+                              onImageChange(file);
+                            }}
+                            hasPreview={!!currentImage}
+                            label={currentImage ? "Selecionar Nova Imagem" : "Imagem do Produto"}
+                            disabled={submitting}
                           />
                         </FormControl>
-                        <p className="text-sm text-muted-foreground">
-                          Formatos aceitos: JPG, PNG, GIF, SVG • Tamanho máximo: 2MB
-                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
