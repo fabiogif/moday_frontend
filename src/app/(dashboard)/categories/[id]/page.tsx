@@ -112,7 +112,12 @@ export default function CategoryDetailPage() {
   
   const onSubmit = async (data: CategoryFormValues) => {
     try {
-      const response = await updateCategory(endpoints.categories.update(categoryId), 'PUT', data)
+      const response = await updateCategory(endpoints.categories.update(categoryId), 'PUT', {
+        name: data.name,
+        description: data.description || '',
+        status: data.isActive ? 'A' : 'I',
+        isActive: data.isActive,
+      })
       
       if (response) {
         toast.success("Categoria atualizada com sucesso!")
