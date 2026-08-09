@@ -1594,7 +1594,7 @@ export default function PublicStorePage() {
                                     src={resolveImageUrl(product.image) || ""}
                                     alt={product.name}
                                     fill
-                                    className="object-cover"
+                                    className="object-cover transition-transform duration-300 ease-out group-hover:scale-110"
                                     sizes="112px"
                                     unoptimized
                                   />

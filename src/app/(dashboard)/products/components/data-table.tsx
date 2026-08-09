@@ -152,14 +152,14 @@ export function DataTable({ products, onDeleteProduct, onEditProduct, onAddProdu
       accessorKey: "name",
       header: "Nome",
       cell: ({ row }) => (
-        <div className="flex items-center gap-3">
+        <div className="group flex items-center gap-3">
           {/* Product Image Thumbnail */}
           <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-md bg-muted">
             {row.original.url ? (
               <img
                 src={resolveImageUrl(row.original.url) || ""}
                 alt={row.getValue("name")}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-110"
                 onError={(e) => {
                   // Fallback if image fails to load
                   e.currentTarget.style.display = 'none'

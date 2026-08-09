@@ -183,7 +183,7 @@ export function ProductRecommendations({
                       src={imageUrl}
                       alt={product.name}
                       fill
-                      className="object-cover group-hover:scale-105 transition-transform"
+                      className="object-cover transition-transform duration-300 ease-out group-hover:scale-110"
                       sizes="(max-width: 640px) 128px, 160px"
                       unoptimized
                     />
