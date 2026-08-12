@@ -50,7 +50,7 @@ export function OwnerAccessCard({ tenantId, owner, canManage, onUpdated }: Owner
             Acesso do Dono
           </CardTitle>
           <CardDescription>
-            Nenhum usu·rio dono encontrado para esta empresa.
+            Nenhum usu√°rio dono encontrado para esta empresa.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -79,7 +79,7 @@ export function OwnerAccessCard({ tenantId, owner, canManage, onUpdated }: Owner
     if (!canManage) return
 
     if (password && password !== passwordConfirmation) {
-      toast.error('A confirmaÁ„o da senha n„o confere')
+      toast.error('A confirma√ß√£o da senha n√£o confere')
       return
     }
 
@@ -169,7 +169,7 @@ export function OwnerAccessCard({ tenantId, owner, canManage, onUpdated }: Owner
           <div className="space-y-1">
             <Label>Reset de senha</Label>
             <p className="text-sm text-muted-foreground">
-              Deixe em branco para gerar uma senha tempor·ria automaticamente.
+              Deixe em branco para gerar uma senha tempor√°ria automaticamente.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -181,7 +181,7 @@ export function OwnerAccessCard({ tenantId, owner, canManage, onUpdated }: Owner
                 value={password}
                 disabled={!canManage || resetting}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="MÌnimo 8 caracteres"
+                placeholder="M√≠nimo 8 caracteres"
                 autoComplete="new-password"
               />
             </div>
