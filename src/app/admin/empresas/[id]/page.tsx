@@ -52,6 +52,7 @@ import {
   ArrowRightLeft,
 } from 'lucide-react'
 import { ChangeTenantPlanDialog } from '../components/change-tenant-plan-dialog'
+import { OwnerAccessCard, TenantOwner } from '../components/owner-access-card'
 
 interface TenantDetails {
   tenant: {
@@ -109,6 +110,7 @@ interface TenantDetails {
     admin: string
     created_at: string
   }>
+  owner?: TenantOwner | null
 }
 
 export default function TenantDetailsPage() {
@@ -483,6 +485,13 @@ export default function TenantDetailsPage() {
           </CardContent>
         </Card>
       )}
+
+      <OwnerAccessCard
+        tenantId={params.id as string}
+        owner={data.owner ?? null}
+        canManage={canManage}
+        onUpdated={loadData}
+      />
 
       {/* Informações Gerais */}
       <Card>

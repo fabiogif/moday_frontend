@@ -291,6 +291,23 @@ class AdminApiClient {
     })
   }
 
+  async updateTenantOwnerEmail(id: string | number, email: string) {
+    return this.request(`/tenants/${id}/owner-email`, {
+      method: 'PUT',
+      body: JSON.stringify({ email }),
+    })
+  }
+
+  async resetTenantOwnerPassword(
+    id: string | number,
+    data?: { password?: string; password_confirmation?: string }
+  ) {
+    return this.request(`/tenants/${id}/owner-password-reset`, {
+      method: 'POST',
+      body: JSON.stringify(data ?? {}),
+    })
+  }
+
   async migrateTenantPlan(data: {
     tenant_id: number
     plan_id: number
